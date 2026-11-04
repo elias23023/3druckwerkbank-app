@@ -132,7 +132,7 @@ export function App() {
   });
 
   return (
-    <Stage phase={phase} world={route.world} parallax={!motionReduced && !coarse && !sheet && !mobile && (settings.parallax ?? 1) > 0} parallaxStrength={settings.parallax ?? 1} weatherCode={weather?.data.hourly.length ? weather.data.current.code : undefined} islands={islands}>
+    <Stage phase={phase} world={route.world} parallax={!motionReduced && !coarse && !sheet && !mobile && (settings.parallax ?? 1) > 0} parallaxStrength={settings.parallax ?? 1} weatherCode={weather?.data.hourly.length ? weather.data.current.code : undefined} background={settings.background ?? 'foto'} islands={islands}>
       <div className="ui">
         <TopBar />
         {route.world === 'start' ? <Start /> : null}

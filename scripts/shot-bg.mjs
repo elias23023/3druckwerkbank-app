@@ -1,0 +1,10 @@
+import pw from '/opt/node-tools/node_modules/playwright/index.js';
+const { chromium } = pw;
+const [base, out, variant] = process.argv.slice(2);
+const browser = await chromium.launch();
+const page = await (await browser.newContext({ viewport: { width: 1920, height: 1080 }, timezoneId: 'Europe/Vienna', locale: 'de-AT' })).newPage();
+await page.clock.install({ time: new Date('2026-11-05T16:10:00+01:00') });
+await page.goto(`${base}/#/start`, { waitUntil: 'networkidle' });
+await page.evaluate((v) => { const k = '3druckwerkbank:v1'; const j = JSON.parse(localStorage.getItem(k) || '{"state":{}}'); j.state.settings = { ...(j.state.settings || {}), background: v }; localStorage.setItem(k, JSON.stringify(j)); }, variant);
+await page.reload({ waitUntil: 'networkidle' }); await page.clock.runFor(2500); await page.waitForTimeout(1500);
+await page.screenshot({ path: out }); await browser.close(); console.log(out);

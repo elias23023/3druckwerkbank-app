@@ -28,17 +28,19 @@ async function ramp(baseBuf, warm, cool, maskStops, mix) {
   return sharp(baseBuf).composite([{ input: tonedA, blend: 'over' }]).toBuffer();
 }
 
-async function render(name, pipeline) {
+async function render(name, pipeline, prefix = 'landschaft') {
   const img = await pipeline();
   for (const w of [1920, 1280]) {
     const r = sharp(await img.clone().toBuffer()).resize({ width: w });
-    await r.clone().avif({ quality: 52 }).toFile(`${out}/landschaft-${name}-${w}.avif`);
-    await r.clone().webp({ quality: 80 }).toFile(`${out}/landschaft-${name}-${w}.webp`);
+    await r.clone().avif({ quality: 52 }).toFile(`${out}/${prefix}-${name}-${w}.avif`);
+    await r.clone().webp({ quality: 80 }).toFile(`${out}/${prefix}-${name}-${w}.webp`);
   }
-  console.log('rendered', name);
+  console.log('rendered', prefix, name);
 }
 
-const finalOrGraded = (name, graded) => existsSync(`assets-src/final-landschaft-${name}.png`) ? () => Promise.resolve(sharp(`assets-src/final-landschaft-${name}.png`).resize(W, H, { fit: 'cover' })) : graded;
+const finalOrGraded = (name, graded) => graded;
+// Procedural renders (scripts/render-landscape.py) are published under the 'landschaft-r' prefix and selectable in settings.
+for (const name of ['abend', 'tag', 'nacht']) if (existsSync(`assets-src/final-landschaft-${name}.png`)) await render(name, () => Promise.resolve(sharp(`assets-src/final-landschaft-${name}.png`).resize(W, H, { fit: 'cover' })), 'landschaft-r');
 
 // ABEND: golden hour. Sun low, right of centre, warm highlights, violet-blue shadows.
 await render('abend', finalOrGraded('abend', async () => {

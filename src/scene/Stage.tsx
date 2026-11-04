@@ -16,7 +16,7 @@ const TINTS: Record<WorldId | 'start', string> = {
   archiv: 'radial-gradient(70% 60% at 50% 60%, rgba(220,180,110,.55), transparent 70%)',
 };
 
-export function Stage({ phase, world, parallax, islands, children, weatherCode, parallaxStrength = 1 }: { phase: DayPhase; world: WorldId | 'start'; parallax: boolean; islands: ReactNode; children: ReactNode; weatherCode?: number; parallaxStrength?: number }) {
+export function Stage({ phase, world, parallax, islands, children, weatherCode, parallaxStrength = 1, background = 'foto' }: { phase: DayPhase; world: WorldId | 'start'; parallax: boolean; islands: ReactNode; children: ReactNode; weatherCode?: number; parallaxStrength?: number; background?: 'foto' | 'gerendert' }) {
   const ref = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const onReady = useCallback(() => setReady(true), []);
@@ -35,7 +35,7 @@ export function Stage({ phase, world, parallax, islands, children, weatherCode, 
   return (
     <div className="stage" ref={ref} data-scene-ready={ready ? 'true' : 'false'} data-phase={phase} data-look={look}>
       <div className="stage__bg">
-        <Landscape look={look} onReady={onReady} />
+        <Landscape look={look} onReady={onReady} variant={background} />
         <Clouds look={look} />
         <div className="rays" style={{ opacity: look === 'nacht' ? 0.05 : look === 'tag' ? .12 : .2 }} />
         <div className="tint" style={{ background: TINTS[world] }} />

@@ -9,16 +9,17 @@ const SKY: Record<Look, string> = {
   nacht: 'linear-gradient(180deg, #070a1e 0%, #141c44 50%, #2a2a4a 100%)',
 };
 
-function Layer({ name, on, onLoad }: { name: Look; on: boolean; onLoad: () => void }) {
+function Layer({ name, on, onLoad, prefix }: { name: Look; on: boolean; onLoad: () => void; prefix: string }) {
   return (
     <picture>
-      <source type="image/avif" srcSet={`/img/landschaft-${name}-1280.avif 1280w, /img/landschaft-${name}-1920.avif 1920w`} sizes="100vw" />
-      <img src={`/img/landschaft-${name}-1920.webp`} srcSet={`/img/landschaft-${name}-1280.webp 1280w, /img/landschaft-${name}-1920.webp 1920w`} sizes="100vw" alt="" style={{ opacity: on ? 1 : 0 }} fetchPriority={on ? 'high' : 'low'} loading={on ? 'eager' : 'lazy'} decoding="async" onLoad={onLoad} />
+      <source type="image/avif" srcSet={`/img/${prefix}-${name}-1280.avif 1280w, /img/${prefix}-${name}-1920.avif 1920w`} sizes="100vw" />
+      <img src={`/img/${prefix}-${name}-1920.webp`} srcSet={`/img/${prefix}-${name}-1280.webp 1280w, /img/${prefix}-${name}-1920.webp 1920w`} sizes="100vw" alt="" style={{ opacity: on ? 1 : 0 }} fetchPriority={on ? 'high' : 'low'} loading={on ? 'eager' : 'lazy'} decoding="async" onLoad={onLoad} />
     </picture>
   );
 }
 
-export function Landscape({ look, onReady }: { look: Look; onReady?: () => void }) {
+export function Landscape({ look, onReady, variant = 'foto' }: { look: Look; onReady?: () => void; variant?: 'foto' | 'gerendert' }) {
+  const prefix = variant === 'gerendert' ? 'landschaft-r' : 'landschaft';
   const [loaded, setLoaded] = useState(0);
   useEffect(() => { if (loaded >= 1) onReady?.(); }, [loaded, onReady]);
   const inc = () => setLoaded((n) => n + 1);
@@ -26,9 +27,9 @@ export function Landscape({ look, onReady }: { look: Look; onReady?: () => void 
     <>
       <div className="sky" style={{ background: SKY[look] }} />
       <div className="land">
-        <Layer name="abend" on={look === 'abend'} onLoad={inc} />
-        <Layer name="tag" on={look === 'tag'} onLoad={inc} />
-        <Layer name="nacht" on={look === 'nacht'} onLoad={inc} />
+        <Layer key={prefix + 'a'} prefix={prefix} name="abend" on={look === 'abend'} onLoad={inc} />
+        <Layer key={prefix + 't'} prefix={prefix} name="tag" on={look === 'tag'} onLoad={inc} />
+        <Layer key={prefix + 'n'} prefix={prefix} name="nacht" on={look === 'nacht'} onLoad={inc} />
       </div>
       <div className="sun-glow" style={{ opacity: look === 'nacht' ? 0.25 : look === 'tag' ? 0.55 : 1 }} />
     </>

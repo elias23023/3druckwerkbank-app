@@ -127,7 +127,7 @@ export interface Settings {
   theme: 'auto' | 'hell' | 'dunkel'; motion: 'auto' | 'reduziert' | 'voll'; showQuote: boolean;
   location: { name: string; lat: number; lon: number; tz: string };
   pvKwp: number; pricePerKwh: number; printerWatts: number; userName?: string;
-  parallax?: number; notifications?: 'alle' | 'wichtig' | 'aus'; defaultPrinterId?: Id; preferredMaterials?: string[];
+  parallax?: number; notifications?: 'alle' | 'wichtig' | 'aus'; defaultPrinterId?: Id; preferredMaterials?: string[]; background?: 'foto' | 'gerendert';
 }
 
 export interface WeatherHour { time: string; temp: number; code: number; precipProb: number; precip: number; cloud: number; ghi: number; isDay: boolean; wind: number; gust?: number; pressure?: number; uv?: number }

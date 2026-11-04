@@ -23,6 +23,7 @@ export function EinstellungenSheet() {
   return (
     <Sheet title="Einstellungen" icon={<IGear />} onClose={s.closeSheet} foot={<><button className="btn" onClick={() => s.openSheet({ kind: 'ueber' })}><IInfo width={14} height={14} /> Über diesen Entwurf</button></>}>
       <Field label="Dein Name (max. 40 Zeichen, für die Begrüßung)"><input className="input" maxLength={40} value={st.userName ?? ''} onChange={(e) => s.setSettings({ userName: e.target.value })} placeholder="z. B. Elias" /></Field>
+      <Field label="Hintergrund-Landschaft"><Seg value={st.background ?? 'foto'} options={[{ v: 'foto', l: 'Foto, umgefärbt (Übergang)' }, { v: 'gerendert', l: 'Selbst gerendert' }]} onChange={(v) => s.setSettings({ background: v })} /><span className="xs muted">Beide sind Platzhalter, bis eine Landschaft im Referenzstil vorliegt (siehe README).</span></Field>
       <Field label="Erscheinungsbild"><Seg value={st.theme} options={[{ v: 'auto', l: 'Automatisch (Tageszeit)' }, { v: 'hell', l: 'Hell' }, { v: 'dunkel', l: 'Dunkel' }]} onChange={(v) => s.setSettings({ theme: v })} /></Field>
       <div className="grid2">
         <Field label="Bewegung"><Seg value={st.motion} options={[{ v: 'auto', l: 'System' }, { v: 'voll', l: 'Voll' }, { v: 'reduziert', l: 'Reduziert' }]} onChange={(v) => s.setSettings({ motion: v })} /></Field>
