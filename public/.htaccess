@@ -13,6 +13,3 @@ AddType image/webp .webp
     Header set Cache-Control "no-cache"
   </FilesMatch>
 </IfModule>
-<Files "site.zip">
-  Require all denied
-</Files>
