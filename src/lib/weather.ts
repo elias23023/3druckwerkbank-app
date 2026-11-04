@@ -17,9 +17,9 @@ export const wmo = (code: number) => WMO[code] ?? { label: 'Unbekannt', icon: 'w
 export async function fetchWeather(loc: Settings['location'], signal?: AbortSignal): Promise<WeatherData> {
   const p = new URLSearchParams({
     latitude: String(loc.lat), longitude: String(loc.lon), timezone: loc.tz, forecast_days: '7',
-    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,wind_speed_10m',
-    hourly: 'temperature_2m,precipitation_probability,precipitation,weather_code,cloud_cover,shortwave_radiation,is_day,wind_speed_10m',
-    daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,precipitation_sum,shortwave_radiation_sum',
+    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,wind_speed_10m,surface_pressure',
+    hourly: 'temperature_2m,precipitation_probability,precipitation,weather_code,cloud_cover,shortwave_radiation,is_day,wind_speed_10m,wind_gusts_10m,surface_pressure,uv_index',
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,precipitation_sum,shortwave_radiation_sum,wind_gusts_10m_max,uv_index_max',
   });
   const res = await fetch(`https://api.open-meteo.com/v1/forecast?${p}`, { signal });
   if (!res.ok) throw new Error(`Open-Meteo ${res.status}`);
@@ -27,24 +27,33 @@ export async function fetchWeather(loc: Settings['location'], signal?: AbortSign
   const hourly: WeatherHour[] = j.hourly.time.map((t: string, i: number) => ({
     time: t, temp: j.hourly.temperature_2m[i], code: j.hourly.weather_code[i], precipProb: j.hourly.precipitation_probability[i] ?? 0,
     precip: j.hourly.precipitation[i] ?? 0, cloud: j.hourly.cloud_cover[i] ?? 0, ghi: j.hourly.shortwave_radiation[i] ?? 0,
-    isDay: j.hourly.is_day[i] === 1, wind: j.hourly.wind_speed_10m[i] ?? 0,
+    isDay: j.hourly.is_day[i] === 1, wind: j.hourly.wind_speed_10m[i] ?? 0, gust: j.hourly.wind_gusts_10m?.[i] ?? undefined, pressure: j.hourly.surface_pressure?.[i] ?? undefined, uv: j.hourly.uv_index?.[i] ?? undefined,
   }));
   const daily: WeatherDay[] = j.daily.time.map((d: string, i: number) => ({
     date: d, code: j.daily.weather_code[i], tmax: j.daily.temperature_2m_max[i], tmin: j.daily.temperature_2m_min[i],
     sunrise: j.daily.sunrise[i], sunset: j.daily.sunset[i], daylightSec: j.daily.daylight_duration[i], precipSum: j.daily.precipitation_sum[i] ?? 0,
-    ghiSum: j.daily.shortwave_radiation_sum[i] ?? 0,
+    ghiSum: j.daily.shortwave_radiation_sum[i] ?? 0, gustMax: j.daily.wind_gusts_10m_max?.[i] ?? undefined, uvMax: j.daily.uv_index_max?.[i] ?? undefined,
   }));
   return {
     current: {
       time: j.current.time, temp: j.current.temperature_2m, feels: j.current.apparent_temperature, humidity: j.current.relative_humidity_2m,
-      precip: j.current.precipitation, code: j.current.weather_code, cloud: j.current.cloud_cover, wind: j.current.wind_speed_10m, isDay: j.current.is_day === 1,
+      precip: j.current.precipitation, code: j.current.weather_code, cloud: j.current.cloud_cover, wind: j.current.wind_speed_10m, isDay: j.current.is_day === 1, pressure: j.current.surface_pressure ?? undefined, uv: hourly.find((h) => h.time.slice(0, 13) === String(j.current.time).slice(0, 13))?.uv,
     },
     hourly, daily,
   };
 }
 
 /** Simplified PV power estimate in kW from global horizontal irradiance (W/m²). Clearly an estimate. */
-export const pvKw = (ghi: number, kwp: number) => Math.max(0, (kwp * ghi) / 1000 * 0.8);
+export const pvKw = (ghi: number, kwp: number) => Math.max(0, (kwp * ghi) / 1000 * 0.82);
+/** Quality of a single hour per plan rule: ≥0.5 kW and ≤60 % rain → geeignet; ≥1 kW gut; ≥2 kW sehr gut. */
+export function hourQuality(h: WeatherHour, kwp: number): 'sehr gut' | 'gut' | 'geeignet' | null {
+  const kw = pvKw(h.ghi, kwp); if (kw < 0.5 || h.precipProb > 60) return null; return kw >= 2 ? 'sehr gut' : kw >= 1 ? 'gut' : 'geeignet';
+}
+/** Best n suitable hours in the next 48 h, by PV power. */
+export function bestHours(hourly: WeatherHour[], kwp: number, n = 8, from = new Date()): (WeatherHour & { kw: number; q: 'sehr gut' | 'gut' | 'geeignet' })[] {
+  const t0 = from.getTime() - 3600_000;
+  return hourly.filter((h) => { const t = new Date(h.time).getTime(); return t >= t0 && t <= t0 + 49 * 3600_000; }).map((h) => ({ ...h, kw: pvKw(h.ghi, kwp), q: hourQuality(h, kwp) })).filter((h): h is WeatherHour & { kw: number; q: 'sehr gut' | 'gut' | 'geeignet' } => !!h.q).sort((a, b) => b.kw - a.kw).slice(0, n);
+}
 
 export interface Window { start: string; end: string; kwh: number; hours: number }
 
@@ -82,4 +91,21 @@ export function todayDaily(data: WeatherData | undefined, now = new Date()): Wea
   if (!data) return undefined;
   const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   return data.daily.find((d) => d.date === key) ?? data.daily[0];
+}
+
+export interface WeatherAlert { level: 'warn' | 'info'; title: string; detail: string }
+/** Simple rule-based alerts from the forecast (not an official warning service). */
+export function weatherAlerts(data: WeatherData, from = new Date()): WeatherAlert[] {
+  const out: WeatherAlert[] = [];
+  const h = data.hourly.filter((x) => new Date(x.time).getTime() >= from.getTime());
+  for (let i = 0; i + 3 <= h.length; i++) { const sum = h[i].precip + h[i + 1].precip + h[i + 2].precip; if (sum >= 5) { out.push({ level: 'warn', title: 'Starkregen möglich', detail: `≈ ${sum.toFixed(1)} mm in 3 h ab ${new Date(h[i].time).toLocaleString('de-AT', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}` }); break; } }
+  const gust = h.find((x) => (x.gust ?? 0) >= 50); if (gust) out.push({ level: 'warn', title: 'Sturmböen', detail: `bis ${Math.round(gust.gust!)} km/h ${new Date(gust.time).toLocaleString('de-AT', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}` });
+  const frost = data.daily.find((d) => d.tmin <= 0); if (frost) out.push({ level: 'info', title: 'Frost', detail: `${frost.tmin.toFixed(0)} °C am ${new Date(frost.date).toLocaleDateString('de-AT', { weekday: 'long' })} – Filament trocken lagern` });
+  const uv = data.daily.find((d) => (d.uvMax ?? 0) >= 6); if (uv) out.push({ level: 'info', title: 'Hoher UV-Index', detail: `UV ${uv.uvMax!.toFixed(0)} am ${new Date(uv.date).toLocaleDateString('de-AT', { weekday: 'long' })} – ASA für Außenteile` });
+  return out;
+}
+/** Comfort score 0–100 from temperature and humidity (for the "Wohlfühlfaktor" chip). */
+export function comfort(temp: number, humidity: number): number {
+  const t = 100 - Math.min(100, Math.abs(temp - 21) * 6); const hum = 100 - Math.min(100, Math.abs(humidity - 45) * 1.6);
+  return Math.round(t * 0.65 + hum * 0.35);
 }

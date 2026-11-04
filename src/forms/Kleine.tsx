@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore, printProgress, printRemainingMin, availableGrams } from '../store';
 import { Sheet } from '../ui/Sheet';
 import { Field, Progress, Seg, Stat, Check } from '../ui/Glass';
-import type { VersionStatus } from '../types';
+import { CALIBRATIONS, type VersionStatus } from '../types';
 import { fmtDate, fmtDuration, fmtEur, fmtGrams, fmtNum, fmtTime, relTime } from '../lib/format';
 import { useNow } from '../lib/time';
 import { navigate } from '../router';
@@ -26,6 +26,7 @@ export function GeraetSheet({ deviceId }: { deviceId: string }) {
           ); })}
         </Field>
       ) : null}
+      {d.kind === 'drucker' ? <Field label="Kalibrierung planen (Referenzzeiten, gerätebezogen prüfen)"><div className="pills">{CALIBRATIONS.map((c) => <button key={c.title} className="pill xs" onClick={() => { s.addMaintenance(d.id, `${c.title} (≈ ${c.minutes} min)`, new Date().toISOString()); s.toast('Kalibrierung eingeplant'); }}>+ {c.title} · {c.minutes} min</button>)}</div></Field> : null}
       {d.maintenance.length ? <Field label="Wartung">{d.maintenance.map((m) => <div key={m.id} className="row small"><Check on={m.done} onClick={() => s.toggleMaintenance(d.id, m.id)} /><span className="grow" style={{ textDecoration: m.done ? 'line-through' : undefined }}>{m.title}</span><span className="xs muted">{relTime(m.due, now.getTime())}</span></div>)}</Field> : null}
       {history.length ? <Field label="Letzte Drucke">{history.map((p) => <div key={p.id} className="row small"><span className={`pill xs ${p.result === 'erfolg' ? 'pill--ok' : p.result === 'fehldruck' ? 'pill--bad' : 'pill--warn'}`}>{p.result}</span><span className="grow ellipsis">{p.name}</span><span className="xs muted">{fmtDate(p.finishedAt)}</span></div>)}</Field> : null}
       <p className="xs faint">Gerätestatus und Fortschritt sind in diesem Entwurf simuliert; es besteht keine Verbindung zum Drucker.</p>
@@ -102,17 +103,19 @@ export function VersionSheet({ projectId, versionId }: { projectId: string; vers
 export function AbschliessenSheet({ projectId }: { projectId: string }) {
   const s = useStore();
   const p = s.projects.find((x) => x.id === projectId)!;
-  const [result, setResult] = useState(''); const [lessons, setLessons] = useState('');
+  const [result, setResult] = useState(''); const [lessons, setLessons] = useState(''); const [asTemplate, setAsTemplate] = useState(false);
   const open = s.tasks.filter((t) => t.projectId === p.id && !t.done && !t.skipped).length;
   const running = s.prints.some((pr) => pr.projectId === p.id && (pr.status === 'läuft' || pr.status === 'wartend'));
   return (
     <Sheet title="Projekt abschließen" icon={<IArchive />} onClose={s.closeSheet}
-      foot={<><button className="btn btn--primary" disabled={!result.trim()} onClick={() => { s.archiveProject(p.id, result.trim(), lessons.split('\n').map((x) => x.trim()).filter(Boolean)); s.closeSheet(); navigate({ world: 'archiv' }); }}>Bewusst abschließen</button><button className="btn" onClick={s.closeSheet}>Noch nicht</button></>}>
+      foot={<><button className="btn btn--primary" disabled={!result.trim()} onClick={() => { s.archiveProject(p.id, result.trim(), lessons.split('\n').map((x) => x.trim()).filter(Boolean)); if (asTemplate) s.setTemplate(p.id, true); s.spotlight(p.id); s.closeSheet(); navigate({ world: 'archiv' }); }}>Bewusst abschließen</button><button className="btn" onClick={s.closeSheet}>Noch nicht</button></>}>
       <p className="small">„{p.name}“ wird abgeschlossen und ins Archiv übernommen. Es entsteht ein Bericht mit Versionen, Drucken, Material, Zeit und Kosten. Das Projekt bleibt vollständig erhalten.</p>
       {open ? <span className="pill pill--warn xs">{open} offene Aufgabe(n) bleiben offen</span> : null}
       {running ? <span className="pill pill--warn xs">Es gibt noch laufende oder wartende Drucke</span> : null}
       <Field label="Ergebnis in einem Satz"><input className="input" value={result} onChange={(e) => setResult(e.target.value)} placeholder="Hält, ist montiert, Ziel erreicht." autoFocus /></Field>
       <Field label="Erfahrungen (eine je Zeile)"><textarea className="textarea" value={lessons} onChange={(e) => setLessons(e.target.value)} placeholder={'PLA im Garten wird weich.\n3 mm Wandstärke reichen.'} /></Field>
+      <label className="row small" style={{ cursor: 'pointer' }}><input type="checkbox" checked={asTemplate} onChange={(e) => setAsTemplate(e.target.checked)} /> Als Vorlage speichern (Meilensteine, Tags, Notizen wiederverwendbar)</label>
+      <span className="xs faint">Der Bericht enthält Versionen, Drucke, Materialverbrauch, Dauer, Kosten und {p.files.length} Dateien.</span>
     </Sheet>
   );
 }

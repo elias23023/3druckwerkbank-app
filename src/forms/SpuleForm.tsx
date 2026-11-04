@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore, availableGrams } from '../store';
 import { Sheet } from '../ui/Sheet';
 import { Field, Stack } from '../ui/Glass';
-import type { Spool } from '../types';
+import { COLOR_REFS, DRYING_PROFILES, type Spool } from '../types';
 import { id, nowIso, fmtDate, fmtGrams } from '../lib/format';
 import { ISpool, ITrash } from '../ui/Icons';
 
@@ -13,7 +13,7 @@ export function SpuleForm({ spoolId }: { spoolId?: string }) {
   const s = useStore();
   const existing = spoolId ? s.spools.find((x) => x.id === spoolId) : undefined;
   const [d, setD] = useState<Spool>(existing ?? blank());
-  const [book, setBook] = useState(''); const [note, setNote] = useState('');
+  const [book, setBook] = useState(''); const [note, setNote] = useState(''); const [dry, setDry] = useState(DRYING_PROFILES.find((x) => x.name.startsWith(d.material))?.name ?? DRYING_PROFILES[0].name);
   const upd = (p: Partial<Spool>) => setD({ ...d, ...p });
   const close = () => s.closeSheet();
   const save = () => { if (!d.label.trim()) return; s.upsertSpool({ ...d, label: d.label.trim() }); close(); s.toast('Rolle gespeichert'); };
@@ -31,7 +31,12 @@ export function SpuleForm({ spoolId }: { spoolId?: string }) {
             <input className="input grow" placeholder="Wofür? (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
             <button className="btn btn--sm" disabled={!Number(book)} onClick={() => { s.bookConsumption(existing.id, Number(book), note || undefined); setBook(''); setNote(''); setD({ ...d, remainingGrams: Math.max(0, d.remainingGrams - Number(book)) }); }}>Verbrauch buchen</button>
           </div>
-          <div className="row" style={{ gap: 6 }}><button className="btn btn--sm" onClick={() => { s.markDried(existing.id); setD({ ...d, lastDriedAt: nowIso() }); }}>Trocknung erfasst</button><span className="xs muted">{existing.lastDriedAt ? `zuletzt getrocknet ${fmtDate(existing.lastDriedAt)}` : 'noch nie getrocknet'}</span></div>
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            <select className="select" style={{ width: 'auto', padding: '4px 6px', fontSize: 12 }} value={dry} onChange={(e) => setDry(e.target.value)}>{DRYING_PROFILES.map((x) => <option key={x.name} value={x.name}>{x.name} · {x.temp} °C / {x.hours} h</option>)}</select>
+            <button className="btn btn--sm" onClick={() => { const pr = DRYING_PROFILES.find((x) => x.name === dry)!; const dryer = s.devices.find((x) => x.kind === 'trockner'); s.addTask({ title: `${existing.label} aus dem Trockner holen (${pr.temp} °C, ${pr.hours} h)`, kind: 'trocknung', deviceId: dryer?.id, due: new Date(Date.now() + pr.hours * 3600_000).toISOString() }); s.upsertSpool({ ...existing, location: dryer?.name ?? 'Trockner' }); setD({ ...d, location: dryer?.name ?? 'Trockner' }); s.toast(`Trocknung geplant: ${pr.temp} °C, ${pr.hours} h`); }}>Trocknung starten</button>
+            <button className="btn btn--sm btn--ghost" onClick={() => { s.markDried(existing.id); setD({ ...d, lastDriedAt: nowIso() }); }}>Trocknung erfasst</button>
+            <span className="xs muted">{existing.lastDriedAt ? `zuletzt getrocknet ${fmtDate(existing.lastDriedAt)}` : 'noch nie getrocknet'}{DRYING_PROFILES.find((x) => x.name === dry)?.note ? ` · ${DRYING_PROFILES.find((x) => x.name === dry)!.note}` : ''}</span>
+          </div>
           <div className="hr" />
         </div>
       ) : null}
@@ -39,7 +44,7 @@ export function SpuleForm({ spoolId }: { spoolId?: string }) {
       <div className="grid2">
         <Field label="Material"><select className="select" value={d.material} onChange={(e) => upd({ material: e.target.value })}>{[...new Set([...MATS, d.material])].map((m) => <option key={m}>{m}</option>)}</select></Field>
         <Field label="Marke"><input className="input" value={d.brand} onChange={(e) => upd({ brand: e.target.value })} /></Field>
-        <Field label="Farbe"><div className="row"><input type="color" value={d.colorHex} onChange={(e) => upd({ colorHex: e.target.value })} style={{ width: 36, height: 32, border: 0, background: 'none' }} /><input className="input" value={d.colorName} onChange={(e) => upd({ colorName: e.target.value })} placeholder="Farbname" /></div></Field>
+        <Field label="Farbe"><div className="row"><input type="color" value={d.colorHex} onChange={(e) => upd({ colorHex: e.target.value })} style={{ width: 36, height: 32, border: 0, background: 'none' }} /><input className="input" value={d.colorName} onChange={(e) => upd({ colorName: e.target.value })} placeholder="Farbname" /></div><select className="select" style={{ marginTop: 4, fontSize: 12 }} value="" onChange={(e) => { const c = COLOR_REFS.find((x) => x.hex === e.target.value); if (c) upd({ colorHex: c.hex, colorName: c.name }); }}><option value="">Herstellerfarbe wählen …</option>{COLOR_REFS.map((c) => <option key={c.hex} value={c.hex}>{c.name}</option>)}</select></Field>
         <Field label="Lagerort"><input className="input" value={d.location} onChange={(e) => upd({ location: e.target.value })} /></Field>
         <Field label="Gewicht neu (g)"><input className="input" type="number" value={d.initialGrams} onChange={(e) => upd({ initialGrams: Number(e.target.value) })} /></Field>
         <Field label="Restmenge (g)"><input className="input" type="number" value={d.remainingGrams} onChange={(e) => upd({ remainingGrams: Number(e.target.value) })} /></Field>

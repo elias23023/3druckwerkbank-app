@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ArchiveReport, Device, HistoryEvent, HistoryType, Milestone, PersistedState, PrintJob, Project, Settings, ShoppingItem, Spool, Task, Version, VersionStatus, WeatherCache } from './types';
+import type { ArchiveReport, Device, EnergyEntry, HistoryEvent, HistoryType, Milestone, PersistedState, PrintJob, Project, Settings, ShoppingItem, Spool, Task, Version, VersionStatus, WeatherCache } from './types';
 import { makeSeed, DEFAULT_SETTINGS } from './seed';
 import { id, nowIso, clamp } from './lib/format';
 
@@ -14,9 +14,11 @@ export type SheetKind =
   | { kind: 'ueber' }
   | { kind: 'neuerDruck'; projectId: string }
   | { kind: 'version'; projectId: string; versionId?: string }
-  | { kind: 'abschliessen'; projectId: string };
+  | { kind: 'abschliessen'; projectId: string }
+  | { kind: 'projektDetail'; projectId: string; tab: 'meilensteine' | 'aufgaben' | 'versionen' | 'drucke' | 'dateien' | 'material' | 'werkzeuge' | 'notizen' | 'historie' }
+  | { kind: 'hinweise' };
 
-interface UiState { sheet?: SheetKind; commandOpen: boolean; drafts: Record<string, unknown>; toast?: { id: number; text: string } }
+interface UiState { sheet?: SheetKind; commandOpen: boolean; drafts: Record<string, unknown>; toast?: { id: number; text: string }; recent: string[]; spotlight?: { projectId: string; until: number } }
 
 export interface Store extends PersistedState {
   ui: UiState;
@@ -44,6 +46,11 @@ export interface Store extends PersistedState {
   upsertSpool: (s: Spool) => void; deleteSpool: (sid: string) => void; bookConsumption: (sid: string, grams: number, note?: string) => void; markDried: (sid: string) => void;
   assignSlot: (deviceId: string, index: number, spoolId?: string) => void; toggleMaintenance: (deviceId: string, mid: string) => void;
   toggleShopping: (sid: string) => void; addShopping: (s: Omit<ShoppingItem, 'id' | 'done'>) => void;
+  assignPrint: (prid: string, projectId: string) => void; setProjectTools: (pid: string, toolIds: string[]) => void; setToolStatus: (toolId: string, status: Device['status']) => void;
+  restoreProject: (pid: string) => void; purgeProject: (pid: string) => void; setTemplate: (pid: string, on: boolean) => void;
+  addEnergy: (e: Omit<EnergyEntry, 'id'>) => void; deleteEnergy: (eid: string) => void;
+  ignorePrint: (prid: string, on: boolean) => void; projectFromPrint: (prid: string) => string; setWaitReason: (prid: string, reason?: string) => void;
+  touchRecent: (id: string) => void; spotlight: (projectId: string) => void; addMaintenance: (deviceId: string, title: string, dueIso: string) => void; addTasks: (pid: string, titles: string[], kind?: Task['kind']) => void;
 }
 
 const touch = (p: Project): Project => ({ ...p, updatedAt: nowIso() });
@@ -64,7 +71,7 @@ export const useStore = create<Store>()(
       let toastN = 0;
       return {
         ...makeSeed(),
-        ui: { commandOpen: false, drafts: {} },
+        ui: { commandOpen: false, drafts: {}, recent: [] },
 
         openSheet: (sheet) => set((s) => ({ ui: { ...s.ui, sheet } })),
         closeSheet: () => set((s) => ({ ui: { ...s.ui, sheet: undefined } })),
@@ -75,17 +82,17 @@ export const useStore = create<Store>()(
 
         setSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
         setWeather: (weather) => set({ weather }),
-        resetDemo: () => { const seed = makeSeed(); set({ ...seed, weather: get().weather, ui: { commandOpen: false, drafts: {} } }); get().toast('Demodaten zurückgesetzt'); },
+        resetDemo: () => { const seed = makeSeed(); set({ ...seed, weather: get().weather, ui: { commandOpen: false, drafts: {}, recent: [] } }); get().toast('Demodaten zurückgesetzt'); },
         exportJson: () => {
           const s = get();
-          const data: PersistedState = { version: 1, seededAt: s.seededAt, projects: s.projects, devices: s.devices, spools: s.spools, tasks: s.tasks, prints: s.prints, reports: s.reports, appointments: s.appointments, shopping: s.shopping, settings: s.settings };
+          const data: PersistedState = { version: 1, seededAt: s.seededAt, projects: s.projects, devices: s.devices, spools: s.spools, tasks: s.tasks, prints: s.prints, reports: s.reports, appointments: s.appointments, shopping: s.shopping, settings: s.settings, energy: s.energy };
           return JSON.stringify(data, null, 2);
         },
         importJson: (text) => {
           try {
             const j = JSON.parse(text);
             if (!j || j.version !== 1 || !Array.isArray(j.projects)) return { ok: false, error: 'Keine gültige 3Druckwerkbank-Datei (version 1 erwartet).' };
-            set({ version: 1, projects: j.projects, devices: j.devices ?? [], spools: j.spools ?? [], tasks: j.tasks ?? [], prints: j.prints ?? [], reports: j.reports ?? [], appointments: j.appointments ?? [], shopping: j.shopping ?? [], settings: { ...DEFAULT_SETTINGS, ...(j.settings ?? {}) } });
+            set({ version: 1, projects: j.projects, devices: j.devices ?? [], spools: j.spools ?? [], tasks: j.tasks ?? [], prints: j.prints ?? [], reports: j.reports ?? [], appointments: j.appointments ?? [], shopping: j.shopping ?? [], settings: { ...DEFAULT_SETTINGS, ...(j.settings ?? {}) }, energy: j.energy ?? [] });
             get().toast('Daten importiert');
             return { ok: true };
           } catch (e) { return { ok: false, error: (e as Error).message }; }
@@ -96,7 +103,25 @@ export const useStore = create<Store>()(
           const np = touch(exists ? p : { ...p, history: [ev('angelegt', 'Projekt angelegt'), ...p.history] });
           return { projects: exists ? s.projects.map((x) => (x.id === p.id ? np : x)) : [np, ...s.projects] };
         }),
-        deleteProject: (pid) => set((s) => ({ projects: s.projects.filter((p) => p.id !== pid), tasks: s.tasks.filter((t) => t.projectId !== pid), prints: s.prints.filter((p) => p.projectId !== pid || p.status === 'fertig') })),
+        deleteProject: (pid) => { updProject(pid, (p) => ({ ...p, deletedAt: nowIso() })); get().toast('In den Papierkorb verschoben'); },
+        restoreProject: (pid) => updProject(pid, (p) => ({ ...p, deletedAt: undefined, history: [ev('entscheidung', 'Aus dem Papierkorb wiederhergestellt'), ...p.history] })),
+        purgeProject: (pid) => set((s) => ({ projects: s.projects.filter((p) => p.id !== pid), tasks: s.tasks.filter((t) => t.projectId !== pid), prints: s.prints.map((p) => (p.projectId === pid ? { ...p, projectId: undefined, imported: p.status === 'fertig' } : p)).filter((p) => p.projectId !== undefined || p.status === 'fertig') })),
+        setTemplate: (pid, on) => { updProject(pid, (p) => ({ ...p, isTemplate: on, history: on ? [ev('entscheidung', 'Als Vorlage gespeichert'), ...p.history] : p.history })); if (on) get().toast('Als Vorlage gespeichert'); },
+        addEnergy: (e) => set((s) => ({ energy: [{ ...e, id: id('e') }, ...(s.energy ?? [])] })),
+        deleteEnergy: (eid) => set((s) => ({ energy: (s.energy ?? []).filter((x) => x.id !== eid) })),
+        ignorePrint: (prid, on) => set((s) => ({ prints: s.prints.map((p) => (p.id === prid ? { ...p, ignored: on } : p)) })),
+        projectFromPrint: (prid) => {
+          const pr = get().prints.find((x) => x.id === prid)!; const nid = id('p');
+          const name = pr.name.replace(/\.(gcode|3mf|stl)$/i, '').replace(/_/g, ' ');
+          const p: Project = { id: nid, name, description: `Aus importiertem Druck „${pr.name}“ angelegt.`, type: 'Sonstiges / Universal', areas: [], tags: [], priority: 2, difficulty: 2, stage: 'Druck', progress: 50, favorite: false, createdAt: nowIso(), updatedAt: nowIso(), island: { kind: 'bibliothek', libraryId: 'werkstatt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } }, milestones: ['Idee', 'Konstruktion', 'Testdruck', 'Anpassen', 'Finaldruck', 'Fertig'].map((t, i) => ({ id: id('ms'), title: t, done: i < 3, order: i })), versions: [], files: [], notes: '', experiences: [], history: [ev('angelegt', 'Projekt aus Druck erstellt', pr.name)], requiredSpools: [] };
+          set((s) => ({ projects: [p, ...s.projects], prints: s.prints.map((x) => (x.id === prid ? { ...x, projectId: nid, imported: false } : x)) }));
+          get().toast('Neues Projekt aus Druck erstellt'); return nid;
+        },
+        setWaitReason: (prid, reason) => set((s) => ({ prints: s.prints.map((p) => (p.id === prid ? { ...p, waitReason: reason } : p)) })),
+        touchRecent: (rid) => set((s) => ({ ui: { ...s.ui, recent: [rid, ...s.ui.recent.filter((x) => x !== rid)].slice(0, 20) } })),
+        spotlight: (projectId) => set((s) => ({ ui: { ...s.ui, spotlight: { projectId, until: Date.now() + 2600 } } })),
+        addMaintenance: (deviceId, title, dueIso) => updDevice(deviceId, (d) => ({ ...d, maintenance: [...d.maintenance, { id: id('m'), title, due: dueIso, done: false }] })),
+        addTasks: (pid, titles, kind = 'allgemein') => set((s) => ({ tasks: [...s.tasks, ...titles.map((title, i) => ({ id: id('t'), projectId: pid, title, done: false, kind, order: s.tasks.length + i, createdAt: nowIso() }))] })),
         duplicateProject: (pid) => {
           const src = get().projects.find((p) => p.id === pid)!;
           const nid = id('p');
@@ -218,6 +243,9 @@ export const useStore = create<Store>()(
         markDried: (sid) => updSpool(sid, (sp) => ({ ...sp, lastDriedAt: nowIso() })),
         assignSlot: (deviceId, index, spoolId) => { updDevice(deviceId, (d) => ({ ...d, slots: (d.slots ?? []).map((sl) => (sl.index === index ? { ...sl, spoolId } : sl)) })); if (spoolId) { const d = get().devices.find((x) => x.id === deviceId); updSpool(spoolId, (sp) => ({ ...sp, location: `${d?.name ?? 'AMS'} Slot ${index}` })); } },
         toggleMaintenance: (deviceId, mid) => updDevice(deviceId, (d) => ({ ...d, maintenance: d.maintenance.map((m) => (m.id === mid ? { ...m, done: !m.done } : m)) })),
+        assignPrint: (prid, projectId) => { set((s) => ({ prints: s.prints.map((p) => (p.id === prid ? { ...p, projectId, imported: false } : p)) })); const p = get().prints.find((x) => x.id === prid); if (p) get().addHistory(projectId, 'druck', `Druck zugeordnet: ${p.name}`, p.result); get().toast('Druck dem Projekt zugeordnet'); },
+        setProjectTools: (pid, toolIds) => updProject(pid, (p) => ({ ...p, toolIds })),
+        setToolStatus: (toolId, status) => updDevice(toolId, (d) => ({ ...d, status })),
         toggleShopping: (sid) => set((s) => ({ shopping: s.shopping.map((x) => (x.id === sid ? { ...x, done: !x.done } : x)) })),
         addShopping: (item) => set((s) => ({ shopping: [...s.shopping, { ...item, id: id('sh'), done: false }] })),
       };
@@ -225,18 +253,19 @@ export const useStore = create<Store>()(
     {
       name: '3druckwerkbank:v1',
       version: 1,
-      partialize: (s) => ({ version: s.version, seededAt: s.seededAt, projects: s.projects, devices: s.devices, spools: s.spools, tasks: s.tasks, prints: s.prints, reports: s.reports, appointments: s.appointments, shopping: s.shopping, settings: s.settings, weather: s.weather, ui: { drafts: s.ui.drafts } }) as unknown as Store,
+      partialize: (s) => ({ version: s.version, seededAt: s.seededAt, projects: s.projects, devices: s.devices, spools: s.spools, tasks: s.tasks, prints: s.prints, reports: s.reports, appointments: s.appointments, shopping: s.shopping, settings: s.settings, weather: s.weather, energy: s.energy, ui: { drafts: s.ui.drafts, recent: s.ui.recent } }) as unknown as Store,
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<Store>;
-        return { ...current, ...p, settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) }, ui: { ...current.ui, drafts: p.ui?.drafts ?? {} } };
+        return { ...current, ...p, settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) }, energy: p.energy ?? current.energy ?? [], ui: { ...current.ui, drafts: p.ui?.drafts ?? {}, recent: p.ui?.recent ?? [] } };
       },
     },
   ),
 );
 
 export const availableGrams = (sp: Spool) => Math.max(0, sp.remainingGrams - sp.reservedGrams);
-export const activeProjects = (projects: Project[]) => projects.filter((p) => !p.archivedAt);
-export const archivedProjects = (projects: Project[]) => projects.filter((p) => !!p.archivedAt);
+export const activeProjects = (projects: Project[]) => projects.filter((p) => !p.archivedAt && !p.deletedAt);
+export const archivedProjects = (projects: Project[]) => projects.filter((p) => !!p.archivedAt && !p.deletedAt);
+export const liveProjects = (projects: Project[]) => projects.filter((p) => !p.deletedAt);
 export function printProgress(p: PrintJob, now = Date.now()): number {
   if (p.status === 'fertig') return 1;
   if (p.status !== 'läuft' || !p.startedAt) return 0;

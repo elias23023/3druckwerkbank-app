@@ -1,23 +1,34 @@
 import { useMemo, useState } from 'react';
-import { useStore, availableGrams } from '../store';
+import { useStore, availableGrams, liveProjects } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { fmtDate, fmtGrams, fmtNum, fold } from '../lib/format';
 import { Panel, Stack, Stat } from '../ui/Glass';
-import { ILayers, ISpool, ICart, IPlus } from '../ui/Icons';
+import { ILayers, ISpool, ICart, IPlus, IList, IStar } from '../ui/Icons';
+import { FILAMENT_CATALOG } from '../types';
 
-const MCOL: Record<string, string> = { PLA: '#4ccf7a', PETG: '#ffbd6b', ABS: '#7cc6ff', TPU: '#ff6b6b', ASA: '#c59bff' };
+const MCOL: Record<string, string> = { PLA: '#4ccf7a', PETG: '#ffbd6b', ABS: '#7cc6ff', TPU: '#ff6b6b', ASA: '#c59bff', PA: '#9fd4ff', PC: '#dfe9ff' };
+const PROPS: Record<string, { nozzle: string; bed: string; strength: number; flex: number; weather: number; note: string }> = {
+  PLA: { nozzle: '190–230 °C', bed: '45–60 °C', strength: 3, flex: 1, weather: 1, note: 'Einfach, präzise, nicht hitzefest' },
+  PETG: { nozzle: '230–260 °C', bed: '60–90 °C', strength: 4, flex: 2, weather: 3, note: 'Zäh, leicht flexibel, wasserfest' },
+  ABS: { nozzle: '240–270 °C', bed: '90–110 °C', strength: 4, flex: 2, weather: 3, note: 'Hitzefest, warp-anfällig' },
+  ASA: { nozzle: '240–270 °C', bed: '90–110 °C', strength: 4, flex: 2, weather: 5, note: 'UV-stabil für Außenteile' },
+  TPU: { nozzle: '210–240 °C', bed: '30–60 °C', strength: 2, flex: 5, weather: 3, note: 'Flexibel, langsam drucken' },
+};
 
 export function Material() {
-  const { spools, projects, shopping } = useStore(useShallow((s) => ({ spools: s.spools, projects: s.projects, shopping: s.shopping })));
-  const openSheet = useStore((s) => s.openSheet); const toggleShopping = useStore((s) => s.toggleShopping);
-  const [sort, setSort] = useState<'label' | 'avail' | 'material'>('material'); const [mat, setMat] = useState<string>('alle'); const [q, setQ] = useState('');
+  const { spools, projects, shopping, prints, settings } = useStore(useShallow((s) => ({ spools: s.spools, projects: s.projects, shopping: s.shopping, prints: s.prints, settings: s.settings })));
+  const openSheet = useStore((s) => s.openSheet); const toggleShopping = useStore((s) => s.toggleShopping); const addShopping = useStore((s) => s.addShopping);
+  const [sort, setSort] = useState<'label' | 'avail' | 'material'>('material'); const [mat, setMat] = useState<string>('alle'); const [q, setQ] = useState(''); const [cmpTab, setCmpTab] = useState<'material' | 'produkte'>('material');
   const mats = useMemo(() => [...new Set(spools.map((s) => s.material))], [spools]);
   const list = useMemo(() => spools.filter((s) => (mat === 'alle' || s.material === mat) && (!q || fold(`${s.label} ${s.brand} ${s.colorName} ${s.location}`).includes(fold(q)))).sort((a, b) => sort === 'label' ? a.label.localeCompare(b.label) : sort === 'avail' ? availableGrams(b) - availableGrams(a) : a.material.localeCompare(b.material) || a.label.localeCompare(b.label)), [spools, sort, mat, q]);
   const totalKg = spools.reduce((a, s) => a + s.remainingGrams, 0) / 1000;
   const byMat = mats.map((m) => ({ m, n: spools.filter((s) => s.material === m).length, g: spools.filter((s) => s.material === m).reduce((a, s) => a + s.remainingGrams, 0) }));
-  const shortages = projects.filter((p) => !p.archivedAt).flatMap((p) => p.requiredSpools.map((r) => { const sp = spools.find((x) => x.id === r.spoolId); return sp && availableGrams(sp) < r.grams ? { p, sp, missing: r.grams - availableGrams(sp) } : null; }).filter(Boolean) as { p: typeof projects[number]; sp: typeof spools[number]; missing: number }[]);
+  const live = liveProjects(projects);
+  const shortages = live.filter((p) => !p.archivedAt).flatMap((p) => p.requiredSpools.map((r) => { const sp = spools.find((x) => x.id === r.spoolId); return sp && availableGrams(sp) < r.grams ? { p, sp, missing: r.grams - availableGrams(sp) } : null; }).filter(Boolean) as { p: typeof projects[number]; sp: typeof spools[number]; missing: number }[]);
   const low = spools.filter((s) => availableGrams(s) < 150);
+  const top = useMemo(() => mats.map((m) => ({ m, used: prints.filter((p) => p.status === 'fertig' && spools.find((s) => s.id === p.spoolId)?.material === m).reduce((a, p) => a + (p.gramsUsed ?? 0), 0), projects: live.filter((p) => p.requiredSpools.some((r) => spools.find((s) => s.id === r.spoolId)?.material === m)).length })).sort((a, b) => b.used - a.used).slice(0, 3), [mats, prints, spools, live]);
   let acc = 0; const total = byMat.reduce((a, x) => a + x.g, 0) || 1;
+  const dots = (n: number) => '●'.repeat(n) + '○'.repeat(5 - n);
 
   return (
     <>
@@ -25,18 +36,23 @@ export function Material() {
 
       <Panel title="Materialbestand" icon={<ILayers />} style={{ left: '3.2%', top: '24%', width: '22%' }} delay={60}>
         <div className="donut">
-          <svg width="92" height="92" viewBox="0 0 100 100">
+          <svg width="88" height="88" viewBox="0 0 100 100">
             {byMat.map((x) => { const f = x.g / total; const r = 40, C = 2 * Math.PI * r; const el = <circle key={x.m} cx="50" cy="50" r={r} fill="none" stroke={MCOL[x.m] ?? '#aaa'} strokeWidth="12" strokeDasharray={`${C * f} ${C}`} strokeDashoffset={-C * acc} transform="rotate(-90 50 50)" />; acc += f; return el; })}
-            <text x="50" y="47" textAnchor="middle" fontSize="20" fontWeight="600" fill="#fff">{spools.length}</text><text x="50" y="62" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,.7)">Rollen</text>
+            <text x="50" y="47" textAnchor="middle" fontSize="20" fontWeight="600" fill="currentColor">{spools.length}</text><text x="50" y="62" textAnchor="middle" fontSize="9" fill="currentColor" opacity=".7">Rollen</text>
           </svg>
           <div className="col small" style={{ gap: 3 }}>{byMat.map((x) => <span key={x.m} className="row" style={{ gap: 6 }}><span className="dot" style={{ background: MCOL[x.m] ?? '#aaa' }} />{x.m}<span className="muted">{x.n} · {fmtGrams(x.g)}</span></span>)}</div>
         </div>
         <div className="grid2"><Stat value={`${fmtNum(totalKg, 1)} kg`} label="vorhanden" /><Stat value={`${fmtNum(spools.reduce((a, s) => a + s.reservedGrams, 0))} g`} label="reserviert" /></div>
       </Panel>
 
-      <Panel title="Rollen" icon={<ISpool />} style={{ left: '27%', bottom: '11%', width: '46%', maxHeight: '36%' }} delay={100}
-        right={<div className="row" style={{ gap: 6 }}><input className="input" style={{ width: 130, padding: '4px 8px', fontSize: 12 }} placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} /><select className="select" style={{ width: 'auto', padding: '4px 6px', fontSize: 12 }} value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}><option value="material">nach Material</option><option value="avail">nach Verfügbarkeit</option><option value="label">nach Name</option></select></div>}
-        foot={<><div className="pills"><button className={`pill xs${mat === 'alle' ? ' pill--on' : ''}`} onClick={() => setMat('alle')}>Alle</button>{mats.map((m) => <button key={m} className={`pill xs${mat === m ? ' pill--on' : ''}`} onClick={() => setMat(m)}>{m}</button>)}</div><button className="btn btn--sm" style={{ marginLeft: 'auto' }} onClick={() => openSheet({ kind: 'spule' })}><IPlus width={12} height={12} /> Rolle</button></>}>
+      <Panel title="Top Materialien" icon={<IStar />} style={{ left: '3.2%', top: '56%', width: '22%' }} delay={120}>
+        {top.map((t) => <div key={t.m} className="row small"><span className="dot" style={{ background: MCOL[t.m] ?? '#aaa' }} /><b style={{ width: 44 }}>{t.m}</b><span className="muted grow">{fmtGrams(t.used)} verdruckt · {t.projects} Projekte</span>{settings.preferredMaterials?.includes(t.m) ? <span className="pill xs pill--acc">bevorzugt</span> : null}</div>)}
+        <div className="row" style={{ gap: 6, marginTop: 4 }}><button className="btn btn--sm" onClick={() => openSheet({ kind: 'spule' })}><IPlus width={12} height={12} /> Neue Rolle</button><button className="btn btn--sm btn--ghost" onClick={() => setSort('label')}>Lagerorte</button></div>
+      </Panel>
+
+      <Panel title="Rollen" icon={<ISpool />} style={{ left: '27%', bottom: '10.5%', width: '46%', maxHeight: '36%' }} delay={100}
+        right={<div className="row" style={{ gap: 6 }}><input className="input" style={{ width: 130, padding: '4px 8px', fontSize: 12 }} placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} /><select className="select" style={{ width: 'auto', padding: '4px 6px', fontSize: 12 }} value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}><option value="material">nach Material</option><option value="avail">nach Verfügbarkeit</option><option value="label">nach Name / Lagerort</option></select></div>}
+        foot={<><div className="pills"><button className={`pill xs${mat === 'alle' ? ' pill--on' : ''}`} onClick={() => setMat('alle')}>Alle</button>{mats.map((m) => <button key={m} className={`pill xs${mat === m ? ' pill--on' : ''}`} onClick={() => setMat(m)}>{m}</button>)}</div></>}>
         <div className="spool-grid">
           {list.map((s) => (
             <div key={s.id} className="item item--click" style={{ alignItems: 'flex-start' }} onClick={() => openSheet({ kind: 'spule', spoolId: s.id })}>
@@ -51,15 +67,28 @@ export function Material() {
         </div>
       </Panel>
 
-      <Panel title="Fehlmengen & Einkauf" icon={<ICart />} style={{ right: '3.2%', top: '24%', width: '24%', maxHeight: '50%' }} delay={140}>
-        {shortages.map((x, i) => <div key={i} className="row small"><span className="pill pill--bad xs">fehlt {fmtGrams(x.missing)}</span><span className="ellipsis grow">{x.sp.label}</span><span className="xs muted ellipsis">{x.p.name}</span></div>)}
+      <Panel title="Eigenschaften vergleichen" icon={<IList />} right={<div className="tabs" style={{ padding: 2 }}><button className={cmpTab === 'material' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setCmpTab('material')}>Materialien</button><button className={cmpTab === 'produkte' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setCmpTab('produkte')}>Produkte</button></div>} style={{ right: '3.2%', top: '24%', width: '25%', maxHeight: '36%' }} delay={140}>
+        {cmpTab === 'material' ? (
+          <table className="tbl"><thead><tr><th>Material</th><th>Düse</th><th>Bett</th><th>Fest</th><th>Flex</th><th>Wetter</th></tr></thead><tbody>
+            {Object.entries(PROPS).map(([m, p]) => <tr key={m}><td><b style={{ color: MCOL[m] }}>{m}</b></td><td>{p.nozzle}</td><td>{p.bed}</td><td title="Festigkeit">{dots(p.strength)}</td><td title="Flexibilität">{dots(p.flex)}</td><td title="Witterung">{dots(p.weather)}</td></tr>)}
+          </tbody></table>
+        ) : (
+          <table className="tbl"><thead><tr><th>Produkt</th><th>Düse °C</th><th>Bett °C</th><th>Trocknung</th></tr></thead><tbody>
+            {FILAMENT_CATALOG.map((f) => <tr key={f.product}><td>{f.product}</td><td>{f.nozzle}</td><td>{f.bed}</td><td>{f.dry}</td></tr>)}
+          </tbody></table>
+        )}
+        <span className="xs faint">{cmpTab === 'material' ? 'Richtwerte, keine Herstellerangaben.' : 'Historische Planwerte aus dem Katalog, vor Anwendung prüfen. „—“ = unbekannt.'}</span>
+      </Panel>
+
+      <Panel title="Fehlmengen & Einkauf" icon={<ICart />} style={{ right: '3.2%', top: '62%', width: '25%', maxHeight: '28%' }} delay={200}>
+        {shortages.map((x, i) => <div key={i} className="row small"><span className="pill pill--bad xs">fehlt {fmtGrams(x.missing)}</span><span className="ellipsis grow">{x.sp.label}</span><button className="btn btn--sm btn--ghost" style={{ fontSize: 11, padding: '1px 6px' }} onClick={() => addShopping({ title: `${x.sp.label} nachkaufen`, qty: '1', price: x.sp.price, projectId: x.p.id, url: x.sp.reorderUrl })}>+ Liste</button></div>)}
         {low.map((s) => <div key={s.id} className="row small"><span className="pill pill--warn xs">wenig</span><span className="ellipsis grow">{s.label}</span><span className="xs muted">{fmtGrams(availableGrams(s))}</span></div>)}
         {shortages.length + low.length === 0 ? <p className="muted small">Bestand reicht für alle geplanten Drucke.</p> : null}
         <div className="hr" />
-        <b className="small">Einkaufsliste</b>
-        {shopping.map((it) => <label key={it.id} className="row small" style={{ cursor: 'pointer' }}><input type="checkbox" checked={it.done} onChange={() => toggleShopping(it.id)} /><span className="grow" style={{ textDecoration: it.done ? 'line-through' : undefined }}>{it.title} <span className="muted">× {it.qty}</span></span>{it.price ? <span className="muted">{fmtNum(it.price, 2)} €</span> : null}{it.auto ? <span className="xs faint">auto</span> : null}</label>)}
-        <p className="xs faint">Einkauf ist in diesem Entwurf nur eine Liste.</p>
+        {shopping.map((it) => <label key={it.id} className="row small" style={{ cursor: 'pointer' }}><input type="checkbox" checked={it.done} onChange={() => toggleShopping(it.id)} /><span className="grow" style={{ textDecoration: it.done ? 'line-through' : undefined }}>{it.title} <span className="muted">× {it.qty}</span></span>{it.price ? <span className="muted">{fmtNum(it.price, 2)} €</span> : null}{it.url ? <a href={it.url} target="_blank" rel="noreferrer" className="xs">Link</a> : null}</label>)}
+        <p className="xs faint">Produktlinks lösen keine Bestellung aus.</p>
       </Panel>
+      <div className="hand hand--tr">{'Gute Ideen brauchen\ndie richtigen Werkstoffe.'}</div>
     </>
   );
 }

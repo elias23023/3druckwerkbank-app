@@ -3,6 +3,8 @@ import { ProjektForm } from '../forms/ProjektForm';
 import { SpuleForm } from '../forms/SpuleForm';
 import { AbschliessenSheet, BerichtSheet, DruckSheet, GeraetSheet, NeuerDruckSheet, VersionSheet } from '../forms/Kleine';
 import { EinstellungenSheet, UeberSheet } from './About';
+import { ProjektDetailSheet } from '../forms/ProjektDetail';
+import { HinweiseSheet } from './Hinweise';
 
 export function SheetHost({ sheet }: { sheet: SheetKind }) {
   switch (sheet.kind) {
@@ -16,5 +18,7 @@ export function SheetHost({ sheet }: { sheet: SheetKind }) {
     case 'abschliessen': return <AbschliessenSheet projectId={sheet.projectId} />;
     case 'einstellungen': return <EinstellungenSheet />;
     case 'ueber': return <UeberSheet />;
+    case 'projektDetail': return <ProjektDetailSheet key={sheet.projectId + sheet.tab} projectId={sheet.projectId} tab={sheet.tab} />;
+    case 'hinweise': return <HinweiseSheet />;
   }
 }

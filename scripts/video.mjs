@@ -7,7 +7,7 @@ const [base = 'https://snow-salmon-793472.hostingersite.com', outDir = 'video-ra
 await mkdir(outDir, { recursive: true });
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1, recordVideo: { dir: outDir, size: { width: 1920, height: 1080 } }, locale: 'de-AT' });
+const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1, recordVideo: { dir: outDir, size: { width: 1920, height: 1080 } }, locale: 'de-AT', timezoneId: 'Europe/Vienna' });
 const page = await ctx.newPage();
 const wait = (ms) => page.waitForTimeout(ms);
 // smooth mouse glide for the parallax

@@ -2,7 +2,7 @@ import pw from '/opt/node-tools/node_modules/playwright/index.js';
 const { chromium } = pw;
 const [base, out] = process.argv.slice(2);
 const browser = await chromium.launch();
-const page = await (await browser.newContext({ viewport: { width: 1920, height: 1080 } })).newPage();
+const page = await (await browser.newContext({ viewport: { width: 1920, height: 1080 }, timezoneId: 'Europe/Vienna', locale: 'de-AT' })).newPage();
 await page.goto(`${base}/#/projekte`, { waitUntil: 'networkidle' }); await page.waitForTimeout(800);
 await page.getByText('Neu', { exact: false }).last().click(); await page.waitForTimeout(500);
 await page.screenshot({ path: out.replace('.png', '-form.png') });

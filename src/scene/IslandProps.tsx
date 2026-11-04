@@ -69,3 +69,20 @@ export function WetterProp({ data }: { data?: WeatherData }) {
     </svg>
   );
 }
+
+export function PrinterProp({ name, progress, busy }: { name: string; progress: number; busy: boolean }) {
+  return (
+    <svg viewBox="0 0 100 100" className="prop" preserveAspectRatio="none">
+      <rect x="32" y="48" width="36" height="38" rx="3" fill="#2b2f36" stroke="#5a6068" strokeWidth=".8" />
+      <rect x="36" y="53" width="28" height="22" rx="1.5" fill="#101418" />
+      <rect x="37" y="54" width="26" height="20" rx="1" fill="#1a2a3a" opacity={busy ? 1 : .5} />
+      {busy ? <rect x="43" y={72 - 14 * progress} width="14" height={14 * progress} fill="#dfe9ff" opacity=".9" /> : null}
+      <rect x="40" y="56" width="20" height="1.4" fill={busy ? '#7cc6ff' : '#444'} />
+      <rect x="34" y="78" width="32" height="5" rx="1" fill="#1b1f25" />
+      <circle cx="64" cy="81" r="1.2" fill={busy ? '#4ccf7a' : '#8a8f96'} />
+      <text x="50" y="92" fontSize="6" textAnchor="middle" fill="#fff" fontWeight="700">{name}</text>
+      <rect x="31" y="46" width="38" height="2.5" rx="1" fill="#3a3f47" />
+      <ellipse cx="50" cy="87" rx="20" ry="3" fill="rgba(0,0,0,.3)" />
+    </svg>
+  );
+}

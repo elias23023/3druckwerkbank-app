@@ -4,54 +4,74 @@ const base = process.argv[2] ?? 'http://localhost:4173';
 const browser = await chromium.launch();
 const results = [];
 const check = (name, ok, info = '') => { results.push({ name, ok, info }); console.log(`${ok ? 'OK  ' : 'FAIL'} ${name} ${info}`); };
-const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+const ctxOpts = { viewport: { width: 1920, height: 1080 }, timezoneId: 'Europe/Vienna', locale: 'de-AT' };
+const ctx = await browser.newContext(ctxOpts);
 const page = await ctx.newPage();
 const errors = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(String(e)));
-// 1 weather call succeeds and chip shows °C
 const wx = page.waitForResponse((r) => r.url().includes('api.open-meteo.com'), { timeout: 20000 }).catch(() => null);
-await page.goto(`${base}/#/heute`, { waitUntil: 'networkidle' });
+await page.goto(`${base}/#/start`, { waitUntil: 'networkidle' });
 const res = await wx;
 check('Open-Meteo response', !!res && res.ok(), res ? String(res.status()) : 'none');
 await page.waitForFunction(() => /°C/.test(document.querySelector('.topbar')?.textContent ?? ''), null, { timeout: 15000 }).catch(() => {});
 check('Weather chip shows °C', /°C/.test(await page.locator('.topbar').textContent()));
 check('Scene ready', (await page.getAttribute('.stage', 'data-scene-ready')) === 'true');
-// 2 all worlds render a title
+check('Start world shows 6 islands with titles', (await page.locator('.island__label--big b').count()) === 6);
+check('Start world has no status cards', (await page.locator('.minicard').count()) === 0);
+check('Hints bell has a badge', (await page.locator('.topbar .badge').count()) === 1);
+await page.mouse.move(960, 540); await page.mouse.wheel(0, 400); await page.waitForTimeout(600);
+check('Wheel on start dives into Heute', (await page.evaluate(() => location.hash)) === '#/heute');
+check('Heute platform ring present', (await page.locator('.platform-ring').count()) === 1);
 for (const w of ['projekte', 'druck', 'material', 'wetter', 'archiv']) { await page.goto(`${base}/#/${w}`); await page.waitForTimeout(400); check(`World ${w} title`, (await page.locator('.world-title h1').count()) === 1); }
-// 3 keyboard world switching
-await page.keyboard.press('1'); await page.waitForTimeout(300); check('Key 1 → heute', location => true, ''); check('Hash after key 1', (await page.evaluate(() => location.hash)) === '#/heute');
-// 4 persistence: add a task in inner world, reload, present; reset; gone
-await page.goto(`${base}/#/projekte/p-sensorhalter`); await page.waitForTimeout(500);
+await page.goto(`${base}/#/druck`); await page.waitForTimeout(500);
+check('Druck: Eingang shows imported print', (await page.getByText('Kabelclip_v2.gcode').count()) > 0);
+await page.getByRole('button', { name: /Neues Projekt/ }).first().click(); await page.waitForTimeout(500);
+check('Eingang: new project from print', (await page.evaluate(() => location.hash)) === '#/druck' && (await page.getByText('Kabelclip_v2.gcode').count()) === 0);
+await page.goto(`${base}/#/wetter`); await page.waitForTimeout(500);
+check('Wetter: chips around island', (await page.locator('.wchip').count()) === 5);
+await page.keyboard.press('0'); await page.waitForTimeout(300); check('Key 0 → start', (await page.evaluate(() => location.hash)) === '#/start');
+await page.goto(`${base}/#/projekte/p-sensorhalter`); await page.waitForTimeout(600);
+check('Inner world: 8 panels around island', (await page.locator('.ui .panel').count()) >= 8);
+check('Inner world: tools panel', (await page.getByText('Werkzeuge').count()) > 0);
 await page.getByPlaceholder('Aufgabe hinzufügen … (Enter)').fill('Playwright-Testaufgabe'); await page.keyboard.press('Enter'); await page.waitForTimeout(300);
 await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(600);
 check('Task persists after reload', (await page.getByText('Playwright-Testaufgabe').count()) > 0);
+await page.locator('.ms').nth(4).locator('button').first().click(); await page.waitForTimeout(300);
+check('Milestone toggle updates progress text', /\d+ %/.test(await page.locator('.ui .panel').first().textContent()));
+// detail sheet with checklist
+await page.locator('.bottom-row .panel').first().locator('button[title="Alles anzeigen"]').click(); await page.waitForTimeout(400);
+await page.getByText('+ Druckvorbereitung').click(); await page.waitForTimeout(300);
+check('Checklist template inserted', (await page.getByText('Slicer-Einstellungen kontrollieren').count()) > 0);
+await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+// project form stepper
+await page.goto(`${base}/#/projekte`); await page.waitForTimeout(500);
+await page.getByRole('button', { name: /Neu$/ }).click(); await page.waitForTimeout(400);
+await page.getByPlaceholder('z. B. Sensorhalter Garten').fill('Playwright-Projekt'); await page.locator('.sheet__foot button', { hasText: 'Weiter' }).click(); await page.waitForTimeout(200);
+await page.locator('.sheet .tile', { hasText: 'Halterung / Befestigung' }).click(); await page.locator('.sheet__foot button', { hasText: 'Weiter' }).click(); await page.waitForTimeout(200);
+await page.locator('.sheet .tile', { hasText: 'Garten & Outdoor' }).click(); await page.locator('.sheet__foot button', { hasText: 'Weiter' }).click(); await page.waitForTimeout(200);
+check('Form suggests 3 worlds', (await page.locator('.sheet .island-lib button').count()) === 3);
+await page.locator('.sheet__foot button', { hasText: 'Weiter' }).click(); await page.waitForTimeout(200);
+await page.locator('.sheet__foot button', { hasText: 'Projekt erstellen' }).click(); await page.waitForTimeout(800);
+check('New project focused in carousel with template milestones', (await page.locator('.project-hero h2').textContent()) === 'Playwright-Projekt');
+// reset & persistence gone
 page.once('dialog', (d) => d.accept());
 await page.locator('.topbar button[aria-label="Einstellungen"]').click(); await page.waitForTimeout(300);
-await page.getByText('Demodaten zurücksetzen').click(); await page.waitForTimeout(500);
-await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+await page.getByText('Demodaten zurücksetzen').click(); await page.waitForTimeout(500); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+await page.goto(`${base}/#/projekte/p-sensorhalter`); await page.waitForTimeout(400);
 check('Task gone after reset', (await page.getByText('Playwright-Testaufgabe').count()) === 0);
-// 5 command bar
 await page.keyboard.press('Control+k'); await page.waitForTimeout(300);
 check('Command bar opens', (await page.locator('.cmd').count()) === 1);
 await page.keyboard.type('sensor'); await page.waitForTimeout(200);
 check('Command bar finds project', (await page.locator('.cmd__item').first().textContent())?.includes('Sensorhalter') ?? false);
 await page.keyboard.press('Enter'); await page.waitForTimeout(500);
 check('Enter navigates to inner world', (await page.evaluate(() => location.hash)).includes('p-sensorhalter'));
-// 6 milestone toggle changes progress suggestion
-await page.goto(`${base}/#/projekte/p-organizer`); await page.waitForTimeout(500);
-const before = await page.locator('.inner-cluster .panel--wide .panel__head span').textContent();
-await page.locator('.ms').nth(2).locator('button').first().click(); await page.waitForTimeout(300);
-const after = await page.locator('.inner-cluster .panel--wide .panel__head span').textContent();
-check('Milestone toggle updates progress', before !== after, `${before} → ${after}`);
-// 7 export JSON
 const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 5000 }).catch(() => null), (async () => { await page.locator('.topbar button[aria-label="Einstellungen"]').click(); await page.waitForTimeout(300); await page.getByText('JSON exportieren').click(); })()]);
 check('Export download', !!dl, dl ? await dl.suggestedFilename() : '');
 await page.keyboard.press('Escape');
 check('No console errors', errors.length === 0, errors.join(' | ').slice(0, 300));
 await ctx.close();
-// 8 weather failure handling
-const ctx2 = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+const ctx2 = await browser.newContext(ctxOpts);
 const p2 = await ctx2.newPage(); const err2 = [];
 p2.on('console', (m) => { if (m.type() === 'error') err2.push(m.text()); }); p2.on('pageerror', (e) => err2.push(String(e)));
 await p2.route('**/api.open-meteo.com/**', (r) => r.abort());
@@ -59,8 +79,7 @@ await p2.goto(`${base}/#/heute`, { waitUntil: 'load' }); await p2.waitForTimeout
 check('Weather failure shows message', /nicht verfügbar/.test(await p2.locator('.topbar').textContent() ?? ''));
 check('No console errors on weather failure', err2.filter((e) => !/open-meteo|ERR_FAILED|Failed to fetch/i.test(e)).length === 0, err2.join(' | ').slice(0, 200));
 await ctx2.close();
-// 9 reduced motion: no animations on islands
-const ctx3 = await browser.newContext({ viewport: { width: 1920, height: 1080 }, reducedMotion: 'reduce' });
+const ctx3 = await browser.newContext({ ...ctxOpts, reducedMotion: 'reduce' });
 const p3 = await ctx3.newPage(); await p3.goto(`${base}/#/heute`, { waitUntil: 'networkidle' }); await p3.waitForTimeout(500);
 const anim = await p3.evaluate(() => [...document.querySelectorAll('.island__img')].map((e) => getComputedStyle(e).animationName).filter((a) => a !== 'none'));
 check('Reduced motion disables float', anim.length === 0, anim.join(','));

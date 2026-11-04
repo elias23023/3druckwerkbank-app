@@ -9,10 +9,11 @@ export function CommandBar() {
   const input = useRef<HTMLInputElement>(null);
   const close = () => s.setCommand(false);
   const index = useMemo(() => buildIndex(s, (h) => { location.hash = h; }), [s.projects, s.tasks, s.spools, s.devices, s.prints]); // eslint-disable-line react-hooks/exhaustive-deps
-  const hits = useMemo(() => index.map((h) => ({ h, sc: score(h, q) })).filter((x) => x.sc > 0).sort((a, b) => b.sc - a.sc).slice(0, q ? 14 : 10).map((x) => x.h), [index, q]);
+  const recent = s.ui.recent; const favs = new Set(s.projects.filter((p) => p.favorite).map((p) => p.id));
+  const hits = useMemo(() => index.map((h) => ({ h, sc: score(h, q) * (1 + (recent.includes(h.id) ? 0.5 : 0) + (favs.has(h.id) ? 0.3 : 0)) })).filter((x) => x.sc > 0).sort((a, b) => b.sc - a.sc).slice(0, q ? 14 : 10).map((x) => x.h), [index, q, recent, favs]);
   useEffect(() => { input.current?.focus(); }, []);
   useEffect(() => setSel(0), [q]);
-  const run = (i: number) => { const h = hits[i]; if (!h) return; close(); h.action(); };
+  const run = (i: number) => { const h = hits[i]; if (!h) return; s.touchRecent(h.id); close(); h.action(); };
   const groups: string[] = []; hits.forEach((h) => { if (!groups.includes(h.group)) groups.push(h.group); });
   return (
     <div className="cmd-back" onClick={close}>

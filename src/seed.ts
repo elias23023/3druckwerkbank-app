@@ -1,4 +1,4 @@
-import type { ArchiveReport, Appointment, Device, HistoryEvent, PersistedState, Project, PrintJob, Settings, ShoppingItem, Spool, Task } from './types';
+import type { ArchiveReport, Appointment, Device, EnergyEntry, HistoryEvent, PersistedState, Project, PrintJob, Settings, ShoppingItem, Spool, Task } from './types';
 
 const h = (hours: number, from: Date) => new Date(from.getTime() + hours * 3600_000).toISOString();
 const d = (days: number, from: Date) => new Date(from.getTime() + days * 86400_000).toISOString();
@@ -6,7 +6,7 @@ const d = (days: number, from: Date) => new Date(from.getTime() + days * 86400_0
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'auto', motion: 'auto', showQuote: true,
   location: { name: 'Weitra, Niederösterreich', lat: 48.7037, lon: 14.9088, tz: 'Europe/Vienna' },
-  pvKwp: 5, pricePerKwh: 0.22, printerWatts: 120,
+  pvKwp: 5, pricePerKwh: 0.22, printerWatts: 120, parallax: 1, notifications: 'alle', defaultPrinterId: 'd-x1c', preferredMaterials: ['PETG', 'PLA'],
 };
 
 function hist(now: Date, items: [number, HistoryEvent['type'], string, string?][]): HistoryEvent[] {
@@ -34,12 +34,18 @@ export function makeSeed(now = new Date()): PersistedState {
     { id: 'd-ams', name: 'AMS', model: 'Bambu AMS', kind: 'ams', status: 'bereit', location: 'auf X1C', hoursTotal: 1432, parentId: 'd-x1c', maintenance: [],
       slots: [ { index: 1, spoolId: 's-pla-weiss' }, { index: 2, spoolId: 's-pla-indigo' }, { index: 3, spoolId: 's-pla-bronze' }, { index: 4, spoolId: 's-petg-gruen' } ] },
     { id: 'd-trockner', name: 'Trockner', model: 'Sunlu S2', kind: 'trockner', status: 'trocknet', location: 'Regal C', hoursTotal: 380, maintenance: [], notes: 'ASA Weiß seit gestern, 55 °C' },
+    { id: 'w-seitenschneider', name: 'Seitenschneider', model: 'Knipex 78 61 125', kind: 'werkzeug', status: 'verfügbar', location: 'Werkbank Schublade 1', hoursTotal: 0, maintenance: [] },
+    { id: 'w-bohrer3', name: 'Bohrer 3 mm', model: 'HSS', kind: 'werkzeug', status: 'verfügbar', location: 'Bohrerkassette', hoursTotal: 0, maintenance: [] },
+    { id: 'w-schraubendreher', name: 'Schraubendreher-Set', model: 'Wera Kraftform', kind: 'werkzeug', status: 'im Einsatz', location: 'Werkbank', hoursTotal: 0, maintenance: [] },
+    { id: 'w-feile', name: 'Nadelfeilen', model: '6er-Set', kind: 'werkzeug', status: 'verfügbar', location: 'Werkbank Schublade 2', hoursTotal: 0, maintenance: [] },
+    { id: 'w-messschieber', name: 'Messschieber', model: 'Mitutoyo 150 mm', kind: 'werkzeug', status: 'verfügbar', location: 'Werkbank Schublade 1', hoursTotal: 0, maintenance: [] },
+    { id: 'w-gewindeschneider', name: 'Gewindeschneider M3', model: 'HSS', kind: 'werkzeug', status: 'fehlt', location: '–', hoursTotal: 0, maintenance: [], notes: 'Verliehen an Markus' },
   ];
 
   const projects: Project[] = [
     {
       id: 'p-sensorhalter', name: 'Sensorhalter Garten', description: 'Halterung für den Bodenfeuchtesensor am Hochbeet. Wetterfest, schnell abnehmbar, Kabelführung nach unten.',
-      type: 'Halterung', areas: ['Garten', 'Elektronik'], tags: ['Hochbeet', 'ASA', 'Außen'], priority: 1, difficulty: 3, stage: 'Druck', progress: 68, favorite: true,
+      type: 'Halterung / Befestigung', areas: ['Garten & Outdoor', 'Elektronik & Smart Home'], tags: ['Hochbeet', 'ASA', 'Außen'], priority: 1, difficulty: 3, stage: 'Druck', progress: 68, favorite: true,
       createdAt: d(-21, now), updatedAt: h(-3, now), island: { kind: 'bibliothek', libraryId: 'elektronik', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [
         { id: 'ms-1', title: 'Idee & Maße', done: true, order: 0 }, { id: 'ms-2', title: 'Konstruktion v1', done: true, order: 1 }, { id: 'ms-3', title: 'Testdruck', done: true, order: 2 },
@@ -57,41 +63,41 @@ export function makeSeed(now = new Date()): PersistedState {
       notes: 'Sensor sitzt 12 cm über dem Boden. Kabel nach unten, Steckverbinder muss zugänglich bleiben.',
       experiences: ['PLA im Garten wurde nach zwei Wochen weich – ASA nehmen.', 'Klemmung: 1,5 mm Wandstärke reicht nicht, 3 mm hält.'],
       history: hist(now, [[-21, 'angelegt', 'Projekt angelegt'], [-18, 'version', 'v1 konstruiert'], [-15, 'druck', 'Testdruck v1 fertig', 'Klemmung zu schwach'], [-15, 'fehler', 'Klemme gebrochen', 'Wandstärke 1,5 mm'], [-9, 'version', 'v2 mit stärkerer Klemmung'], [-8, 'druck', 'Testdruck v2 erfolgreich'], [-8, 'erfahrung', 'PLA im Garten wird weich'], [-2, 'version', 'v3 für ASA angelegt'], [-2, 'entscheidung', 'Finaldruck in ASA Weiß']]),
-      requiredSpools: [{ spoolId: 's-asa-weiss', grams: 38 }], plannedHours: 6,
+      requiredSpools: [{ spoolId: 's-asa-weiss', grams: 38 }], plannedHours: 6, toolIds: ['w-seitenschneider', 'w-bohrer3', 'w-schraubendreher'],
     },
     {
       id: 'p-bewaesserung', name: 'Bewässerungsclip', description: 'Clip für den 6-mm-Tropfschlauch am Hochbeetrand, mit Abstandhalter.',
-      type: 'Halterung', areas: ['Garten'], tags: ['Schlauch', 'Clip'], priority: 2, difficulty: 2, stage: 'Nacharbeit', progress: 80, favorite: false,
+      type: 'Halterung / Befestigung', areas: ['Garten & Outdoor'], tags: ['Schlauch', 'Clip'], priority: 2, difficulty: 2, stage: 'Nacharbeit', progress: 80, favorite: false,
       createdAt: d(-14, now), updatedAt: h(-1, now), island: { kind: 'bibliothek', libraryId: 'ideen', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [ { id: 'ms-b1', title: 'Maße nehmen', done: true, order: 0 }, { id: 'ms-b2', title: 'Konstruktion', done: true, order: 1 }, { id: 'ms-b3', title: 'Testdruck ×3', done: true, order: 2 }, { id: 'ms-b4', title: 'Grat entfernen', done: false, order: 3 }, { id: 'ms-b5', title: '12 Stück drucken', done: false, order: 4 } ],
       versions: [ { id: 'v-b-1', label: 'v1', status: 'final', createdAt: d(-10, now), changes: ['Grundform'], dims: '22 × 14 × 10 mm', material: 'PETG Schwarz', settings: '0,16 mm' } ],
       files: [ { id: 'f-b-1', name: 'clip_v1.3mf', kind: '3mf', createdAt: d(-10, now), size: 410_000 } ],
       notes: 'Beim Druck Brim verwenden, sonst löst sich der Clip.', experiences: [],
       history: hist(now, [[-14, 'angelegt', 'Projekt angelegt'], [-10, 'version', 'v1'], [-6, 'druck', 'Testdruck erfolgreich'], [-1, 'druck', 'Serie 12 Stück läuft']]),
-      requiredSpools: [{ spoolId: 's-petg-schwarz-1', grams: 120 }],
+      requiredSpools: [{ spoolId: 's-petg-schwarz-1', grams: 120 }], toolIds: ['w-seitenschneider', 'w-feile'],
     },
     {
       id: 'p-organizer', name: 'Werkzeug-Organizer', description: 'Einsatz für die Schublade: Bits, Inbus und Schraubendreher griffbereit.',
-      type: 'Organizer', areas: ['Werkstatt'], tags: ['Schublade', 'Gridfinity'], priority: 2, difficulty: 2, stage: 'Konstruktion', progress: 30, favorite: true,
+      type: 'Organizer / Aufbewahrung', areas: ['Werkstatt'], tags: ['Schublade', 'Gridfinity'], priority: 2, difficulty: 2, stage: 'Konstruktion', progress: 30, favorite: true,
       createdAt: d(-5, now), updatedAt: d(-1, now), island: { kind: 'bibliothek', libraryId: 'werkstatt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [ { id: 'ms-o1', title: 'Schublade vermessen', done: true, order: 0 }, { id: 'ms-o2', title: 'Raster festlegen', done: true, order: 1 }, { id: 'ms-o3', title: 'Einsätze konstruieren', done: false, order: 2 }, { id: 'ms-o4', title: 'Probeeinsatz drucken', done: false, order: 3 } ],
       versions: [ { id: 'v-o-1', label: 'v1', status: 'aktuell', createdAt: d(-2, now), changes: ['Raster 42 mm'], dims: '252 × 168 × 40 mm', material: 'PLA Indigo' } ],
       files: [ { id: 'f-o-1', name: 'Schublade.jpg', kind: 'foto', createdAt: d(-5, now) } ], notes: '', experiences: [],
       history: hist(now, [[-5, 'angelegt', 'Projekt angelegt'], [-2, 'version', 'v1 begonnen']]),
-      requiredSpools: [{ spoolId: 's-pla-indigo', grams: 260 }],
+      requiredSpools: [{ spoolId: 's-pla-indigo', grams: 260 }], toolIds: ['w-messschieber'],
     },
     {
       id: 'p-gehaeuse', name: 'ESP32-Wettergehäuse', description: 'Gehäuse für den Außensensor mit Lüftungsschlitzen und Dach.',
-      type: 'Gehäuse', areas: ['Elektronik', 'Energie'], tags: ['ESP32', 'Außen', 'Lüftung'], priority: 3, difficulty: 4, stage: 'Planung', progress: 20, favorite: false,
+      type: 'Gehäuse / Elektronik', areas: ['Elektronik & Smart Home', 'Technik & Maschinen'], tags: ['ESP32', 'Außen', 'Lüftung'], priority: 3, difficulty: 4, stage: 'Planung', progress: 20, favorite: false,
       createdAt: d(-9, now), updatedAt: d(-3, now), island: { kind: 'bibliothek', libraryId: 'elektronik', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'metall' } },
       milestones: [ { id: 'ms-g1', title: 'Platine vermessen', done: true, order: 0 }, { id: 'ms-g2', title: 'Belüftung planen', done: false, order: 1 }, { id: 'ms-g3', title: 'Konstruktion', done: false, order: 2 }, { id: 'ms-g4', title: 'Testdruck', done: false, order: 3 } ],
       versions: [], files: [], notes: 'Stevenson-Screen-Prinzip für die Lüftung.', experiences: [],
       history: hist(now, [[-9, 'angelegt', 'Projekt angelegt'], [-3, 'notiz', 'Belüftung nach Stevenson-Prinzip']]),
-      requiredSpools: [{ spoolId: 's-asa-weiss', grams: 140 }],
+      requiredSpools: [{ spoolId: 's-asa-weiss', grams: 140 }], toolIds: ['w-gewindeschneider', 'w-bohrer3'],
     },
     {
       id: 'p-zahnrad', name: 'Zahnrad Mixer', description: 'Ersatzzahnrad für den Küchenmixer, Modul 1, 24 Zähne.',
-      type: 'Reparatur', areas: ['Haushalt'], tags: ['Ersatzteil', 'Zahnrad'], priority: 1, difficulty: 3, stage: 'Idee', progress: 5, favorite: false,
+      type: 'Reparatur / Ersatzteil', areas: ['Haushalt'], tags: ['Ersatzteil', 'Zahnrad'], priority: 1, difficulty: 3, stage: 'Idee', progress: 5, favorite: false,
       createdAt: d(-1, now), updatedAt: d(-1, now), island: { kind: 'bibliothek', libraryId: 'werkstatt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'metall' } },
       milestones: [ { id: 'ms-z1', title: 'Altes Zahnrad vermessen', done: false, order: 0 }, { id: 'ms-z2', title: 'Konstruktion', done: false, order: 1 }, { id: 'ms-z3', title: 'Testdruck PETG', done: false, order: 2 } ],
       versions: [], files: [], notes: '', experiences: [],
@@ -99,7 +105,7 @@ export function makeSeed(now = new Date()): PersistedState {
     },
     {
       id: 'p-schluesselhalter', name: 'Schlüsselhalter v2', description: 'Wandhalter für fünf Schlüssel mit Ablage.',
-      type: 'Halterung', areas: ['Haushalt'], tags: ['Wand', 'Deko'], priority: 3, difficulty: 1, stage: 'Abgeschlossen', progress: 100, favorite: true,
+      type: 'Halterung / Befestigung', areas: ['Haushalt'], tags: ['Wand', 'Deko'], priority: 3, difficulty: 1, stage: 'Abgeschlossen', progress: 100, favorite: true,
       createdAt: d(-70, now), updatedAt: d(-30, now), archivedAt: d(-30, now), island: { kind: 'bibliothek', libraryId: 'ideen', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [ { id: 'ms-s1', title: 'Konstruktion', done: true, order: 0 }, { id: 'ms-s2', title: 'Druck', done: true, order: 1 }, { id: 'ms-s3', title: 'Montage', done: true, order: 2 } ],
       versions: [ { id: 'v-s-1', label: 'v1', status: 'verworfen', createdAt: d(-60, now), changes: ['Zu schmal'] }, { id: 'v-s-2', label: 'v2', status: 'final', createdAt: d(-40, now), changes: ['Breiter', 'Ablage'] } ],
@@ -108,7 +114,7 @@ export function makeSeed(now = new Date()): PersistedState {
     },
     {
       id: 'p-pflanzgefaess', name: 'Pflanzgefäß Wabe', description: 'Sechseckiger Übertopf mit Wassersammler.',
-      type: 'Experiment', areas: ['Haushalt', 'Garten'], tags: ['Vase-Mode', 'Deko'], priority: 3, difficulty: 2, stage: 'Abgeschlossen', progress: 100, favorite: false,
+      type: 'Experiment / Neue Idee', areas: ['Haushalt', 'Garten & Outdoor'], tags: ['Vase-Mode', 'Deko'], priority: 3, difficulty: 2, stage: 'Abgeschlossen', progress: 100, favorite: false,
       createdAt: d(-50, now), updatedAt: d(-12, now), archivedAt: d(-12, now), island: { kind: 'bibliothek', libraryId: 'ideen', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [ { id: 'ms-p1', title: 'Form', done: true, order: 0 }, { id: 'ms-p2', title: 'Druck', done: true, order: 1 } ],
       versions: [ { id: 'v-p-1', label: 'v1', status: 'final', createdAt: d(-20, now), changes: ['Vase-Mode, 0,6 mm Düse'] } ],
@@ -123,6 +129,7 @@ export function makeSeed(now = new Date()): PersistedState {
     { id: 'pr-3', projectId: 'p-organizer', versionId: 'v-o-1', printerId: 'd-p1s', spoolId: 's-pla-indigo', name: 'Organizer Probeeinsatz', kind: 'test', status: 'wartend', estimatedMinutes: 142, gramsPlanned: 60, queueOrder: 2 },
     { id: 'pr-4', projectId: 'p-sensorhalter', versionId: 'v-sh-2', printerId: 'd-x1c', spoolId: 's-petg-schwarz-1', name: 'Sensorhalter v2 Test', kind: 'test', status: 'fertig', result: 'erfolg', estimatedMinutes: 88, startedAt: d(-8.4, now), finishedAt: d(-8.3, now), gramsPlanned: 34, gramsUsed: 36, booked: true, queueOrder: 90 },
     { id: 'pr-5', projectId: 'p-sensorhalter', versionId: 'v-sh-1', printerId: 'd-p1s', spoolId: 's-pla-weiss', name: 'Sensorhalter v1 Test', kind: 'test', status: 'fertig', result: 'fehldruck', estimatedMinutes: 80, startedAt: d(-15.3, now), finishedAt: d(-15.2, now), gramsPlanned: 30, gramsUsed: 31, booked: true, queueOrder: 91, notes: 'Klemme gebrochen beim Einrasten.' },
+    { id: 'pr-7', printerId: 'd-p1s', spoolId: 's-pla-weiss', name: 'Kabelclip_v2.gcode', kind: 'test', status: 'fertig', result: 'erfolg', estimatedMinutes: 22, startedAt: d(-0.6, now), finishedAt: d(-0.58, now), gramsPlanned: 9, gramsUsed: 9, booked: true, queueOrder: 93, imported: true, notes: 'Vom Drucker importiert, noch keinem Projekt zugeordnet.' },
     { id: 'pr-6', projectId: 'p-bewaesserung', versionId: 'v-b-1', printerId: 'd-p1s', spoolId: 's-petg-schwarz-1', name: 'Clip Test ×3', kind: 'test', status: 'fertig', result: 'nacharbeit', estimatedMinutes: 40, startedAt: d(-6.2, now), finishedAt: d(-6.1, now), gramsPlanned: 28, gramsUsed: 29, booked: true, queueOrder: 92, notes: 'Grat an der Unterseite.' },
   ];
 
@@ -152,5 +159,10 @@ export function makeSeed(now = new Date()): PersistedState {
     { id: 'sh-2', title: 'M3 Einpressmuttern', qty: '100 Stk', price: 8.5, projectId: 'p-gehaeuse', done: false },
   ];
 
-  return { version: 1, seededAt: now.toISOString(), projects, devices, spools, tasks, prints, reports, appointments, shopping, settings: DEFAULT_SETTINGS };
+  const energy: EnergyEntry[] = [
+    { id: 'e-1', at: d(-8, now), projectId: 'p-sensorhalter', wh: 180, pricePerKwh: 0.22, source: 'messung', note: 'Steckdosenmesser X1C' },
+    { id: 'e-2', at: d(-6, now), projectId: 'p-bewaesserung', wh: 95, pricePerKwh: 0.22, source: 'messung' },
+    { id: 'e-3', at: d(-1, now), projectId: 'p-bewaesserung', wh: 370, pricePerKwh: 0.22, source: 'schaetzung', note: 'aus Druckdauer × 120 W' },
+  ];
+  return { version: 1, seededAt: now.toISOString(), projects, devices, spools, tasks, prints, reports, appointments, shopping, settings: DEFAULT_SETTINGS, energy };
 }
