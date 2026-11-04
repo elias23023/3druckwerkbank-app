@@ -1,0 +1,38 @@
+:root {
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --hand: "Caveat", "Segoe Script", "Bradley Hand", cursive;
+  --ink: #0d1726;
+  --ink-2: #33415a;
+  --ink-3: #5f6d86;
+  --paper: #f3f1ea;
+  --accent: #ffbd6b;
+  --accent-2: #7cc6ff;
+  --ok: #4ccf7a;
+  --warn: #ffb547;
+  --bad: #ff6b6b;
+  --glass-bg: rgba(14, 22, 38, 0.56);
+  --glass-bg-strong: rgba(12, 19, 33, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-hi: rgba(255, 255, 255, 0.08);
+  --text: #f4f6fb;
+  --text-2: rgba(244, 246, 251, 0.74);
+  --text-3: rgba(244, 246, 251, 0.5);
+  --radius: 18px;
+  --radius-sm: 11px;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255,255,255,.06) inset;
+  --t-fast: 180ms;
+  --t-mid: 420ms;
+  --t-slow: 800ms;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --z-sky: 0; --z-land: 1; --z-clouds: 2; --z-islands: 3; --z-fog: 4; --z-rays: 5; --z-tint: 6; --z-ui: 10; --z-sheet: 20; --z-cmd: 30; --z-toast: 40;
+}
+:root[data-theme="hell"] {
+  --glass-bg: rgba(255, 255, 255, 0.52);
+  --glass-bg-strong: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-hi: rgba(255, 255, 255, 0.5);
+  --text: #0f1a2b;
+  --text-2: rgba(15, 26, 43, 0.74);
+  --text-3: rgba(15, 26, 43, 0.5);
+  --shadow: 0 18px 50px rgba(20, 30, 60, 0.18), 0 1px 0 rgba(255,255,255,.6) inset;
+}

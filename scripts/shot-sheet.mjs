@@ -1,0 +1,13 @@
+import pw from '/opt/node-tools/node_modules/playwright/index.js';
+const { chromium } = pw;
+const [base, out] = process.argv.slice(2);
+const browser = await chromium.launch();
+const page = await (await browser.newContext({ viewport: { width: 1920, height: 1080 } })).newPage();
+await page.goto(`${base}/#/projekte`, { waitUntil: 'networkidle' }); await page.waitForTimeout(800);
+await page.getByText('Neu', { exact: false }).last().click(); await page.waitForTimeout(500);
+await page.screenshot({ path: out.replace('.png', '-form.png') });
+await page.keyboard.press('Escape'); await page.keyboard.press('Control+k'); await page.waitForTimeout(300); await page.keyboard.type('petg'); await page.waitForTimeout(300);
+await page.screenshot({ path: out.replace('.png', '-cmd.png') });
+await page.keyboard.press('Escape'); await page.locator('.topbar button[aria-label="Einstellungen"]').click(); await page.waitForTimeout(300); await page.getByText('Über diesen Entwurf').click(); await page.waitForTimeout(400);
+await page.screenshot({ path: out.replace('.png', '-about.png') });
+await browser.close();

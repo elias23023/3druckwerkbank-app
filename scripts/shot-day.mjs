@@ -1,0 +1,18 @@
+import pw from '/opt/node-tools/node_modules/playwright/index.js';
+const { chromium, devices } = pw;
+const [url, out, mode = 'day', mobile] = process.argv.slice(2);
+const browser = await chromium.launch();
+const ctx = await browser.newContext(mobile ? { ...devices['iPhone 13'] } : { viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+const page = await ctx.newPage();
+const errors = [];
+page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+page.on('pageerror', (e) => errors.push(String(e)));
+if (mode === 'day') await page.clock.install({ time: new Date('2026-11-05T11:20:00+01:00') });
+if (mode === 'golden') await page.clock.install({ time: new Date('2026-11-05T16:20:00+01:00') });
+await page.goto(url, { waitUntil: 'networkidle' });
+await page.waitForSelector('[data-scene-ready="true"]', { timeout: 15000 }).catch(() => errors.push('scene not ready'));
+if (mode === 'day' || mode === 'golden') await page.clock.runFor(3000);
+await page.waitForTimeout(1500);
+await page.screenshot({ path: out, fullPage: !!mobile });
+console.log(JSON.stringify({ out, errors }));
+await browser.close();
