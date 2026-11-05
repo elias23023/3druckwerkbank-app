@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { useNow, quoteOfDay, greeting } from '../lib/time';
 import { fmtLongDate, fmtTime, fmtNum } from '../lib/format';
+import { resolveSeason, SEASON_META, daysUntilNextSeason } from '../lib/season';
 import { wmo, bestPvWindow } from '../lib/weather';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import { navigate } from '../router';
@@ -25,6 +26,7 @@ export function Start() {
       <div className="start-clock">
         <b>{fmtTime(now)}</b>
         <span>{fmtLongDate(now)}</span>
+        <span className="start-season">{SEASON_META[resolveSeason(settings.season, now)].label} · noch {daysUntilNextSeason(now)} Tage bis {SEASON_META[resolveSeason(settings.season, now)].next} · {SEASON_META[resolveSeason(settings.season, now)].motto}</span>
         <span style={{ marginTop: 10, fontSize: 'clamp(16px, 1.5cqw, 24px)', color: '#fff' }}>{greeting(now)}{settings.userName ? `, ${settings.userName}` : ''}</span>
         {settings.showQuote ? <p className="quote">„{quoteOfDay(now)}“</p> : null}
       </div>

@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useNow, hourOf } from '../lib/time';
 import { fmtDayShort, fmtDuration, fmtNum, fmtTime, relTime } from '../lib/format';
 import { bestPvWindow, bestHours, comfort, dryWindow, pvKw, todayDaily, weatherAlerts, wmo } from '../lib/weather';
+import { resolveSeason, SEASON_META, daysUntilNextSeason } from '../lib/season';
 import { Panel, Stat } from '../ui/Glass';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import { ISun, IClock, ICal, IEnergy, IRefresh, IWind, IDrop, IThermo, IBolt, IInfo } from '../ui/Icons';
@@ -82,6 +83,9 @@ export function Wetter() {
         </div>
       </Panel>
 
+      <Panel title={`Jahreszeit · ${SEASON_META[resolveSeason(settings.season, now)].label}`} icon={<ISun />} style={{ left: '3.2%', bottom: '2.5%', width: '22%' }} delay={160} right={<span className="xs faint">noch {daysUntilNextSeason(now)} Tage</span>}>
+        <div className="col" style={{ gap: 6 }}>{SEASON_META[resolveSeason(settings.season, now)].tips.map((t) => <span key={t} className="small">• {t}</span>)}</div>
+      </Panel>
       <Panel title="7 Tage" icon={<ICal />} style={{ right: '3.2%', top: '24%', width: '24%' }} delay={140}>
         <div className="days">
           {(d?.daily ?? []).map((day, i) => <div key={day.date}><span className="muted">{i === 0 ? 'Heute' : fmtDayShort(day.date)}</span><WeatherIcon code={day.code} size={18} /><span className="xs muted ellipsis">{wmo(day.code).label}</span><span><b>{fmtNum(day.tmax)}°</b> <span className="muted">{fmtNum(day.tmin)}°</span></span><span className="xs muted" style={{ textAlign: 'right' }}>{fmtNum(day.precipSum, 1)} mm</span></div>)}

@@ -128,6 +128,8 @@ export interface Settings {
   location: { name: string; lat: number; lon: number; tz: string };
   pvKwp: number; pricePerKwh: number; printerWatts: number; userName?: string;
   parallax?: number; notifications?: 'alle' | 'wichtig' | 'aus'; defaultPrinterId?: Id; preferredMaterials?: string[];
+  /** Jahreszeit: automatisch nach Datum oder fest (Vorschau) */
+  season?: 'auto' | 'fruehling' | 'sommer' | 'herbst' | 'winter';
 }
 
 export interface WeatherHour { time: string; temp: number; code: number; precipProb: number; precip: number; cloud: number; ghi: number; isDay: boolean; wind: number; gust?: number; pressure?: number; uv?: number }

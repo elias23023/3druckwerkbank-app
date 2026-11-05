@@ -21,6 +21,7 @@ import { Wetter } from './worlds/Wetter';
 import { Archiv } from './worlds/Archiv';
 import { Mobile } from './mobile/Mobile';
 import { SundialRing } from './ui/SundialRing';
+import { resolveSeason } from './lib/season';
 import type { LibraryIsland, WorldId } from './types';
 
 const STAGE_COLOR: Record<string, string> = { Idee: '#c59bff', Konstruktion: '#7cc6ff', Planung: '#7cc6ff', Vorbereitung: '#ffe29a', Druck: '#4ccf7a', Nacharbeit: '#ffb547', 'Qualität': '#ffb547', Abgeschlossen: '#8a8f96' };
@@ -58,6 +59,7 @@ export function App() {
   const today = todayDaily(weather?.data, now);
   const phase = dayPhase(now, today?.sunrise, today?.sunset);
   const look = sceneLook(now, today?.sunrise, today?.sunset, weather?.data.hourly.length ? weather.data.current.code : undefined);
+  const season = resolveSeason(settings.season, now);
   useEffect(() => {
     const theme = mobile ? 'dunkel' : settings.theme === 'auto' ? (DARK_LOOKS.has(look) ? 'dunkel' : 'hell') : settings.theme;
     document.documentElement.dataset.theme = theme;
@@ -134,7 +136,7 @@ export function App() {
   if (mobile) return <Mobile />;
 
   return (
-    <Stage phase={phase} look={look} world={route.world} parallax={!motionReduced && !coarse && !sheet && !mobile && (settings.parallax ?? 1) > 0} parallaxStrength={settings.parallax ?? 1} weatherCode={weather?.data.hourly.length ? weather.data.current.code : undefined} islands={islands}>
+    <Stage phase={phase} look={look} world={route.world} parallax={!motionReduced && !coarse && !sheet && !mobile && (settings.parallax ?? 1) > 0} parallaxStrength={settings.parallax ?? 1} season={season} weatherCode={weather?.data.hourly.length ? weather.data.current.code : undefined} islands={islands}>
       <div className="ui">
         <TopBar />
         {route.world === 'start' ? <Start /> : null}

@@ -32,7 +32,7 @@ p { margin: 0; }
 
 .island { position: absolute; transform: translate(-50%, -50%) translate(calc(var(--px, 0) * var(--par, 0px)), calc(var(--py, 0) * var(--par, 0px))) scale(var(--s, 1)); transition: left var(--t-slow) var(--ease), top var(--t-slow) var(--ease), width var(--t-slow) var(--ease), opacity 600ms var(--ease), filter 600ms var(--ease), transform 600ms var(--ease); will-change: transform, opacity; cursor: pointer; text-align: center; }
 .island--active { cursor: default; }
-.island__body { animation: float 7s ease-in-out infinite; }
+.island__body { animation: float 7s ease-in-out infinite; filter: var(--season-filter, none); transition: filter 1.2s var(--ease); }
 .island__img { position: relative; width: 100%; height: auto; display: block; filter: drop-shadow(0 0 1px rgba(20, 10, 0, .25)) drop-shadow(0 30px 40px rgba(0, 0, 0, .35)); }
 .island--active .island__img { filter: drop-shadow(0 0 1px rgba(20, 10, 0, .25)) drop-shadow(0 50px 70px rgba(0, 0, 0, .5)); }
 .island__props { position: absolute; inset: 0; pointer-events: none; }
@@ -396,3 +396,20 @@ p { margin: 0; }
   .toast { position: fixed; bottom: 86px; }
   .tiles { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---------- seasons: tint over the landscape and drifting particles ---------- */
+.season-tint { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light; opacity: .6; transition: background 1.5s var(--ease); }
+.season-fx { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: var(--z-fog); }
+.season-fx i { position: absolute; top: -6%; display: block; border-radius: 50%; will-change: transform; animation: season-fall var(--dur) linear var(--delay) infinite; }
+.season-fx--leaf i { border-radius: 0 70% 0 70%; box-shadow: inset -2px -1px 0 rgba(0,0,0,.18); animation-name: season-tumble; }
+.season-fx--petal i { border-radius: 65% 35% 65% 35%; animation-name: season-tumble; box-shadow: 0 0 2px rgba(255,255,255,.4); }
+.season-fx--flake i { box-shadow: 0 0 4px rgba(255,255,255,.85); }
+.season-fx--pollen i, .season-fx--firefly i { top: auto; animation: season-glow var(--dur) ease-in-out var(--delay) infinite; }
+.season-fx--firefly i { box-shadow: 0 0 6px 2px rgba(232,255,138,.75); }
+.season-fx--pollen i { box-shadow: 0 0 3px rgba(255,233,168,.9); }
+@keyframes season-fall { 0% { transform: translate3d(0, 0, 0); } 25% { transform: translate3d(var(--dx), 28vh, 0); } 50% { transform: translate3d(calc(var(--dx) * -1), 56vh, 0); } 75% { transform: translate3d(var(--dx), 84vh, 0); } 100% { transform: translate3d(0, 112vh, 0); } }
+@keyframes season-tumble { 0% { transform: translate3d(0, 0, 0) rotate(var(--rot)); } 25% { transform: translate3d(var(--dx), 28vh, 0) rotate(calc(var(--rot) + 160deg)); } 50% { transform: translate3d(calc(var(--dx) * -1), 56vh, 0) rotate(calc(var(--rot) + 380deg)); } 75% { transform: translate3d(var(--dx), 84vh, 0) rotate(calc(var(--rot) + 540deg)); } 100% { transform: translate3d(0, 112vh, 0) rotate(calc(var(--rot) + 720deg)); } }
+@keyframes season-glow { 0%, 100% { opacity: 0; transform: translate3d(0, 0, 0); } 30% { opacity: 1; transform: translate3d(calc(var(--dx) * .3), -10px, 0); } 60% { opacity: .35; transform: translate3d(calc(var(--dx) * .55), -22px, 0); } 80% { opacity: .9; transform: translate3d(calc(var(--dx) * .4), -30px, 0); } }
+.season-fx--still i, :root[data-motion="reduziert"] .season-fx i { animation: none !important; opacity: .35; top: calc(10% + var(--delay, 0s) * 0); }
+.start-season { display: block; margin-top: 4px; font-size: clamp(11px, .9cqw, 14px); color: rgba(255,255,255,.85); }
+.stage[data-season="winter"] .ground-mist { opacity: 1.15; }

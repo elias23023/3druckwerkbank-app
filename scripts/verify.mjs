@@ -95,6 +95,20 @@ for (const [iso, look] of [['2026-11-05T06:05:00+01:00', 'daemmerung'], ['2026-1
   check(`Look at ${iso.slice(11, 16)} is ${look}`, (await pg.locator(`.land img[src*="landschaft-${look}-"]`).count()) >= 1, await pg.locator('.land img').first().getAttribute('src') ?? '');
   await c.close();
 }
+// ---- seasons: override in settings changes stage, particles and island filter ----
+{
+  const c = await browser.newContext(ctxOpts); const pg = await c.newPage();
+  await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(800);
+  const auto = await pg.evaluate(() => document.querySelector('.stage')?.getAttribute('data-season'));
+  check('Season auto = Herbst in November', auto === 'herbst', auto ?? '');
+  await pg.locator('.topbar button[aria-label="Einstellungen"]').click(); await pg.waitForTimeout(300);
+  await pg.locator('.sheet .seg button', { hasText: 'Winter' }).click(); await pg.waitForTimeout(400);
+  const w = await pg.evaluate(() => ({ s: document.querySelector('.stage')?.getAttribute('data-season'), fx: document.querySelectorAll('.season-fx--flake i').length, filter: getComputedStyle(document.querySelector('.island--active .island__body, .island .island__body')).filter }));
+  check('Season override Winter: snow dust + island filter', w.s === 'winter' && w.fx >= 20 && /saturate/.test(w.filter), JSON.stringify(w));
+  await pg.locator('.sheet .seg', { hasText: 'Winter' }).locator('button', { hasText: 'Automatisch' }).click(); await pg.waitForTimeout(300);
+  check('Season back to auto', (await pg.evaluate(() => document.querySelector('.stage')?.getAttribute('data-season'))) === 'herbst');
+  await c.close();
+}
 // ---- sundial shadow follows the sun; lantern at night ----
 {
   const lens = {};

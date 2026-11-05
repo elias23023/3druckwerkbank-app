@@ -7,6 +7,7 @@ import { useNow, greeting, quoteOfDay, sameDay } from '../lib/time';
 import { fmtLongDate, fmtTime, fmtNum, fmtGrams, fmtDuration, relTime, fmtDate } from '../lib/format';
 import { bestPvWindow, todayDaily, wmo, pvKw } from '../lib/weather';
 import { sceneLook, type Look } from '../scene/looks';
+import { resolveSeason, SEASON_META, daysUntilNextSeason } from '../lib/season';
 import { islandSrc } from '../scene/Island';
 import { Logo } from '../ui/TopBar';
 import { Check, Progress, Stack } from '../ui/Glass';
@@ -76,7 +77,7 @@ function MStart({ now }: { now: Date }) {
   }, [running, appointments, devices, tasks, now]);
   return (
     <>
-      <div className="m-clock"><b>{fmtTime(now)}</b><span>{fmtLongDate(now)}</span><span style={{ color: '#fff', fontSize: 16, marginTop: 8 }}>{greeting(now)}{settings.userName ? `, ${settings.userName}` : ''}</span>{settings.showQuote ? <p className="q">„{quoteOfDay(now)}“</p> : null}</div>
+      <div className="m-clock"><b>{fmtTime(now)}</b><span>{fmtLongDate(now)}</span><span className="xs" style={{ color: 'rgba(255,255,255,.8)' }}>{SEASON_META[resolveSeason(settings.season, now)].label} · noch {daysUntilNextSeason(now)} Tage bis {SEASON_META[resolveSeason(settings.season, now)].next}</span><span style={{ color: '#fff', fontSize: 16, marginTop: 8 }}>{greeting(now)}{settings.userName ? `, ${settings.userName}` : ''}</span>{settings.showQuote ? <p className="q">„{quoteOfDay(now)}“</p> : null}</div>
       <Card>
         {cur ? <div className="row" style={{ gap: 12 }}><WeatherIcon code={cur.code} isDay={cur.isDay} size={40} /><div className="col grow" style={{ gap: 1 }}><b className="m-big">{fmtNum(cur.temp)} °C</b><span className="small muted">{wmo(cur.code).label} · {settings.location.name.split(',')[0]}</span></div><div className="col xs muted" style={{ textAlign: 'right' }}><span>{pv ? `Solarfenster ${fmtTime(pv.start)}` : 'kein Solarfenster'}</span><span>Open-Meteo</span></div></div> : <span className="muted small">{weather?.error ? 'Wetter nicht verfügbar' : 'Wetter …'}</span>}
       </Card>
