@@ -14,6 +14,11 @@ const islands = [
   ['insel-elektronik', 'assets-src/elektronik-insel.png'],
   ['insel-ideen', 'assets-src/ideen-insel.png'],
   ['insel-rahmen', 'assets-src/rahmen-inselbasis.png'],
+  ['insel-heute', 'assets-src/insel-heute.png'],
+  ['insel-material', 'assets-src/insel-material.png'],
+  ['insel-wetter', 'assets-src/insel-wetter.png'],
+  ['insel-archiv', 'assets-src/insel-archiv.png'],
+  ['insel-drucker', 'assets-src/insel-drucker.png'],
 ];
 
 for (const [name, src] of landscapes) {

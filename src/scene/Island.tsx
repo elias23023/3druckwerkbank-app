@@ -5,6 +5,7 @@ import { IArrowR } from '../ui/Icons';
 export const ISLAND_META: Record<LibraryIsland, { w: number; h: number; disc?: { cx: number; cy: number; rx: number; ry: number } }> = {
   werkstatt: { w: 1191, h: 1106 }, elektronik: { w: 1172, h: 1140 }, ideen: { w: 1196, h: 1145 },
   rahmen: { w: 1167, h: 597, disc: { cx: 50, cy: 30, rx: 29, ry: 11 } },
+  heute: { w: 1082, h: 1207 }, material: { w: 1081, h: 1219 }, wetter: { w: 1084, h: 1205 }, archiv: { w: 1079, h: 1205 }, drucker: { w: 1081, h: 1188 },
 };
 export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${id}-${w}.webp`;
 

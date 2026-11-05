@@ -15,6 +15,11 @@ const LIB: { id: LibraryIsland; name: string; hint: string; types: string[]; are
   { id: 'werkstatt', name: 'Werkstatt', hint: 'Werkbank, Drucker, Werkzeuge', types: ['Werkzeug / Hilfsmittel', 'Mechanisches Bauteil', 'Reparatur / Ersatzteil', 'Organizer / Aufbewahrung'], areas: ['Werkstatt', 'Technik & Maschinen'] },
   { id: 'elektronik', name: 'Elektronik', hint: 'Platinen, Gehäuse, Sensoren', types: ['Gehäuse / Elektronik', 'Prototyp / Testteil'], areas: ['Elektronik & Smart Home', 'Prototyping & Entwicklung'] },
   { id: 'ideen', name: 'Ideen', hint: 'Skizzen, Pläne, Neues', types: ['Experiment / Neue Idee', 'Deko / Geschenk', 'Modell / Miniatur', 'Halterung / Befestigung'], areas: ['Hobby & Freizeit', 'Deko & Persönliches', 'Schule / Lernen', 'Haushalt', 'Garten & Outdoor'] },
+  { id: 'heute', name: 'Terrasse', hint: 'Plattform, Sonnenuhr, Bank', types: ['Deko / Geschenk', 'Sonstiges / Universal'], areas: ['Deko & Persönliches', 'Haushalt'] },
+  { id: 'material', name: 'Materiallager', hint: 'Regal mit Filamentrollen', types: ['Organizer / Aufbewahrung'], areas: ['Werkstatt'] },
+  { id: 'wetter', name: 'Wetterstation', hint: 'Sensoren, Solar, Display', types: ['Gehäuse / Elektronik', 'Experiment / Neue Idee'], areas: ['Garten & Outdoor', 'Elektronik & Smart Home', 'Technik & Maschinen'] },
+  { id: 'archiv', name: 'Galerie', hint: 'Vitrinen und Bilder', types: ['Deko / Geschenk', 'Modell / Miniatur'], areas: ['Deko & Persönliches', 'Hobby & Freizeit'] },
+  { id: 'drucker', name: 'Druckerplatz', hint: 'Drucker auf der Werkbank', types: ['Prototyp / Testteil', 'Mechanisches Bauteil', 'Reparatur / Ersatzteil', 'Werkzeug / Hilfsmittel'], areas: ['Werkstatt', 'Prototyping & Entwicklung'] },
   { id: 'rahmen', name: 'Eigenes Bild', hint: 'Insel mit Bilderrahmen', types: [], areas: [] },
 ];
 

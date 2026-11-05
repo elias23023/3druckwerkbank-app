@@ -58,7 +58,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
       </div>
 
       <div className="heute-time"><b>{fmtTime(now)}</b><span>{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length} Druck{running.length === 1 ? '' : 'e'} läuft</span></div>
-      <PlatformRing now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} />
+      <PlatformRing now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} tilt={63} />
       <div className="ring-legend"><span><i className="dot" style={{ background: '#ffd36e' }} />Tageslicht · PV</span><span><i className="dot" style={{ background: '#7cc6ff' }} />Drucke</span><span><i className="dot" style={{ background: '#4ccf7a' }} />Aufgaben</span><span><i className="dot" style={{ background: '#c59bff' }} />Termine</span><span><i className="dot" style={{ background: '#ffb547' }} />Wartung</span></div>
       <div className="mobile-only" style={{ margin: '0 auto' }}><Tagesring now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} size={280} centre={<><b>{fmtTime(now)}</b><span>{open.length} offen · {running.length} Druck</span></>} /></div>
 

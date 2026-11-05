@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Stage } from './scene/Stage';
 import { Island } from './scene/Island';
-import { MaterialProp, TagesringProp, WetterProp, PrinterProp } from './scene/IslandProps';
 import { projectCarousel, projectInner, worldIslands, startIslands, type Placement } from './scene/worldLayouts';
 import { Start } from './worlds/Start';
 import { navigate, useRoute } from './router';
@@ -22,7 +21,7 @@ import { Archiv } from './worlds/Archiv';
 import type { LibraryIsland, WorldId } from './types';
 
 const STAGE_COLOR: Record<string, string> = { Idee: '#c59bff', Konstruktion: '#7cc6ff', Planung: '#7cc6ff', Vorbereitung: '#ffe29a', Druck: '#4ccf7a', Nacharbeit: '#ffb547', 'Qualität': '#ffb547', Abgeschlossen: '#8a8f96' };
-const WORLD_IMAGE: Record<WorldId, LibraryIsland> = { heute: 'rahmen', projekte: 'ideen', druck: 'werkstatt', material: 'rahmen', wetter: 'rahmen', archiv: 'ideen' };
+const WORLD_IMAGE: Record<WorldId, LibraryIsland> = { heute: 'heute', projekte: 'ideen', druck: 'werkstatt', material: 'material', wetter: 'wetter', archiv: 'archiv' };
 
 function useMedia(q: string) {
   const [m, setM] = useState(() => window.matchMedia(q).matches);
@@ -102,23 +101,20 @@ export function App() {
     return worldIslands(route.world, mobile ? [50, 50, 70] : undefined);
   }, [route.world, current, active, carousel, mobile]);
 
-  const hour = now.getHours() + now.getMinutes() / 60;
   const blocked = (pid: string) => { const p = projects.find((x) => x.id === pid); return !!p && p.requiredSpools.some((r) => { const sp = spools.find((x) => x.id === r.spoolId); return sp && availableGrams(sp) < r.grams; }); };
   const islands = placements.map((pl) => {
     if (pl.key === 'd-p1s') {
       const d = devices.find((x) => x.kind === 'drucker' && x.id !== settings.defaultPrinterId) ?? devices.find((x) => x.kind === 'drucker');
       const job = d ? prints.find((x) => x.printerId === d.id && x.status === 'läuft') : undefined;
-      return <Island key={pl.key} image="rahmen" x={pl.x} y={pl.y} size={mobile ? 0 : pl.size} depth={pl.depth} label={d?.name ?? 'P1S'} labelSize="small" status={d ? { text: job ? `Druckt ${Math.round(printProgress(job, now.getTime()) * 100)} %` : d.status, color: job ? '#7cc6ff' : '#4ccf7a' } : undefined} onClick={d ? () => useStore.getState().openSheet({ kind: 'geraet', deviceId: d.id }) : undefined}><PrinterProp name={d?.name ?? 'P1S'} progress={job ? printProgress(job, now.getTime()) : 0} busy={!!job} /></Island>;
+      return <Island key={pl.key} image="drucker" x={pl.x} y={pl.y} size={mobile ? 0 : pl.size} depth={pl.depth} label={d?.name ?? 'P1S'} labelSize="small" status={d ? { text: job ? `Druckt ${Math.round(printProgress(job, now.getTime()) * 100)} %` : d.status, color: job ? '#7cc6ff' : '#4ccf7a' } : undefined} onClick={d ? () => useStore.getState().openSheet({ kind: 'geraet', deviceId: d.id }) : undefined} />;
     }
     if (pl.world) {
       const w = pl.world; const isStart = route.world === 'start'; const isActive = !isStart && pl.depth === 0;
       const hideMobile = mobile && !isActive && !isStart;
       return (
         <Island key={pl.key} image={WORLD_IMAGE[w]} x={pl.x} y={pl.y} size={hideMobile ? 0 : mobile ? Math.min(pl.size, 44) : pl.size} depth={pl.depth} active={isActive} opacity={hideMobile ? 0 : pl.opacity}
-          label={isActive ? undefined : pl.label} sub={isStart ? pl.sub : undefined} labelSize={pl.labelSize ?? 'big'} cta={isStart ? 'Öffnen' : undefined} eager={isActive || isStart} title={`Zur Welt ${pl.label ?? w}`} filter={w === 'archiv' ? 'sepia(.25) saturate(.85)' : w === 'projekte' ? 'hue-rotate(-8deg)' : undefined}
-          onClick={isActive ? undefined : () => navigate({ world: w })}>
-          {w === 'heute' && !isActive ? <TagesringProp hour={hour} isDay={phase !== 'nacht'} /> : w === 'material' ? <MaterialProp spools={spools} /> : w === 'wetter' ? <WetterProp data={weather?.data} /> : null}
-        </Island>
+          label={isActive ? undefined : pl.label} sub={isStart ? pl.sub : undefined} labelSize={pl.labelSize ?? 'big'} cta={isStart ? 'Öffnen' : undefined} eager={isActive || isStart} title={`Zur Welt ${pl.label ?? w}`} filter={w === 'projekte' ? 'hue-rotate(-8deg)' : undefined}
+          onClick={isActive ? undefined : () => navigate({ world: w })} />
       );
     }
     const p = projects.find((x) => x.id === pl.projectId)!;
@@ -132,7 +128,7 @@ export function App() {
   });
 
   return (
-    <Stage phase={phase} world={route.world} parallax={!motionReduced && !coarse && !sheet && !mobile && (settings.parallax ?? 1) > 0} parallaxStrength={settings.parallax ?? 1} weatherCode={weather?.data.hourly.length ? weather.data.current.code : undefined} background={settings.background ?? 'foto'} islands={islands}>
+    <Stage phase={phase} world={route.world} parallax={!motionReduced && !coarse && !sheet && !mobile && (settings.parallax ?? 1) > 0} parallaxStrength={settings.parallax ?? 1} weatherCode={weather?.data.hourly.length ? weather.data.current.code : undefined} islands={islands}>
       <div className="ui">
         <TopBar />
         {route.world === 'start' ? <Start /> : null}

@@ -18,8 +18,8 @@ function Layer({ name, on, onLoad, prefix }: { name: Look; on: boolean; onLoad: 
   );
 }
 
-export function Landscape({ look, onReady, variant = 'foto' }: { look: Look; onReady?: () => void; variant?: 'foto' | 'gerendert' }) {
-  const prefix = variant === 'gerendert' ? 'landschaft-r' : 'landschaft';
+export function Landscape({ look, onReady }: { look: Look; onReady?: () => void }) {
+  const prefix = 'landschaft';
   const [loaded, setLoaded] = useState(0);
   useEffect(() => { if (loaded >= 1) onReady?.(); }, [loaded, onReady]);
   const inc = () => setLoaded((n) => n + 1);

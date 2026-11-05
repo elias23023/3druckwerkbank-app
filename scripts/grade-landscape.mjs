@@ -38,9 +38,8 @@ async function render(name, pipeline, prefix = 'landschaft') {
   console.log('rendered', prefix, name);
 }
 
-const finalOrGraded = (name, graded) => graded;
-// Procedural renders (scripts/render-landscape.py) are published under the 'landschaft-r' prefix and selectable in settings.
-for (const name of ['abend', 'tag', 'nacht']) if (existsSync(`assets-src/final-landschaft-${name}.png`)) await render(name, () => Promise.resolve(sharp(`assets-src/final-landschaft-${name}.png`).resize(W, H, { fit: 'cover' })), 'landschaft-r');
+// A user-supplied assets-src/final-landschaft-<look>.png replaces the graded fallback unchanged.
+const finalOrGraded = (name, graded) => existsSync(`assets-src/final-landschaft-${name}.png`) ? () => Promise.resolve(sharp(`assets-src/final-landschaft-${name}.png`).resize(W, H, { fit: 'cover' })) : graded;
 
 // ABEND: golden hour. Sun low, right of centre, warm highlights, violet-blue shadows.
 await render('abend', finalOrGraded('abend', async () => {
