@@ -23,6 +23,7 @@ check('Hints bell has a badge', (await page.locator('.topbar .badge').count()) =
 await page.mouse.move(960, 540); await page.mouse.wheel(0, 400); await page.waitForTimeout(600);
 check('Wheel on start dives into Heute', (await page.evaluate(() => location.hash)) === '#/heute');
 check('Heute ring sits inside the island', (await page.locator('.island--active .sundial-ring').count()) === 1);
+check('Sundial dial rotates with the time', (await page.locator('.sundial-dial').count()) === 1 && (await page.locator('.sundial-dial').evaluate((e) => getComputedStyle(e).transform)) !== 'none');
 for (const w of ['projekte', 'druck', 'material', 'wetter', 'archiv']) { await page.goto(`${base}/#/${w}`); await page.waitForTimeout(400); check(`World ${w} title`, (await page.locator('.world-title h1').count()) === 1); }
 await page.goto(`${base}/#/druck`); await page.waitForTimeout(500);
 check('Druck: Eingang shows imported print', (await page.getByText('Kabelclip_v2.gcode').count()) > 0);
@@ -84,6 +85,14 @@ const p3 = await ctx3.newPage(); await p3.goto(`${base}/#/heute`, { waitUntil: '
 const anim = await p3.evaluate(() => [...document.querySelectorAll('.island__body')].map((e) => getComputedStyle(e).animationName).filter((a) => a !== 'none'));
 check('Reduced motion disables float', anim.length === 0, anim.join(','));
 await ctx3.close();
+// ---- morning looks by real sunrise (clock pinned) ----
+for (const [iso, look] of [['2026-11-05T06:05:00+01:00', 'daemmerung'], ['2026-11-05T06:58:00+01:00', 'sonnenaufgang']]) {
+  const c = await browser.newContext(ctxOpts); const pg = await c.newPage();
+  await pg.clock.install({ time: new Date(iso) });
+  await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
+  check(`Look at ${iso.slice(11, 16)} is ${look}`, (await pg.locator(`.land img[src*="landschaft-${look}-"]`).count()) >= 1, await pg.locator('.land img').first().getAttribute('src') ?? '');
+  await c.close();
+}
 // ---- mobile companion (iPhone viewport) ----
 const ctxM = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Europe/Vienna', locale: 'de-AT' });
 const pm = await ctxM.newPage(); const errM = [];

@@ -38,3 +38,7 @@ for (const [name, src] of islands) {
   }
   console.log('island', name, meta.info.width, meta.info.height);
 }
+
+// sundial dial plate (top-down, alpha) -> 640 / 320 px, rotated by CSS on the Heute island
+for (const w of [640, 320]) await sharp('assets-src/sonnenuhr-scheibe.png').resize({ width: w, height: w, fit: 'fill' }).webp({ quality: 84 }).toFile(`${out}/sonnenuhr-scheibe-${w}.webp`);
+console.log('dial');
