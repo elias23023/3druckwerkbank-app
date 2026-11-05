@@ -41,7 +41,7 @@ export function SundialRing({ tilt = 62 }: { tilt?: number }) {
   const now = useNow(1000);
   const { sunrise, sunset, arcs, dots } = useRingData(now);
   const cosT = Math.cos((tilt * Math.PI) / 180);
-  const lab = (t: number) => { const a = ringAngle(t); return { left: `${50 + Math.cos(a) * 50 * 0.97}%`, top: `${50 + Math.sin(a) * 50 * 0.97 * cosT}%` }; };
+  const lab = (t: number) => { const a = ringAngle(t); return { left: `${50 + Math.cos(a) * 50 * 0.93}%`, top: `${50 + Math.sin(a) * 50 * 0.93 * cosT}%` }; };
   const h = now.getHours() + now.getMinutes() / 60;
   return (
     <div className="sundial-ring" data-testid="sundial-ring" style={{ ['--dial-rot' as string]: `${(h * 15).toFixed(2)}deg` }}>
