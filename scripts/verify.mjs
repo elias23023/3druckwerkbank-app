@@ -86,7 +86,7 @@ const anim = await p3.evaluate(() => [...document.querySelectorAll('.island__bod
 check('Reduced motion disables float', anim.length === 0, anim.join(','));
 await ctx3.close();
 // ---- morning looks by real sunrise (clock pinned) ----
-for (const [iso, look] of [['2026-11-05T06:05:00+01:00', 'daemmerung'], ['2026-11-05T06:58:00+01:00', 'sonnenaufgang']]) {
+for (const [iso, look] of [['2026-11-05T06:05:00+01:00', 'daemmerung'], ['2026-11-05T06:58:00+01:00', 'sonnenaufgang'], ['2026-11-05T08:30:00+01:00', 'morgen']]) {
   const c = await browser.newContext(ctxOpts); const pg = await c.newPage();
   await pg.clock.install({ time: new Date(iso) });
   await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);

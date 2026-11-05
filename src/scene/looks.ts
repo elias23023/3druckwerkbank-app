@@ -4,7 +4,7 @@ export const LOOKS: Look[] = ['daemmerung', 'sonnenaufgang', 'morgen', 'mittag',
 export const NIGHT_LOOKS = new Set<Look>(['blau', 'nacht']);
 export const DARK_LOOKS = new Set<Look>(['blau', 'nacht', 'sonnenuntergang', 'regen', 'daemmerung', 'sonnenaufgang']);
 /** Set to true once assets-src/landschaft-03-morgen.png exists and has been optimised. */
-export const HAS_MORGEN = false;
+export const HAS_MORGEN = true;
 
 export const LOOK_META: Record<Look, { sx: string; sy: string; glow: number; rays: number; sky: string; cloud: string; label: string }> = {
   daemmerung: { sx: '70%', sy: '46%', glow: .25, rays: 0, sky: 'linear-gradient(180deg,#0a1140 0%,#2a3a86 55%,#c98a6a 100%)', cloud: '170,180,220', label: 'Morgendämmerung' },

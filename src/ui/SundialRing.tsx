@@ -48,7 +48,7 @@ export function SundialRing({ tilt = 62 }: { tilt?: number }) {
       {/* Mask that cuts the painted gnomon blade out of the rotating dial so the blade stays fixed (box fractions, measured in the island image). */}
       <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden><defs><mask id="gnomonMask" maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox" x="0" y="0" width="1" height="1"><rect width="1" height="1" fill="#fff" /><polygon points="0.377,0.203 0.391,0.205 0.582,0.522 0.584,0.560 0.364,0.512 0.364,0.478" fill="#000" /></mask></defs></svg>
       <div className="sundial-dial-wrap"><div className="sundial-ring__tilt" style={{ transform: `perspective(1400px) rotateX(${tilt}deg)` }}><img className="sundial-dial" src="/img/sonnenuhr-scheibe-640.webp" alt="" draggable={false} /></div></div>
-      <div className="sundial-ring__tilt" style={{ transform: `perspective(1400px) rotateX(${tilt}deg)` }}><RingSvg now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} labels={false} inlay shadow /></div>
+      <div className="sundial-ring-wrap"><div className="sundial-ring__tilt" style={{ transform: `perspective(1400px) rotateX(${tilt}deg)` }}><RingSvg now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} labels={false} inlay shadow /></div></div>
       {[0, 6, 12, 18].map((t) => <span key={t} className="sundial-ring__h" style={lab(t)}>{String(t).padStart(2, '0')}</span>)}
     </div>
   );

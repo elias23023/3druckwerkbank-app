@@ -292,8 +292,8 @@ p { margin: 0; }
 /* Heute: ring on the platform */
 .sundial-ring { position: absolute; left: 21.4%; top: 23%; width: 38%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; }
 .sundial-ring__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; mix-blend-mode: normal; opacity: .95; }
-.sundial-dial-wrap, .sundial-ring > .sundial-ring__tilt { mask: url(#gnomonMask); -webkit-mask: url(#gnomonMask); }
-.sundial-dial-wrap { position: absolute; inset: 0; }
+/* masks sit on untransformed wrappers so the gnomon cut-out stays in screen space while the content inside is tilted */
+.sundial-dial-wrap, .sundial-ring-wrap { position: absolute; inset: 0; mask: url(#gnomonMask); -webkit-mask: url(#gnomonMask); }
 .sundial-dial-wrap .sundial-ring__tilt { opacity: 1; }
 .sundial-dial { position: absolute; left: 8.3%; top: 8.3%; width: 83.4%; height: 83.4%; display: block; transform: rotate(var(--dial-rot, 0deg)); transform-origin: 50% 50%; transition: transform 1s var(--ease); animation: dial-settle 1.6s var(--ease) both; filter: drop-shadow(0 1px 1px rgba(40,20,0,.35)); }
 @keyframes dial-settle { from { transform: rotate(calc(var(--dial-rot, 0deg) - 40deg)); } }
