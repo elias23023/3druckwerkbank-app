@@ -24,6 +24,7 @@ await page.mouse.move(960, 540); await page.mouse.wheel(0, 400); await page.wait
 check('Wheel on start dives into Heute', (await page.evaluate(() => location.hash)) === '#/heute');
 check('Heute ring sits inside the island', (await page.locator('.island--active .sundial-ring').count()) === 1);
 check('Sundial gnomon is the top layer', await page.evaluate(() => { const g = document.querySelector('.sundial-gnomon'); const r = document.querySelector('.sundial-ring-wrap'); return !!g && !!r && !!(r.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING) && g.complete && g.naturalWidth > 0; }));
+check('Sundial shadow layer sits between dial and ring', await page.evaluate(() => { const s = document.querySelector('.sundial-shadow-wrap'); const r = document.querySelector('.sundial-ring-wrap'); const d = document.querySelector('.sundial-dial-wrap'); return !!s && !!r && !!d && !!(d.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_FOLLOWING) && !!(s.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_FOLLOWING); }));
 check('Sundial dial rotates with the time', (await page.locator('.sundial-dial').count()) === 1 && (await page.locator('.sundial-dial').evaluate((e) => getComputedStyle(e).transform)) !== 'none');
 for (const w of ['projekte', 'druck', 'material', 'wetter', 'archiv']) { await page.goto(`${base}/#/${w}`); await page.waitForTimeout(400); check(`World ${w} title`, (await page.locator('.world-title h1').count()) === 1); }
 await page.goto(`${base}/#/druck`); await page.waitForTimeout(500);
@@ -93,6 +94,20 @@ for (const [iso, look] of [['2026-11-05T06:05:00+01:00', 'daemmerung'], ['2026-1
   await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
   check(`Look at ${iso.slice(11, 16)} is ${look}`, (await pg.locator(`.land img[src*="landschaft-${look}-"]`).count()) >= 1, await pg.locator('.land img').first().getAttribute('src') ?? '');
   await c.close();
+}
+// ---- sundial shadow follows the sun; lantern at night ----
+{
+  const lens = {};
+  for (const [iso, key] of [['2026-11-05T09:00:00+01:00', 'morgen'], ['2026-11-05T12:30:00+01:00', 'mittag'], ['2026-11-05T22:00:00+01:00', 'nacht']]) {
+    const c = await browser.newContext(ctxOpts); const pg = await c.newPage();
+    await pg.clock.install({ time: new Date(iso) });
+    await pg.goto(`${base}/#/heute`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(2500);
+    lens[key] = await pg.evaluate(() => { const g = document.querySelector('.sundial-shadow .shadow-core'); if (!g) return null; const pts = g.getAttribute('points').split(' ').map((p) => p.split(',').map(Number)); return { len: Math.max(...pts.map((p) => p[0])), lantern: !!document.querySelector('.sundial-shadow--lantern'), marker: document.querySelector('.ring-now')?.getAttribute('data-kind') }; });
+    await c.close();
+  }
+  check('Shadow longer at 09:00 than at 12:30', !!lens.morgen && !!lens.mittag && lens.morgen.len > lens.mittag.len, JSON.stringify(lens));
+  check('Sun marker by day, moon at night', lens.mittag?.marker === 'sonne' && lens.nacht?.marker === 'mond');
+  check('Lantern shadow at night', lens.nacht?.lantern === true && lens.mittag?.lantern === false);
 }
 // ---- mobile companion (iPhone viewport) ----
 const ctxM = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Europe/Vienna', locale: 'de-AT' });

@@ -293,14 +293,24 @@ p { margin: 0; }
 .sundial-ring { position: absolute; left: 21.4%; top: 23%; width: 38%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; }
 .sundial-ring__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; mix-blend-mode: normal; opacity: .95; }
 /* masks sit on untransformed wrappers so the gnomon cut-out stays in screen space while the content inside is tilted */
-.sundial-dial-wrap, .sundial-ring-wrap { position: absolute; inset: 0; }
+.sundial-dial-wrap, .sundial-ring-wrap, .sundial-shadow-wrap { position: absolute; inset: 0; }
+.sundial-shadow-wrap { z-index: 1; } .sundial-ring-wrap { z-index: 2; } .sundial-gnomon { z-index: 3; } .sundial-ring__h { z-index: 4; }
+.sundial-shadow-wrap .sundial-ring__tilt { opacity: 1; }
+.sundial-shadow { position: absolute; inset: 0; }
+.sundial-shadow .shadow-g { transform-origin: 0 0; transform-box: view-box; transition: transform 1.2s var(--ease), opacity 1.2s var(--ease); }
+.sundial-shadow--lantern .shadow-g { animation: lantern-flicker 2.8s ease-in-out infinite; }
+.sundial-shadow--lantern .lantern-pool { animation: lantern-pool 2.8s ease-in-out infinite; }
+@keyframes lantern-flicker { 0%, 100% { opacity: .8; } 35% { opacity: .7; } 60% { opacity: .85; } 80% { opacity: .74; } }
+@keyframes lantern-pool { 0%, 100% { opacity: .38; } 40% { opacity: .3; } 70% { opacity: .42; } }
+.ring-now__halo { transform-origin: center; transform-box: fill-box; animation: ring-pulse 2.6s ease-in-out infinite; }
+@keyframes ring-pulse { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.35); opacity: .45; } }
+:root[data-motion="reduziert"] .sundial-shadow .shadow-g, :root[data-motion="reduziert"] .ring-now__halo, :root[data-motion="reduziert"] .lantern-pool { animation: none; transition: none; }
 .sundial-gnomon { position: absolute; left: 37.9%; top: 21%; width: 23.3%; height: auto; display: block; filter: drop-shadow(1px 2px 2px rgba(40,20,0,.35)); }
 .sundial-dial-wrap .sundial-ring__tilt { opacity: 1; }
 .sundial-dial { position: absolute; left: 8.3%; top: 8.3%; width: 83.4%; height: 83.4%; display: block; transform: rotate(var(--dial-rot, 0deg)); transform-origin: 50% 50%; transition: transform 1s var(--ease); animation: dial-settle 1.6s var(--ease) both; filter: drop-shadow(0 1px 1px rgba(40,20,0,.35)); }
 @keyframes dial-settle { from { transform: rotate(calc(var(--dial-rot, 0deg) - 40deg)); } }
 :root[data-motion="reduziert"] .sundial-dial { animation: none; transition: none; }
-.sundial-ring__tilt .ring-shadow { mix-blend-mode: multiply; }
-.sundial-ring__h { position: absolute; transform: translate(-50%, -50%); font-size: clamp(8px, .62cqw, 11px); font-weight: 700; letter-spacing: .02em; color: rgba(255,246,222,.95); text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 6px rgba(0,0,0,.6); }
+.sundial-ring__h { position: absolute; transform: translate(-50%, -50%); font-size: clamp(8px, .62cqw, 11px); font-weight: 700; letter-spacing: .04em; color: #ffe7b3; text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 6px rgba(0,0,0,.6); }
 .heute-time { position: absolute; left: 30%; width: 40%; top: 10.5%; text-align: center; color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,.7); animation: rise var(--t-mid) var(--ease) both; pointer-events: none; }
 .heute-time b { font-size: clamp(34px, 3.6cqw, 58px); font-weight: 600; letter-spacing: -.03em; line-height: 1; display: block; }
 .heute-time span { font-size: clamp(12px, 1cqw, 15px); color: rgba(255,255,255,.85); display: block; margin-top: 4px; }
