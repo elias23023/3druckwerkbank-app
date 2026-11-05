@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Landscape, lookFor } from './Landscape';
+import { Landscape } from './Landscape';
+import { LOOK_META, NIGHT_LOOKS, type Look } from './looks';
 import { Clouds } from './Clouds';
 import { WeatherFx } from './WeatherFx';
 import type { DayPhase } from '../lib/time';
@@ -15,11 +16,11 @@ const TINTS: Record<WorldId | 'start', string> = {
   archiv: 'radial-gradient(70% 60% at 50% 60%, rgba(220,180,110,.55), transparent 70%)',
 };
 
-export function Stage({ phase, world, parallax, islands, children, weatherCode, parallaxStrength = 1 }: { phase: DayPhase; world: WorldId | 'start'; parallax: boolean; islands: ReactNode; children: ReactNode; weatherCode?: number; parallaxStrength?: number }) {
+export function Stage({ phase, look, world, parallax, islands, children, weatherCode, parallaxStrength = 1 }: { phase: DayPhase; look: Look; world: WorldId | 'start'; parallax: boolean; islands: ReactNode; children: ReactNode; weatherCode?: number; parallaxStrength?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const onReady = useCallback(() => setReady(true), []);
-  const look = lookFor(phase);
+  const m = LOOK_META[look]; const night = NIGHT_LOOKS.has(look);
   useEffect(() => {
     const el = ref.current; if (!el) return;
     if (!parallax) { el.style.setProperty('--px', '0'); el.style.setProperty('--py', '0'); return; }
@@ -32,13 +33,13 @@ export function Stage({ phase, world, parallax, islands, children, weatherCode, 
     return () => { window.removeEventListener('pointermove', move); if (raf) cancelAnimationFrame(raf); };
   }, [parallax, parallaxStrength]);
   return (
-    <div className="stage" ref={ref} data-scene-ready={ready ? 'true' : 'false'} data-phase={phase} data-look={look}>
+    <div className="stage" ref={ref} data-scene-ready={ready ? 'true' : 'false'} data-phase={phase} data-look={look} data-night={night ? 'true' : 'false'} style={{ ['--sx' as string]: m.sx, ['--sy' as string]: m.sy }}>
       <div className="stage__bg">
         <Landscape look={look} onReady={onReady} />
         <Clouds look={look} />
-        <div className="rays" style={{ opacity: look === 'nacht' ? 0.05 : look === 'tag' ? .12 : .2 }} />
+        <div className="rays" style={{ opacity: m.rays }} />
         <div className="tint" style={{ background: TINTS[world] }} />
-        <WeatherFx code={weatherCode} reduced={!parallax} />
+        <WeatherFx code={weatherCode} reduced={!parallax} look={look} />
       </div>
       <div className="frame"><div className="islands">{islands}</div></div>
       <div className="ground-mist" />

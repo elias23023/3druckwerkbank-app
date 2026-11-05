@@ -18,13 +18,7 @@ node scripts/verify.mjs   # Playwright-Prüfungen gegen den Preview-Server
 
 ## Bilder austauschen
 
-Der Hintergrund ist zurzeit die vorhandene Tageslandschaft, per `scripts/grade-landscape.mjs` auf Tag/Abend/Nacht umgefärbt. Sobald eigene Bilder im Referenzstil vorliegen:
-
-1. Landschaft als `assets-src/final-landschaft-abend.png` (Pflicht), optional `final-landschaft-tag.png` und `final-landschaft-nacht.png`. 16:9, mindestens 2048 px breit, Horizont etwa bei 40–45 % der Höhe, keine Inseln, kein Text.
-2. Inselmotive quadratisch mit transparentem Hintergrund als `assets-src/<name>.png` und in `scripts/optimize-images.mjs` in die Liste `islands` eintragen; in `src/scene/Island.tsx` (`ISLAND_META`) Breite/Höhe ergänzen und in `src/App.tsx` (`WORLD_IMAGE`) der Welt zuordnen.
-3. `node scripts/grade-landscape.mjs && node scripts/optimize-images.mjs`, dann Build und Deploy.
-
-Die 17 Originalbilder und der Gesamtplan liegen unter `reference/` (nicht im Build).
+Landschaften liegen als `assets-src/landschaft-NN-<name>.png` (16:9). Der Name bestimmt den Look: `mittag`, `nachmittag`, `goldene-stunde`, `sonnenuntergang`, `blaue-stunde`, `mondnacht`, `bedeckt`, `nebel`, `regen` (Zuordnung in `src/scene/looks.ts`). Inseln liegen als `assets-src/insel-<name>.png` mit Transparenz; neue KI-Bilder auf weißem Hintergrund zuerst mit `node scripts/cutout-islands.mjs <ordner>` freistellen, dann in `scripts/optimize-images.mjs` und `src/scene/Island.tsx` (`ISLAND_META`) eintragen. Danach `npm run images`, Build und Deploy.
 
 ## Abgleich mit dem Gesamtplan
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Stage } from './scene/Stage';
+import { sceneLook, DARK_LOOKS } from './scene/looks';
 import { Island } from './scene/Island';
 import { projectCarousel, projectInner, worldIslands, startIslands, type Placement } from './scene/worldLayouts';
 import { Start } from './worlds/Start';
@@ -54,10 +55,11 @@ export function App() {
   useEffect(() => { document.documentElement.dataset.motion = motionReduced ? 'reduziert' : 'voll'; }, [motionReduced]);
   const today = todayDaily(weather?.data, now);
   const phase = dayPhase(now, today?.sunrise, today?.sunset);
+  const look = sceneLook(now, today?.sunrise, today?.sunset, weather?.data.hourly.length ? weather.data.current.code : undefined);
   useEffect(() => {
-    const theme = settings.theme === 'auto' ? (phase === 'tag' || phase === 'morgen' ? 'hell' : 'dunkel') : settings.theme;
+    const theme = settings.theme === 'auto' ? (DARK_LOOKS.has(look) ? 'dunkel' : 'hell') : settings.theme;
     document.documentElement.dataset.theme = theme;
-  }, [settings.theme, phase]);
+  }, [settings.theme, look]);
 
   // weather fetch with 30 min cache
   useEffect(() => {
@@ -128,7 +130,7 @@ export function App() {
   });
 
   return (
-    <Stage phase={phase} world={route.world} parallax={!motionReduced && !coarse && !sheet && !mobile && (settings.parallax ?? 1) > 0} parallaxStrength={settings.parallax ?? 1} weatherCode={weather?.data.hourly.length ? weather.data.current.code : undefined} islands={islands}>
+    <Stage phase={phase} look={look} world={route.world} parallax={!motionReduced && !coarse && !sheet && !mobile && (settings.parallax ?? 1) > 0} parallaxStrength={settings.parallax ?? 1} weatherCode={weather?.data.hourly.length ? weather.data.current.code : undefined} islands={islands}>
       <div className="ui">
         <TopBar />
         {route.world === 'start' ? <Start /> : null}
