@@ -1,0 +1,45 @@
+/* Mobile companion: simple, one-hand, large touch targets. Own dark glass tokens for readability on any landscape. */
+.m-shell { position: fixed; inset: 0; display: flex; flex-direction: column; color: #f4f6fb; --glass-bg: rgba(14,22,38,.62); --glass-bg-strong: rgba(12,19,33,.86); --glass-border: rgba(255,255,255,.14); --text: #f4f6fb; --text-2: rgba(244,246,251,.74); --text-3: rgba(244,246,251,.5); }
+.m-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.m-bg img { width: 100%; height: 100%; object-fit: cover; object-position: 58% 40%; transition: opacity 2s var(--ease); }
+.m-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,12,24,.35) 0%, rgba(8,12,24,.15) 30%, rgba(8,12,24,.55) 70%, rgba(8,12,24,.85) 100%); }
+.m-head { position: relative; z-index: 2; display: flex; align-items: center; gap: 8px; padding: calc(10px + env(safe-area-inset-top)) 14px 8px; }
+.m-head .brand b { font-size: 14px; } .m-head .brand span { display: none; }
+.m-head .spacer { flex: 1; }
+.m-ico { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+.m-main { position: relative; z-index: 1; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 14px calc(84px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; scrollbar-width: none; }
+.m-main::-webkit-scrollbar { display: none; }
+.m-tabs { background: rgba(10,16,30,.92); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid rgba(255,255,255,.12); position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; padding: 6px 6px calc(8px + env(safe-area-inset-bottom)); border-radius: 18px 18px 0 0; }
+.m-tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 4px; font-size: 11px; color: var(--text-2); border-radius: 12px; min-height: 52px; }
+.m-tabs button.on { color: #cfeaff; background: rgba(124,198,255,.16); }
+.m-tabs .ico { width: 22px; height: 22px; }
+.m-card { padding: 14px; display: flex; flex-direction: column; gap: 10px; animation: rise var(--t-mid) var(--ease) both; }
+.m-card h3 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.m-card h3 .ico { width: 18px; height: 18px; color: var(--accent); }
+.m-card h3 .cnt { margin-left: auto; font-weight: 500; }
+.m-card h3 .btn--icon { color: var(--text-2); background: rgba(255,255,255,.08); padding: 0; width: 34px; height: 34px; }
+.m-card h3 .btn--icon svg { width: 18px; height: 18px; }
+.m-clock { padding: 18px 4px 8px; text-shadow: 0 2px 16px rgba(0,0,0,.6); }
+.m-clock b { font-size: 56px; font-weight: 600; letter-spacing: -.03em; line-height: 1; display: block; }
+.m-clock span { display: block; font-size: 14px; color: var(--text-2); margin-top: 4px; }
+.m-clock .q { font-size: 15px; color: #fff; margin-top: 10px; line-height: 1.3; }
+.m-row { display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-radius: 12px; background: rgba(255,255,255,.06); min-height: 52px; }
+.m-row--click { cursor: pointer; }
+.m-row--click:active { background: rgba(255,255,255,.14); }
+.m-row .thumb { width: 46px; height: 46px; border-radius: 12px; }
+.m-row .check { width: 26px; height: 26px; }
+.m-row .btn--icon { width: 36px; height: 36px; padding: 0; }
+.m-big { font-size: 28px; font-weight: 600; line-height: 1; }
+.m-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.m-stat { padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.06); display: flex; flex-direction: column; gap: 2px; }
+.m-stat b { font-size: 20px; } .m-stat span { font-size: 11px; color: var(--text-2); }
+.m-back { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-2); padding: 6px 0; }
+.m-hero { display: flex; gap: 12px; align-items: center; }
+.m-hero img { width: 96px; height: 96px; object-fit: contain; }
+.m-hero h2 { font-size: 22px; font-weight: 700; line-height: 1.1; }
+.m-ms { display: flex; flex-direction: column; gap: 6px; }
+.m-hours { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.m-hours > div { min-width: 52px; }
+.m-shell .input, .m-shell .select, .m-shell .textarea { font-size: 16px; padding: 10px 12px; }
+.m-shell .btn { padding: 10px 14px; font-size: 14px; }
+.m-shell .btn--sm { padding: 7px 11px; font-size: 13px; }
