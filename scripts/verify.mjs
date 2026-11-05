@@ -23,6 +23,7 @@ check('Hints bell has a badge', (await page.locator('.topbar .badge').count()) =
 await page.mouse.move(960, 540); await page.mouse.wheel(0, 400); await page.waitForTimeout(600);
 check('Wheel on start dives into Heute', (await page.evaluate(() => location.hash)) === '#/heute');
 check('Heute ring sits inside the island', (await page.locator('.island--active .sundial-ring').count()) === 1);
+check('Sundial gnomon is the top layer', await page.evaluate(() => { const g = document.querySelector('.sundial-gnomon'); const r = document.querySelector('.sundial-ring-wrap'); return !!g && !!r && !!(r.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING) && g.complete && g.naturalWidth > 0; }));
 check('Sundial dial rotates with the time', (await page.locator('.sundial-dial').count()) === 1 && (await page.locator('.sundial-dial').evaluate((e) => getComputedStyle(e).transform)) !== 'none');
 for (const w of ['projekte', 'druck', 'material', 'wetter', 'archiv']) { await page.goto(`${base}/#/${w}`); await page.waitForTimeout(400); check(`World ${w} title`, (await page.locator('.world-title h1').count()) === 1); }
 await page.goto(`${base}/#/druck`); await page.waitForTimeout(500);

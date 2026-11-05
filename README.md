@@ -18,7 +18,7 @@ Die räumliche Inselwelt ist für Desktop und Tablet quer gebaut. Unter 900 px B
 
 ## Sonnenuhr auf der Heute-Insel
 
-Die Scheibe (`assets-src/sonnenuhr-scheibe.png`, Draufsicht) wird per CSS in die Neigung der gemalten Uhr gekippt und dreht sich mit der Uhrzeit. Der gemalte Zeiger bleibt stehen: `public/img/zeiger-maske.png` spart seine Silhouette aus Scheibe und Ring aus. Nach einem Tausch des Heute-Inselbilds die Maske neu erzeugen: `node scripts/blade-mask.mjs` (Kantenlinien im Skript ggf. nachmessen).
+Die Scheibe (`assets-src/sonnenuhr-scheibe.png`, Draufsicht) wird per CSS in die Neigung der gemalten Uhr gekippt und dreht sich mit der Uhrzeit; der Tagesring liegt auf ihrem Rand. Der Zeiger ist ein eigenes Bild (`assets-src/zeiger-gnomon.png` → `src/assets/zeiger-gnomon.webp`, per Vite mit Hash im Dateinamen) und liegt als oberste Ebene darüber. Tausch: Datei ersetzen, `npm run images`, Position in `.sundial-gnomon` (global.css) prüfen.
 
 ## Deploy (Hostinger, statisch)
 

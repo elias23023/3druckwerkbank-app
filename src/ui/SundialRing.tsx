@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useNow, hourOf, sameDay } from '../lib/time';
 import { pvKw, todayDaily } from '../lib/weather';
 import { RingSvg, ringAngle, type RingArc, type RingDot } from './Tagesring';
+import zeigerUrl from '../assets/zeiger-gnomon.webp';
 
 const PRINTER_COLORS = ['#7cc6ff', '#c59bff', '#4ccf7a'];
 
@@ -34,8 +35,9 @@ export function useRingData(now: Date) {
 }
 
 /**
- * The Tagesring laid onto the sundial disc of the Heute island. Rendered as a child of the island, so it floats,
- * scales and parallaxes with the image. Disc centre measured in the island image: 38.7 % / 40.7 %, tilt ≈ 64°.
+ * Sundial on the Heute island: rotating dial plate (user image), the Tagesring on its rim and the user's gnomon on top.
+ * Rendered as a child of the island, so it floats, scales and parallaxes with the image. Disc centre measured in the
+ * island image: 38.7 % / 40.7 %, tilt ≈ 62°.
  */
 export function SundialRing({ tilt = 62 }: { tilt?: number }) {
   const now = useNow(1000);
@@ -45,9 +47,10 @@ export function SundialRing({ tilt = 62 }: { tilt?: number }) {
   const h = now.getHours() + now.getMinutes() / 60;
   return (
     <div className="sundial-ring" data-testid="sundial-ring" style={{ ['--dial-rot' as string]: `${(h * 15).toFixed(2)}deg` }}>
-      {/* The gnomon cut-out is a pixel mask (public/img/zeiger-maske.png, built by scripts/blade-mask.mjs) applied to the untilted wrappers. */}
       <div className="sundial-dial-wrap"><div className="sundial-ring__tilt" style={{ transform: `perspective(1400px) rotateX(${tilt}deg)` }}><img className="sundial-dial" src="/img/sonnenuhr-scheibe-640.webp" alt="" draggable={false} /></div></div>
       <div className="sundial-ring-wrap"><div className="sundial-ring__tilt" style={{ transform: `perspective(1400px) rotateX(${tilt}deg)` }}><RingSvg now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} labels={false} inlay shadow /></div></div>
+      {/* The user's gnomon as the top layer: dial, ring and shadow pass behind it; it also covers the painted blade of the island. */}
+      <img className="sundial-gnomon" src={zeigerUrl} alt="" draggable={false} />
       {[0, 6, 12, 18].map((t) => <span key={t} className="sundial-ring__h" style={lab(t)}>{String(t).padStart(2, '0')}</span>)}
     </div>
   );

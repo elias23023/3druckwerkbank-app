@@ -3,7 +3,7 @@
 import sharp from 'sharp';
 import { readdirSync } from 'node:fs';
 const src = process.argv[2];
-const names = readdirSync(src).filter((f) => /^(insel|sonnenuhr)-.*\.png$/.test(f));
+const names = readdirSync(src).filter((f) => /^(insel|sonnenuhr|zeiger)-.*\.png$/.test(f));
 for (const f of names) {
   const img = sharp(`${src}/${f}`).ensureAlpha();
   const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
