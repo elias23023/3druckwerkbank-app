@@ -20,6 +20,7 @@ import { Material } from './worlds/Material';
 import { Wetter } from './worlds/Wetter';
 import { Archiv } from './worlds/Archiv';
 import { Mobile } from './mobile/Mobile';
+import { SundialRing } from './ui/SundialRing';
 import type { LibraryIsland, WorldId } from './types';
 
 const STAGE_COLOR: Record<string, string> = { Idee: '#c59bff', Konstruktion: '#7cc6ff', Planung: '#7cc6ff', Vorbereitung: '#ffe29a', Druck: '#4ccf7a', Nacharbeit: '#ffb547', 'Qualität': '#ffb547', Abgeschlossen: '#8a8f96' };
@@ -117,7 +118,7 @@ export function App() {
       return (
         <Island key={pl.key} image={WORLD_IMAGE[w]} x={pl.x} y={pl.y} size={hideMobile ? 0 : mobile ? Math.min(pl.size, 44) : pl.size} depth={pl.depth} active={isActive} opacity={hideMobile ? 0 : pl.opacity}
           label={isActive ? undefined : pl.label} sub={isStart ? pl.sub : undefined} labelSize={pl.labelSize ?? 'big'} cta={isStart ? 'Öffnen' : undefined} eager={isActive || isStart} title={`Zur Welt ${pl.label ?? w}`} filter={w === 'projekte' ? 'hue-rotate(-8deg)' : undefined}
-          onClick={isActive ? undefined : () => navigate({ world: w })} />
+          onClick={isActive ? undefined : () => navigate({ world: w })}>{isActive && w === 'heute' ? <SundialRing /> : null}</Island>
       );
     }
     const p = projects.find((x) => x.id === pl.projectId)!;

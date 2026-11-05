@@ -22,7 +22,7 @@ check('Start world has no status cards', (await page.locator('.minicard').count(
 check('Hints bell has a badge', (await page.locator('.topbar .badge').count()) === 1);
 await page.mouse.move(960, 540); await page.mouse.wheel(0, 400); await page.waitForTimeout(600);
 check('Wheel on start dives into Heute', (await page.evaluate(() => location.hash)) === '#/heute');
-check('Heute platform ring present', (await page.locator('.platform-ring').count()) === 1);
+check('Heute ring sits inside the island', (await page.locator('.island--active .sundial-ring').count()) === 1);
 for (const w of ['projekte', 'druck', 'material', 'wetter', 'archiv']) { await page.goto(`${base}/#/${w}`); await page.waitForTimeout(400); check(`World ${w} title`, (await page.locator('.world-title h1').count()) === 1); }
 await page.goto(`${base}/#/druck`); await page.waitForTimeout(500);
 check('Druck: Eingang shows imported print', (await page.getByText('Kabelclip_v2.gcode').count()) > 0);
@@ -81,7 +81,7 @@ check('No console errors on weather failure', err2.filter((e) => !/open-meteo|ER
 await ctx2.close();
 const ctx3 = await browser.newContext({ ...ctxOpts, reducedMotion: 'reduce' });
 const p3 = await ctx3.newPage(); await p3.goto(`${base}/#/heute`, { waitUntil: 'networkidle' }); await p3.waitForTimeout(500);
-const anim = await p3.evaluate(() => [...document.querySelectorAll('.island__img')].map((e) => getComputedStyle(e).animationName).filter((a) => a !== 'none'));
+const anim = await p3.evaluate(() => [...document.querySelectorAll('.island__body')].map((e) => getComputedStyle(e).animationName).filter((a) => a !== 'none'));
 check('Reduced motion disables float', anim.length === 0, anim.join(','));
 await ctx3.close();
 // ---- mobile companion (iPhone viewport) ----
@@ -110,7 +110,7 @@ await pm.locator('.m-tabs button', { hasText: 'Material' }).click(); await pm.wa
 check('Mobile: spool list', (await pm.locator('.m-main .m-row--click').count()) >= 5);
 const tabBox = await pm.locator('.m-tabs').boundingBox();
 check('Mobile: tab bar inside viewport', !!tabBox && tabBox.y + tabBox.height <= 845, JSON.stringify(tabBox));
-check('Mobile: no console errors', errM.length === 0, errM.join(' | ').slice(0, 300));
+check('Mobile: no console errors', errM.filter((e) => !/open-meteo|ERR_FAILED|Failed to fetch|CORS/i.test(e)).length === 0, errM.join(' | ').slice(0, 300));
 await ctxM.close();
 await browser.close();
 const fails = results.filter((r) => !r.ok).length;

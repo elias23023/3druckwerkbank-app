@@ -29,7 +29,7 @@ export function Island({ image, x, y, size, depth, active, opacity, label, sub, 
   return (
     <div className={`island${active ? ' island--active' : ''}${onClick ? ' island--click' : ''}${halo ? ' island--halo' : ''}${spotlight ? ' island--spot' : ''}`} style={style} onClick={onClick} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : -1} aria-label={title ?? label}
       onKeyDown={(e) => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}>
-      <div style={{ position: 'relative', width: '100%', aspectRatio: `${meta.w} / ${meta.h}` }}>
+      <div className="island__body" style={{ position: 'relative', width: '100%', aspectRatio: `${meta.w} / ${meta.h}` }}>
         <img className="island__img" src={src} alt="" width={meta.w} height={meta.h} loading={eager ? 'eager' : 'lazy'} decoding="async" draggable={false} />
         {children ? <div className="island__props" style={image === 'rahmen' ? { left: '14%', right: '14%', top: '-52%', bottom: '55%' } : undefined}>{children}</div> : null}
       </div>

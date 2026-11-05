@@ -1,23 +1,19 @@
 import { useMemo } from 'react';
 import { useStore, printProgress, printRemainingMin, availableGrams } from '../store';
 import { useShallow } from 'zustand/react/shallow';
-import { useNow, greeting, quoteOfDay, hourOf, sameDay, type DayPhase } from '../lib/time';
+import { useNow, greeting, quoteOfDay, sameDay, type DayPhase } from '../lib/time';
 import { fmtDuration, fmtNum, fmtTime, relTime, fmtGrams } from '../lib/format';
-import { bestPvWindow, pvKw, todayDaily, wmo, dryWindow } from '../lib/weather';
+import { bestPvWindow, todayDaily, wmo, dryWindow } from '../lib/weather';
 import { Panel, Check, Progress } from '../ui/Glass';
-import { PlatformRing, Tagesring, type RingArc, type RingDot } from '../ui/Tagesring';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import { ICal, ICheck, IEnergy, IPlay, IPrinter, ISun, IWind, IDrop, ISkip, ISpool, IWrench, IClock, ICube } from '../ui/Icons';
 import { navigate } from '../router';
-
-const PRINTER_COLORS = ['#7cc6ff', '#c59bff', '#4ccf7a'];
 
 export function Heute({ phase }: { phase: DayPhase }) {
   const now = useNow(1000);
   const { tasks, prints, projects, devices, appointments, settings, weather, spools } = useStore(useShallow((s) => ({ tasks: s.tasks, prints: s.prints, projects: s.projects, devices: s.devices, appointments: s.appointments, settings: s.settings, weather: s.weather, spools: s.spools })));
   const toggleTask = useStore((s) => s.toggleTask); const skipTask = useStore((s) => s.skipTask); const startNextPrint = useStore((s) => s.startNextPrint); const openSheet = useStore((s) => s.openSheet); const toggleMaintenance = useStore((s) => s.toggleMaintenance);
   const today = todayDaily(weather?.data, now);
-  const sunrise = today ? hourOf(today.sunrise) : undefined; const sunset = today ? hourOf(today.sunset) : undefined;
   const open = tasks.filter((t) => !t.done && !t.skipped).sort((a, b) => a.order - b.order);
   const running = prints.filter((p) => p.status === 'läuft');
   const queued = prints.filter((p) => p.status === 'wartend').sort((a, b) => a.queueOrder - b.queueOrder);
@@ -26,20 +22,6 @@ export function Heute({ phase }: { phase: DayPhase }) {
 
   const pv = useMemo(() => (weather?.data.hourly.length ? bestPvWindow(weather.data.hourly, settings.pvKwp, 3, now) : null), [weather, settings.pvKwp, now]);
   const dry = useMemo(() => (weather?.data.hourly.length ? dryWindow(weather.data.hourly, 3, now) : null), [weather, now]);
-  const pvHoursToday = useMemo(() => (weather?.data.hourly ?? []).filter((h) => sameDay(new Date(h.time), now) && pvKw(h.ghi, settings.pvKwp) > settings.pvKwp * 0.3), [weather, settings.pvKwp, now]);
-
-  const arcs: RingArc[] = [];
-  if (pvHoursToday.length) arcs.push({ from: hourOf(pvHoursToday[0].time), to: hourOf(pvHoursToday[pvHoursToday.length - 1].time) + 1, color: 'rgba(255,214,110,.8)', title: 'Solarstrom-Fenster (Schätzung)', r: 70 });
-  prints.forEach((p) => {
-    const pi = Math.max(0, printers.findIndex((d) => d.id === p.printerId));
-    if (p.status === 'läuft' && p.startedAt) { const s = hourOf(p.startedAt); arcs.push({ from: s, to: s + p.estimatedMinutes / 60, color: PRINTER_COLORS[pi % 3], title: `${p.name} (läuft)`, r: 62 - pi * 7 }); }
-  });
-  let cursor = running[0]?.startedAt ? hourOf(running[0].startedAt) + running[0].estimatedMinutes / 60 : now.getHours() + now.getMinutes() / 60;
-  queued.slice(0, 2).forEach((p) => { const pi = Math.max(0, printers.findIndex((d) => d.id === p.printerId)); arcs.push({ from: cursor, to: cursor + p.estimatedMinutes / 60, color: PRINTER_COLORS[pi % 3] + '88', title: `${p.name} (geplant)`, r: 62 - pi * 7 }); cursor += p.estimatedMinutes / 60; });
-  const dots: RingDot[] = [];
-  tasks.filter((t) => t.due && sameDay(new Date(t.due), now)).forEach((t) => dots.push({ hour: hourOf(t.due!), color: t.kind === 'wartung' ? '#ffb547' : '#4ccf7a', title: t.title, done: t.done }));
-  appointments.filter((a) => sameDay(new Date(a.at), now)).forEach((a) => dots.push({ hour: hourOf(a.at), color: '#c59bff', title: a.title }));
-
   const cur = weather?.data.hourly.length ? weather.data.current : undefined;
   const nextHours = (weather?.data.hourly ?? []).filter((h) => new Date(h.time).getTime() >= now.getTime() - 3600_000).slice(0, 6);
   const rainSoon = nextHours.find((h) => h.precipProb >= 50);
@@ -58,9 +40,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
       </div>
 
       <div className="heute-time"><b>{fmtTime(now)}</b><span>{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length} Druck{running.length === 1 ? '' : 'e'} läuft</span></div>
-      <PlatformRing now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} tilt={68} />
       <div className="ring-legend"><span><i className="dot" style={{ background: '#ffd36e' }} />Tageslicht · PV</span><span><i className="dot" style={{ background: '#7cc6ff' }} />Drucke</span><span><i className="dot" style={{ background: '#4ccf7a' }} />Aufgaben</span><span><i className="dot" style={{ background: '#c59bff' }} />Termine</span><span><i className="dot" style={{ background: '#ffb547' }} />Wartung</span></div>
-      <div className="mobile-only" style={{ margin: '0 auto' }}><Tagesring now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} size={280} centre={<><b>{fmtTime(now)}</b><span>{open.length} offen · {running.length} Druck</span></>} /></div>
 
       <Panel title="Aktive Drucke" icon={<IPrinter />} right={<span className="pill xs">{running.length}</span>} style={{ left: '3.2%', top: '29%', width: '23%' }} delay={60}
         foot={<>{printers.map((d) => <button key={d.id} className="btn btn--sm" disabled={prints.some((p) => p.printerId === d.id && p.status === 'läuft') || !queued.some((p) => p.printerId === d.id)} onClick={() => startNextPrint(d.id)}><IPlay width={12} height={12} /> {d.name}</button>)}<button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={() => navigate({ world: 'druck' })}>Alle</button></>}>

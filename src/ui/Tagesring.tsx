@@ -15,7 +15,7 @@ function arcPath(from: number, to: number, r: number) {
 }
 
 /** Flat ring graphic (no text). Used inside a perspective container on the Heute island, and plain on mobile. */
-export function RingSvg({ now, sunrise, sunset, arcs, dots, labels = true, inlay = false }: { now: Date; sunrise?: number; sunset?: number; arcs: RingArc[]; dots: RingDot[]; labels?: boolean; inlay?: boolean }) {
+export function RingSvg({ now, sunrise, sunset, arcs, dots, labels = true, inlay = false, shadow = false }: { now: Date; sunrise?: number; sunset?: number; arcs: RingArc[]; dots: RingDot[]; labels?: boolean; inlay?: boolean; shadow?: boolean }) {
   const h = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
   const [nx, ny] = pt(h, 86);
   const sw = inlay ? 4 : 9;
@@ -25,6 +25,7 @@ export function RingSvg({ now, sunrise, sunset, arcs, dots, labels = true, inlay
         <linearGradient id="dayG" x1="0" x2="1"><stop offset="0" stopColor="#ffb14d" /><stop offset=".5" stopColor="#ffe29a" /><stop offset="1" stopColor="#ff9a5c" /></linearGradient>
         <linearGradient id="nightG" x1="0" x2="1"><stop offset="0" stopColor="#4a7fe0" /><stop offset="1" stopColor="#9fd4ff" /></linearGradient>
         <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+        <filter id="ringBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.4" /></filter>
       </defs>
       {inlay ? <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(20,12,4,.35)" strokeWidth="7" /> : <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(10,16,30,.55)" strokeWidth="14" />}
       <circle cx="100" cy="100" r="86" fill="none" stroke="url(#nightG)" strokeWidth={sw} opacity={inlay ? .5 : .55} />
@@ -33,6 +34,7 @@ export function RingSvg({ now, sunrise, sunset, arcs, dots, labels = true, inlay
       {labels ? [0, 6, 12, 18].map((t) => { const [x, y] = pt(t, 66); return <text key={t} x={x} y={y + 3} fontSize="8" textAnchor="middle" fill="rgba(255,255,255,.8)" fontWeight="600">{String(t).padStart(2, '0')}</text>; }) : null}
       {arcs.map((a, i) => <path key={i} d={arcPath(a.from, a.to, inlay ? 70 - (62 - (a.r ?? 62)) * 0.6 : a.r ?? 62)} fill="none" stroke={a.color} strokeWidth={inlay ? 3.5 : 6} strokeLinecap="round" opacity=".95"><title>{a.title}</title></path>)}
       {dots.map((d, i) => { const [x, y] = pt(d.hour, inlay ? 58 : 52); return <g key={i}><circle cx={x} cy={y} r={inlay ? 3 : 3.8} fill={d.done ? 'rgba(255,255,255,.3)' : d.color} stroke="rgba(0,0,0,.4)" strokeWidth=".8" /><title>{d.title}</title></g>; })}
+      {shadow && sunrise !== undefined && sunset !== undefined && h >= sunrise && h <= sunset ? (() => { const a = ringAngle(h); const px = -Math.sin(a), py = Math.cos(a); const len = 80; const tx = 100 + Math.cos(a) * len, ty = 100 + Math.sin(a) * len; const w0 = 5, w1 = 1.2; return <polygon className="ring-shadow" points={`${100 + px * w0},${100 + py * w0} ${tx + px * w1},${ty + py * w1} ${tx - px * w1},${ty - py * w1} ${100 - px * w0},${100 - py * w0}`} fill="rgba(40,22,6,.55)" filter="url(#ringBlur)" />; })() : null}
       {inlay ? null : <line x1="100" y1="100" x2={nx} y2={ny} stroke="rgba(255,255,255,.7)" strokeWidth="1.2" />}
       <circle cx={nx} cy={ny} r={inlay ? 4 : 5} fill="#fff" filter="url(#ringGlow)" />
       {inlay ? null : <circle cx="100" cy="100" r="2.5" fill="rgba(255,255,255,.8)" />}
@@ -52,13 +54,3 @@ export function Tagesring(props: { now: Date; sunrise?: number; sunset?: number;
 }
 
 /** Perspective ring that lies on the island platform. `rx`/`ry` in cqw give the ellipse used for upright labels. */
-export function PlatformRing({ now, sunrise, sunset, arcs, dots, tilt = 70 }: { now: Date; sunrise?: number; sunset?: number; arcs: RingArc[]; dots: RingDot[]; tilt?: number }) {
-  const cosT = Math.cos((tilt * Math.PI) / 180);
-  const lab = (t: number) => { const a = ringAngle(t); return { left: `${50 + Math.cos(a) * 50 * 0.98}%`, top: `${50 + Math.sin(a) * 50 * 0.98 * cosT}%` }; };
-  return (
-    <div className="platform-ring">
-      <div className="platform-ring__tilt" style={{ transform: `perspective(1400px) rotateX(${tilt}deg)` }}><RingSvg now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} labels={false} inlay /></div>
-      {[0, 6, 12, 18].map((t) => <span key={t} className="platform-ring__h" style={lab(t)}>{String(t).padStart(2, '0')}:00</span>)}
-    </div>
-  );
-}
