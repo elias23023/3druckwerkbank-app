@@ -325,9 +325,9 @@ p { margin: 0; }
   .hand { display: none; }
 }
 /* Heute: ring on the platform */
-.platform-ring { position: absolute; left: calc(49.3% - 10.5cqw); top: calc(54% - 12cqw); width: 21cqw; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; }
-.platform-ring__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.45)); }
-.platform-ring__h { position: absolute; transform: translate(-50%, -50%); font-size: clamp(11px, .95cqw, 15px); font-weight: 600; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.8); background: rgba(10,16,30,.45); padding: 2px 7px; border-radius: 999px; backdrop-filter: blur(6px); }
+.platform-ring { position: absolute; left: calc(51.2% - 10.2cqw); top: calc(50.9% - 10.2cqw); width: 20.4cqw; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; }
+.platform-ring__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; mix-blend-mode: screen; opacity: .92; }
+.platform-ring__h { position: absolute; transform: translate(-50%, -50%); font-size: clamp(9px, .72cqw, 12px); font-weight: 600; letter-spacing: .02em; color: rgba(255,248,230,.95); text-shadow: 0 1px 4px rgba(0,0,0,.9), 0 0 8px rgba(0,0,0,.6); }
 .heute-time { position: absolute; left: 30%; width: 40%; top: 10.5%; text-align: center; color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,.7); animation: rise var(--t-mid) var(--ease) both; pointer-events: none; }
 .heute-time b { font-size: clamp(34px, 3.6cqw, 58px); font-weight: 600; letter-spacing: -.03em; line-height: 1; display: block; }
 .heute-time span { font-size: clamp(12px, 1cqw, 15px); color: rgba(255,255,255,.85); display: block; margin-top: 4px; }
