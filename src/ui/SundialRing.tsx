@@ -45,8 +45,7 @@ export function SundialRing({ tilt = 62 }: { tilt?: number }) {
   const h = now.getHours() + now.getMinutes() / 60;
   return (
     <div className="sundial-ring" data-testid="sundial-ring" style={{ ['--dial-rot' as string]: `${(h * 15).toFixed(2)}deg` }}>
-      {/* Mask that cuts the painted gnomon blade out of the rotating dial so the blade stays fixed (box fractions, measured in the island image). */}
-      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden><defs><mask id="gnomonMask" maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox" x="0" y="0" width="1" height="1"><rect width="1" height="1" fill="#fff" /><polygon points="0.388,0.220 0.400,0.222 0.463,0.342 0.524,0.444 0.575,0.526 0.597,0.541 0.590,0.556 0.388,0.492 0.386,0.478 0.400,0.461 0.412,0.424 0.415,0.395 0.408,0.347 0.398,0.298 0.388,0.254" fill="#000" /></mask></defs></svg>
+      {/* The gnomon cut-out is a pixel mask (public/img/zeiger-maske.png, built by scripts/blade-mask.mjs) applied to the untilted wrappers. */}
       <div className="sundial-dial-wrap"><div className="sundial-ring__tilt" style={{ transform: `perspective(1400px) rotateX(${tilt}deg)` }}><img className="sundial-dial" src="/img/sonnenuhr-scheibe-640.webp" alt="" draggable={false} /></div></div>
       <div className="sundial-ring-wrap"><div className="sundial-ring__tilt" style={{ transform: `perspective(1400px) rotateX(${tilt}deg)` }}><RingSvg now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} labels={false} inlay shadow /></div></div>
       {[0, 6, 12, 18].map((t) => <span key={t} className="sundial-ring__h" style={lab(t)}>{String(t).padStart(2, '0')}</span>)}
