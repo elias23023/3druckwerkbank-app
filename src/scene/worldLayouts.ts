@@ -19,13 +19,20 @@ export function startIslands(): Placement[] {
 
 const RING: [number, number, number, number][] = [[12, 47, 16, 0.5], [88, 47, 16, 0.5], [29, 20, 12.5, 0.66], [71, 20, 12.5, 0.66], [50, 13, 10.5, 0.78]];
 
-export function worldIslands(active: WorldId, centre: [number, number, number] = [50, 54, 34]): Placement[] {
+/** Per-world overrides so neighbour islands stay visible beside that world's panels (side columns start lower there). */
+const HIGH_RING: typeof RING = [[12, 28, 14, 0.5], [88, 28, 14, 0.5], [30, 13, 12, 0.66], [70, 13, 12, 0.66], [50, 8, 10, 0.78]];
+const RING_BY_WORLD: Partial<Record<WorldId, typeof RING>> = { material: HIGH_RING, wetter: HIGH_RING, archiv: HIGH_RING };
+const CENTRE_BY_WORLD: Partial<Record<WorldId, [number, number, number]>> = { material: [50, 48, 34], wetter: [50, 48, 34], archiv: [50, 48, 34] };
+
+export function worldIslands(active: WorldId, centre?: [number, number, number]): Placement[] {
   const out: Placement[] = [];
+  const c = centre ?? CENTRE_BY_WORLD[active] ?? [50, 54, 34];
+  const ring = RING_BY_WORLD[active] ?? RING;
   if (active === 'druck') out.push({ key: 'd-p1s', x: 29, y: 42, size: 11, depth: 0.3, label: 'P1S', labelSize: 'small' });
   let slot = 0;
   for (const w of ORDER) {
-    if (w === active) out.push({ key: `w-${w}`, x: centre[0], y: centre[1], size: centre[2], depth: 0, world: w });
-    else { const [x, y, size, depth] = RING[slot++]; out.push({ key: `w-${w}`, x, y, size, depth, world: w, label: LABELS[w][0], labelSize: 'small' }); }
+    if (w === active) out.push({ key: `w-${w}`, x: c[0], y: c[1], size: c[2], depth: 0, world: w });
+    else { const [x, y, size, depth] = ring[slot++]; out.push({ key: `w-${w}`, x, y, size, depth, world: w, label: LABELS[w][0], labelSize: 'small' }); }
   }
   return out;
 }

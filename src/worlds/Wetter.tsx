@@ -43,7 +43,7 @@ export function Wetter() {
         </>
       ) : null}
 
-      <Panel title="Aktuell" icon={<ISun />} style={{ left: '3.2%', top: '24%', width: '22%' }} delay={60}
+      <Panel title="Aktuell" icon={<ISun />} style={{ left: '3.2%', top: '41%', width: '22%' }} delay={60}
         foot={<><span className="xs faint">Quelle: Open-Meteo{weather ? ` · ${relTime(weather.fetchedAt, now.getTime())}` : ''}</span><button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={refresh} title="Aktualisieren"><IRefresh width={13} height={13} /></button></>}>
         {cur ? (
           <>
@@ -54,7 +54,7 @@ export function Wetter() {
         ) : <p className="muted small">{weather?.error ? `Wetter nicht verfügbar (${weather.error}).` : 'Wetter wird geladen …'}</p>}
       </Panel>
 
-      <Panel title="Tageslicht" icon={<IClock />} style={{ left: '3.2%', top: '53%', width: '22%' }} delay={120}>
+      <Panel title="Tageslicht" icon={<IClock />} style={{ left: '3.2%', top: '59%', width: '22%' }} delay={120}>
         {today ? (
           <>
             <svg className="sunarc" viewBox="0 0 200 70">
@@ -86,13 +86,13 @@ export function Wetter() {
       <Panel title={`Jahreszeit · ${SEASON_META[resolveSeason(settings.season, now)].label}`} icon={<ISun />} style={{ left: '3.2%', bottom: '2.5%', width: '22%' }} delay={160} right={<span className="xs faint">noch {daysUntilNextSeason(now)} Tage</span>}>
         <div className="col" style={{ gap: 6 }}>{SEASON_META[resolveSeason(settings.season, now)].tips.map((t) => <span key={t} className="small">• {t}</span>)}</div>
       </Panel>
-      <Panel title="7 Tage" icon={<ICal />} style={{ right: '3.2%', top: '24%', width: '24%' }} delay={140}>
+      <Panel title="7 Tage" icon={<ICal />} style={{ right: '3.2%', top: '41%', width: '24%' }} delay={140}>
         <div className="days">
           {(d?.daily ?? []).map((day, i) => <div key={day.date}><span className="muted">{i === 0 ? 'Heute' : fmtDayShort(day.date)}</span><WeatherIcon code={day.code} size={18} /><span className="xs muted ellipsis">{wmo(day.code).label}</span><span><b>{fmtNum(day.tmax)}°</b> <span className="muted">{fmtNum(day.tmin)}°</span></span><span className="xs muted" style={{ textAlign: 'right' }}>{fmtNum(day.precipSum, 1)} mm</span></div>)}
         </div>
       </Panel>
 
-      <Panel title="Beste Stunden & Zeitfenster" icon={<IEnergy />} right={<div className="tabs" style={{ padding: 2 }}><button className={sortBy === 'pv' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setSortBy('pv')}>nach PV</button><button className={sortBy === 'zeit' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setSortBy('zeit')}>nach Zeit</button></div>} style={{ right: '3.2%', top: '53%', width: '24%', maxHeight: '36%' }} delay={200}>
+      <Panel title="Beste Stunden & Zeitfenster" icon={<IEnergy />} right={<div className="tabs" style={{ padding: 2 }}><button className={sortBy === 'pv' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setSortBy('pv')}>nach PV</button><button className={sortBy === 'zeit' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setSortBy('zeit')}>nach Zeit</button></div>} style={{ right: '3.2%', top: '69%', width: '24%', maxHeight: '28%' }} delay={200}>
         {best.length ? <div className="pills">{best.map((h) => <span key={h.time} className={`pill xs ${h.q === 'sehr gut' ? 'pill--ok' : h.q === 'gut' ? 'pill--acc' : ''}`} title={h.q}>{fmtDayShort(h.time)} {fmtTime(h.time)} · {fmtNum(h.kw, 1)} kW</span>)}</div> : <p className="small muted">Keine geeigneten Stunden (≥ 0,5 kW, ≤ 60 % Regen) in 48 h.</p>}
         {pv ? <div className="col" style={{ gap: 2 }}><b className="small">Druck mit Solarstrom</b><span className="small">{fmtTime(pv.start)}–{fmtTime(new Date(new Date(pv.end).getTime() + 3600_000))} Uhr ({fmtDayShort(pv.start)}), ≈ {fmtNum(pv.kwh, 1)} kWh</span><span className="xs muted">für {queued[0] ? `„${queued[0].name}“ (${fmtDuration(queued[0].estimatedMinutes)})` : `einen ${dur}-h-Druck`}, gesamte Druckdauer berücksichtigt</span></div> : null}
         {dry ? <div className="col" style={{ gap: 2 }}><b className="small">Trocken & windstill für Außenarbeit</b><span className="small">{fmtDayShort(dry.start)} {fmtTime(dry.start)}–{fmtTime(new Date(new Date(dry.end).getTime() + 3600_000))} Uhr</span></div> : null}

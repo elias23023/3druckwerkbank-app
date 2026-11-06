@@ -34,7 +34,7 @@ export function Material() {
     <>
       <div className="world-title"><h1>Material</h1><p>Filamente. Werkstoffe. Möglichkeiten.</p></div>
 
-      <Panel title="Materialbestand" icon={<ILayers />} style={{ left: '3.2%', top: '24%', width: '22%' }} delay={60}>
+      <Panel title="Materialbestand" icon={<ILayers />} style={{ left: '3.2%', top: '44%', width: '22%' }} delay={60}>
         <div className="donut">
           <svg width="88" height="88" viewBox="0 0 100 100">
             {byMat.map((x) => { const f = x.g / total; const r = 40, C = 2 * Math.PI * r; const el = <circle key={x.m} cx="50" cy="50" r={r} fill="none" stroke={MCOL[x.m] ?? '#aaa'} strokeWidth="12" strokeDasharray={`${C * f} ${C}`} strokeDashoffset={-C * acc} transform="rotate(-90 50 50)" />; acc += f; return el; })}
@@ -45,7 +45,7 @@ export function Material() {
         <div className="grid2"><Stat value={`${fmtNum(totalKg, 1)} kg`} label="vorhanden" /><Stat value={`${fmtNum(spools.reduce((a, s) => a + s.reservedGrams, 0))} g`} label="reserviert" /></div>
       </Panel>
 
-      <Panel title="Top Materialien" icon={<IStar />} style={{ left: '3.2%', top: '56%', width: '22%' }} delay={120}>
+      <Panel title="Top Materialien" icon={<IStar />} style={{ left: '3.2%', top: '65%', width: '22%' }} delay={120}>
         {top.map((t) => <div key={t.m} className="row small"><span className="dot" style={{ background: MCOL[t.m] ?? '#aaa' }} /><b style={{ width: 44 }}>{t.m}</b><span className="muted grow">{fmtGrams(t.used)} verdruckt · {t.projects} Projekte</span>{settings.preferredMaterials?.includes(t.m) ? <span className="pill xs pill--acc">bevorzugt</span> : null}</div>)}
         <div className="row" style={{ gap: 6, marginTop: 4 }}><button className="btn btn--sm" onClick={() => openSheet({ kind: 'spule' })}><IPlus width={12} height={12} /> Neue Rolle</button><button className="btn btn--sm btn--ghost" onClick={() => setSort('label')}>Lagerorte</button></div>
       </Panel>
@@ -67,7 +67,7 @@ export function Material() {
         </div>
       </Panel>
 
-      <Panel title="Eigenschaften vergleichen" icon={<IList />} right={<div className="tabs" style={{ padding: 2 }}><button className={cmpTab === 'material' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setCmpTab('material')}>Materialien</button><button className={cmpTab === 'produkte' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setCmpTab('produkte')}>Produkte</button></div>} style={{ right: '3.2%', top: '24%', width: '25%', maxHeight: '36%' }} delay={140}>
+      <Panel title="Eigenschaften vergleichen" icon={<IList />} right={<div className="tabs" style={{ padding: 2 }}><button className={cmpTab === 'material' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setCmpTab('material')}>Materialien</button><button className={cmpTab === 'produkte' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setCmpTab('produkte')}>Produkte</button></div>} style={{ right: '3.2%', top: '44%', width: '25%', maxHeight: '36%' }} delay={140}>
         {cmpTab === 'material' ? (
           <table className="tbl"><thead><tr><th>Material</th><th>Düse</th><th>Bett</th><th>Fest</th><th>Flex</th><th>Wetter</th></tr></thead><tbody>
             {Object.entries(PROPS).map(([m, p]) => <tr key={m}><td><b style={{ color: MCOL[m] }}>{m}</b></td><td>{p.nozzle}</td><td>{p.bed}</td><td title="Festigkeit">{dots(p.strength)}</td><td title="Flexibilität">{dots(p.flex)}</td><td title="Witterung">{dots(p.weather)}</td></tr>)}
@@ -80,7 +80,7 @@ export function Material() {
         <span className="xs faint">{cmpTab === 'material' ? 'Richtwerte, keine Herstellerangaben.' : 'Historische Planwerte aus dem Katalog, vor Anwendung prüfen. „—“ = unbekannt.'}</span>
       </Panel>
 
-      <Panel title="Fehlmengen & Einkauf" icon={<ICart />} style={{ right: '3.2%', top: '62%', width: '25%', maxHeight: '28%' }} delay={200}>
+      <Panel title="Fehlmengen & Einkauf" icon={<ICart />} style={{ right: '3.2%', top: '66%', width: '25%', maxHeight: '26%' }} delay={200}>
         {shortages.map((x, i) => <div key={i} className="row small"><span className="pill pill--bad xs">fehlt {fmtGrams(x.missing)}</span><span className="ellipsis grow">{x.sp.label}</span><button className="btn btn--sm btn--ghost" style={{ fontSize: 11, padding: '1px 6px' }} onClick={() => addShopping({ title: `${x.sp.label} nachkaufen`, qty: '1', price: x.sp.price, projectId: x.p.id, url: x.sp.reorderUrl })}>+ Liste</button></div>)}
         {low.map((s) => <div key={s.id} className="row small"><span className="pill pill--warn xs">wenig</span><span className="ellipsis grow">{s.label}</span><span className="xs muted">{fmtGrams(availableGrams(s))}</span></div>)}
         {shortages.length + low.length === 0 ? <p className="muted small">Bestand reicht für alle geplanten Drucke.</p> : null}
