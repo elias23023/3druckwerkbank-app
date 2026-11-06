@@ -20,6 +20,14 @@ const LIB: { id: LibraryIsland; name: string; hint: string; types: string[]; are
   { id: 'wetter', name: 'Wetterstation', hint: 'Sensoren, Solar, Display', types: ['Gehäuse / Elektronik', 'Experiment / Neue Idee'], areas: ['Garten & Outdoor', 'Elektronik & Smart Home', 'Technik & Maschinen'] },
   { id: 'archiv', name: 'Galerie', hint: 'Vitrinen und Bilder', types: ['Deko / Geschenk', 'Modell / Miniatur'], areas: ['Deko & Persönliches', 'Hobby & Freizeit'] },
   { id: 'drucker', name: 'Druckerplatz', hint: 'Drucker auf der Werkbank', types: ['Prototyp / Testteil', 'Mechanisches Bauteil', 'Reparatur / Ersatzteil', 'Werkzeug / Hilfsmittel'], areas: ['Werkstatt', 'Prototyping & Entwicklung'] },
+  { id: 'projekt-garten', name: 'Garten', hint: 'Hochbeet, Gewächshaus, Sensor', types: ['Halterung / Befestigung', 'Gehäuse / Elektronik'], areas: ['Garten & Outdoor'] },
+  { id: 'projekt-haushalt', name: 'Küche & Haushalt', hint: 'Küchenzeile, Organizer', types: ['Organizer / Aufbewahrung', 'Reparatur / Ersatzteil', 'Halterung / Befestigung'], areas: ['Haushalt'] },
+  { id: 'projekt-fahrzeug', name: 'Fahrzeug', hint: 'Garage, Rad, Ersatzteile', types: ['Reparatur / Ersatzteil', 'Halterung / Befestigung', 'Mechanisches Bauteil'], areas: ['Fahrzeug & Mobilität'] },
+  { id: 'projekt-buero', name: 'Büro', hint: 'Schreibtisch, Monitorständer', types: ['Organizer / Aufbewahrung', 'Halterung / Befestigung'], areas: ['Büro & Arbeitsplatz', 'Schule / Lernen'] },
+  { id: 'projekt-hobby', name: 'Hobby', hint: 'Spiele, Kamera, Gitarre', types: ['Deko / Geschenk', 'Modell / Miniatur', 'Experiment / Neue Idee'], areas: ['Hobby & Freizeit'] },
+  { id: 'projekt-technik', name: 'Technik', hint: 'Motor, Getriebe, Schraubstock', types: ['Mechanisches Bauteil', 'Werkzeug / Hilfsmittel', 'Prototyp / Testteil'], areas: ['Technik & Maschinen'] },
+  { id: 'projekt-deko', name: 'Deko', hint: 'Vasen, Lampe, Geschenke', types: ['Deko / Geschenk'], areas: ['Deko & Persönliches'] },
+  { id: 'projekt-modell', name: 'Modellbau', hint: 'Miniaturen, Lupe, Vitrine', types: ['Modell / Miniatur'], areas: ['Hobby & Freizeit'] },
   { id: 'rahmen', name: 'Eigenes Bild', hint: 'Insel mit Bilderrahmen', types: [], areas: [] },
 ];
 

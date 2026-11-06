@@ -5,10 +5,7 @@ import { mkdir } from 'node:fs/promises';
 const out = 'public/img';
 await mkdir(out, { recursive: true });
 
-const landscapes = [
-  ['landschaft-tag', 'assets-src/landschaft-tag.png'],
-  ['landschaft-nacht', 'assets-src/landschaft-abend.png'],
-];
+const landscapes = [];
 const islands = [
   ['insel-werkstatt', 'assets-src/werkstatt-referenz.png'],
   ['insel-elektronik', 'assets-src/elektronik-insel.png'],
@@ -19,6 +16,14 @@ const islands = [
   ['insel-wetter', 'assets-src/insel-wetter.png'],
   ['insel-archiv', 'assets-src/insel-archiv.png'],
   ['insel-drucker', 'assets-src/insel-drucker.png'],
+  ['insel-projekt-garten', 'assets-src/insel-projekt-garten.png'],
+  ['insel-projekt-haushalt', 'assets-src/insel-projekt-haushalt.png'],
+  ['insel-projekt-fahrzeug', 'assets-src/insel-projekt-fahrzeug.png'],
+  ['insel-projekt-buero', 'assets-src/insel-projekt-buero.png'],
+  ['insel-projekt-hobby', 'assets-src/insel-projekt-hobby.png'],
+  ['insel-projekt-technik', 'assets-src/insel-projekt-technik.png'],
+  ['insel-projekt-deko', 'assets-src/insel-projekt-deko.png'],
+  ['insel-projekt-modell', 'assets-src/insel-projekt-modell.png'],
 ];
 
 for (const [name, src] of landscapes) {
@@ -39,6 +44,3 @@ for (const [name, src] of islands) {
   console.log('island', name, meta.info.width, meta.info.height);
 }
 
-// sundial dial plate (top-down, alpha) -> 640 / 320 px, rotated by CSS on the Heute island
-for (const w of [640, 320]) await sharp('assets-src/sonnenuhr-scheibe.png').resize({ width: w, height: w, fit: 'fill' }).webp({ quality: 84 }).toFile(`${out}/sonnenuhr-scheibe-${w}.webp`);
-console.log('dial');

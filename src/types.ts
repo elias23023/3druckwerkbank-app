@@ -64,7 +64,7 @@ export const COLOR_REFS: { name: string; hex: string }[] = [
   { name: 'PLA Marble White Marble', hex: '#F7F3F0' }, { name: 'PLA Marble Red Granite', hex: '#AD4E38' }, { name: 'ABS Beige', hex: '#DFD1A7' }, { name: 'ABS Lavender', hex: '#7248BD' }, { name: 'ABS Olive', hex: '#789D4A' }, { name: 'ABS Tangerine Yellow', hex: '#FFC72C' }, { name: 'ABS Azure', hex: '#489FDF' },
 ];
 
-export type LibraryIsland = 'werkstatt' | 'elektronik' | 'ideen' | 'rahmen' | 'heute' | 'material' | 'wetter' | 'archiv' | 'drucker';
+export type LibraryIsland = 'werkstatt' | 'elektronik' | 'ideen' | 'rahmen' | 'heute' | 'material' | 'wetter' | 'archiv' | 'drucker' | 'projekt-garten' | 'projekt-haushalt' | 'projekt-fahrzeug' | 'projekt-buero' | 'projekt-hobby' | 'projekt-technik' | 'projekt-deko' | 'projekt-modell';
 export interface IslandImageConfig {
   kind: 'bibliothek' | 'eigenes';
   libraryId: LibraryIsland;

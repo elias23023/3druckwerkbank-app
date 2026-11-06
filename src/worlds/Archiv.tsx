@@ -32,7 +32,7 @@ export function Archiv() {
         </div>
       </div>
 
-      <PanelColumn side="left" top="41%" bottom="7%" width="22%">
+      <PanelColumn side="left" top="44%" bottom="7%" width="22%">
       <Panel title="Zeitreise" icon={<IHistory />} delay={60}>
         <div className="bars">{months.map((m) => <div key={m.key} title={`${m.n} Projekte`}><i style={{ height: `${Math.max(3, (m.n / Math.max(1, ...months.map((x) => x.n))) * 44)}px`, background: m.n ? undefined : 'rgba(255,255,255,.1)' }} /><span>{m.label}</span></div>)}</div>
         <div className="grid2"><Stat value={all.length} label="archiviert" /><Stat value={totals.prints} label="Drucke" /><Stat value={fmtGrams(totals.g)} label="Material" /><Stat value={`${fmtNum(totals.h)} h`} label="Druckzeit" /></div>
@@ -45,7 +45,7 @@ export function Archiv() {
       </Panel>
       </PanelColumn>
 
-      <Panel title="Galerie" icon={<IImage />} style={{ left: '27%', bottom: '10.5%', width: '46%', maxHeight: '40%' }} delay={100}
+      <Panel title="Galerie" icon={<IImage />} style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100}
         right={<div className="row" style={{ gap: 6 }}><input className="input" style={{ width: 150, padding: '4px 8px', fontSize: 12 }} placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} /><button className={`pill${fav ? ' pill--on' : ''}`} onClick={() => setFav(!fav)}><IStar width={12} height={12} /> Favoriten</button></div>}>
         {arch.length === 0 ? <p className="muted small">Nichts gefunden. Schließe ein Projekt bewusst ab, dann landet es hier mit Bericht.</p> : (
           <div className="gallery">
@@ -59,7 +59,7 @@ export function Archiv() {
         )}
       </Panel>
 
-      <PanelColumn side="right" top="41%" bottom="2.5%" width="24%">
+      <PanelColumn side="right" top="44%" bottom="2.5%" width="24%">
       <Panel title="Vorlagen" icon={<ICopy />} delay={140}>
         {templates.length === 0 ? <p className="muted small">Noch keine Vorlage. Speichere ein Projekt in der Innenwelt oder beim Abschluss als Vorlage.</p> : templates.map((p) => <div key={p.id} className="sim-item" onClick={() => { const nid = projectFromTemplate(p.id); navigate({ world: 'projekte', projectId: nid }); }}><img src={islandSrc(p.island.libraryId, 256)} alt="" /><div className="col grow" style={{ gap: 0 }}><b className="small ellipsis">{p.name}</b><span className="xs muted">{p.type.split(' / ')[0]} · {p.milestones.length} Meilensteine · {p.tags.length} Tags</span></div><span className="xs muted">Neu daraus</span></div>)}
       </Panel>

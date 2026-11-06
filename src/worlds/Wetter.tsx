@@ -35,15 +35,15 @@ export function Wetter() {
 
       {cur ? (
         <>
-          {chip(-23, -10, <IWind />, `${fmtNum(cur.wind)} km/h`, 'Wind', 80)}
-          {chip(-19, 2, <IDrop />, `${cur.humidity} %`, 'Luftfeuchte', 140)}
-          {chip(10, -16, <IThermo />, cur.pressure ? `${fmtNum(cur.pressure)} hPa` : '–', 'Luftdruck', 200)}
-          {chip(16, -4, <ISun />, cur.uv !== undefined ? `UV ${fmtNum(cur.uv, 1)}` : 'UV –', 'UV-Index', 260)}
-          {chip(-8, -16, <IDrop />, `${fmtNum(cur.precip, 1)} mm`, 'Niederschlag', 320)}
+          {chip(-15.6, -15.2, <IWind />, `${fmtNum(cur.wind)} km/h`, 'Wind', 80)}
+          {chip(-12.9, -7.0, <IDrop />, `${cur.humidity} %`, 'Luftfeuchte', 140)}
+          {chip(6.8, -19.3, <IThermo />, cur.pressure ? `${fmtNum(cur.pressure)} hPa` : '–', 'Luftdruck', 200)}
+          {chip(10.9, -11.1, <ISun />, cur.uv !== undefined ? `UV ${fmtNum(cur.uv, 1)}` : 'UV –', 'UV-Index', 260)}
+          {chip(-5.4, -19.3, <IDrop />, `${fmtNum(cur.precip, 1)} mm`, 'Niederschlag', 320)}
         </>
       ) : null}
 
-      <PanelColumn side="left" top="41%" bottom="2.5%" width="22%">
+      <PanelColumn side="left" top="44%" bottom="2.5%" width="22%">
       <Panel title="Aktuell" icon={<ISun />} delay={60}
         foot={<><span className="xs faint">Quelle: Open-Meteo{weather ? ` · ${relTime(weather.fetchedAt, now.getTime())}` : ''}</span><button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={refresh} title="Aktualisieren"><IRefresh width={13} height={13} /></button></>}>
         {cur ? (
@@ -73,7 +73,7 @@ export function Wetter() {
       </Panel>
       </PanelColumn>
 
-      <Panel title="Nächste 24 Stunden" icon={<IClock />} style={{ left: '27%', bottom: '10.5%', width: '46%' }} delay={100} right={<span className="xs faint">Kurve: Temperatur · Balken: Solarstrom-Schätzung ({settings.pvKwp} kWp)</span>}>
+      <Panel title="Nächste 24 Stunden" icon={<IClock />} style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100} right={<span className="xs faint">Kurve: Temperatur · Balken: Solarstrom-Schätzung ({settings.pvKwp} kWp)</span>}>
         {hours.length ? <svg className="tcurve" viewBox="0 0 200 70" preserveAspectRatio="none"><polyline points={curve} fill="none" stroke="#ffbd6b" strokeWidth="1.5" vectorEffect="non-scaling-stroke" /><circle cx="0" cy={60 - ((hours[0].temp - tmin) / Math.max(1, tmax - tmin)) * 50} r="2.5" fill="#fff" /></svg> : null}
         <div className="hours">
           {hours.map((h, i) => (
@@ -88,7 +88,7 @@ export function Wetter() {
         </div>
       </Panel>
 
-      <PanelColumn side="right" top="41%" bottom="2.5%" width="24%">
+      <PanelColumn side="right" top="44%" bottom="2.5%" width="24%">
       <Panel title="7 Tage" icon={<ICal />} delay={140}>
         <div className="days">
           {(d?.daily ?? []).map((day, i) => <div key={day.date}><span className="muted">{i === 0 ? 'Heute' : fmtDayShort(day.date)}</span><WeatherIcon code={day.code} size={18} /><span className="xs muted ellipsis">{wmo(day.code).label}</span><span><b>{fmtNum(day.tmax)}°</b> <span className="muted">{fmtNum(day.tmin)}°</span></span><span className="xs muted" style={{ textAlign: 'right' }}>{fmtNum(day.precipSum, 1)} mm</span></div>)}

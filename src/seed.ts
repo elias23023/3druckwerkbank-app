@@ -46,7 +46,7 @@ export function makeSeed(now = new Date()): PersistedState {
     {
       id: 'p-sensorhalter', name: 'Sensorhalter Garten', description: 'Halterung für den Bodenfeuchtesensor am Hochbeet. Wetterfest, schnell abnehmbar, Kabelführung nach unten.',
       type: 'Halterung / Befestigung', areas: ['Garten & Outdoor', 'Elektronik & Smart Home'], tags: ['Hochbeet', 'ASA', 'Außen'], priority: 1, difficulty: 3, stage: 'Druck', progress: 68, favorite: true,
-      createdAt: d(-21, now), updatedAt: h(-3, now), island: { kind: 'bibliothek', libraryId: 'elektronik', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
+      createdAt: d(-21, now), updatedAt: h(-3, now), island: { kind: 'bibliothek', libraryId: 'projekt-garten', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [
         { id: 'ms-1', title: 'Idee & Maße', done: true, order: 0 }, { id: 'ms-2', title: 'Konstruktion v1', done: true, order: 1 }, { id: 'ms-3', title: 'Testdruck', done: true, order: 2 },
         { id: 'ms-4', title: 'Klemmung verbessern (v2)', done: true, order: 3 }, { id: 'ms-5', title: 'Finaldruck in ASA', done: false, order: 4 }, { id: 'ms-6', title: 'Montage am Hochbeet', done: false, order: 5 },
@@ -98,7 +98,7 @@ export function makeSeed(now = new Date()): PersistedState {
     {
       id: 'p-zahnrad', name: 'Zahnrad Mixer', description: 'Ersatzzahnrad für den Küchenmixer, Modul 1, 24 Zähne.',
       type: 'Reparatur / Ersatzteil', areas: ['Haushalt'], tags: ['Ersatzteil', 'Zahnrad'], priority: 1, difficulty: 3, stage: 'Idee', progress: 5, favorite: false,
-      createdAt: d(-1, now), updatedAt: d(-1, now), island: { kind: 'bibliothek', libraryId: 'werkstatt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'metall' } },
+      createdAt: d(-1, now), updatedAt: d(-1, now), island: { kind: 'bibliothek', libraryId: 'projekt-haushalt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'metall' } },
       milestones: [ { id: 'ms-z1', title: 'Altes Zahnrad vermessen', done: false, order: 0 }, { id: 'ms-z2', title: 'Konstruktion', done: false, order: 1 }, { id: 'ms-z3', title: 'Testdruck PETG', done: false, order: 2 } ],
       versions: [], files: [], notes: '', experiences: [],
       history: hist(now, [[-1, 'angelegt', 'Projekt angelegt']]), requiredSpools: [],
@@ -106,7 +106,7 @@ export function makeSeed(now = new Date()): PersistedState {
     {
       id: 'p-schluesselhalter', name: 'Schlüsselhalter v2', description: 'Wandhalter für fünf Schlüssel mit Ablage.',
       type: 'Halterung / Befestigung', areas: ['Haushalt'], tags: ['Wand', 'Deko'], priority: 3, difficulty: 1, stage: 'Abgeschlossen', progress: 100, favorite: true,
-      createdAt: d(-70, now), updatedAt: d(-30, now), archivedAt: d(-30, now), island: { kind: 'bibliothek', libraryId: 'ideen', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
+      createdAt: d(-70, now), updatedAt: d(-30, now), archivedAt: d(-30, now), island: { kind: 'bibliothek', libraryId: 'projekt-haushalt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [ { id: 'ms-s1', title: 'Konstruktion', done: true, order: 0 }, { id: 'ms-s2', title: 'Druck', done: true, order: 1 }, { id: 'ms-s3', title: 'Montage', done: true, order: 2 } ],
       versions: [ { id: 'v-s-1', label: 'v1', status: 'verworfen', createdAt: d(-60, now), changes: ['Zu schmal'] }, { id: 'v-s-2', label: 'v2', status: 'final', createdAt: d(-40, now), changes: ['Breiter', 'Ablage'] } ],
       files: [ { id: 'f-s-1', name: 'Montiert.jpg', kind: 'foto', createdAt: d(-30, now) } ], notes: '', experiences: ['Dübel 6 mm reichen.'],
@@ -115,7 +115,7 @@ export function makeSeed(now = new Date()): PersistedState {
     {
       id: 'p-pflanzgefaess', name: 'Pflanzgefäß Wabe', description: 'Sechseckiger Übertopf mit Wassersammler.',
       type: 'Experiment / Neue Idee', areas: ['Haushalt', 'Garten & Outdoor'], tags: ['Vase-Mode', 'Deko'], priority: 3, difficulty: 2, stage: 'Abgeschlossen', progress: 100, favorite: false,
-      createdAt: d(-50, now), updatedAt: d(-12, now), archivedAt: d(-12, now), island: { kind: 'bibliothek', libraryId: 'ideen', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
+      createdAt: d(-50, now), updatedAt: d(-12, now), archivedAt: d(-12, now), island: { kind: 'bibliothek', libraryId: 'projekt-deko', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [ { id: 'ms-p1', title: 'Form', done: true, order: 0 }, { id: 'ms-p2', title: 'Druck', done: true, order: 1 } ],
       versions: [ { id: 'v-p-1', label: 'v1', status: 'final', createdAt: d(-20, now), changes: ['Vase-Mode, 0,6 mm Düse'] } ],
       files: [], notes: '', experiences: ['Vase-Mode mit 0,6-mm-Düse ist dicht genug für Wasser.'],

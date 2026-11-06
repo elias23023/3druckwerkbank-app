@@ -34,7 +34,7 @@ export function Material() {
     <>
       <div className="world-title"><h1>Material</h1><p>Filamente. Werkstoffe. Möglichkeiten.</p></div>
 
-      <PanelColumn side="left" top="41%" bottom="2.5%" width="22%">
+      <PanelColumn side="left" top="44%" bottom="2.5%" width="22%">
       <Panel title="Materialbestand" icon={<ILayers />} delay={60}>
         <div className="donut">
           <svg width="88" height="88" viewBox="0 0 100 100">
@@ -52,7 +52,7 @@ export function Material() {
       </Panel>
       </PanelColumn>
 
-      <Panel title="Rollen" icon={<ISpool />} style={{ left: '27%', bottom: '10.5%', width: '46%', maxHeight: '36%' }} delay={100}
+      <Panel title="Rollen" icon={<ISpool />} style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100}
         right={<div className="row" style={{ gap: 6 }}><input className="input" style={{ width: 130, padding: '4px 8px', fontSize: 12 }} placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} /><select className="select" style={{ width: 'auto', padding: '4px 6px', fontSize: 12 }} value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}><option value="material">nach Material</option><option value="avail">nach Verfügbarkeit</option><option value="label">nach Name / Lagerort</option></select></div>}
         foot={<><div className="pills"><button className={`pill xs${mat === 'alle' ? ' pill--on' : ''}`} onClick={() => setMat('alle')}>Alle</button>{mats.map((m) => <button key={m} className={`pill xs${mat === m ? ' pill--on' : ''}`} onClick={() => setMat(m)}>{m}</button>)}</div></>}>
         <div className="spool-grid">
@@ -69,7 +69,7 @@ export function Material() {
         </div>
       </Panel>
 
-      <PanelColumn side="right" top="41%" bottom="2.5%" width="25%">
+      <PanelColumn side="right" top="44%" bottom="2.5%" width="24%">
       <Panel title="Eigenschaften vergleichen" icon={<IList />} right={<div className="tabs" style={{ padding: 2 }}><button className={cmpTab === 'material' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setCmpTab('material')}>Materialien</button><button className={cmpTab === 'produkte' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setCmpTab('produkte')}>Produkte</button></div>} delay={140}>
         {cmpTab === 'material' ? (
           <table className="tbl"><thead><tr><th>Material</th><th>Düse</th><th>Bett</th><th>Fest</th><th>Flex</th><th>Wetter</th></tr></thead><tbody>

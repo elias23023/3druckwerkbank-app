@@ -20,9 +20,9 @@ export function startIslands(): Placement[] {
 const RING: [number, number, number, number][] = [[12, 47, 16, 0.5], [88, 47, 16, 0.5], [29, 20, 12.5, 0.66], [71, 20, 12.5, 0.66], [50, 13, 10.5, 0.78]];
 
 /** Per-world overrides so neighbour islands stay visible beside that world's panels (side columns start lower there). */
-const HIGH_RING: typeof RING = [[12, 28, 14, 0.5], [88, 28, 14, 0.5], [30, 13, 12, 0.66], [70, 13, 12, 0.66], [50, 8, 10, 0.78]];
+const HIGH_RING: typeof RING = [[11, 23, 11, 0.5], [89, 23, 11, 0.5], [30, 10, 9.5, 0.66], [70, 10, 9.5, 0.66], [50, 6, 8, 0.78]];
 const RING_BY_WORLD: Partial<Record<WorldId, typeof RING>> = { material: HIGH_RING, wetter: HIGH_RING, archiv: HIGH_RING };
-const CENTRE_BY_WORLD: Partial<Record<WorldId, [number, number, number]>> = { material: [50, 48, 34], wetter: [50, 48, 34], archiv: [50, 48, 34] };
+const CENTRE_BY_WORLD: Partial<Record<WorldId, [number, number, number]>> = { material: [50, 33, 23], wetter: [50, 33, 23], archiv: [50, 33, 23] };
 
 export function worldIslands(active: WorldId, centre?: [number, number, number]): Placement[] {
   const out: Placement[] = [];
