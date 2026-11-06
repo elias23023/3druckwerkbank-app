@@ -43,35 +43,25 @@ export function useRingData(now: Date) {
 
 /**
  * The Heute info ring: a glass ring floating over the island platform (perspective), with the daylight arc, event inlays,
- * pearls, a sun/moon "now" marker, upright hour marks, the clock in its centre and the next events as upright tags
- * attached to their position on the ring. Rendered as a child of the island (it floats and scales with it).
+ * pearls, a sun/moon "now" marker, upright hour marks and the clock in its centre. Rendered as a child of the island (it floats and scales with it).
  */
-export function InfoRing({ tilt = 70 }: { tilt?: number }) {
+export function InfoRing({ tilt = 70.4 }: { tilt?: number }) {
   const now = useNow(1000);
-  const { sunrise, sunset, arcs, dots, upcoming } = useRingData(now);
+  const { sunrise, sunset, arcs, dots } = useRingData(now);
   const { tasks, prints } = useStore(useShallow((s) => ({ tasks: s.tasks, prints: s.prints })));
   const open = tasks.filter((t) => !t.done && !t.skipped).length;
   const running = prints.filter((p) => p.status === 'läuft').length;
   const cosT = Math.cos((tilt * Math.PI) / 180);
   // ring point in box percent (the box is square; the ring is tilted, so y is foreshortened)
   const at = (hour: number, r: number) => { const a = ringAngle(hour); return { x: 50 + Math.cos(a) * 50 * r, y: 50 + Math.sin(a) * 50 * r * cosT }; };
-  // up to three upcoming events as tags; keep them apart on the ring (min 1.6 h spacing)
-  const tags: RingEvent[] = [];
-  for (const e of upcoming) { if (tags.length >= 3) break; if (tags.every((t) => Math.abs(t.hour - e.hour) >= 1.6)) tags.push(e); }
   return (
     <div className="inforing" data-testid="inforing">
       <div className="inforing__shadow" />
-      <div className="inforing__tilt" style={{ transform: `perspective(1400px) rotateX(${tilt}deg)` }}>
+      <div className="inforing__tilt" style={{ transform: `rotateX(${tilt}deg)` }}>
         <RingSvg now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} labels={false} inlay glass />
       </div>
       {[0, 6, 12, 18].map((t) => { const p = at(t, 0.86); return <span key={t} className="inforing__h" style={{ left: `${p.x}%`, top: `${p.y}%` }}>{String(t).padStart(2, '0')}</span>; })}
       <div className="inforing__centre"><b>{fmtTime(now)}</b><span>{open} offen · {running} Druck{running === 1 ? '' : 'e'}</span></div>
-      {tags.map((e, i) => { const p = at(e.hour, 0.81); const side = p.x > 50 ? 'r' : 'l'; const tagX = side === 'r' ? Math.min(118, p.x + 16) : Math.max(-18, p.x - 16); const tagY = p.y - 10 - i * 2; return (
-        <div key={i} className={`inforing__tagwrap inforing__tagwrap--${side}`}>
-          <svg className="inforing__lead" viewBox="0 0 100 100" preserveAspectRatio="none"><line x1={p.x} y1={p.y} x2={tagX} y2={tagY} stroke="rgba(255,255,255,.7)" strokeWidth=".5" vectorEffect="non-scaling-stroke" /><circle cx={p.x} cy={p.y} r=".9" fill="#fff" /></svg>
-          <div className="glass inforing__tag" style={{ left: `${tagX}%`, top: `${tagY}%`, ['--c' as string]: e.color }}><i className="dot" /><b>{fmtTime(new Date(now.getFullYear(), now.getMonth(), now.getDate(), Math.floor(e.hour), Math.round((e.hour % 1) * 60)))}</b><span>{e.text}</span></div>
-        </div>
-      ); })}
     </div>
   );
 }

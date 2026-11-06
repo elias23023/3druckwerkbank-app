@@ -23,7 +23,7 @@ check('Hints bell has a badge', (await page.locator('.topbar .badge').count()) =
 await page.mouse.move(960, 540); await page.mouse.wheel(0, 400); await page.waitForTimeout(600);
 check('Wheel on start dives into Heute', (await page.evaluate(() => location.hash)) === '#/heute');
 check('Heute info ring sits inside the island', (await page.locator('.island--active .inforing').count()) === 1);
-check('Info ring shows the clock and up to three event tags', await page.evaluate(() => { const c = document.querySelector('.inforing__centre b'); const n = document.querySelectorAll('.inforing__tag').length; return !!c && /\d{2}:\d{2}/.test(c.textContent || '') && n >= 1 && n <= 3; }));
+check('Info ring shows the clock, no tags over the island', await page.evaluate(() => { const c = document.querySelector('.inforing__centre b'); return !!c && /\d{2}:\d{2}/.test(c.textContent || '') && document.querySelectorAll('.inforing__tag').length === 0; }));
 for (const w of ['projekte', 'druck', 'material', 'wetter', 'archiv']) { await page.goto(`${base}/#/${w}`); await page.waitForTimeout(400); check(`World ${w} title`, (await page.locator('.world-title h1').count()) === 1); }
 await page.goto(`${base}/#/druck`); await page.waitForTimeout(500);
 check('Druck: Eingang shows imported print', (await page.getByText('Kabelclip_v2.gcode').count()) > 0);

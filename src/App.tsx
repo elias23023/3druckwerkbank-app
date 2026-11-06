@@ -120,7 +120,7 @@ export function App() {
       return (
         <Island key={pl.key} image={WORLD_IMAGE[w]} x={pl.x} y={pl.y} size={hideMobile ? 0 : mobile ? Math.min(pl.size, 44) : pl.size} depth={pl.depth} active={isActive} opacity={hideMobile ? 0 : pl.opacity}
           label={isActive ? undefined : pl.label} sub={isStart ? pl.sub : undefined} labelSize={pl.labelSize ?? 'big'} cta={isStart ? 'Öffnen' : undefined} eager={isActive || isStart} title={`Zur Welt ${pl.label ?? w}`} filter={w === 'projekte' ? 'hue-rotate(-8deg)' : undefined}
-          onClick={isActive ? undefined : () => navigate({ world: w })}>{isActive && w === 'heute' ? <InfoRing /> : null}</Island>
+          onClick={isActive ? undefined : () => navigate({ world: w })}>{(isActive || isStart) && w === 'heute' ? <InfoRing /> : null}</Island>
       );
     }
     const p = projects.find((x) => x.id === pl.projectId)!;
