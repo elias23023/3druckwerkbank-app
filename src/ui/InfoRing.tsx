@@ -46,7 +46,7 @@ export function useRingData(now: Date) {
  * pearls, a sun/moon "now" marker, upright hour marks, the clock in its centre and the next events as upright tags
  * attached to their position on the ring. Rendered as a child of the island (it floats and scales with it).
  */
-export function InfoRing({ tilt = 68 }: { tilt?: number }) {
+export function InfoRing({ tilt = 70 }: { tilt?: number }) {
   const now = useNow(1000);
   const { sunrise, sunset, arcs, dots, upcoming } = useRingData(now);
   const { tasks, prints } = useStore(useShallow((s) => ({ tasks: s.tasks, prints: s.prints })));

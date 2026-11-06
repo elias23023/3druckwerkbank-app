@@ -5,12 +5,12 @@ import { IArrowR } from '../ui/Icons';
 export const ISLAND_META: Record<LibraryIsland, { w: number; h: number; disc?: { cx: number; cy: number; rx: number; ry: number } }> = {
   werkstatt: { w: 1191, h: 1106 }, elektronik: { w: 1172, h: 1140 }, ideen: { w: 1196, h: 1145 },
   rahmen: { w: 1167, h: 597, disc: { cx: 50, cy: 30, rx: 29, ry: 11 } },
-  heute: { w: 1082, h: 1209 }, material: { w: 1081, h: 1219 }, wetter: { w: 1084, h: 1205 }, archiv: { w: 1079, h: 1205 }, drucker: { w: 1081, h: 1188 },
+  heute: { w: 1154, h: 1209 }, material: { w: 1081, h: 1219 }, wetter: { w: 1084, h: 1205 }, archiv: { w: 1079, h: 1205 }, drucker: { w: 1081, h: 1188 },
   'projekt-garten': { w: 1081, h: 1167 }, 'projekt-haushalt': { w: 1080, h: 1168 }, 'projekt-fahrzeug': { w: 1080, h: 1209 }, 'projekt-buero': { w: 1080, h: 1186 },
   'projekt-hobby': { w: 1079, h: 1204 }, 'projekt-technik': { w: 1086, h: 1208 }, 'projekt-deko': { w: 1081, h: 1196 }, 'projekt-modell': { w: 1080, h: 1195 },
 };
 /** Bump when island sprites change: the CDN and browsers cache /img/* for a year (immutable), so the URL must change. */
-export const ASSET_VERSION = '20261106c';
+export const ASSET_VERSION = '20261106d';
 export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${id}-${w}.webp?v=${ASSET_VERSION}`;
 
 export interface IslandProps {
