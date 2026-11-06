@@ -9,7 +9,9 @@ export const ISLAND_META: Record<LibraryIsland, { w: number; h: number; disc?: {
   'projekt-garten': { w: 1081, h: 1167 }, 'projekt-haushalt': { w: 1080, h: 1168 }, 'projekt-fahrzeug': { w: 1080, h: 1209 }, 'projekt-buero': { w: 1080, h: 1186 },
   'projekt-hobby': { w: 1079, h: 1204 }, 'projekt-technik': { w: 1086, h: 1208 }, 'projekt-deko': { w: 1081, h: 1196 }, 'projekt-modell': { w: 1080, h: 1195 },
 };
-export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${id}-${w}.webp`;
+/** Bump when island sprites change: the CDN and browsers cache /img/* for a year (immutable), so the URL must change. */
+export const ASSET_VERSION = '20261106b';
+export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${id}-${w}.webp?v=${ASSET_VERSION}`;
 
 export interface IslandProps {
   image: LibraryIsland; x: number; y: number; size: number; depth: number; active?: boolean; opacity?: number;

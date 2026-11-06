@@ -290,7 +290,7 @@ p { margin: 0; }
 .minicard .pv { display: flex; align-items: flex-end; gap: 2px; height: 22px; }
 .minicard .pv i { flex: 1; background: linear-gradient(180deg, #ffe29a, #ffb14d); border-radius: 2px 2px 0 0; min-height: 2px; }
 /* Heute: ring on the platform */
-.heute-time { position: absolute; left: 30%; width: 40%; top: 10.5%; text-align: center; color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,.7); animation: rise var(--t-mid) var(--ease) both; pointer-events: none; }
+.heute-time { position: absolute; left: 30%; width: 40%; top: 58%; text-align: center; color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,.7); animation: rise var(--t-mid) var(--ease) both; pointer-events: none; }
 .heute-time b { font-size: clamp(34px, 3.6cqw, 58px); font-weight: 600; letter-spacing: -.03em; line-height: 1; display: block; }
 .heute-time span { font-size: clamp(12px, 1cqw, 15px); color: rgba(255,255,255,.85); display: block; margin-top: 4px; }
 .bottom-row { position: absolute; left: 3.2%; right: 3.2%; bottom: 10.5%; max-height: 15%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
@@ -340,7 +340,7 @@ p { margin: 0; }
 .tile:hover { background: rgba(255,255,255,.12); }
 .tile.on { border-color: var(--accent); background: rgba(255,189,107,.15); }
 .tile small { color: var(--text-2); font-size: 11px; }
-.ring-legend { position: absolute; left: 30%; top: 18.5%; width: 40%; display: flex; justify-content: center; gap: 12px; font-size: 11px; color: rgba(255,255,255,.85); text-shadow: 0 1px 6px rgba(0,0,0,.7); pointer-events: none; }
+.ring-legend { position: absolute; left: 30%; top: 65%; width: 40%; display: flex; justify-content: center; gap: 12px; font-size: 11px; color: rgba(255,255,255,.85); text-shadow: 0 1px 6px rgba(0,0,0,.7); pointer-events: none; }
 .ring-legend span { display: inline-flex; align-items: center; gap: 4px; }
 /* weather chips around the island */
 .wchip { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 12px; border-radius: 14px; font-size: 12px; min-width: 86px; animation: rise var(--t-mid) var(--ease) both; animation-delay: var(--delay, 0ms); }

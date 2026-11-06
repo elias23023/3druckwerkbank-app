@@ -42,7 +42,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
       <div className="heute-time"><span>{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length} Druck{running.length === 1 ? '' : 'e'} läuft</span></div>
       <div className="ring-legend"><span><i className="dot" style={{ background: '#ffd36e' }} />Tageslicht · PV</span><span><i className="dot" style={{ background: '#7cc6ff' }} />Drucke</span><span><i className="dot" style={{ background: '#4ccf7a' }} />Aufgaben</span><span><i className="dot" style={{ background: '#c59bff' }} />Termine</span><span><i className="dot" style={{ background: '#ffb547' }} />Wartung</span></div>
 
-      <PanelColumn side="left" top="29%" bottom="27%" width="23%">
+      <PanelColumn side="left" top="44%" bottom="27%" width="23%">
       <Panel title="Aktive Drucke" icon={<IPrinter />} right={<span className="pill xs">{running.length}</span>} delay={60}
         foot={<>{printers.map((d) => <button key={d.id} className="btn btn--sm" disabled={prints.some((p) => p.printerId === d.id && p.status === 'läuft') || !queued.some((p) => p.printerId === d.id)} onClick={() => startNextPrint(d.id)}><IPlay width={12} height={12} /> {d.name}</button>)}<button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={() => navigate({ world: 'druck' })}>Alle</button></>}>
         {running.length === 0 ? <p className="muted small">Kein Druck läuft gerade.{queued[0] ? ` Nächster: ${queued[0].name}.` : ''}</p> : running.map((p) => (
@@ -71,7 +71,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
       </Panel>
       </PanelColumn>
 
-      <PanelColumn side="right" top="29%" bottom="27%" width="23%">
+      <PanelColumn side="right" top="44%" bottom="27%" width="23%">
       <Panel title={`Wetter · ${settings.location.name.split(',')[0]}`} icon={<ISun />} delay={100}
         foot={<><span className="xs faint">{weather ? `Open-Meteo · ${fmtTime(weather.fetchedAt)}` : ''}</span><button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={() => navigate({ world: 'wetter' })}>Mehr</button></>}>
         {cur ? (
