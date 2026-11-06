@@ -39,7 +39,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
         <p className="small faint" style={{ marginTop: 8 }}>{settings.location.name}</p>
       </div>
 
-      <div className="heute-time"><b>{fmtTime(now)}</b><span>{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length} Druck{running.length === 1 ? '' : 'e'} läuft</span></div>
+      <div className="heute-time"><span>{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length} Druck{running.length === 1 ? '' : 'e'} läuft</span></div>
       <div className="ring-legend"><span><i className="dot" style={{ background: '#ffd36e' }} />Tageslicht · PV</span><span><i className="dot" style={{ background: '#7cc6ff' }} />Drucke</span><span><i className="dot" style={{ background: '#4ccf7a' }} />Aufgaben</span><span><i className="dot" style={{ background: '#c59bff' }} />Termine</span><span><i className="dot" style={{ background: '#ffb547' }} />Wartung</span></div>
 
       <PanelColumn side="left" top="29%" bottom="26%" width="23%">

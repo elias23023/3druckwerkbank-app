@@ -19,11 +19,11 @@ const f = (n: number) => n.toFixed(2);
 const STAR_HOURS = [0.7, 1.9, 3.4, 4.6, 20.9, 22.2, 23.4];
 
 /**
- * The 24-hour ring. `inlay` = engraved light ring on the rim of the sundial plate (Heute island): groove with light edge,
+ * The 24-hour ring. `inlay` = thin light ring, `glass` = wide translucent band for the floating Heute info ring: groove with light edge,
  * daylight arc as a sunrise→noon→sunset gradient (passed part brighter), night arc with stars, glowing event inlays,
  * pearls for tasks/appointments and a sun or moon as the "now" marker. Plain mode = compact standalone ring.
  */
-export function RingSvg({ now, sunrise, sunset, arcs, dots, labels = true, inlay = false }: { now: Date; sunrise?: number; sunset?: number; arcs: RingArc[]; dots: RingDot[]; labels?: boolean; inlay?: boolean }) {
+export function RingSvg({ now, sunrise, sunset, arcs, dots, labels = true, inlay = false, glass = false }: { now: Date; sunrise?: number; sunset?: number; arcs: RingArc[]; dots: RingDot[]; labels?: boolean; inlay?: boolean; glass?: boolean }) {
   const h = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
   const R = inlay ? 81 : 86;
   const [nx, ny] = pt(h, R);
@@ -39,11 +39,20 @@ export function RingSvg({ now, sunrise, sunset, arcs, dots, labels = true, inlay
         <linearGradient id="nightG" x1="0" x2="1"><stop offset="0" stopColor="#2b3f86" /><stop offset="1" stopColor="#4d7bd8" /></linearGradient>
         <filter id="ringGlow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.4" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
         <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2" /></filter>
+        <radialGradient id="centreSheen" cx="35%" cy="25%" r="75%"><stop offset="0" stopColor="rgba(255,255,255,.22)" /><stop offset=".6" stopColor="rgba(255,255,255,.03)" /><stop offset="1" stopColor="rgba(0,0,0,.12)" /></radialGradient>
         <filter id="pearlGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.6" /></filter>
       </defs>
 
       {/* groove: dark inset with a light edge on the inside and a shadow edge on the outside */}
-      {inlay ? (
+      {glass ? (
+        <g>
+          <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(255,255,255,.16)" strokeWidth="15" />
+          <circle cx="100" cy="100" r={R + 7.5} fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".8" />
+          <circle cx="100" cy="100" r={R - 7.5} fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".6" />
+          <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(10,16,30,.35)" strokeWidth="6" />
+          <circle cx="100" cy="100" r="60" fill="rgba(10,16,30,.62)" stroke="rgba(255,255,255,.3)" strokeWidth=".7" /><circle cx="100" cy="100" r="60" fill="url(#centreSheen)" />
+        </g>
+      ) : inlay ? (
         <g>
           <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(28,15,4,.58)" strokeWidth="6.2" />
           <circle cx="100" cy="100" r={R + 3.4} fill="none" stroke="rgba(0,0,0,.32)" strokeWidth=".7" />
