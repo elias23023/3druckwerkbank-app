@@ -10,7 +10,7 @@ export const LABELS: Record<WorldId, [string, string]> = {
 
 /** Start world: six large islands in two rows. */
 export const START_POS: Record<WorldId, [number, number, number, number]> = {
-  heute: [50, 27, 23, 0], projekte: [15, 29, 15.5, 0.12], druck: [85, 29, 15.5, 0.12],
+  heute: [50, 27, 23, 0], projekte: [28, 31, 14, 0.12], druck: [72, 31, 14, 0.12],
   material: [22, 67, 15.5, 0.05], wetter: [50, 69, 15, 0.08], archiv: [79, 67, 15.5, 0.05],
 };
 export function startIslands(): Placement[] {
