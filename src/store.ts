@@ -256,6 +256,9 @@ export const useStore = create<Store>()(
       partialize: (s) => ({ version: s.version, seededAt: s.seededAt, projects: s.projects, devices: s.devices, spools: s.spools, tasks: s.tasks, prints: s.prints, reports: s.reports, appointments: s.appointments, shopping: s.shopping, settings: s.settings, weather: s.weather, energy: s.energy, ui: { drafts: s.ui.drafts, recent: s.ui.recent } }) as unknown as Store,
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<Store>;
+        // demo projects created before the project-world islands existed: move them onto the new motifs once
+        const DEMO_ISLANDS: Record<string, [string, Project['island']['libraryId']]> = { 'p-sensorhalter': ['elektronik', 'projekt-garten'], 'p-zahnrad': ['werkstatt', 'projekt-haushalt'], 'p-schluesselhalter': ['ideen', 'projekt-haushalt'], 'p-pflanzgefaess': ['ideen', 'projekt-deko'] };
+        if (p.projects) p.projects = p.projects.map((pr) => { const m = DEMO_ISLANDS[pr.id]; return m && pr.island.kind === 'bibliothek' && pr.island.libraryId === m[0] ? { ...pr, island: { ...pr.island, libraryId: m[1] } } : pr; });
         return { ...current, ...p, settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) }, energy: p.energy ?? current.energy ?? [], ui: { ...current.ui, drafts: p.ui?.drafts ?? {}, recent: p.ui?.recent ?? [] } };
       },
     },
