@@ -3,7 +3,7 @@
 import pw from '/opt/node-tools/node_modules/playwright/index.js';
 import { mkdir } from 'node:fs/promises';
 const { chromium } = pw;
-const [base = 'https://snow-salmon-793472.hostingersite.com', outDir = 'video-raw'] = process.argv.slice(2);
+const [base = 'https://3druckwerkbank.com', outDir = 'video-raw'] = process.argv.slice(2);
 await mkdir(outDir, { recursive: true });
 
 const browser = await chromium.launch();

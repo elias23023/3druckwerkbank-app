@@ -1,1 +1,7 @@
-{ "domain": "snow-salmon-793472.hostingersite.com", "username": "u685288958", "type": "static" }
+{
+  "domain": "3druckwerkbank.com",
+  "username": "u685288958",
+  "type": "static",
+  "previous_domain": "snow-salmon-793472.hostingersite.com",
+  "note": "snow-salmon-793472.hostingersite.com hostet seit 06.11.2026 die alte PHP-App (Sicherung in reference/alte-app/)"
+}

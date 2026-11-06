@@ -20,6 +20,10 @@ Die räumliche Inselwelt ist für Desktop und Tablet quer gebaut. Unter 900 px B
 
 Die Scheibe (`assets-src/sonnenuhr-scheibe.png`, Draufsicht) wird per CSS in die Neigung der gemalten Uhr gekippt und dreht sich mit der Uhrzeit; der Tagesring liegt auf ihrem Rand. Der Zeiger ist ein eigenes Bild (`assets-src/zeiger-gnomon.png` → `src/assets/zeiger-gnomon.webp`, per Vite mit Hash im Dateinamen) und liegt als oberste Ebene darüber. Tausch: Datei ersetzen, `npm run images`, Position in `.sundial-gnomon` (global.css) prüfen.
 
+## Domains
+
+Seit 6. 11. 2026 läuft der Prototyp unter https://3druckwerkbank.com (Hauptdomain des Hostinger-Pakets). Die frühere PHP-App (Codex) läuft unter https://snow-salmon-793472.hostingersite.com weiter; ihre Dateien, `dw-private/` und die SQLite-Datenbank liegen dort neben `public_html`. Vollsicherung der alten App: `reference/alte-app/` (nicht im Git).
+
 ## Deploy (Hostinger, statisch)
 
 `npm run build`, `cd dist && zip -r ../site.zip .`, Upload per TUS (`hosting_files_generate-upload-url`), dann `hosting_websites_deploy-static-site-archive`. Ziel steht in `.hostinger/site.json`.

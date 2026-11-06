@@ -1,6 +1,6 @@
 # 3Druckwerkbank – Info-Dokument für Brainstorming
 
-Stand: 5. November 2026. Prototyp live unter https://snow-salmon-793472.hostingersite.com (Hostinger, statische Website, kein Server, kein Login).
+Stand: 5. November 2026. Prototyp live unter https://3druckwerkbank.com (Hostinger, statische Website, kein Server, kein Login). Die frühere Codex-App ist unter https://snow-salmon-793472.hostingersite.com erreichbar.
 
 Dieses Dokument fasst alles zusammen, was es über die Idee, den Aufbau, die Bilder und den aktuellen Stand zu wissen gibt. Es ist als Grundlage gedacht, um in einem neuen Chat eine Liste, eine Übersichtsgrafik oder weitere Ideen zu erarbeiten.
 
