@@ -3,14 +3,14 @@ import type { LibraryIsland } from '../types';
 import { IArrowR } from '../ui/Icons';
 
 export const ISLAND_META: Record<LibraryIsland, { w: number; h: number; disc?: { cx: number; cy: number; rx: number; ry: number } }> = {
-  werkstatt: { w: 1191, h: 1106 }, elektronik: { w: 1172, h: 1140 }, ideen: { w: 1196, h: 1145 },
-  rahmen: { w: 1167, h: 597, disc: { cx: 50, cy: 30, rx: 29, ry: 11 } },
+  werkstatt: { w: 1098, h: 1227 }, elektronik: { w: 1098, h: 1226 }, ideen: { w: 1094, h: 1224 },
+  rahmen: { w: 1094, h: 1190 },
   heute: { w: 1154, h: 1209 }, material: { w: 1081, h: 1219 }, wetter: { w: 1084, h: 1205 }, archiv: { w: 1079, h: 1205 }, drucker: { w: 1081, h: 1188 },
   'projekt-garten': { w: 1081, h: 1167 }, 'projekt-haushalt': { w: 1080, h: 1168 }, 'projekt-fahrzeug': { w: 1080, h: 1209 }, 'projekt-buero': { w: 1080, h: 1186 },
   'projekt-hobby': { w: 1079, h: 1204 }, 'projekt-technik': { w: 1086, h: 1208 }, 'projekt-deko': { w: 1081, h: 1196 }, 'projekt-modell': { w: 1080, h: 1195 },
 };
 /** Bump when island sprites change: the CDN and browsers cache /img/* for a year (immutable), so the URL must change. */
-export const ASSET_VERSION = '20261106d';
+export const ASSET_VERSION = '20261106e';
 export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${id}-${w}.webp?v=${ASSET_VERSION}`;
 
 export interface IslandProps {
@@ -35,7 +35,7 @@ export function Island({ image, x, y, size, depth, active, opacity, label, sub, 
       onKeyDown={(e) => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}>
       <div className="island__body" style={{ position: 'relative', width: '100%', aspectRatio: `${meta.w} / ${meta.h}` }}>
         <img className="island__img" src={src} alt="" width={meta.w} height={meta.h} loading={eager ? 'eager' : 'lazy'} decoding="async" draggable={false} />
-        {children ? <div className="island__props" style={image === 'rahmen' ? { left: '14%', right: '14%', top: '-52%', bottom: '55%' } : undefined}>{children}</div> : null}
+        {children ? <div className="island__props" style={image === 'rahmen' ? { left: '25.5%', right: '22.5%', top: '6%', bottom: '64%' } : undefined}>{children}</div> : null}
       </div>
       {label ? (
         <div className={`island__label island__label--${labelSize}`}>

@@ -7,10 +7,10 @@ await mkdir(out, { recursive: true });
 
 const landscapes = [];
 const islands = [
-  ['insel-werkstatt', 'assets-src/werkstatt-referenz.png'],
-  ['insel-elektronik', 'assets-src/elektronik-insel.png'],
-  ['insel-ideen', 'assets-src/ideen-insel.png'],
-  ['insel-rahmen', 'assets-src/rahmen-inselbasis.png'],
+  ['insel-werkstatt', 'assets-src/insel-werkstatt.png'],
+  ['insel-elektronik', 'assets-src/insel-elektronik.png'],
+  ['insel-ideen', 'assets-src/insel-ideen.png'],
+  ['insel-rahmen', 'assets-src/insel-rahmen.png'],
   ['insel-heute', 'assets-src/insel-heute.png'],
   ['insel-material', 'assets-src/insel-material.png'],
   ['insel-wetter', 'assets-src/insel-wetter.png'],

@@ -159,12 +159,14 @@ export function App() {
 function emptyWeather() { return { current: { time: '', temp: 0, feels: 0, humidity: 0, precip: 0, code: 3, cloud: 0, wind: 0, isDay: true }, hourly: [], daily: [] }; }
 
 export function PhotoFrame({ cfg }: { cfg: { photoDataUrl?: string; frame: { ratio: 'quer' | 'hoch' | 'quadrat'; offsetX: number; offsetY: number; zoom: number; style: 'holz' | 'metall' } } }) {
+  // fills the wooden board of the frame island (the island__props box is the board face)
   const ratio = cfg.frame.ratio === 'quer' ? '4 / 3' : cfg.frame.ratio === 'hoch' ? '3 / 4' : '1 / 1';
-  const w = cfg.frame.ratio === 'hoch' ? '34%' : cfg.frame.ratio === 'quadrat' ? '40%' : '48%';
   return (
-    <div style={{ position: 'absolute', left: '50%', bottom: '58%', transform: 'translateX(-50%)', width: w, aspectRatio: ratio, borderRadius: 4, padding: '3.5%', background: cfg.frame.style === 'holz' ? 'linear-gradient(135deg,#8a5a2b,#5a391a)' : 'linear-gradient(135deg,#b9bec7,#6c737d)', boxShadow: '0 12px 30px rgba(0,0,0,.45)' }}>
-      <div style={{ width: '100%', height: '100%', overflow: 'hidden', background: '#222' }}>
-        <img src={cfg.photoDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `translate(${cfg.frame.offsetX}%, ${cfg.frame.offsetY}%) scale(${cfg.frame.zoom})` }} />
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ aspectRatio: ratio, maxWidth: '100%', maxHeight: '100%', width: cfg.frame.ratio === 'quer' ? '100%' : undefined, height: cfg.frame.ratio === 'quer' ? undefined : '100%', borderRadius: 3, padding: '1.2%', background: cfg.frame.style === 'holz' ? 'linear-gradient(135deg,#8a5a2b,#5a391a)' : 'linear-gradient(135deg,#b9bec7,#6b7280)', boxShadow: '0 2px 6px rgba(0,0,0,.4)', boxSizing: 'border-box' }}>
+        <div style={{ width: '100%', height: '100%', overflow: 'hidden', background: '#222' }}>
+          <img src={cfg.photoDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `translate(${cfg.frame.offsetX}%, ${cfg.frame.offsetY}%) scale(${cfg.frame.zoom})` }} />
+        </div>
       </div>
     </div>
   );
