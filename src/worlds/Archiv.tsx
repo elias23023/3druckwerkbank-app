@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useStore, archivedProjects, liveProjects } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { fmtDate, fmtGrams, fmtNum, fold } from '../lib/format';
-import { Panel, Stat } from '../ui/Glass';
+import { PanelColumn, Panel, Stat } from '../ui/Glass';
 import { islandSrc } from '../scene/Island';
 import { IArchive, ISparkle, IStar, IImage, IHistory, ICopy } from '../ui/Icons';
 import { navigate } from '../router';
@@ -32,16 +32,18 @@ export function Archiv() {
         </div>
       </div>
 
-      <Panel title="Zeitreise" icon={<IHistory />} style={{ left: '3.2%', top: '42%', width: '22%' }} delay={60}>
+      <PanelColumn side="left" top="41%" bottom="7%" width="22%">
+      <Panel title="Zeitreise" icon={<IHistory />} delay={60}>
         <div className="bars">{months.map((m) => <div key={m.key} title={`${m.n} Projekte`}><i style={{ height: `${Math.max(3, (m.n / Math.max(1, ...months.map((x) => x.n))) * 44)}px`, background: m.n ? undefined : 'rgba(255,255,255,.1)' }} /><span>{m.label}</span></div>)}</div>
         <div className="grid2"><Stat value={all.length} label="archiviert" /><Stat value={totals.prints} label="Drucke" /><Stat value={fmtGrams(totals.g)} label="Material" /><Stat value={`${fmtNum(totals.h)} h`} label="Druckzeit" /></div>
       </Panel>
 
-      <Panel title="Beliebte Tags" icon={<IStar />} style={{ left: '3.2%', top: '70%', width: '22%', maxHeight: '24%' }} delay={120}>
+      <Panel title="Beliebte Tags" icon={<IStar />} delay={120}>
         <div className="pills">{tags.map(([t, n]) => <button key={t} className={`pill xs${tag === t ? ' pill--on' : ''}`} onClick={() => setTag(tag === t ? null : t)}>#{t} <span className="faint">{n}</span></button>)}{tags.length === 0 ? <span className="muted small">Noch keine Tags.</span> : null}</div>
         <b className="small" style={{ marginTop: 4 }}>Wiederentdecken</b>
         {rediscover.map((p) => <div key={p.id} className="sim-item" onClick={() => { const r = reports.find((x) => x.projectId === p.id); if (r) openSheet({ kind: 'bericht', reportId: r.id }); }}><img src={islandSrc(p.island.libraryId, 256)} alt="" /><div className="col grow" style={{ gap: 0 }}><b className="small ellipsis">{p.name}</b><span className="xs muted">{fmtDate(p.archivedAt)}</span></div></div>)}
       </Panel>
+      </PanelColumn>
 
       <Panel title="Galerie" icon={<IImage />} style={{ left: '27%', bottom: '10.5%', width: '46%', maxHeight: '40%' }} delay={100}
         right={<div className="row" style={{ gap: 6 }}><input className="input" style={{ width: 150, padding: '4px 8px', fontSize: 12 }} placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} /><button className={`pill${fav ? ' pill--on' : ''}`} onClick={() => setFav(!fav)}><IStar width={12} height={12} /> Favoriten</button></div>}>
@@ -57,13 +59,15 @@ export function Archiv() {
         )}
       </Panel>
 
-      <Panel title="Vorlagen" icon={<ICopy />} style={{ right: '3.2%', top: '42%', width: '24%', maxHeight: '18%' }} delay={140}>
+      <PanelColumn side="right" top="41%" bottom="2.5%" width="24%">
+      <Panel title="Vorlagen" icon={<ICopy />} delay={140}>
         {templates.length === 0 ? <p className="muted small">Noch keine Vorlage. Speichere ein Projekt in der Innenwelt oder beim Abschluss als Vorlage.</p> : templates.map((p) => <div key={p.id} className="sim-item" onClick={() => { const nid = projectFromTemplate(p.id); navigate({ world: 'projekte', projectId: nid }); }}><img src={islandSrc(p.island.libraryId, 256)} alt="" /><div className="col grow" style={{ gap: 0 }}><b className="small ellipsis">{p.name}</b><span className="xs muted">{p.type.split(' / ')[0]} · {p.milestones.length} Meilensteine · {p.tags.length} Tags</span></div><span className="xs muted">Neu daraus</span></div>)}
       </Panel>
 
-      <Panel title="Erfahrungen" icon={<ISparkle />} style={{ right: '3.2%', top: '62%', width: '24%', maxHeight: '34%' }} delay={200}>
+      <Panel title="Erfahrungen" icon={<ISparkle />} delay={200}>
         {lessons.length === 0 ? <p className="muted small">Noch keine Erfahrungen festgehalten.</p> : lessons.map((x, i) => <div key={i} className="col" style={{ gap: 0 }}><span className="small">{x.l}</span><span className="xs faint">{x.p}</span></div>)}
       </Panel>
+      </PanelColumn>
       <div className="hand hand--bl" style={{ bottom: '4%' }}>{'Aus Ideen.\nWird morgen.'}</div>
       <IArchive style={{ display: 'none' }} />
     </>

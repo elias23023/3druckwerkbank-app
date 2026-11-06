@@ -3,7 +3,7 @@ import { useStore, printProgress, printRemainingMin, availableGrams, liveProject
 import { useShallow } from 'zustand/react/shallow';
 import { useNow } from '../lib/time';
 import { fmtDuration, fmtNum, relTime, fmtGrams, fold } from '../lib/format';
-import { Panel, Check, Stat } from '../ui/Glass';
+import { PanelColumn, Panel, Check, Stat } from '../ui/Glass';
 import { IPrinter, IList, IWrench, IUp, IDown, IPlay, IX, ILayers, IDownload, IBolt } from '../ui/Icons';
 import type { PrintJob } from '../types';
 
@@ -52,7 +52,8 @@ export function Druck() {
     <>
       <div className="world-title"><h1>3D-Druck</h1><p>Deine Drucker. Immer im Blick.</p></div>
 
-      <Panel title="Drucker" icon={<IPrinter />} style={{ left: '3.2%', top: '24%', width: '22%', maxHeight: '24%' }} delay={60}>
+      <PanelColumn side="left" top="24%" bottom="10.5%" width="22%">
+      <Panel title="Drucker" icon={<IPrinter />} delay={60}>
         {printers.map((d) => { const job = prints.find((p) => p.printerId === d.id && p.status === 'läuft'); return (
           <div key={d.id} className="item item--click" onClick={() => a.openSheet({ kind: 'geraet', deviceId: d.id })}>
             <span className="dot" style={{ background: stColor[d.status] }} />
@@ -61,9 +62,8 @@ export function Druck() {
         ); })}
         {devices.filter((d) => d.kind === 'trockner').map((d) => <div key={d.id} className="item item--click" onClick={() => a.openSheet({ kind: 'geraet', deviceId: d.id })}><span className="dot" style={{ background: stColor[d.status] }} /><div className="grow col" style={{ gap: 1 }}><b className="small">{d.name}</b><span className="xs muted">{d.notes ?? d.status}</span></div></div>)}
       </Panel>
-
       {ams ? (
-        <Panel title="AMS" icon={<ILayers />} right={<button className="btn btn--sm btn--ghost" style={{ fontSize: 11 }} onClick={() => a.openSheet({ kind: 'geraet', deviceId: ams.id })}>verwalten</button>} style={{ left: '3.2%', top: '50%', width: '22%' }} delay={120}>
+        <Panel title="AMS" icon={<ILayers />} right={<button className="btn btn--sm btn--ghost" style={{ fontSize: 11 }} onClick={() => a.openSheet({ kind: 'geraet', deviceId: ams.id })}>verwalten</button>} delay={120}>
           <div className="ams">
             {(ams.slots ?? []).map((sl) => { const sp = spools.find((x) => x.id === sl.spoolId); const fill = sp ? sp.remainingGrams / sp.initialGrams : 0; return (
               <div key={sl.index}>
@@ -74,6 +74,13 @@ export function Druck() {
           </div>
         </Panel>
       ) : null}
+      <Panel title="Statistiken (30 Tage)" icon={<IBolt />} delay={240}>
+        <div className="grid2" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr' }}><Stat value={stats.parts} label="Gedruckte Teile" /><Stat value={`${fmtNum(stats.hours)} h`} label="Druckzeit" /><Stat value={fmtGrams(stats.grams)} label="Material" /><Stat value={`${stats.ok} %`} label="Erfolgsquote" /></div>
+        <div className="bars" style={{ height: 36 }}>{weeks.map((n, i) => <div key={i}><i style={{ height: `${Math.max(3, (n / Math.max(1, ...weeks)) * 28)}px` }} /><span>W{i + 1}</span></div>)}</div>
+        <span className="xs muted">Energie: {fmtNum(kwhMeasured, 2)} kWh gemessen · {fmtNum(kwhEst, 2)} kWh geschätzt · ≈ {fmtNum((kwhMeasured + kwhEst) * settings.pricePerKwh, 2)} €</span>
+      </Panel>
+      </PanelColumn>
+
 
       <Panel strong style={{ left: '32%', bottom: '10.5%', width: '36%' }} delay={100}
         foot={main ? <><button className="btn btn--sm" onClick={() => a.openSheet({ kind: 'druck', printId: main.id })}>Details</button><button className="btn btn--sm btn--ghost" onClick={() => a.openSheet({ kind: 'druck', printId: main.id })}>Ergebnis buchen</button><button className="btn btn--sm btn--ghost btn--danger" onClick={() => a.cancelPrint(main.id)}><IX width={12} height={12} /> Abbrechen</button><span className="xs faint" style={{ marginLeft: 'auto' }}>simuliert</span></> : <>{printers.map((d) => <button key={d.id} className="btn btn--sm btn--primary" disabled={!queue.some((q) => q.printerId === d.id && readiness(q).ok)} onClick={() => a.startNextPrint(d.id)}><IPlay width={12} height={12} /> {d.name} starten</button>)}</>}>
@@ -96,7 +103,8 @@ export function Druck() {
         ) : <><h2 style={{ fontSize: 18 }}>Kein Druck läuft</h2><p className="small muted">{queue.length ? `${queue.length} in der Warteschlange.` : 'Plane einen Druck aus einem Projekt heraus.'}</p></>}
       </Panel>
 
-      <Panel title="Nächste Drucke" icon={<IList />} style={{ right: '3.2%', top: '24%', width: '24%', maxHeight: '27%' }} delay={140}>
+      <PanelColumn side="right" top="24%" bottom="10.5%" width="24%">
+      <Panel title="Nächste Drucke" icon={<IList />} delay={140}>
         {queue.length === 0 ? <p className="muted small">Leer.</p> : queue.map((q, i) => { const r = readiness(q); return (
           <div key={q.id} className="item" style={{ padding: '6px 8px', alignItems: 'flex-start' }}>
             <span className="xs faint" style={{ width: 14, marginTop: 2 }}>{i + 1}</span>
@@ -110,18 +118,10 @@ export function Druck() {
         ); })}
       </Panel>
 
-      <Panel title="Wartung & Status" icon={<IWrench />} style={{ right: '3.2%', top: '52.5%', width: '24%', maxHeight: '15%' }} delay={200}>
+      <Panel title="Wartung & Status" icon={<IWrench />} delay={200}>
         {maint.length === 0 ? <p className="muted small">Alles in Ordnung.</p> : maint.slice(0, 3).map(({ d, m }) => <div key={m.id} className="row small"><Check on={m.done} onClick={() => a.toggleMaintenance(d.id, m.id)} /><span className="grow ellipsis">{d.name}: {m.title}</span>{new Date(m.due).getTime() < now.getTime() ? <span className="pill pill--warn xs">überfällig</span> : <span className="xs muted">{relTime(m.due, now.getTime())}</span>}</div>)}
       </Panel>
-
-
-      <Panel title="Statistiken (30 Tage)" icon={<IBolt />} style={{ left: '3.2%', bottom: '10.5%', width: '22%', maxHeight: '19%' }} delay={240}>
-        <div className="grid2" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr' }}><Stat value={stats.parts} label="Gedruckte Teile" /><Stat value={`${fmtNum(stats.hours)} h`} label="Druckzeit" /><Stat value={fmtGrams(stats.grams)} label="Material" /><Stat value={`${stats.ok} %`} label="Erfolgsquote" /></div>
-        <div className="bars" style={{ height: 36 }}>{weeks.map((n, i) => <div key={i}><i style={{ height: `${Math.max(3, (n / Math.max(1, ...weeks)) * 28)}px` }} /><span>W{i + 1}</span></div>)}</div>
-        <span className="xs muted">Energie: {fmtNum(kwhMeasured, 2)} kWh gemessen · {fmtNum(kwhEst, 2)} kWh geschätzt · ≈ {fmtNum((kwhMeasured + kwhEst) * settings.pricePerKwh, 2)} €</span>
-      </Panel>
-
-      <Panel title="Eingang" icon={<IDownload />} right={<div className="tabs" style={{ padding: 2 }}>{(['neu', 'zugeordnet', 'ignoriert'] as const).map((t) => <button key={t} className={inboxTab === t ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setInboxTab(t)}>{t === 'neu' ? `Neu ${inbox.filter((p) => !p.ignored).length}` : t === 'zugeordnet' ? 'Zugeordnet' : `Ignoriert ${inbox.filter((p) => p.ignored).length}`}</button>)}</div>} style={{ right: '3.2%', bottom: '10.5%', width: '24%', maxHeight: '21%' }} delay={280}>
+      <Panel title="Eingang" icon={<IDownload />} right={<div className="tabs" style={{ padding: 2 }}>{(['neu', 'zugeordnet', 'ignoriert'] as const).map((t) => <button key={t} className={inboxTab === t ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setInboxTab(t)}>{t === 'neu' ? `Neu ${inbox.filter((p) => !p.ignored).length}` : t === 'zugeordnet' ? 'Zugeordnet' : `Ignoriert ${inbox.filter((p) => p.ignored).length}`}</button>)}</div>} delay={280}>
         {inboxTab === 'zugeordnet' ? prints.filter((p) => p.projectId && p.imported === false).slice(0, 3).map((p) => <div key={p.id} className="row small"><span className="dot" style={{ background: '#4ccf7a' }} /><span className="grow ellipsis">{p.name}</span><span className="xs muted">{projects.find((x) => x.id === p.projectId)?.name}</span></div>) : null}
         {inboxTab !== 'zugeordnet' ? (inbox.filter((p) => !!p.ignored === (inboxTab === 'ignoriert')).length === 0 ? <p className="muted small">{inboxTab === 'neu' ? 'Keine neuen Drucke ohne Projekt.' : 'Nichts ignoriert.'}</p> : inbox.filter((p) => !!p.ignored === (inboxTab === 'ignoriert')).map((p) => { const sug = suggest(p); return (
           <div key={p.id} className="col" style={{ gap: 4, padding: '6px 8px', borderRadius: 10, background: 'rgba(255,255,255,.06)' }}>
@@ -136,6 +136,10 @@ export function Druck() {
           </div>
         ); })) : null}
       </Panel>
+      </PanelColumn>
+
+
+
       <div className="hand hand--tr">{'Nicht nur drucken,\nsondern Möglichkeiten\nerschaffen.'}</div>
     </>
   );

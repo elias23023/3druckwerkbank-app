@@ -38,3 +38,8 @@ export function Seg<T extends string>({ value, options, onChange }: { value: T; 
 export function Stat({ value, label }: { value: ReactNode; label: string }) {
   return <div className="stat"><b>{value}</b><span>{label}</span></div>;
 }
+
+/** A side column that lays its panels out in flow (flex) so they shrink and scroll instead of overlapping on short screens. */
+export function PanelColumn({ side, top, bottom, width, children }: { side: 'left' | 'right'; top: string; bottom: string; width: string; children: ReactNode }) {
+  return <div className={`panel-col panel-col--${side}`} style={{ [side]: '3.2%', top, bottom, width }}>{children}</div>;
+}

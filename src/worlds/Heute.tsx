@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useNow, greeting, quoteOfDay, sameDay, type DayPhase } from '../lib/time';
 import { fmtDuration, fmtNum, fmtTime, relTime, fmtGrams } from '../lib/format';
 import { bestPvWindow, todayDaily, wmo, dryWindow } from '../lib/weather';
-import { Panel, Check, Progress } from '../ui/Glass';
+import { PanelColumn, Panel, Check, Progress } from '../ui/Glass';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import { ICal, ICheck, IEnergy, IPlay, IPrinter, ISun, IWind, IDrop, ISkip, ISpool, IWrench, IClock, ICube } from '../ui/Icons';
 import { navigate } from '../router';
@@ -42,7 +42,8 @@ export function Heute({ phase }: { phase: DayPhase }) {
       <div className="heute-time"><b>{fmtTime(now)}</b><span>{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length} Druck{running.length === 1 ? '' : 'e'} läuft</span></div>
       <div className="ring-legend"><span><i className="dot" style={{ background: '#ffd36e' }} />Tageslicht · PV</span><span><i className="dot" style={{ background: '#7cc6ff' }} />Drucke</span><span><i className="dot" style={{ background: '#4ccf7a' }} />Aufgaben</span><span><i className="dot" style={{ background: '#c59bff' }} />Termine</span><span><i className="dot" style={{ background: '#ffb547' }} />Wartung</span></div>
 
-      <Panel title="Aktive Drucke" icon={<IPrinter />} right={<span className="pill xs">{running.length}</span>} style={{ left: '3.2%', top: '29%', width: '23%' }} delay={60}
+      <PanelColumn side="left" top="29%" bottom="26%" width="23%">
+      <Panel title="Aktive Drucke" icon={<IPrinter />} right={<span className="pill xs">{running.length}</span>} delay={60}
         foot={<>{printers.map((d) => <button key={d.id} className="btn btn--sm" disabled={prints.some((p) => p.printerId === d.id && p.status === 'läuft') || !queued.some((p) => p.printerId === d.id)} onClick={() => startNextPrint(d.id)}><IPlay width={12} height={12} /> {d.name}</button>)}<button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={() => navigate({ world: 'druck' })}>Alle</button></>}>
         {running.length === 0 ? <p className="muted small">Kein Druck läuft gerade.{queued[0] ? ` Nächster: ${queued[0].name}.` : ''}</p> : running.map((p) => (
           <div key={p.id} className="item item--click" onClick={() => openSheet({ kind: 'druck', printId: p.id })}>
@@ -56,7 +57,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
         ))}
       </Panel>
 
-      <Panel title="Aufgaben heute" icon={<ICheck />} right={<span className="pill xs">{open.length}</span>} style={{ left: '3.2%', top: '51%', width: '23%', maxHeight: '27%' }} delay={120}>
+      <Panel title="Aufgaben heute" icon={<ICheck />} right={<span className="pill xs">{open.length}</span>} delay={120}>
         {open.length === 0 ? <p className="muted small">Alles erledigt. Schöner Tag.</p> : open.slice(0, 5).map((t) => (
           <div key={t.id} className="item" style={{ padding: '6px 8px' }}>
             <Check on={t.done} onClick={() => toggleTask(t.id)} />
@@ -68,8 +69,10 @@ export function Heute({ phase }: { phase: DayPhase }) {
           </div>
         ))}
       </Panel>
+      </PanelColumn>
 
-      <Panel title={`Wetter · ${settings.location.name.split(',')[0]}`} icon={<ISun />} style={{ right: '3.2%', top: '29%', width: '23%' }} delay={100}
+      <PanelColumn side="right" top="29%" bottom="26%" width="23%">
+      <Panel title={`Wetter · ${settings.location.name.split(',')[0]}`} icon={<ISun />} delay={100}
         foot={<><span className="xs faint">{weather ? `Open-Meteo · ${fmtTime(weather.fetchedAt)}` : ''}</span><button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={() => navigate({ world: 'wetter' })}>Mehr</button></>}>
         {cur ? (
           <>
@@ -80,9 +83,10 @@ export function Heute({ phase }: { phase: DayPhase }) {
         ) : <p className="muted small">{weather?.error ? 'Wetter nicht verfügbar.' : 'Wetter wird geladen …'}</p>}
       </Panel>
 
-      <Panel title="Wetterentwicklung" icon={<IClock />} style={{ right: '3.2%', top: '51%', width: '23%' }} delay={160}>
+      <Panel title="Wetterentwicklung" icon={<IClock />} delay={160}>
         {nextHours.length ? <div className="hours-mini">{nextHours.map((h, i) => <div key={h.time}><span className="muted">{i === 0 ? 'jetzt' : fmtTime(h.time).slice(0, 5)}</span><WeatherIcon code={h.code} isDay={h.isDay} size={16} /><b>{fmtNum(h.temp)}°</b><span className="muted" style={{ fontSize: 10 }}>{h.precipProb} %</span></div>)}</div> : <p className="muted small">–</p>}
       </Panel>
+      </PanelColumn>
 
       <div className="bottom-row">
         <Panel title="Nächste Termine" icon={<ICal />} delay={200}>

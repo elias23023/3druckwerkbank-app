@@ -413,3 +413,8 @@ p { margin: 0; }
 .season-fx--still i, :root[data-motion="reduziert"] .season-fx i { animation: none !important; opacity: .35; top: calc(10% + var(--delay, 0s) * 0); }
 .start-season { display: block; margin-top: 4px; font-size: clamp(11px, .9cqw, 14px); color: rgba(255,255,255,.85); }
 .stage[data-season="winter"] .ground-mist { opacity: 1.15; }
+
+/* ---------- flow columns for side panels ---------- */
+.panel-col { position: absolute; display: flex; flex-direction: column; gap: 12px; pointer-events: none; z-index: 2; }
+.panel-col > .panel { position: static; width: auto; flex: 0 1 auto; min-height: 0; max-height: none; pointer-events: auto; overflow: hidden; }
+.panel-col > .panel > .panel__body { overflow: auto; min-height: 0; flex: 1 1 auto; scrollbar-width: thin; }
