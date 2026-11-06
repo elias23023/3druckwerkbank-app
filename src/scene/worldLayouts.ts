@@ -20,7 +20,7 @@ export function startIslands(): Placement[] {
 const RING: [number, number, number, number][] = [[12, 47, 16, 0.5], [88, 47, 16, 0.5], [29, 20, 12.5, 0.66], [71, 20, 12.5, 0.66], [50, 13, 10.5, 0.78]];
 
 /** Per-world overrides so neighbour islands stay visible beside that world's panels (side columns start lower there). */
-const HIGH_RING: typeof RING = [[11, 23, 11, 0.5], [89, 23, 11, 0.5], [30, 10, 9.5, 0.66], [70, 10, 9.5, 0.66], [50, 6, 8, 0.78]];
+const HIGH_RING: typeof RING = [[11, 30, 11, 0.5], [89, 30, 11, 0.5], [30, 10, 9.5, 0.66], [70, 10, 9.5, 0.66], [50, 6, 8, 0.78]];
 const RING_BY_WORLD: Partial<Record<WorldId, typeof RING>> = { heute: HIGH_RING, druck: HIGH_RING, material: HIGH_RING, wetter: HIGH_RING, archiv: HIGH_RING };
 const CENTRE_BY_WORLD: Partial<Record<WorldId, [number, number, number]>> = { heute: [50, 33, 23], druck: [50, 33, 23], material: [50, 33, 23], wetter: [50, 33, 23], archiv: [50, 33, 23] };
 
@@ -48,10 +48,10 @@ export function projectCarousel(projects: Project[], activeIndex: number): Place
   projects.forEach((p, i) => {
     const r = rel(i);
     if (r === 0) out.push({ key: `p-${p.id}`, x: 50, y: 40, size: 30, depth: 0, projectId: p.id });
-    else if (r === -1) out.push({ key: `p-${p.id}`, x: 17, y: 44, size: 19, depth: 0.4, projectId: p.id, label: p.name, labelSize: 'small' });
-    else if (r === 1) out.push({ key: `p-${p.id}`, x: 83, y: 44, size: 19, depth: 0.4, projectId: p.id, label: p.name, labelSize: 'small' });
-    else if (r === -2) out.push({ key: `p-${p.id}`, x: 4, y: 34, size: 11, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
-    else if (r === 2) out.push({ key: `p-${p.id}`, x: 96, y: 34, size: 11, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
+    else if (r === -1) out.push({ key: `p-${p.id}`, x: 16, y: 52, size: 17, depth: 0.4, projectId: p.id, label: p.name, labelSize: 'small' });
+    else if (r === 1) out.push({ key: `p-${p.id}`, x: 84, y: 52, size: 17, depth: 0.4, projectId: p.id, label: p.name, labelSize: 'small' });
+    else if (r === -2) out.push({ key: `p-${p.id}`, x: 3, y: 36, size: 10, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
+    else if (r === 2) out.push({ key: `p-${p.id}`, x: 97, y: 36, size: 10, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
     else out.push({ key: `p-${p.id}`, x: 50 + (r < 0 ? -34 : 34), y: 22, size: 6, depth: 0.92, projectId: p.id, opacity: 0.35 });
   });
   return out;
@@ -60,7 +60,7 @@ export function projectCarousel(projects: Project[], activeIndex: number): Place
 export function projectInner(project: Project, others: Project[]): Placement[] {
   const out: Placement[] = [];
   ORDER.forEach((w, i) => { const [x, y, size, depth] = FAR[i]; out.push({ key: `w-${w}`, x, y, size, depth, world: w, opacity: 0.25 }); });
-  out.push({ key: `p-${project.id}`, x: 50, y: 52, size: 28, depth: 0, projectId: project.id });
+  out.push({ key: `p-${project.id}`, x: 50, y: 55, size: 26, depth: 0, projectId: project.id });
   others.slice(0, 4).forEach((p, i) => out.push({ key: `p-${p.id}`, x: [6, 94, 18, 82][i], y: [42, 44, 24, 26][i], size: 7, depth: 0.9, projectId: p.id, opacity: 0.2 }));
   return out;
 }

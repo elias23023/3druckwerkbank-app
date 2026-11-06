@@ -69,7 +69,7 @@ p { margin: 0; }
 .hand { position: absolute; font-family: var(--hand); font-size: clamp(18px, 1.7cqw, 28px); color: rgba(255,255,255,.88); line-height: 1.15; text-shadow: 0 2px 12px rgba(0,0,0,.55); transform: rotate(-5deg); pointer-events: none; max-width: 18%; white-space: pre-line; animation: rise var(--t-slow) var(--ease) both; }
 .hand--br { right: 3%; bottom: 12%; transform: rotate(-4deg); text-align: right; }
 .hand--bl { left: 2.5%; bottom: 3.5%; }
-.hand--tr { right: 3%; top: 12%; text-align: right; transform: rotate(-6deg); }
+.hand--tr { right: 3%; top: 7.5%; text-align: right; transform: rotate(-6deg); }
 
 .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1px solid var(--glass-border); font-size: 13px; font-weight: 500; transition: background var(--t-fast), transform var(--t-fast); white-space: nowrap; }
 .btn:hover { background: rgba(255,255,255,.18); }
