@@ -98,7 +98,7 @@ Demodaten: fünf aktive Projekte (Sensorhalter Garten, Bewässerungsclip, Werkze
 
 **Landschaften (1672 × 941, Bergsee mit gleichbleibendem Bildaufbau):** je Jahreszeit vier Bilder (früher Morgen, Mittag, Sonnenuntergang, Nacht) für Frühling, Sommer, Herbst und Winter, dazu ein regennasser Bergsee für bedeckt, Nebel und Regen. Die zwölf Licht-Looks (Dämmerung bis Mondnacht) steuern weiter Sonnenstand, Himmelsfarbe und Wolken und werden auf die vier Tagesbilder der aktuellen Jahreszeit abgebildet (`src/scene/looks.ts`, `LOOK_PHASE`). Die früheren zwölf Tal-Landschaften liegen in `reference/alte-assets/`.
 
-**Hauptinseln (1536 × 1024, freigestellt geliefert):** Heute (Garten mit stehendem Leuchtring, Bank und Hütte; darin das Tagesportal), Projekte (Werkstatthütte mit Baum), 3D-Druck (Druckwerkstatt mit AMS), Material (Spulenregal), Wetter (Kuppel, Wettermast, Wasserfall), Archiv (Bibliothek mit Vitrinen).
+**Hauptinseln (1536 × 1024, freigestellt geliefert):** Heute (Garten mit Bank, Hütte und leerem Steinsockel; darauf zeichnet die App das Tagesportal als Messingring), Projekte (Werkstatthütte mit Baum), 3D-Druck (Druckwerkstatt mit AMS), Material (Spulenregal), Wetter (Kuppel, Wettermast, Wasserfall), Archiv (Bibliothek mit Vitrinen).
 
 **Bibliotheksinseln für Projekte (1254 × 1254):** Werkstatt, Elektronik, Ideen, Drucker, acht Projektwelten (Garten, Haushalt, Fahrzeug, Büro, Hobby, Technik, Deko, Modellbau) sowie 16 weitere Motive: Haus & Bauen, Sammlung, Druckhütte, Pergola-Garten, Holzwerkstatt, Computerstudio, Elektroniklabor, Spulenlager, Solarpavillon, Metallwerkstatt, Atelier, Observatorium, Planungsgarten, Garten mit Ring, Werkstatt-Pavillon; für eigene Fotos zwei Rahmen-Inseln (Holztafel, Staffelei).
 

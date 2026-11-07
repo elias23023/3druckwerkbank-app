@@ -19,14 +19,14 @@ function arc(from: number, to: number, r: number) {
  * the real landscape and weather show through. On the rim: one luminous arc, the sun's path from sunrise (left) to sunset (right);
  * the passed part glows, a sun or moon bead marks now. Centre: the clock, and (not in compact mode) when the sun sets or rises next.
  */
-export function Tagesportal({ compact = false, turn = 33, lean = 7 }: { compact?: boolean; turn?: number; lean?: number }) {
+export function Tagesportal({ compact = false, turn = 28, lean = 0 }: { compact?: boolean; turn?: number; lean?: number }) {
   const now = useNow(1000);
   const weather = useStore(useShallow((s) => s.weather));
   const today = todayDaily(weather?.data, now);
   const sr = today ? hourOf(today.sunrise) : 7; const ss = today ? hourOf(today.sunset) : 17;
   const h = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
   const isDay = h >= sr && h <= ss;
-  const R = 90; const [bx, by] = pt(h, R);
+  const R = 83; const [bx, by] = pt(h, R);
   // what the centre line says: the next change of light
   const tomorrow = weather?.data.daily?.[1];
   const at = (iso: string | undefined, fallbackHour: number) => fmtTime(iso ? new Date(iso) : new Date(new Date(now).setHours(fallbackHour, 0, 0, 0)));
@@ -40,17 +40,23 @@ export function Tagesportal({ compact = false, turn = 33, lean = 7 }: { compact?
           <defs>
             <linearGradient id="portalDay" gradientUnits="userSpaceOnUse" x1={f(pt(sr, R)[0])} y1={f(pt(sr, R)[1])} x2={f(pt(ss, R)[0])} y2={f(pt(ss, R)[1])}><stop offset="0" stopColor="#ffb08a" /><stop offset=".5" stopColor="#fff1c2" /><stop offset="1" stopColor="#ffa052" /></linearGradient>
             <radialGradient id="portalText" cx="50%" cy="50%" r="50%"><stop offset="0" stopColor="rgba(8,14,30,.55)" /><stop offset=".7" stopColor="rgba(8,14,30,.25)" /><stop offset="1" stopColor="rgba(8,14,30,0)" /></radialGradient>
+            <linearGradient id="portalBrass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f6dc9a" /><stop offset=".35" stopColor="#c99a4a" /><stop offset=".65" stopColor="#8a5d22" /><stop offset="1" stopColor="#e4bf6e" /></linearGradient>
+            <linearGradient id="portalBrassHi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="rgba(255,250,225,.95)" /><stop offset=".5" stopColor="rgba(255,240,200,.15)" /><stop offset="1" stopColor="rgba(255,255,255,0)" /></linearGradient>
             <filter id="portalSoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" /></filter>
             <filter id="portalGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.8" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
           </defs>
 
+          {/* the ring itself: a brass tube standing on the pedestal of the island (the island image has no ring of its own) */}
+          <circle cx="100" cy="100" r="93" fill="none" stroke="rgba(0,0,0,.35)" strokeWidth="9" filter="url(#portalSoft)" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalBrass)" strokeWidth="7" />
+          <circle cx="100" cy="100" r="95.2" fill="none" stroke="url(#portalBrassHi)" strokeWidth="1.6" />
+          <circle cx="100" cy="100" r="90.6" fill="none" stroke="rgba(60,35,10,.55)" strokeWidth=".9" />
           {/* inside stays transparent: the real landscape and weather show through; only a soft dark centre keeps the clock readable */}
           <circle cx="100" cy="100" r="46" fill="url(#portalText)" />
-          <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(255,255,255,.28)" strokeWidth=".7" />
-
+          
           {/* the rim: the sun's path. Night part faint, daylight as a warm arc, the passed part glowing */}
-          <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(10,16,34,.45)" strokeWidth="5.5" />
-          <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(140,170,255,.4)" strokeWidth="2.2" />
+          <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(10,16,34,.4)" strokeWidth="5" />
+          <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(140,170,255,.42)" strokeWidth="2" />
           <path d={arc(sr, ss, R)} fill="none" stroke="url(#portalDay)" strokeWidth="4.2" strokeLinecap="round" opacity=".5" />
           {h > sr ? <path d={arc(sr, Math.min(h, ss), R)} fill="none" stroke="#ffe9b0" strokeWidth="7" strokeLinecap="round" opacity=".35" filter="url(#portalSoft)" /> : null}
           {h > sr ? <path d={arc(sr, Math.min(h, ss), R)} fill="none" stroke="url(#portalDay)" strokeWidth="4.2" strokeLinecap="round" filter="url(#portalGlow)" /> : null}
@@ -64,6 +70,7 @@ export function Tagesportal({ compact = false, turn = 33, lean = 7 }: { compact?
           </g>
         </svg>
       </div>
+      <div className="portal__foot" />
       <div className="portal__centre"><b>{fmtTime(now)}</b>{compact ? null : <><span>{line[0]}</span><span className="portal__sub">{line[1]}</span></>}</div>
     </div>
   );
