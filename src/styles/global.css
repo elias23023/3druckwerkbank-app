@@ -389,8 +389,9 @@ p { margin: 0; }
 
 /* ---------- flow columns for side panels ---------- */
 .panel-col { position: absolute; display: flex; flex-direction: column; gap: 12px; pointer-events: none; z-index: 2; }
-.panel-col > .panel { position: static; width: auto; flex: 0 1 auto; min-height: 0; max-height: none; pointer-events: auto; overflow: hidden; }
-.panel-col > .panel > .panel__body { overflow: auto; min-height: 0; flex: 1 1 auto; scrollbar-width: thin; }
+.panel-col > .panel { position: static; width: auto; flex: 0 1 auto; min-height: 0; max-height: none; pointer-events: auto; overflow: hidden; padding: 12px 14px; gap: 8px; }
+/* when a column runs out of room, every panel keeps at least one row of content visible; the rest scrolls */
+.panel-col > .panel > .panel__body { overflow: auto; min-height: 58px; flex: 1 1 auto; scrollbar-width: thin; }
 
 /* ---------- Heute info ring: floating glass ring over the island platform ---------- */
 /* standing ring: laid into the painted gold ring of the Heute island (measured: centre 43.5 % / 30.7 %, height 37.4 % of the island) */

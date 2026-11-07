@@ -20,7 +20,7 @@ export function startIslands(): Placement[] {
 const RING: [number, number, number, number][] = [[12, 47, 16, 0.5], [88, 47, 16, 0.5], [29, 20, 12.5, 0.66], [71, 20, 12.5, 0.66], [50, 13, 10.5, 0.78]];
 
 /** Per-world overrides so neighbour islands stay visible beside that world's panels (side columns start lower there). */
-const HIGH_RING: typeof RING = [[11, 30, 11, 0.5], [89, 30, 11, 0.5], [30, 10, 9.5, 0.66], [70, 10, 9.5, 0.66], [50, 6, 8, 0.78]];
+const HIGH_RING: typeof RING = [[11, 27, 10.5, 0.5], [89, 27, 10.5, 0.5], [30, 10, 9.5, 0.66], [70, 10, 9.5, 0.66], [50, 6, 8, 0.78]];
 const RING_BY_WORLD: Partial<Record<WorldId, typeof RING>> = { heute: HIGH_RING, druck: HIGH_RING, material: HIGH_RING, wetter: HIGH_RING, archiv: HIGH_RING };
 // the main islands are wide (3:2), so they get more width than the old square sprites
 const CENTRE_BY_WORLD: Partial<Record<WorldId, [number, number, number]>> = { heute: [50, 33, 30], druck: [50, 33, 30], material: [50, 33, 30], wetter: [50, 33, 30], archiv: [50, 33, 30] };

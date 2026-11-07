@@ -43,7 +43,7 @@ export function Wetter() {
         </>
       ) : null}
 
-      <PanelColumn side="left" top="44%" bottom="2.5%" width="22%">
+      <PanelColumn side="left" top="38%" bottom="2.5%" width="22%">
       <Panel title="Aktuell" icon={<ISun />} delay={60}
         foot={<><span className="xs faint">Quelle: Open-Meteo{weather ? ` · ${relTime(weather.fetchedAt, now.getTime())}` : ''}</span><button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={refresh} title="Aktualisieren"><IRefresh width={13} height={13} /></button></>}>
         {cur ? (
@@ -88,7 +88,7 @@ export function Wetter() {
         </div>
       </Panel>
 
-      <PanelColumn side="right" top="44%" bottom="2.5%" width="24%">
+      <PanelColumn side="right" top="38%" bottom="2.5%" width="24%">
       <Panel title="7 Tage" icon={<ICal />} delay={140}>
         <div className="days">
           {(d?.daily ?? []).map((day, i) => <div key={day.date}><span className="muted">{i === 0 ? 'Heute' : fmtDayShort(day.date)}</span><WeatherIcon code={day.code} size={18} /><span className="xs muted ellipsis">{wmo(day.code).label}</span><span><b>{fmtNum(day.tmax)}°</b> <span className="muted">{fmtNum(day.tmin)}°</span></span><span className="xs muted" style={{ textAlign: 'right' }}>{fmtNum(day.precipSum, 1)} mm</span></div>)}

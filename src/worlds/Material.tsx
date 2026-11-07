@@ -34,7 +34,7 @@ export function Material() {
     <>
       <div className="world-title"><h1>Material</h1><p>Filamente. Werkstoffe. Möglichkeiten.</p></div>
 
-      <PanelColumn side="left" top="44%" bottom="2.5%" width="22%">
+      <PanelColumn side="left" top="38%" bottom="2.5%" width="22%">
       <Panel title="Materialbestand" icon={<ILayers />} delay={60}>
         <div className="donut">
           <svg width="88" height="88" viewBox="0 0 100 100">
@@ -69,7 +69,7 @@ export function Material() {
         </div>
       </Panel>
 
-      <PanelColumn side="right" top="44%" bottom="2.5%" width="24%">
+      <PanelColumn side="right" top="38%" bottom="2.5%" width="24%">
       <Panel title="Eigenschaften vergleichen" icon={<IList />} right={<div className="tabs" style={{ padding: 2 }}><button className={cmpTab === 'material' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setCmpTab('material')}>Materialien</button><button className={cmpTab === 'produkte' ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setCmpTab('produkte')}>Produkte</button></div>} delay={140}>
         {cmpTab === 'material' ? (
           <table className="tbl"><thead><tr><th>Material</th><th>Düse</th><th>Bett</th><th>Fest</th><th>Flex</th><th>Wetter</th></tr></thead><tbody>

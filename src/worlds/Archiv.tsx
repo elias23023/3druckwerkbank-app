@@ -32,7 +32,7 @@ export function Archiv() {
         </div>
       </div>
 
-      <PanelColumn side="left" top="44%" bottom="7%" width="22%">
+      <PanelColumn side="left" top="38%" bottom="7%" width="22%">
       <Panel title="Zeitreise" icon={<IHistory />} delay={60}>
         <div className="bars">{months.map((m) => <div key={m.key} title={`${m.n} Projekte`}><i style={{ height: `${Math.max(3, (m.n / Math.max(1, ...months.map((x) => x.n))) * 44)}px`, background: m.n ? undefined : 'rgba(255,255,255,.1)' }} /><span>{m.label}</span></div>)}</div>
         <div className="grid2"><Stat value={all.length} label="archiviert" /><Stat value={totals.prints} label="Drucke" /><Stat value={fmtGrams(totals.g)} label="Material" /><Stat value={`${fmtNum(totals.h)} h`} label="Druckzeit" /></div>
@@ -59,7 +59,7 @@ export function Archiv() {
         )}
       </Panel>
 
-      <PanelColumn side="right" top="44%" bottom="2.5%" width="24%">
+      <PanelColumn side="right" top="38%" bottom="2.5%" width="24%">
       <Panel title="Vorlagen" icon={<ICopy />} delay={140}>
         {templates.length === 0 ? <p className="muted small">Noch keine Vorlage. Speichere ein Projekt in der Innenwelt oder beim Abschluss als Vorlage.</p> : templates.map((p) => <div key={p.id} className="sim-item" onClick={() => { const nid = projectFromTemplate(p.id); navigate({ world: 'projekte', projectId: nid }); }}><img src={islandSrc(p.island.libraryId, 256)} alt="" /><div className="col grow" style={{ gap: 0 }}><b className="small ellipsis">{p.name}</b><span className="xs muted">{p.type.split(' / ')[0]} · {p.milestones.length} Meilensteine · {p.tags.length} Tags</span></div><span className="xs muted">Neu daraus</span></div>)}
       </Panel>

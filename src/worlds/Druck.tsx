@@ -52,7 +52,7 @@ export function Druck() {
     <>
       <div className="world-title"><h1>3D-Druck</h1><p>Deine Drucker. Immer im Blick.</p></div>
 
-      <PanelColumn side="left" top="44%" bottom="10.5%" width="22%">
+      <PanelColumn side="left" top="38%" bottom="10.5%" width="22%">
       <Panel title="Drucker" icon={<IPrinter />} delay={60}>
         {printers.map((d) => { const job = prints.find((p) => p.printerId === d.id && p.status === 'läuft'); return (
           <div key={d.id} className="item item--click" onClick={() => a.openSheet({ kind: 'geraet', deviceId: d.id })}>
@@ -103,7 +103,7 @@ export function Druck() {
         ) : <><h2 style={{ fontSize: 18 }}>Kein Druck läuft</h2><p className="small muted">{queue.length ? `${queue.length} in der Warteschlange.` : 'Plane einen Druck aus einem Projekt heraus.'}</p></>}
       </Panel>
 
-      <PanelColumn side="right" top="44%" bottom="10.5%" width="24%">
+      <PanelColumn side="right" top="38%" bottom="10.5%" width="24%">
       <Panel title="Nächste Drucke" icon={<IList />} delay={140}>
         {queue.length === 0 ? <p className="muted small">Leer.</p> : queue.map((q, i) => { const r = readiness(q); return (
           <div key={q.id} className="item" style={{ padding: '6px 8px', alignItems: 'flex-start' }}>
