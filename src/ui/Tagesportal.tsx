@@ -134,14 +134,22 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
 
           {/* now: a radiant sun by day, a glowing moon by night */}
           <g className="portal__now" data-kind={isDay ? 'sonne' : 'mond'}>
-            <circle className="portal__halo" cx={f(bx)} cy={f(by)} r="12" fill={isDay ? 'rgba(255,205,120,.6)' : 'rgba(200,215,245,.45)'} filter="url(#portalBloom)" />
+            <circle className="portal__halo" cx={f(bx)} cy={f(by)} r={isDay ? 12 : 14} fill={isDay ? 'rgba(255,205,120,.6)' : 'rgba(205,220,255,.6)'} filter="url(#portalBloom)" />
             {isDay ? (
               <g className="portal__rays" style={{ transformOrigin: `${f(bx)}px ${f(by)}px` }}>
                 {Array.from({ length: 10 }, (_, i) => { const a = (i * Math.PI) / 5; const l = i % 2 ? 6.8 : 8.4; return <line key={i} x1={f(bx + Math.cos(a) * 5.5)} y1={f(by + Math.sin(a) * 5.5)} x2={f(bx + Math.cos(a) * l)} y2={f(by + Math.sin(a) * l)} stroke="#ffcf7a" strokeWidth="1" strokeLinecap="round" opacity=".75" />; })}
               </g>
             ) : null}
             {isDay ? <circle cx={f(bx)} cy={f(by)} r="4.8" fill="#fff8dc" stroke="#ffb347" strokeWidth="1.2" filter="url(#portalGlow)" />
-              : <path d={`M ${f(bx)} ${f(by - 4.8)} A 4.8 4.8 0 1 1 ${f(bx)} ${f(by + 4.8)} A 3.5 3.5 0 1 0 ${f(bx)} ${f(by - 4.8)} Z`} fill="#f2f6ff" stroke="rgba(0,0,0,.3)" strokeWidth=".5" filter="url(#portalGlow)" />}
+              : (
+                <g>
+                  {/* the moon: a full pale disc with a soft glow and a crescent of brighter light on its right side */}
+                  <circle cx={f(bx)} cy={f(by)} r="5.4" fill="#c9d4ee" stroke="rgba(10,16,40,.45)" strokeWidth=".6" />
+                  <path d={`M ${f(bx + .4)} ${f(by - 5)} A 5 5 0 1 1 ${f(bx + .4)} ${f(by + 5)} A 6.8 6.8 0 0 0 ${f(bx + .4)} ${f(by - 5)} Z`} fill="#f6f8ff" filter="url(#portalGlow)" />
+                  <circle cx={f(bx - 1.6)} cy={f(by - 1.2)} r=".9" fill="rgba(120,135,175,.55)" />
+                  <circle cx={f(bx - .4)} cy={f(by + 1.8)} r=".6" fill="rgba(120,135,175,.5)" />
+                </g>
+              )}
           </g>
         </svg>
       </div>
