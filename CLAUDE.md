@@ -18,6 +18,9 @@ Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store 
 - Screenshots: `node scripts/shot.mjs <url> <out.png> 1920 1080`, mit fester Uhrzeit `node scripts/shot-day.mjs <url> <out.png> 2026-11-06T13:40:00+01:00`, Mobil `node scripts/shot-mobile.mjs <base> <ordner>`. Playwright liegt unter `/opt/node-tools/node_modules/playwright/index.js`.
 - Layout immer in zwei Formaten prüfen: 1920×1080 und 2000×993 (Bildschirm des Nutzers, 2:1). Inseln dürfen nicht von Texten oder Panels überdeckt werden; Seitenpanels liegen in `PanelColumn`-Spalten.
 
+## Xmind-Mindmap (immer aktuell halten)
+- Projekt-Mindmap des Nutzers in Xmind: Datei `VtPUHiU1` (https://app.xmind.com/share/VtPUHiU1). Der **Hauptchat** aktualisiert sie **nach jedem abgeschlossenen Schritt** (Deploy, größere Änderung, neue offene Punkte) ohne Nachfrage: Ast „Stand heute“ ergänzen oder korrigieren, Ast „Was noch fehlt“ abhaken bzw. ergänzen, bei Architekturänderungen „Technischer Aufbau“ und „Bilder-Pipeline“ nachziehen. Werkzeuge `xmind_edit_mindmap` / `xmind_read_mindmap`; danach `xmind_show_mindmap` nur, wenn der Nutzer die Map sehen will. Unterchats melden Änderungen dem Hauptchat, sie haben keinen Xmind-Zugriff.
+
 ## Git
 - Commits als `Elias Pollak <elias.pollak@gmail.com>`, deutsche Betreffzeile, Trailer `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
 - `reference/`, `dist/`, `*.zip`, `video-raw/` sind nicht im Git.

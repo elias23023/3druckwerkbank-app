@@ -24,7 +24,7 @@ Querschnitt (Kopfzeile, Dock, Suche, Hinweise-Glocke, Einstellungen, Store, Type
 4. Dem Nutzer Screenshots zeigen und sagen, dass der Branch bereit ist. Nicht deployen.
 
 ## Ablauf im Hauptchat
-`git fetch`, Branch ansehen, auf `main` mergen, Build, `verify.mjs`, Zip, TUS-Upload, `hosting_websites_deploy-static-site-archive` mit `archive_path: "site.zip"`, Live-Hash prüfen, Screenshots.
+`git fetch`, Branch ansehen, auf `main` mergen, Build, `verify.mjs`, Zip, TUS-Upload, `hosting_websites_deploy-static-site-archive` mit `archive_path: "site.zip"`, Live-Hash prüfen, Screenshots, **Xmind-Mindmap `VtPUHiU1` aktualisieren** (Stand heute / Was noch fehlt).
 
 ## Bildstil (für Prompts)
 Schwebende Felsinsel mit Moos, Wurzeln und Farnen unten, saftiges Gras und Wildblumen oben, warmes Nachmittagslicht von rechts oben, hell und freundlich (nicht dunkel), malerisch-realistischer 3D-Look, klare Kanten, auf reinem Weiß, 1254×1254, Insel füllt etwa 85 % der Breite. Stilreferenz: zwei vorhandene Inseln anhängen (z. B. Garten und Büro). Dateiname immer `insel-<name>.png`. Landschaften: 1672×941, gleiches Tal und gleiche Kamera, nur das Licht wechselt, Dateiname `landschaft-NN-<look>.png`.
