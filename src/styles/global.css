@@ -397,8 +397,9 @@ p { margin: 0; }
 /* standing ring: laid into the painted gold ring of the Heute island (measured: centre 43.5 % / 30.7 %, height 37.4 % of the island) */
 
 /* ---- Tagesportal: a brass ring drawn on the pedestal of the Heute island (pedestal top measured at 45.9 % / 51.3 % of the sprite) ---- */
-.portal { position: absolute; left: 32.55%; top: 11.3%; width: 26.7%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; }
-.portal__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+.portal { position: absolute; left: 32.55%; top: 11.3%; width: 26.7%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; perspective: 520px; perspective-origin: 50% 40%; }
+.portal__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; transform-style: preserve-3d; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+.portal__depth { position: absolute; inset: 0; overflow: visible; }
 .portal__foot { position: absolute; left: 28%; right: 28%; top: 96%; height: 7%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 50%, rgba(20,12,0,.5), transparent 70%); filter: blur(2px); }
 /* light of the ring spilling onto the pedestal and the terrace */
 .portal__pool { position: absolute; left: 8%; right: 8%; top: 80%; height: 38%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 45%, rgba(255,196,110,.3), rgba(255,170,80,.1) 45%, transparent 72%); filter: blur(5px); animation: portal-breathe 6s ease-in-out infinite; }
