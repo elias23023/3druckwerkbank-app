@@ -49,7 +49,7 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
         ))}
         <svg viewBox="0 0 200 200" width="100%" height="100%" role="img" aria-label={`Tagesportal, jetzt ${fmtTime(now)}`} style={{ overflow: 'visible', position: 'relative' }}>
           <defs>
-            <linearGradient id="portalOak" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#d6a96a" /><stop offset=".25" stopColor="#9c6a34" /><stop offset=".55" stopColor="#5f3b19" /><stop offset=".8" stopColor="#8d5c2b" /><stop offset="1" stopColor="#c99a5c" /></linearGradient>
+            <linearGradient id="portalOak" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f1d9a8" /><stop offset=".25" stopColor="#d4ab6c" /><stop offset=".55" stopColor="#a87a42" /><stop offset=".8" stopColor="#c99c5e" /><stop offset="1" stopColor="#ecd09c" /></linearGradient>
             <linearGradient id="portalOakHi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="rgba(255,236,200,.75)" /><stop offset=".4" stopColor="rgba(255,236,200,.08)" /><stop offset="1" stopColor="rgba(255,255,255,0)" /></linearGradient>
             <linearGradient id="portalFar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="rgba(255,240,215,.1)" /><stop offset=".45" stopColor="rgba(0,0,0,0)" /><stop offset="1" stopColor="rgba(0,0,0,.38)" /></linearGradient>
             <linearGradient id="portalBrass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f3dca0" /><stop offset=".4" stopColor="#b98a3e" /><stop offset=".7" stopColor="#7d561c" /><stop offset="1" stopColor="#dcb86a" /></linearGradient>
@@ -57,6 +57,11 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
             <filter id="portalGrain" x="-10%" y="-10%" width="120%" height="120%">
               <feTurbulence type="fractalNoise" baseFrequency="0.01 0.22" numOctaves="4" seed="7" result="n" />
               <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.22  0 0 0 0 0.12  0 0 0 0 0.04  0 0 0 1.6 -0.35" result="g" />
+              <feComposite in="g" in2="SourceAlpha" operator="in" />
+            </filter>
+            <filter id="portalGrainMid" x="-10%" y="-10%" width="120%" height="120%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.02 0.5" numOctaves="3" seed="19" result="n" />
+              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.45  0 0 0 0 0.28  0 0 0 0 0.1  0 0 0 1.8 -0.55" result="g" />
               <feComposite in="g" in2="SourceAlpha" operator="in" />
             </filter>
             <filter id="portalGrainFine" x="-10%" y="-10%" width="120%" height="120%">
@@ -83,11 +88,12 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
 
           {/* the oak ring: turned wood with grain, a soft sheen on the upper left, bevel edges, brass on the inner lip */}
           <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOak)" strokeWidth="11" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrain)" opacity=".85" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrainFine)" opacity=".5" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrainDark)" opacity=".7" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrain)" opacity=".95" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrainMid)" opacity=".75" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrainFine)" opacity=".7" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrainDark)" opacity=".8" />
           {/* growth rings of the turned wood: thin concentric lines, slightly uneven */}
-          {[90.2, 91.6, 93.1, 94.7, 96.1].map((r, i) => <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="rgba(55,30,8,.42)" strokeWidth={i % 2 ? .35 : .55} strokeDasharray={i % 2 ? '14 6 22 4' : '30 5 12 8'} strokeDashoffset={i * 9} />)}
+          {[90.2, 91.6, 93.1, 94.7, 96.1].map((r, i) => <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="rgba(70,40,12,.55)" strokeWidth={i % 2 ? .4 : .65} strokeDasharray={i % 2 ? '14 6 22 4' : '30 5 12 8'} strokeDashoffset={i * 9} />)}
           {/* rounded tube: dark outer edge, bright ridge just inside it, shadow trough towards the inner lip, far side a little darker */}
           <circle cx="100" cy="100" r="97.9" fill="none" stroke="rgba(28,14,3,.6)" strokeWidth="1" />
           <circle cx="100" cy="100" r="95.6" fill="none" stroke="rgba(255,236,200,.42)" strokeWidth="1.8" filter="url(#portalSoft)" />
