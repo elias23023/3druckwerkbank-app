@@ -85,12 +85,15 @@ const p3 = await ctx3.newPage(); await p3.goto(`${base}/#/heute`, { waitUntil: '
 const anim = await p3.evaluate(() => [...document.querySelectorAll('.island__body')].map((e) => getComputedStyle(e).animationName).filter((a) => a !== 'none'));
 check('Reduced motion disables float', anim.length === 0, anim.join(','));
 await ctx3.close();
-// ---- morning looks by real sunrise (clock pinned) ----
-for (const [iso, look] of [['2026-11-05T06:05:00+01:00', 'daemmerung'], ['2026-11-05T06:58:00+01:00', 'sonnenaufgang'], ['2026-11-05T08:30:00+01:00', 'morgen']]) {
+// ---- seasonal landscapes by real sunrise/sunset (clock pinned to TODAY's date, because Open-Meteo only returns today onwards; November = Herbst) ----
+const TODAY = new Date().toISOString().slice(0, 10);
+for (const [iso, look, key] of [[`${TODAY}T06:05:00+01:00`, 'daemmerung', 'herbst-morgen'], [`${TODAY}T12:30:00+01:00`, 'mittag', 'herbst-mittag'], [`${TODAY}T16:50:00+01:00`, 'sonnenuntergang', 'herbst-abend'], [`${TODAY}T22:00:00+01:00`, 'nacht', 'herbst-nacht']]) {
   const c = await browser.newContext(ctxOpts); const pg = await c.newPage();
   await pg.clock.install({ time: new Date(iso) });
   await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
-  check(`Look at ${iso.slice(11, 16)} is ${look}`, (await pg.locator(`.land img[src*="landschaft-${look}-"]`).count()) >= 1, await pg.locator('.land img').first().getAttribute('src') ?? '');
+  const dl = await pg.getAttribute('.stage', 'data-look');
+  // the exact look depends on today's sunrise/sunset; what matters is the seasonal image it maps to (grey weather shows the rain lake instead)
+  check(`Landscape at ${iso.slice(11, 16)} (${look}) is ${key}`, (await pg.locator(`.land img[src*="landschaft-${key}-"]`).count()) >= 1 || /bedeckt|nebel|regen/.test(dl ?? ''), `${dl} ${await pg.locator('.land img').first().getAttribute('src') ?? ''}`);
   await c.close();
 }
 // ---- seasons: override in settings changes stage, particles and island filter ----
@@ -103,6 +106,8 @@ for (const [iso, look] of [['2026-11-05T06:05:00+01:00', 'daemmerung'], ['2026-1
   await pg.locator('.sheet .seg button', { hasText: 'Winter' }).click(); await pg.waitForTimeout(400);
   const w = await pg.evaluate(() => ({ s: document.querySelector('.stage')?.getAttribute('data-season'), fx: document.querySelectorAll('.season-fx--flake i').length, filter: getComputedStyle(document.querySelector('.island--active .island__body, .island .island__body')).filter }));
   check('Season override Winter: snow dust + island filter', w.s === 'winter' && w.fx >= 20 && /saturate/.test(w.filter), JSON.stringify(w));
+  await pg.waitForTimeout(600);
+  check('Season override Winter: winter landscape', (await pg.locator('.land img[src*="landschaft-winter-"]').count()) >= 1 || /bedeckt|nebel|regen/.test(await pg.getAttribute('.stage', 'data-look') ?? ''), await pg.locator('.land img').last().getAttribute('src') ?? '');
   await pg.locator('.sheet .seg', { hasText: 'Winter' }).locator('button', { hasText: 'Automatisch' }).click(); await pg.waitForTimeout(300);
   check('Season back to auto', (await pg.evaluate(() => document.querySelector('.stage')?.getAttribute('data-season'))) === 'herbst');
   await c.close();
@@ -110,7 +115,7 @@ for (const [iso, look] of [['2026-11-05T06:05:00+01:00', 'daemmerung'], ['2026-1
 // ---- info ring: sun by day, moon at night ----
 {
   const marks = {};
-  for (const [iso, key] of [['2026-11-05T12:30:00+01:00', 'mittag'], ['2026-11-05T22:00:00+01:00', 'nacht']]) {
+  for (const [iso, key] of [[`${TODAY}T12:30:00+01:00`, 'mittag'], [`${TODAY}T22:00:00+01:00`, 'nacht']]) {
     const c = await browser.newContext(ctxOpts); const pg = await c.newPage();
     await pg.clock.install({ time: new Date(iso) });
     await pg.goto(`${base}/#/heute`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(2000);

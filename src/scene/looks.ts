@@ -21,6 +21,14 @@ export const LOOK_META: Record<Look, { sx: string; sy: string; glow: number; ray
   regen: { sx: '69%', sy: '12%', glow: .15, rays: .1, sky: 'linear-gradient(180deg,#3a4452 0%,#6d7886 60%,#9aa3ae 100%)', cloud: '170,180,195', label: 'Regen' },
 };
 
+/** Landscape image for a look in a season: four seasonal images (morning, noon, evening, night) plus one rainy lake for grey weather. */
+export type LandscapePhase = 'morgen' | 'mittag' | 'abend' | 'nacht';
+export const LOOK_PHASE: Record<Look, LandscapePhase | 'regen'> = {
+  daemmerung: 'morgen', sonnenaufgang: 'morgen', morgen: 'morgen', mittag: 'mittag', nachmittag: 'mittag', golden: 'abend', sonnenuntergang: 'abend',
+  blau: 'nacht', nacht: 'nacht', bedeckt: 'regen', nebel: 'regen', regen: 'regen',
+};
+export const landscapeKey = (look: Look, season: string) => (LOOK_PHASE[look] === 'regen' ? 'regen' : `${season}-${LOOK_PHASE[look]}`);
+
 const MIN = 60_000;
 
 /** Look from the real sun position. Sunrise/sunset ISO strings from Open-Meteo; fallback 7:00 / 17:00. */

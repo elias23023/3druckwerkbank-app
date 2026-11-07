@@ -9,8 +9,9 @@ Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store 
 
 ## Bilder
 - Der Nutzer erzeugt alle Bilder selbst mit seiner Bild-KI. Wir schreiben Prompts (Stil: siehe `docs/Unterchats.md`, Abschnitt Bildstil), erzeugen nie selbst Bilder, schneiden nie aus den 17 Referenz-Mockups aus.
-- Neue Insel: PNG 1254×1254 auf Weiß → `node scripts/cutout-islands.mjs <ordner>` (Freistellen) → `node scripts/cutout-holes.mjs assets-src/insel-<name>.png` (weiße Restflächen) → WebP 1254/640/256 nach `public/img/` (Muster in `scripts/optimize-images.mjs`), Maße in `ISLAND_META` (`src/scene/Island.tsx`) eintragen und **`ASSET_VERSION` dort erhöhen** (sonst zeigt das CDN alte Bilder).
-- Neue Landschaft: `assets-src/landschaft-NN-<look>.png` → `node scripts/optimize-landscapes.mjs`.
+- Neue Insel: PNG auf Weiß → `node scripts/cutout-islands.mjs <ordner>` (Freistellen) → `node scripts/cutout-holes.mjs assets-src/insel-<name>.png` (weiße Restflächen; bei bereits transparenten Bildern weglassen) → `node scripts/optimize-island.mjs <name>` (WebP 1254/640/256, druckt die Maße) → Id in `src/types.ts`, Maße in `ISLAND_META` (`src/scene/Island.tsx`), Eintrag in `LIB` (`src/forms/ProjektForm.tsx`) und **`ASSET_VERSION` erhöhen** (sonst zeigt das CDN alte Bilder). Sichtung vieler Bilder: `node scripts/contact-sheet.mjs <ordner> <ausgabe>`.
+- Neue Landschaft: `assets-src/landschaft-<jahreszeit>-<morgen|mittag|abend|nacht>.png` oder `landschaft-regen.png` → `node scripts/optimize-landscapes.mjs`; Zuordnung Look → Bild in `LOOK_PHASE` (`src/scene/looks.ts`).
+- Szene für Mobil: `assets-src/szenen/szene-<key>.png` → `node scripts/optimize-scenes.mjs`.
 
 ## Prüfen
 - `npm run build` muss fehlerfrei sein. `npm run preview` + `node scripts/verify.mjs http://localhost:4173` (51 Playwright-Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code).

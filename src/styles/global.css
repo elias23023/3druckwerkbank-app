@@ -400,7 +400,12 @@ p { margin: 0; }
 .panel-col > .panel > .panel__body { overflow: auto; min-height: 0; flex: 1 1 auto; scrollbar-width: thin; }
 
 /* ---------- Heute info ring: floating glass ring over the island platform ---------- */
-.inforing { position: absolute; left: 11.5%; top: -0.8%; width: 76%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; }
+.inforing { position: absolute; left: 11.5%; top: -0.8%; width: 76%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; }
+/* standing ring: laid into the painted gold ring of the Heute island (measured: centre 43.5 % / 30.7 %, height 37.4 % of the island) */
+.inforing--stand { left: 32.2%; top: 11.6%; width: 25.2%; }
+.inforing--stand .inforing__h { font-size: clamp(6px, 7cqw, 14px); }
+.inforing--stand .inforing__centre b { font-size: clamp(11px, 14cqw, 34px); }
+.inforing--stand .inforing__centre span { font-size: clamp(6px, 6.2cqw, 12px); margin-top: 2px; }
 .inforing__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
 .inforing__shadow { position: absolute; left: 10%; right: 10%; top: 34%; height: 34%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 50%, rgba(20,10,0,.38), transparent 70%); filter: blur(4px); }
 @keyframes ring-hover { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1.2%; } }

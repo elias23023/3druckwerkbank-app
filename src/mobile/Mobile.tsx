@@ -36,11 +36,13 @@ export function Mobile() {
   const tab: Tab = route.world === 'heute' ? 'heute' : route.world === 'projekte' ? 'projekte' : route.world === 'material' ? 'material' : route.world === 'start' ? 'start' : 'mehr';
   const project = route.world === 'projekte' && route.projectId ? s.projects.find((p) => p.id === route.projectId) : undefined;
   const go = (t: Tab) => navigate({ world: t === 'mehr' ? 'druck' : t });
+  // background: one of the eight painted scenes (island over the lake), chosen by tab / view
+  const scene = project ? 'innen' : tab === 'mehr' ? (route.world === 'wetter' ? 'wetter' : route.world === 'archiv' ? 'archiv' : 'druck') : tab;
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
     <div className="m-shell" data-look={look}>
-      <div className="m-bg" aria-hidden><img key={look} src={`/img/landschaft-${look}-1280.webp`} alt="" /></div>
+      <div className="m-bg" aria-hidden><img key={scene} src={`/img/szene-${scene}-1280.webp`} srcSet={`/img/szene-${scene}-640.webp 640w, /img/szene-${scene}-1280.webp 1280w`} sizes="100vw" alt="" /></div>
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b></div></button>
         <span className="spacer" />

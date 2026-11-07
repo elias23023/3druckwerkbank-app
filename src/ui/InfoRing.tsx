@@ -42,22 +42,28 @@ export function useRingData(now: Date) {
 }
 
 /**
- * The Heute info ring: a glass ring floating over the island platform (perspective), with the daylight arc, event inlays,
- * pearls, a sun/moon "now" marker, upright hour marks and the clock in its centre. Rendered as a child of the island (it floats and scales with it).
+ * The Heute info ring, laid into the painted ring of the Heute island: the daylight arc, event inlays, pearls, a sun/moon "now"
+ * marker, upright hour marks and the clock in its centre. Rendered as a child of the island (it floats and scales with it).
+ * `stand` = the painted ring stands upright (viewed a little from the side, so x is foreshortened and the ring leans by `lean`);
+ * otherwise the ring lies on a table (tilted by `tilt`, y foreshortened).
  */
-export function InfoRing({ tilt = 70.4 }: { tilt?: number }) {
+export function InfoRing({ stand = true, tilt = 70.4, turn = 33, lean = 7 }: { stand?: boolean; tilt?: number; turn?: number; lean?: number }) {
   const now = useNow(1000);
   const { sunrise, sunset, arcs, dots } = useRingData(now);
   const { tasks, prints } = useStore(useShallow((s) => ({ tasks: s.tasks, prints: s.prints })));
   const open = tasks.filter((t) => !t.done && !t.skipped).length;
   const running = prints.filter((p) => p.status === 'läuft').length;
-  const cosT = Math.cos((tilt * Math.PI) / 180);
-  // ring point in box percent (the box is square; the ring is tilted, so y is foreshortened)
-  const at = (hour: number, r: number) => { const a = ringAngle(hour); return { x: 50 + Math.cos(a) * 50 * r, y: 50 + Math.sin(a) * 50 * r * cosT }; };
+  const k = Math.cos(((stand ? turn : tilt) * Math.PI) / 180);
+  const phi = stand ? (lean * Math.PI) / 180 : 0;
+  // ring point in box percent (the box is square; the ring is foreshortened along one axis and may lean)
+  const at = (hour: number, r: number) => {
+    const a = ringAngle(hour); const ex = Math.cos(a) * 50 * r * (stand ? k : 1); const ey = Math.sin(a) * 50 * r * (stand ? 1 : k);
+    return { x: 50 + ex * Math.cos(phi) - ey * Math.sin(phi), y: 50 + ex * Math.sin(phi) + ey * Math.cos(phi) };
+  };
   return (
-    <div className="inforing" data-testid="inforing">
-      <div className="inforing__shadow" />
-      <div className="inforing__tilt" style={{ transform: `rotateX(${tilt}deg)` }}>
+    <div className={`inforing${stand ? ' inforing--stand' : ''}`} data-testid="inforing">
+      {stand ? null : <div className="inforing__shadow" />}
+      <div className="inforing__tilt" style={{ transform: stand ? `rotate(${lean}deg) rotateY(${turn}deg)` : `rotateX(${tilt}deg)` }}>
         <RingSvg now={now} sunrise={sunrise} sunset={sunset} arcs={arcs} dots={dots} labels={false} inlay glass />
       </div>
       {[0, 6, 12, 18].map((t) => { const p = at(t, 0.86); return <span key={t} className="inforing__h" style={{ left: `${p.x}%`, top: `${p.y}%` }}>{String(t).padStart(2, '0')}</span>; })}

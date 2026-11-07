@@ -10,8 +10,8 @@ export const LABELS: Record<WorldId, [string, string]> = {
 
 /** Start world: six large islands in two rows. */
 export const START_POS: Record<WorldId, [number, number, number, number]> = {
-  heute: [50, 27, 23, 0], projekte: [28, 31, 14, 0.12], druck: [72, 31, 14, 0.12],
-  material: [22, 67, 15.5, 0.05], wetter: [50, 69, 15, 0.08], archiv: [79, 67, 15.5, 0.05],
+  heute: [50, 27, 29, 0], projekte: [27, 31, 18, 0.12], druck: [73, 31, 18, 0.12],
+  material: [21, 67, 19, 0.05], wetter: [50, 69, 18.5, 0.08], archiv: [79, 67, 19, 0.05],
 };
 export function startIslands(): Placement[] {
   return ORDER.map((w) => { const [x, y, size, depth] = START_POS[w]; return { key: `w-${w}`, x, y, size, depth, world: w, label: LABELS[w][0], sub: LABELS[w][1] }; });
@@ -22,7 +22,8 @@ const RING: [number, number, number, number][] = [[12, 47, 16, 0.5], [88, 47, 16
 /** Per-world overrides so neighbour islands stay visible beside that world's panels (side columns start lower there). */
 const HIGH_RING: typeof RING = [[11, 30, 11, 0.5], [89, 30, 11, 0.5], [30, 10, 9.5, 0.66], [70, 10, 9.5, 0.66], [50, 6, 8, 0.78]];
 const RING_BY_WORLD: Partial<Record<WorldId, typeof RING>> = { heute: HIGH_RING, druck: HIGH_RING, material: HIGH_RING, wetter: HIGH_RING, archiv: HIGH_RING };
-const CENTRE_BY_WORLD: Partial<Record<WorldId, [number, number, number]>> = { heute: [50, 33, 23], druck: [50, 33, 23], material: [50, 33, 23], wetter: [50, 33, 23], archiv: [50, 33, 23] };
+// the main islands are wide (3:2), so they get more width than the old square sprites
+const CENTRE_BY_WORLD: Partial<Record<WorldId, [number, number, number]>> = { heute: [50, 33, 30], druck: [50, 33, 30], material: [50, 33, 30], wetter: [50, 33, 30], archiv: [50, 33, 30] };
 
 export function worldIslands(active: WorldId, centre?: [number, number, number]): Placement[] {
   const out: Placement[] = [];

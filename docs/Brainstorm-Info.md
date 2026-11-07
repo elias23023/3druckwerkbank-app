@@ -37,7 +37,7 @@ Eine persönliche digitale Werkstatt für 3D-Druck-Projekte, dargestellt als rä
 
 **Funktioniert bereits**
 - Startwelt, räumliche Navigation mit Parallaxe, Wolken unter den Inseln, Landschaft nach echtem Sonnenstand und Wetter.
-- Sonnenuhr auf der Heute-Insel: Scheibe dreht sich mit der echten Uhrzeit (eine Umdrehung pro Tag), Zeiger wirft tagsüber einen wandernden Schatten, Tagesring liegt auf dem Scheibenrand.
+- Info-Ring auf der Heute-Insel: liegt im gemalten Leuchtring, zeigt Tageslichtbogen, Solarfenster, Drucke, Aufgaben, Termine, Sonne/Mond als Jetzt-Marke und die Uhr in der Mitte.
 - Echtes Wetter von Open-Meteo: aktuell, 24 h mit Temperaturkurve, 7 Tage, Tageslicht, Luftdruck, UV, regelbasierte Hinweise, beste Stunden nach Solar-Regel.
 - Projekt-Flow in fünf Schritten: Idee → Projektart (11 + eigene) → Einsatzbereiche (12 + eigene) → Projektwelt (drei Vorschläge oder eigenes Bild mit Rahmen) → Details; Meilenstein-Vorlagen je Projektart.
 - Projekte: Karussell, Status, Fortschritt, Aktuelles, Ähnliche, Filter. Innenwelt mit allen Panels, Versionen mit Vergleich, Werkzeuge, Historie.
@@ -96,11 +96,13 @@ Demodaten: fünf aktive Projekte (Sensorhalter Garten, Bewässerungsclip, Werkze
 
 ## 6. Bilder (alle vom Nutzer mit Bild-KI erzeugt, von mir freigestellt und optimiert)
 
-**Landschaften (1672 × 941, gleiches Tal, gleiche Kamera, nur Licht wechselt):** 01 Dämmerung, 02 Sonnenaufgang, 03 Morgen, 04 Mittag, 05 Nachmittag, 06 goldene Stunde, 07 Sonnenuntergang, 08 blaue Stunde, 09 Mondnacht, 10 bedeckt, 11 Nebel, 12 Regen. (Prompts für 13 Gewitter, 14 Schnee, 15 nach dem Regen existieren, Bilder noch nicht erzeugt.)
+**Landschaften (1672 × 941, Bergsee mit gleichbleibendem Bildaufbau):** je Jahreszeit vier Bilder (früher Morgen, Mittag, Sonnenuntergang, Nacht) für Frühling, Sommer, Herbst und Winter, dazu ein regennasser Bergsee für bedeckt, Nebel und Regen. Die zwölf Licht-Looks (Dämmerung bis Mondnacht) steuern weiter Sonnenstand, Himmelsfarbe und Wolken und werden auf die vier Tagesbilder der aktuellen Jahreszeit abgebildet (`src/scene/looks.ts`, `LOOK_PHASE`). Die früheren zwölf Tal-Landschaften liegen in `reference/alte-assets/`.
 
-**Inseln (quadratisch, auf Weiß erzeugt, freigestellt):** Werkstatt, Elektronik, Ideen, Rahmenbasis (aus dem ersten Paket) sowie Heute (Plattform mit Sonnenuhr), Material (Regal), Wetter (Station), Archiv (Vitrine), Drucker (P1S).
+**Hauptinseln (1536 × 1024, freigestellt geliefert):** Heute (Garten mit stehendem Leuchtring, Bank und Hütte; der Info-Ring liegt im gemalten Ring), Projekte (Werkstatthütte mit Baum), 3D-Druck (Druckwerkstatt mit AMS), Material (Spulenregal), Wetter (Kuppel, Wettermast, Wasserfall), Archiv (Bibliothek mit Vitrinen).
 
-**Sonnenuhr:** Scheibe (Draufsicht, 24 Striche, Messing) und Zeiger (Gnomon mit Fußplatte). Nutzer wünscht sich evtl. eine schönere Scheibe (Material / Aufbau); Prompts dafür liegen vor (Variante A Nachbau der gemalten Scheibe, Variante B mit römischen Ziffern und Kompassrose).
+**Bibliotheksinseln für Projekte (1254 × 1254):** Werkstatt, Elektronik, Ideen, Drucker, acht Projektwelten (Garten, Haushalt, Fahrzeug, Büro, Hobby, Technik, Deko, Modellbau) sowie 16 weitere Motive: Haus & Bauen, Sammlung, Druckhütte, Pergola-Garten, Holzwerkstatt, Computerstudio, Elektroniklabor, Spulenlager, Solarpavillon, Metallwerkstatt, Atelier, Observatorium, Planungsgarten, Garten mit Ring, Werkstatt-Pavillon; für eigene Fotos zwei Rahmen-Inseln (Holztafel, Staffelei).
+
+**Szenen (1672 × 941, deckend):** acht Bilder mit Insel über dem See bzw. Innenraum; sie sind die Hintergründe des mobilen Begleiters (Start, Heute, Projekte, Projekt-Innenansicht, Material, Drucker, Wetter, Archiv).
 
 **Regel:** Die 17 ursprünglichen Mockup-Bilder dienen nur als Referenz und werden nie ausgeschnitten oder ausgeliefert. Alle neuen Bilder erzeugt der Nutzer selbst; ich liefere Prompts und baue ein.
 
@@ -118,8 +120,7 @@ Demodaten: fünf aktive Projekte (Sensorhalter Garten, Bewässerungsclip, Werkze
 
 ## 8. Offene Punkte und Ideen für das Brainstorming
 
-- Schönere Sonnenuhr-Scheibe (Material, Aufbau), ggf. Ziffern.
-- Weitere Wetter-Landschaften: Gewitter, Schnee, nach dem Regen. Jahreszeiten (Herbstlaub, Winter).
+- Weitere Wetter-Landschaften je Jahreszeit: Gewitter, Schnee, nach dem Regen (derzeit ein Regenbild für alle Jahreszeiten).
 - Nacht auf der Heute-Insel: Laterne als Lichtquelle, Mondschatten.
 - Mobiler Begleiter: was fehlt, was ist zu viel.
 - Inhalte aus „Später“ priorisieren: Druckeranbindung (Bambu), Slicer-Import, STL-Vorschau, Synchronisation / Login, Kalender.

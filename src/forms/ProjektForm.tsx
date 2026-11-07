@@ -15,10 +15,12 @@ const LIB: { id: LibraryIsland; name: string; hint: string; types: string[]; are
   { id: 'werkstatt', name: 'Werkstatt', hint: 'Werkbank, Drucker, Werkzeuge', types: ['Werkzeug / Hilfsmittel', 'Mechanisches Bauteil', 'Reparatur / Ersatzteil', 'Organizer / Aufbewahrung'], areas: ['Werkstatt', 'Technik & Maschinen'] },
   { id: 'elektronik', name: 'Elektronik', hint: 'Platinen, Gehäuse, Sensoren', types: ['Gehäuse / Elektronik', 'Prototyp / Testteil'], areas: ['Elektronik & Smart Home', 'Prototyping & Entwicklung'] },
   { id: 'ideen', name: 'Ideen', hint: 'Skizzen, Pläne, Neues', types: ['Experiment / Neue Idee', 'Deko / Geschenk', 'Modell / Miniatur', 'Halterung / Befestigung'], areas: ['Hobby & Freizeit', 'Deko & Persönliches', 'Schule / Lernen', 'Haushalt', 'Garten & Outdoor'] },
-  { id: 'heute', name: 'Terrasse', hint: 'Plattform, Sonnenuhr, Bank', types: ['Deko / Geschenk', 'Sonstiges / Universal'], areas: ['Deko & Persönliches', 'Haushalt'] },
+  { id: 'heute', name: 'Terrasse', hint: 'Ring, Bank, Hütte', types: ['Deko / Geschenk', 'Sonstiges / Universal'], areas: ['Deko & Persönliches', 'Haushalt'] },
+  { id: 'projekte', name: 'Werkstatthütte', hint: 'Hütte mit Werkbank und Baum', types: ['Mechanisches Bauteil', 'Werkzeug / Hilfsmittel', 'Organizer / Aufbewahrung'], areas: ['Werkstatt'] },
+  { id: 'druck', name: 'Druckwerkstatt', hint: 'Drucker, AMS, Spulen', types: ['Prototyp / Testteil', 'Mechanisches Bauteil'], areas: ['Werkstatt', 'Prototyping & Entwicklung'] },
   { id: 'material', name: 'Materiallager', hint: 'Regal mit Filamentrollen', types: ['Organizer / Aufbewahrung'], areas: ['Werkstatt'] },
-  { id: 'wetter', name: 'Wetterstation', hint: 'Sensoren, Solar, Display', types: ['Gehäuse / Elektronik', 'Experiment / Neue Idee'], areas: ['Garten & Outdoor', 'Elektronik & Smart Home', 'Technik & Maschinen'] },
-  { id: 'archiv', name: 'Galerie', hint: 'Vitrinen und Bilder', types: ['Deko / Geschenk', 'Modell / Miniatur'], areas: ['Deko & Persönliches', 'Hobby & Freizeit'] },
+  { id: 'wetter', name: 'Wetterstation', hint: 'Kuppel, Wettermast, Wasserfall', types: ['Gehäuse / Elektronik', 'Experiment / Neue Idee'], areas: ['Garten & Outdoor', 'Elektronik & Smart Home', 'Technik & Maschinen'] },
+  { id: 'archiv', name: 'Galerie', hint: 'Bibliothek mit Vitrinen', types: ['Deko / Geschenk', 'Modell / Miniatur'], areas: ['Deko & Persönliches', 'Hobby & Freizeit'] },
   { id: 'drucker', name: 'Druckerplatz', hint: 'Drucker auf der Werkbank', types: ['Prototyp / Testteil', 'Mechanisches Bauteil', 'Reparatur / Ersatzteil', 'Werkzeug / Hilfsmittel'], areas: ['Werkstatt', 'Prototyping & Entwicklung'] },
   { id: 'projekt-garten', name: 'Garten', hint: 'Hochbeet, Gewächshaus, Sensor', types: ['Halterung / Befestigung', 'Gehäuse / Elektronik'], areas: ['Garten & Outdoor'] },
   { id: 'projekt-haushalt', name: 'Küche & Haushalt', hint: 'Küchenzeile, Organizer', types: ['Organizer / Aufbewahrung', 'Reparatur / Ersatzteil', 'Halterung / Befestigung'], areas: ['Haushalt'] },
@@ -28,7 +30,23 @@ const LIB: { id: LibraryIsland; name: string; hint: string; types: string[]; are
   { id: 'projekt-technik', name: 'Technik', hint: 'Motor, Getriebe, Schraubstock', types: ['Mechanisches Bauteil', 'Werkzeug / Hilfsmittel', 'Prototyp / Testteil'], areas: ['Technik & Maschinen'] },
   { id: 'projekt-deko', name: 'Deko', hint: 'Vasen, Lampe, Geschenke', types: ['Deko / Geschenk'], areas: ['Deko & Persönliches'] },
   { id: 'projekt-modell', name: 'Modellbau', hint: 'Miniaturen, Lupe, Vitrine', types: ['Modell / Miniatur'], areas: ['Hobby & Freizeit'] },
-  { id: 'rahmen', name: 'Eigenes Bild', hint: 'Insel mit Bilderrahmen', types: [], areas: [] },
+  { id: 'haus', name: 'Haus & Bauen', hint: 'Alpenhaus mit Gerüst', types: ['Reparatur / Ersatzteil', 'Halterung / Befestigung'], areas: ['Haushalt', 'Garten & Outdoor'] },
+  { id: 'vitrine', name: 'Sammlung', hint: 'Offenes Miniaturarchiv', types: ['Modell / Miniatur', 'Deko / Geschenk'], areas: ['Hobby & Freizeit', 'Deko & Persönliches'] },
+  { id: 'druckhuette', name: 'Druckhütte', hint: 'Drucker mit Spulen auf Fels', types: ['Prototyp / Testteil', 'Gehäuse / Elektronik'], areas: ['Prototyping & Entwicklung'] },
+  { id: 'pergola', name: 'Pergola-Garten', hint: 'Hochbeete, Pergola, Brunnen', types: ['Halterung / Befestigung', 'Deko / Geschenk'], areas: ['Garten & Outdoor'] },
+  { id: 'holz', name: 'Holzwerkstatt', hint: 'Hobelbank, Bretter, Sägen', types: ['Werkzeug / Hilfsmittel', 'Mechanisches Bauteil'], areas: ['Werkstatt'] },
+  { id: 'it', name: 'Computerstudio', hint: 'Schreibtisch, Monitore, Kuppel', types: ['Gehäuse / Elektronik', 'Organizer / Aufbewahrung'], areas: ['Büro & Arbeitsplatz', 'Elektronik & Smart Home'] },
+  { id: 'labor', name: 'Elektroniklabor', hint: 'Oszilloskop, Lötplatz', types: ['Gehäuse / Elektronik', 'Prototyp / Testteil'], areas: ['Elektronik & Smart Home'] },
+  { id: 'spulen', name: 'Spulenlager', hint: 'Regal voller Filamentspulen', types: ['Organizer / Aufbewahrung'], areas: ['Werkstatt'] },
+  { id: 'solar', name: 'Solarpavillon', hint: 'Solarpanel, Wechselrichter', types: ['Gehäuse / Elektronik', 'Halterung / Befestigung'], areas: ['Elektronik & Smart Home', 'Garten & Outdoor'] },
+  { id: 'metall', name: 'Metallwerkstatt', hint: 'Drehbank, Schraubstock', types: ['Mechanisches Bauteil', 'Werkzeug / Hilfsmittel'], areas: ['Technik & Maschinen'] },
+  { id: 'atelier', name: 'Atelier', hint: 'Skizzen, Zeichentisch', types: ['Experiment / Neue Idee', 'Deko / Geschenk'], areas: ['Deko & Persönliches', 'Schule / Lernen'] },
+  { id: 'observatorium', name: 'Observatorium', hint: 'Kuppel, Wettermast, Teich', types: ['Experiment / Neue Idee', 'Gehäuse / Elektronik'], areas: ['Garten & Outdoor', 'Technik & Maschinen'] },
+  { id: 'planung', name: 'Planungsgarten', hint: 'Leuchtring auf der Terrasse', types: ['Sonstiges / Universal'], areas: ['Deko & Persönliches'] },
+  { id: 'garten-ring', name: 'Garten mit Ring', hint: 'Bank, Baum, Ring, Hütte', types: ['Sonstiges / Universal'], areas: ['Garten & Outdoor'] },
+  { id: 'pavillon', name: 'Werkstatt-Pavillon', hint: 'Hütte mit Eichenpavillon', types: ['Mechanisches Bauteil'], areas: ['Werkstatt'] },
+  { id: 'rahmen', name: 'Eigenes Bild', hint: 'Insel mit Holztafel', types: [], areas: [] },
+  { id: 'staffelei', name: 'Eigenes Bild', hint: 'Rahmen auf der Staffelei', types: [], areas: [] },
 ];
 
 export function ProjektForm({ projectId }: { projectId?: string }) {
@@ -45,7 +63,7 @@ export function ProjektForm({ projectId }: { projectId?: string }) {
   const suggested = useMemo(() => {
     const score = (l: typeof LIB[number]) => (l.types.includes(d.type) ? 2 : 0) + l.areas.filter((a) => d.areas.includes(a)).length;
     const used = new Map<string, number>(); s.projects.forEach((p) => used.set(p.island.libraryId, (used.get(p.island.libraryId) ?? 0) + 1));
-    return [...LIB].filter((l) => l.id !== 'rahmen').sort((a, b) => score(b) - score(a) || (used.get(b.id) ?? 0) - (used.get(a.id) ?? 0)).slice(0, 3);
+    return [...LIB].filter((l) => l.id !== 'rahmen' && l.id !== 'staffelei').sort((a, b) => score(b) - score(a) || (used.get(b.id) ?? 0) - (used.get(a.id) ?? 0)).slice(0, 3);
   }, [d.type, d.areas, s.projects]);
   const suggestedTags = useMemo(() => { const t = new Set<string>(); if (d.areas.includes('Garten & Outdoor')) { t.add('wetterfest'); t.add('ASA'); } if (d.type === 'Gehäuse / Elektronik') { t.add('Gehäuse'); t.add('PETG'); } if (d.type === 'Halterung / Befestigung') t.add('Wandmontage'); if (d.type === 'Reparatur / Ersatzteil') t.add('Ersatzteil'); return [...t].filter((x) => !d.tags.includes(x)); }, [d.areas, d.type, d.tags]);
   const save = () => {
@@ -59,7 +77,7 @@ export function ProjektForm({ projectId }: { projectId?: string }) {
     if (!existing) { navigate({ world: 'projekte' }); s.spotlight(p.id); }
   };
   const readPhoto = (file: File, cb: (url: string) => void) => { const r = new FileReader(); r.onload = () => { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); const k = Math.min(1, 800 / Math.max(img.width, img.height)); c.width = img.width * k; c.height = img.height * k; c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', .82)); }; img.src = String(r.result); }; r.readAsDataURL(file); };
-  const fr = d.island.frame; const meta = ISLAND_META.rahmen;
+  const fr = d.island.frame; const easel = d.island.libraryId === 'staffelei'; const meta = ISLAND_META[easel ? 'staffelei' : 'rahmen'];
   const canNext = step === 1 ? !!d.name.trim() : step === 2 ? !!d.type : true;
   const titles = ['Idee', 'Projektart', 'Einsatzbereiche', 'Projektwelt', 'Details'];
 
@@ -101,24 +119,25 @@ export function ProjektForm({ projectId }: { projectId?: string }) {
         <>
           <Field label={existing ? 'Projektwelt' : 'Vorgeschlagene Projektwelten'}>
             <div className="island-lib">
-              {(existing ? LIB.filter((l) => l.id !== 'rahmen') : suggested).map((l) => <button key={l.id} type="button" className={d.island.kind === 'bibliothek' && d.island.libraryId === l.id ? 'on' : ''} onClick={() => upd({ island: { ...d.island, kind: 'bibliothek', libraryId: l.id } })}><img src={islandSrc(l.id, 256)} alt="" />{l.name}<small className="xs muted">{l.hint}</small></button>)}
-              <label className={`${d.island.kind === 'eigenes' ? 'on' : ''}`} style={{ cursor: 'pointer' }}><img src={islandSrc('rahmen', 256)} alt="" />Eigenes Bild<input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) readPhoto(f, (u) => upd({ island: { ...d.island, kind: 'eigenes', libraryId: 'rahmen', photoDataUrl: u } })); }} /></label>
+              {(existing ? LIB.filter((l) => l.id !== 'rahmen' && l.id !== 'staffelei') : suggested).map((l) => <button key={l.id} type="button" className={d.island.kind === 'bibliothek' && d.island.libraryId === l.id ? 'on' : ''} onClick={() => upd({ island: { ...d.island, kind: 'bibliothek', libraryId: l.id } })}><img src={islandSrc(l.id, 256)} alt="" />{l.name}<small className="xs muted">{l.hint}</small></button>)}
+              <label className={`${d.island.kind === 'eigenes' ? 'on' : ''}`} style={{ cursor: 'pointer' }}><img src={islandSrc('rahmen', 256)} alt="" />Eigenes Bild<input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) readPhoto(f, (u) => upd({ island: { ...d.island, kind: 'eigenes', libraryId: d.island.libraryId === 'staffelei' ? 'staffelei' : 'rahmen', photoDataUrl: u } })); }} /></label>
             </div>
             <span className="xs faint">Vorschläge nach Projektart und Bereich. Individuell generierte Welten folgen später.</span>
           </Field>
           {d.island.kind === 'eigenes' && d.island.photoDataUrl ? (
             <>
+              <Field label="Rahmen-Insel"><Seg value={easel ? 'staffelei' : 'rahmen'} options={[{ v: 'rahmen', l: 'Holztafel' }, { v: 'staffelei', l: 'Staffelei' }]} onChange={(v) => upd({ island: { ...d.island, libraryId: v } })} /></Field>
               <div className="frame-preview">
-                <img src={islandSrc('rahmen', 640)} alt="" width={meta.w} height={meta.h} />
-                <div style={{ position: 'absolute', left: '51.5%', top: '21%', transform: 'translate(-50%, -50%)', width: fr.ratio === 'hoch' ? '21%' : fr.ratio === 'quadrat' ? '28%' : '44%', aspectRatio: fr.ratio === 'quer' ? '4/3' : fr.ratio === 'hoch' ? '3/4' : '1/1', padding: '2.5%', background: fr.style === 'holz' ? 'linear-gradient(135deg,#8a5a2b,#5a391a)' : 'linear-gradient(135deg,#b9bec7,#6c737d)', boxShadow: '0 8px 20px rgba(0,0,0,.45)', cursor: 'move' }}
+                <img src={islandSrc(easel ? 'staffelei' : 'rahmen', 640)} alt="" width={meta.w} height={meta.h} />
+                <div style={easel ? { position: 'absolute', left: '28%', top: '21.5%', width: '44%', height: '32%', background: '#1a1a1a', cursor: 'move' } : { position: 'absolute', left: '51.5%', top: '21%', transform: 'translate(-50%, -50%)', width: fr.ratio === 'hoch' ? '21%' : fr.ratio === 'quadrat' ? '28%' : '44%', aspectRatio: fr.ratio === 'quer' ? '4/3' : fr.ratio === 'hoch' ? '3/4' : '1/1', padding: '2.5%', background: fr.style === 'holz' ? 'linear-gradient(135deg,#8a5a2b,#5a391a)' : 'linear-gradient(135deg,#b9bec7,#6c737d)', boxShadow: '0 8px 20px rgba(0,0,0,.45)', cursor: 'move' }}
                   onPointerDown={(e) => { const sx = e.clientX, sy = e.clientY, ox = fr.offsetX, oy = fr.offsetY; const el = e.currentTarget; el.setPointerCapture(e.pointerId); const mv = (ev: PointerEvent) => upd({ island: { ...d.island, frame: { ...fr, offsetX: ox + (ev.clientX - sx) / 2, offsetY: oy + (ev.clientY - sy) / 2 } } }); const up = () => { el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); }; el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); }}>
                   <div style={{ width: '100%', height: '100%', overflow: 'hidden', background: '#222' }}><img src={d.island.photoDataUrl} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `translate(${fr.offsetX}%, ${fr.offsetY}%) scale(${fr.zoom})` }} /></div>
                 </div>
               </div>
-              <div className="grid2">
+              {easel ? null : <div className="grid2">
                 <Field label="Format"><Seg value={fr.ratio} options={[{ v: 'quer', l: 'Quer' }, { v: 'hoch', l: 'Hoch' }, { v: 'quadrat', l: 'Quadrat' }]} onChange={(v) => upd({ island: { ...d.island, frame: { ...fr, ratio: v } } })} /></Field>
                 <Field label="Rahmen"><Seg value={fr.style} options={[{ v: 'holz', l: 'Holz' }, { v: 'metall', l: 'Metall' }]} onChange={(v) => upd({ island: { ...d.island, frame: { ...fr, style: v } } })} /></Field>
-              </div>
+              </div>}
               <Field label={`Zoom ${fr.zoom.toFixed(2)} · Bild im Rahmen ziehen zum Verschieben`}><input className="range" type="range" min={1} max={3} step={0.05} value={fr.zoom} onChange={(e) => upd({ island: { ...d.island, frame: { ...fr, zoom: Number(e.target.value) } } })} /></Field>
             </>
           ) : null}

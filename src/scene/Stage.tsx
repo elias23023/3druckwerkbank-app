@@ -37,7 +37,7 @@ export function Stage({ phase, look, world, parallax, islands, children, weather
   return (
     <div className="stage" ref={ref} data-scene-ready={ready ? 'true' : 'false'} data-phase={phase} data-look={look} data-night={night ? 'true' : 'false'} data-season={season} style={{ ['--sx' as string]: m.sx, ['--sy' as string]: m.sy, ['--season-filter' as string]: SEASON_META[season].islandFilter }}>
       <div className="stage__bg">
-        <Landscape look={look} onReady={onReady} />
+        <Landscape look={look} season={season} onReady={onReady} />
         <Clouds look={look} />
         <div className="rays" style={{ opacity: m.rays }} />
         <div className="tint" style={{ background: TINTS[world] }} />

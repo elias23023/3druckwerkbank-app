@@ -25,7 +25,7 @@ import { resolveSeason } from './lib/season';
 import type { LibraryIsland, WorldId } from './types';
 
 const STAGE_COLOR: Record<string, string> = { Idee: '#c59bff', Konstruktion: '#7cc6ff', Planung: '#7cc6ff', Vorbereitung: '#ffe29a', Druck: '#4ccf7a', Nacharbeit: '#ffb547', 'Qualität': '#ffb547', Abgeschlossen: '#8a8f96' };
-const WORLD_IMAGE: Record<WorldId, LibraryIsland> = { heute: 'heute', projekte: 'ideen', druck: 'werkstatt', material: 'material', wetter: 'wetter', archiv: 'archiv' };
+const WORLD_IMAGE: Record<WorldId, LibraryIsland> = { heute: 'heute', projekte: 'projekte', druck: 'druck', material: 'material', wetter: 'wetter', archiv: 'archiv' };
 
 function useMedia(q: string) {
   const [m, setM] = useState(() => window.matchMedia(q).matches);
@@ -128,7 +128,7 @@ export function App() {
     return (
       <Island key={pl.key} image={p.island.libraryId} x={pl.x} y={pl.y} size={mobile && !isActive ? 0 : pl.size} depth={pl.depth} active={isActive && !!current} opacity={mobile && !isActive ? 0 : pl.opacity} label={current || isActive ? undefined : pl.label} labelSize="small" status={current || isActive || !pl.label ? undefined : { text: blocked(p.id) ? 'Blockiert' : p.stage, color: blocked(p.id) ? '#ff6b6b' : STAGE_COLOR[p.stage] ?? '#8a8f96' }} eager={isActive} halo={blocked(p.id) ? 'rgba(255,107,107,.55)' : undefined} spotlight={spot?.projectId === p.id && spot.until > now.getTime()}
         title={p.name} onClick={current ? undefined : isActive ? () => navigate({ world: 'projekte', projectId: p.id }) : () => setCarousel(active.findIndex((x) => x.id === p.id))}>
-        {p.island.kind === 'eigenes' && p.island.photoDataUrl ? <PhotoFrame cfg={p.island} /> : null}
+        {p.island.kind === 'eigenes' && p.island.photoDataUrl ? <PhotoFrame cfg={p.island} bare={p.island.libraryId === 'staffelei'} /> : null}
       </Island>
     );
   });
@@ -158,9 +158,10 @@ export function App() {
 
 function emptyWeather() { return { current: { time: '', temp: 0, feels: 0, humidity: 0, precip: 0, code: 3, cloud: 0, wind: 0, isDay: true }, hourly: [], daily: [] }; }
 
-export function PhotoFrame({ cfg }: { cfg: { photoDataUrl?: string; frame: { ratio: 'quer' | 'hoch' | 'quadrat'; offsetX: number; offsetY: number; zoom: number; style: 'holz' | 'metall' } } }) {
-  // fills the wooden board of the frame island (the island__props box is the board face)
+export function PhotoFrame({ cfg, bare }: { cfg: { photoDataUrl?: string; frame: { ratio: 'quer' | 'hoch' | 'quadrat'; offsetX: number; offsetY: number; zoom: number; style: 'holz' | 'metall' } }; bare?: boolean }) {
+  // fills the wooden board of the frame island (the island__props box is the board face); `bare` = the easel island paints its own frame, the photo just fills the opening
   const ratio = cfg.frame.ratio === 'quer' ? '4 / 3' : cfg.frame.ratio === 'hoch' ? '3 / 4' : '1 / 1';
+  if (bare) return <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: '#1a1a1a' }}><img src={cfg.photoDataUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `translate(${cfg.frame.offsetX}%, ${cfg.frame.offsetY}%) scale(${cfg.frame.zoom})` }} /></div>;
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ aspectRatio: ratio, maxWidth: '100%', maxHeight: '100%', width: cfg.frame.ratio === 'quer' ? '100%' : undefined, height: cfg.frame.ratio === 'quer' ? undefined : '100%', borderRadius: 3, padding: '1.2%', background: cfg.frame.style === 'holz' ? 'linear-gradient(135deg,#8a5a2b,#5a391a)' : 'linear-gradient(135deg,#b9bec7,#6b7280)', boxShadow: '0 2px 6px rgba(0,0,0,.4)', boxSizing: 'border-box' }}>

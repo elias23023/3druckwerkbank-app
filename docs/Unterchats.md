@@ -29,5 +29,5 @@ Querschnitt (Kopfzeile, Dock, Suche, Hinweise-Glocke, Einstellungen, Store, Type
 ## Bildstil (für Prompts)
 Schwebende Felsinsel mit Moos, Wurzeln und Farnen unten, saftiges Gras und Wildblumen oben, warmes Nachmittagslicht von rechts oben, hell und freundlich (nicht dunkel), malerisch-realistischer 3D-Look, klare Kanten, auf reinem Weiß, 1254×1254, Insel füllt etwa 85 % der Breite. Stilreferenz: zwei vorhandene Inseln anhängen (z. B. Garten und Büro). Dateiname immer `insel-<name>.png`. Landschaften: 1672×941, gleiches Tal und gleiche Kamera, nur das Licht wechselt, Dateiname `landschaft-NN-<look>.png`.
 
-## Was fertig ist (Stand 7. 11. 2026)
-Alle 17 Inseln im neuen Stil, 12 Landschaften, Info-Ring auf der Tisch-Insel, Jahreszeiten, Mobil, Domain. Offen aus dem Brainstorming: Scheibe/Ring-Details, weitere Wetter-Landschaften (Gewitter, Schnee, nach dem Regen), echte Jahreszeiten-Landschaften, Nacht auf der Heute-Insel, Druckeranbindung, Login/Sync.
+## Was fertig ist (Stand 7. 11. 2026, abends)
+Sechs neue Hauptinseln (Breitformat), 33 Bibliotheksinseln, 17 Jahreszeiten-Landschaften (4 × 4 plus Regen), 8 Szenen als Mobil-Hintergründe, Info-Ring im gemalten Ring der Heute-Insel, Jahreszeiten, Mobil, Domain, GitHub-Repo `elias23023/3druckwerkbank-app`. Offen aus dem Brainstorming: Scheibe/Ring-Details, weitere Wetter-Landschaften (Gewitter, Schnee, nach dem Regen), echte Jahreszeiten-Landschaften, Nacht auf der Heute-Insel, Druckeranbindung, Login/Sync.
