@@ -6,7 +6,7 @@ export const ISLAND_META: Record<LibraryIsland, { w: number; h: number; disc?: {
   werkstatt: { w: 1098, h: 1227 }, elektronik: { w: 1098, h: 1226 }, ideen: { w: 1094, h: 1224 },
   rahmen: { w: 1094, h: 1190 }, staffelei: { w: 1203, h: 1123 },
   // the six main islands (wide format, from the user's image package of 7 Nov 2026)
-  heute: { w: 1521, h: 1004 }, projekte: { w: 1517, h: 1024 }, druck: { w: 1483, h: 943 }, material: { w: 1506, h: 1003 }, wetter: { w: 1401, h: 939 }, archiv: { w: 1481, h: 881 },
+  heute: { w: 1521, h: 1004 }, projekte: { w: 1361, h: 841 }, druck: { w: 1483, h: 943 }, material: { w: 1506, h: 1003 }, wetter: { w: 1401, h: 939 }, archiv: { w: 1481, h: 881 },
   drucker: { w: 1081, h: 1188 },
   'projekt-garten': { w: 1081, h: 1167 }, 'projekt-haushalt': { w: 1080, h: 1168 }, 'projekt-fahrzeug': { w: 1080, h: 1209 }, 'projekt-buero': { w: 1080, h: 1186 },
   'projekt-hobby': { w: 1079, h: 1204 }, 'projekt-technik': { w: 1086, h: 1208 }, 'projekt-deko': { w: 1081, h: 1196 }, 'projekt-modell': { w: 1080, h: 1195 },
@@ -20,7 +20,7 @@ export const FRAME_BOX: Partial<Record<LibraryIsland, CSSProperties>> = {
   staffelei: { left: '28%', right: '28%', top: '21.5%', bottom: '46.5%' },
 };
 /** Bump when island sprites change: the CDN and browsers cache /img/* for a year (immutable), so the URL must change. */
-export const ASSET_VERSION = '20261107a';
+export const ASSET_VERSION = '20261107b';
 export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${id}-${w}.webp?v=${ASSET_VERSION}`;
 
 export interface IslandProps {
