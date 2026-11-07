@@ -13,11 +13,13 @@ function arc(from: number, to: number, r: number) {
   const [x1, y1] = pt(from, r); const [x2, y2] = pt(to, r);
   return `M ${f(x1)} ${f(y1)} A ${r} ${r} 0 ${to - from > 12 ? 1 : 0} 1 ${f(x2)} ${f(y2)}`;
 }
-/** Wooden cradle holding the ring: a beam resting on the pedestal and two slats up to the ring (lower left / lower right), as polygons. */
+/** Wooden mount holding the ring: a beam on the pedestal, two curved oak cheeks hugging the ring from outside at the bottom, two short slats inside, brass bolts at every joint. */
+const sector = (h1: number, h2: number, r1: number, r2: number) => { const [ax, ay] = pt(h1, r2); const [bx, by] = pt(h2, r2); const [cx, cy] = pt(h2, r1); const [dx, dy] = pt(h1, r1); return `M ${f(ax)} ${f(ay)} A ${r2} ${r2} 0 0 1 ${f(bx)} ${f(by)} L ${f(cx)} ${f(cy)} A ${r1} ${r1} 0 0 0 ${f(dx)} ${f(dy)} Z`; };
 const CRADLE = (() => {
-  const beam = 'M 56 191 L 144 191 L 144 198.5 L 56 198.5 Z';
-  const slat = (hour: number, bx: number) => { const [rx, ry] = pt(hour, 92); const dx = rx - bx, dy = ry - 191.5; const L = Math.hypot(dx, dy); const nx = (-dy / L) * 3.2, ny = (dx / L) * 3.2; return `M ${f(bx + nx)} ${f(191.5 + ny)} L ${f(rx + nx)} ${f(ry + ny)} L ${f(rx - nx)} ${f(ry - ny)} L ${f(bx - nx)} ${f(191.5 - ny)} Z`; };
-  return { beam, left: slat(3.6, 62), right: slat(20.4, 138), bolts: [[62, 194.8], [138, 194.8], pt(3.6, 92), pt(20.4, 92)] as [number, number][] };
+  const beam = 'M 42 191 L 158 191 L 158 198.5 L 42 198.5 Z';
+  const slat = (hour: number, bx: number, w = 3.2) => { const [rx, ry] = pt(hour, 92); const dx = rx - bx, dy = ry - 191.5; const L = Math.hypot(dx, dy); const nx = (-dy / L) * w, ny = (dx / L) * w; return `M ${f(bx + nx)} ${f(191.5 + ny)} L ${f(rx + nx)} ${f(ry + ny)} L ${f(rx - nx)} ${f(ry - ny)} L ${f(bx - nx)} ${f(191.5 - ny)} Z`; };
+  const parts = [beam, sector(1.4, 4.9, 97.5, 106), sector(19.1, 22.6, 97.5, 106), slat(3.6, 66), slat(20.4, 134)];
+  return { parts, bolts: [[66, 194.8], [134, 194.8], pt(3.6, 92), pt(20.4, 92), pt(2.2, 102), pt(4.1, 102), pt(19.9, 102), pt(21.8, 102)] as [number, number][] };
 })();
 /** Night-side stars on the inner band (fixed hours, only those outside daylight are drawn). */
 const STAR_HOURS = [0.6, 1.8, 3.1, 4.4, 20.4, 21.7, 22.9];
@@ -49,7 +51,7 @@ export function Tagesportal({ compact = false, turn = 28, lean = 0 }: { compact?
         {/* the body of the ring: slices stacked behind the front face give it real thickness once the ring is turned in perspective */}
         {Array.from({ length: 7 }, (_, i) => (
           <svg key={i} className="portal__depth" viewBox="0 0 200 200" width="100%" height="100%" aria-hidden style={{ transform: `translateZ(${-(i + 1) * 1.4}px)` }}>
-            {[CRADLE.beam, CRADLE.left, CRADLE.right].map((d, k) => <path key={k} d={d} fill={`rgba(${58 - i * 5},${34 - i * 3},${12 - i},1)`} />)}
+            {CRADLE.parts.map((d, k) => <path key={k} d={d} fill={`rgba(${58 - i * 5},${34 - i * 3},${12 - i},1)`} />)}
             <circle cx="100" cy="100" r="93" fill="none" stroke={i < 6 ? `rgba(${70 - i * 6},${40 - i * 4},${14 - i},1)` : 'rgba(30,16,4,1)'} strokeWidth="11" />
             <circle cx="100" cy="100" r="98.3" fill="none" stroke="rgba(0,0,0,.35)" strokeWidth=".8" />
           </svg>
@@ -88,10 +90,9 @@ export function Tagesportal({ compact = false, turn = 28, lean = 0 }: { compact?
           <circle cx="100" cy="100" r="92" fill="none" stroke={glow} strokeWidth="12" filter="url(#portalBloom)" opacity=".5" />
           <circle cx="100" cy="100" r="93" fill="none" stroke="rgba(0,0,0,.38)" strokeWidth="12" filter="url(#portalSoft)" />
 
-          {/* the wooden cradle: beam on the pedestal, two slats holding the ring, brass bolts at the joints */}
+          {/* the wooden mount: beam on the pedestal, two posts with knee braces, two slats; all in oak with grain */}
           <g>
-            {[CRADLE.beam, CRADLE.left, CRADLE.right].map((d, k) => <g key={k}><path d={d} fill="url(#portalOak)" /><path d={d} fill="#000" filter="url(#portalGrain)" opacity=".8" /><path d={d} fill="#000" filter="url(#portalGrainDark)" opacity=".6" /><path d={d} fill="none" stroke="rgba(255,236,200,.4)" strokeWidth=".7" /><path d={d} fill="none" stroke="rgba(30,15,3,.55)" strokeWidth=".5" transform="translate(.4 .6)" /></g>)}
-            {CRADLE.bolts.map(([x, y], k) => <g key={k}><circle cx={f(x)} cy={f(y)} r="2.1" fill="url(#portalBrass)" stroke="rgba(40,22,6,.6)" strokeWidth=".4" /><circle cx={f(x - .6)} cy={f(y - .6)} r=".7" fill="rgba(255,245,215,.8)" /></g>)}
+            {CRADLE.parts.map((d, k) => <g key={k}><path d={d} fill="url(#portalOak)" /><path d={d} fill="#000" filter="url(#portalGrain)" opacity=".8" /><path d={d} fill="#000" filter="url(#portalGrainDark)" opacity=".6" /><path d={d} fill="none" stroke="rgba(255,236,200,.4)" strokeWidth=".7" /><path d={d} fill="none" stroke="rgba(30,15,3,.55)" strokeWidth=".5" transform="translate(.4 .6)" /></g>)}
           </g>
 
           {/* the oak ring: turned wood with grain, a soft sheen on the upper left, bevel edges, brass on the inner lip */}
@@ -107,6 +108,8 @@ export function Tagesportal({ compact = false, turn = 28, lean = 0 }: { compact?
           <circle cx="100" cy="100" r="90.3" fill="none" stroke="rgba(22,10,2,.5)" strokeWidth="2.2" filter="url(#portalSoft)" />
           <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalFar)" strokeWidth="11" />
           <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOakHi)" strokeWidth="9" opacity=".7" />
+          {/* brass bolts at every joint of the mount */}
+          {CRADLE.bolts.map(([x, y], k) => <g key={k}><circle cx={f(x)} cy={f(y)} r="2.1" fill="url(#portalBrass)" stroke="rgba(40,22,6,.6)" strokeWidth=".4" /><circle cx={f(x - .6)} cy={f(y - .6)} r=".7" fill="rgba(255,245,215,.8)" /></g>)}
           <circle cx="100" cy="100" r="98.2" fill="none" stroke="rgba(255,235,200,.55)" strokeWidth=".9" />
           <circle cx="100" cy="100" r="98.8" fill="none" stroke="rgba(40,22,6,.5)" strokeWidth=".6" />
           <circle cx="100" cy="100" r="87.2" fill="none" stroke="url(#portalBrass)" strokeWidth="2.2" />
