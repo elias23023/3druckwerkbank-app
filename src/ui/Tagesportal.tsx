@@ -87,6 +87,10 @@ export function Tagesportal({ compact = false, turn = 28, lean = 0 }: { compact?
           <circle cx="100" cy="100" r="88.4" fill="none" stroke="rgba(255,245,215,.6)" strokeWidth=".5" />
           <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(40,22,6,.6)" strokeWidth=".6" />
 
+          {/* hour scale: 24 notches in the brass lip (longer every 6 h), hour numbers every 3 h engraved into the wood */}
+          {Array.from({ length: 24 }, (_, i) => { const major = i % 6 === 0; const mid = i % 3 === 0; const [x1, y1] = pt(i, 88.4); const [x2, y2] = pt(i, 88.4 - (major ? 3.6 : mid ? 2.6 : 1.6)); return <g key={i}><line x1={f(x1 + .35)} y1={f(y1 + .35)} x2={f(x2 + .35)} y2={f(y2 + .35)} stroke="rgba(255,245,215,.55)" strokeWidth={major ? 1 : .6} /><line x1={f(x1)} y1={f(y1)} x2={f(x2)} y2={f(y2)} stroke="rgba(45,25,6,.9)" strokeWidth={major ? 1 : .6} /></g>; })}
+          {[0, 3, 6, 9, 12, 15, 18, 21].map((t) => { const [x, y] = pt(t, 93.2); const major = t % 6 === 0; return <g key={t} fontFamily="Georgia, 'Times New Roman', serif" fontSize={major ? 8.6 : 6.8} fontWeight="700" textAnchor="middle"><text x={f(x + .5)} y={f(y + 3 + .5)} fill="rgba(255,242,215,.6)">{t}</text><text x={f(x)} y={f(y + 3)} fill="rgba(42,22,5,.95)">{t}</text></g>; })}
+
           {/* inside stays transparent; only a soft dark centre keeps the clock readable */}
           <circle cx="100" cy="100" r="46" fill="url(#portalText)" />
 
