@@ -397,7 +397,7 @@ p { margin: 0; }
 /* standing ring: laid into the painted gold ring of the Heute island (measured: centre 43.5 % / 30.7 %, height 37.4 % of the island) */
 
 /* ---- Tagesportal: oak ring resting in the notch of the painted wooden stand on the Heute island (notch measured at 45 % / 46.5 % of the sprite) ---- */
-.portal { position: absolute; left: 33%; top: 13.2%; width: 24%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; perspective: 520px; perspective-origin: 50% 40%; }
+.portal { position: absolute; left: 33%; top: 12.3%; width: 24%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; perspective: 520px; perspective-origin: 50% 40%; }
 .portal__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; transform-style: preserve-3d; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
 .portal__depth { position: absolute; inset: 0; overflow: visible; }
 .portal__foot { position: absolute; left: 30%; right: 30%; top: 96.5%; height: 6%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 50%, rgba(20,12,0,.5), transparent 70%); filter: blur(2px); }
