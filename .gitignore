@@ -4,4 +4,4 @@ reference/
 *.zip
 .DS_Store
 video-raw/
-screenshots/*.mp4
+screenshots/
