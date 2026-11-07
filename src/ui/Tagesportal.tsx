@@ -45,9 +45,20 @@ export function Tagesportal({ compact = false, turn = 28, lean = 0 }: { compact?
             <linearGradient id="portalOak" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#d6a96a" /><stop offset=".25" stopColor="#9c6a34" /><stop offset=".55" stopColor="#5f3b19" /><stop offset=".8" stopColor="#8d5c2b" /><stop offset="1" stopColor="#c99a5c" /></linearGradient>
             <linearGradient id="portalOakHi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="rgba(255,236,200,.75)" /><stop offset=".4" stopColor="rgba(255,236,200,.08)" /><stop offset="1" stopColor="rgba(255,255,255,0)" /></linearGradient>
             <linearGradient id="portalBrass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f3dca0" /><stop offset=".4" stopColor="#b98a3e" /><stop offset=".7" stopColor="#7d561c" /><stop offset="1" stopColor="#dcb86a" /></linearGradient>
+            {/* wood grain: coarse long fibres, fine short fibres and darker growth lines, each clipped to the ring */}
             <filter id="portalGrain" x="-10%" y="-10%" width="120%" height="120%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.012 0.28" numOctaves="3" seed="7" result="n" />
-              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.25  0 0 0 0 0.14  0 0 0 0 0.05  0 0 0 0.9 0" result="g" />
+              <feTurbulence type="fractalNoise" baseFrequency="0.01 0.22" numOctaves="4" seed="7" result="n" />
+              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.22  0 0 0 0 0.12  0 0 0 0 0.04  0 0 0 1.6 -0.35" result="g" />
+              <feComposite in="g" in2="SourceAlpha" operator="in" />
+            </filter>
+            <filter id="portalGrainFine" x="-10%" y="-10%" width="120%" height="120%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.035 0.9" numOctaves="2" seed="3" result="n" />
+              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.95  0 0 0 0 0.78  0 0 0 0 0.5  0 0 0 1.4 -0.45" result="g" />
+              <feComposite in="g" in2="SourceAlpha" operator="in" />
+            </filter>
+            <filter id="portalGrainDark" x="-10%" y="-10%" width="120%" height="120%">
+              <feTurbulence type="turbulence" baseFrequency="0.006 0.5" numOctaves="2" seed="11" result="n" />
+              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.16  0 0 0 0 0.08  0 0 0 0 0.02  0 0 0 2.2 -0.9" result="g" />
               <feComposite in="g" in2="SourceAlpha" operator="in" />
             </filter>
             <linearGradient id="portalDay" gradientUnits="userSpaceOnUse" x1={f(pt(sr, R)[0])} y1={f(pt(sr, R)[1])} x2={f(pt(ss, R)[0])} y2={f(pt(ss, R)[1])}><stop offset="0" stopColor="#ff9c7a" /><stop offset=".3" stopColor="#ffe08a" /><stop offset=".55" stopColor="#fff6cc" /><stop offset=".8" stopColor="#ffc872" /><stop offset="1" stopColor="#ff8a4a" /></linearGradient>
@@ -64,8 +75,12 @@ export function Tagesportal({ compact = false, turn = 28, lean = 0 }: { compact?
 
           {/* the oak ring: turned wood with grain, a soft sheen on the upper left, bevel edges, brass on the inner lip */}
           <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOak)" strokeWidth="11" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrain)" opacity=".55" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOakHi)" strokeWidth="9" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrain)" opacity=".85" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrainFine)" opacity=".5" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrainDark)" opacity=".7" />
+          {/* growth rings of the turned wood: thin concentric lines, slightly uneven */}
+          {[90.2, 91.6, 93.1, 94.7, 96.1].map((r, i) => <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="rgba(55,30,8,.42)" strokeWidth={i % 2 ? .35 : .55} strokeDasharray={i % 2 ? '14 6 22 4' : '30 5 12 8'} strokeDashoffset={i * 9} />)}
+          <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOakHi)" strokeWidth="9" opacity=".7" />
           <circle cx="100" cy="100" r="98.2" fill="none" stroke="rgba(255,235,200,.55)" strokeWidth=".9" />
           <circle cx="100" cy="100" r="98.8" fill="none" stroke="rgba(40,22,6,.5)" strokeWidth=".6" />
           <circle cx="100" cy="100" r="87.2" fill="none" stroke="url(#portalBrass)" strokeWidth="2.2" />
