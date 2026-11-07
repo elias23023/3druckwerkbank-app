@@ -18,12 +18,16 @@ const sector = (h1: number, h2: number, r1: number, r2: number) => { const [ax, 
 const CRADLE = (() => {
   const beam = 'M 42 191 L 158 191 L 158 198.5 L 42 198.5 Z';
   const slat = (hour: number, bx: number, w = 3.2) => { const [rx, ry] = pt(hour, 92); const dx = rx - bx, dy = ry - 191.5; const L = Math.hypot(dx, dy); const nx = (-dy / L) * w, ny = (dx / L) * w; return `M ${f(bx + nx)} ${f(191.5 + ny)} L ${f(rx + nx)} ${f(ry + ny)} L ${f(rx - nx)} ${f(ry - ny)} L ${f(bx - nx)} ${f(191.5 - ny)} Z`; };
-  // the trestle under the beam, down to the stone pedestal: two slanted posts, a cross bar, a sill (viewBox runs on below y=200; the svg overflows)
-  const postL = 'M 50 198 L 58 198 L 70 237 L 62 237 Z'; const postR = 'M 150 198 L 142 198 L 130 237 L 138 237 Z';
-  const cross = 'M 54 214 L 146 214 L 146 219.5 L 54 219.5 Z';
-  const sill = 'M 52 236 L 148 236 L 148 243 L 52 243 Z';
+  // the trestle under the beam, down to the stone pedestal: sill, two slanted posts, a cross bar; low, with top and side faces so it reads as solid wood
+  const postL = 'M 56 198 L 63 198 L 69 218 L 62 218 Z'; const postR = 'M 144 198 L 137 198 L 131 218 L 138 218 Z';
+  const cross = 'M 58 206 L 142 206 L 142 210 L 58 210 Z';
+  const sill = 'M 52 218 L 148 218 L 148 223 L 52 223 Z';
   const parts = [sill, postL, postR, cross, beam, sector(1.4, 4.9, 97.5, 106), sector(19.1, 22.6, 97.5, 106), slat(3.6, 66), slat(20.4, 134)];
-  return { parts, bolts: [[66, 194.8], [134, 194.8], pt(3.6, 92), pt(20.4, 92), pt(2.2, 102), pt(4.1, 102), pt(19.9, 102), pt(21.8, 102), [58, 216.8], [142, 216.8], [66, 239.5], [134, 239.5]] as [number, number][] };
+  // oblique faces (offset +4 / -3): lit tops and shaded right sides, plus the rear pair of posts
+  const tops = ['M 52 218 L 148 218 L 152 215 L 56 215 Z', 'M 58 206 L 142 206 L 146 203 L 62 203 Z', 'M 42 191 L 158 191 L 162 188 L 46 188 Z', 'M 56 198 L 63 198 L 67 195 L 60 195 Z', 'M 137 198 L 144 198 L 148 195 L 141 195 Z'];
+  const sides = ['M 148 218 L 152 215 L 152 220 L 148 223 Z', 'M 142 206 L 146 203 L 146 207 L 142 210 Z', 'M 158 191 L 162 188 L 162 195.5 L 158 198.5 Z', 'M 63 198 L 67 195 L 73 215 L 69 218 Z', 'M 144 198 L 148 195 L 142 215 L 138 218 Z'];
+  const rear = ['M 60 195 L 67 195 L 73 215 L 66 215 Z', 'M 148 195 L 141 195 L 135 215 L 142 215 Z', 'M 56 215 L 152 215 L 152 220 L 56 220 Z'];
+  return { parts, tops, sides, rear, bolts: [[66, 194.8], [134, 194.8], pt(3.6, 92), pt(20.4, 92), pt(2.2, 102), pt(4.1, 102), pt(19.9, 102), pt(21.8, 102), [64, 208], [136, 208], [58, 220.5], [142, 220.5]] as [number, number][] };
 })();
 /** Night-side stars on the inner band (fixed hours, only those outside daylight are drawn). */
 const STAR_HOURS = [0.6, 1.8, 3.1, 4.4, 20.4, 21.7, 22.9];
@@ -94,9 +98,12 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
           <circle cx="100" cy="100" r="92" fill="none" stroke={glow} strokeWidth="12" filter="url(#portalBloom)" opacity=".5" />
           <circle cx="100" cy="100" r="93" fill="none" stroke="rgba(0,0,0,.38)" strokeWidth="12" filter="url(#portalSoft)" />
 
-          {/* the wooden mount: beam on the pedestal, two posts with knee braces, two slats; all in oak with grain */}
+          {/* the wooden mount: trestle on the pedestal (rear posts first), beam, cheeks and slats; oak with grain, lit top faces and shaded side faces */}
           <g>
+            {CRADLE.rear.map((d, k) => <path key={k} d={d} fill="rgba(62,36,12,1)" />)}
             {CRADLE.parts.map((d, k) => <g key={k}><path d={d} fill="url(#portalOak)" /><path d={d} fill="#000" filter="url(#portalGrain)" opacity=".8" /><path d={d} fill="#000" filter="url(#portalGrainDark)" opacity=".6" /><path d={d} fill="none" stroke="rgba(255,236,200,.4)" strokeWidth=".7" /><path d={d} fill="none" stroke="rgba(30,15,3,.55)" strokeWidth=".5" transform="translate(.4 .6)" /></g>)}
+            {CRADLE.tops.map((d, k) => <g key={k}><path d={d} fill="url(#portalOak)" /><path d={d} fill="rgba(255,232,185,.42)" /><path d={d} fill="none" stroke="rgba(60,34,10,.5)" strokeWidth=".4" /></g>)}
+            {CRADLE.sides.map((d, k) => <g key={k}><path d={d} fill="url(#portalOak)" /><path d={d} fill="rgba(20,10,2,.48)" /><path d={d} fill="none" stroke="rgba(30,15,3,.5)" strokeWidth=".4" /></g>)}
           </g>
 
           {/* the oak ring: turned wood with grain, a soft sheen on the upper left, bevel edges, brass on the inner lip */}
