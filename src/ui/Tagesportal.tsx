@@ -30,7 +30,7 @@ const STAR_HOURS = [0.6, 1.8, 3.1, 4.4, 20.4, 21.7, 22.9];
  * brass edge; inside the inlay the sun's path from sunrise (left) to sunset (right) glows like amber, the passed part bright,
  * the night side dark slate with small stars; a warm sun or a pale moon marks now. Centre: the clock, and (not in compact mode) the next change of light.
  */
-export function Tagesportal({ compact = false, turn = 28, lean = 0 }: { compact?: boolean; turn?: number; lean?: number }) {
+export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?: boolean; turn?: number; lean?: number }) {
   const now = useNow(1000);
   const weather = useStore(useShallow((s) => s.weather));
   const today = todayDaily(weather?.data, now);
