@@ -10,7 +10,7 @@ Dieses Dokument fasst alles zusammen, was es über die Idee, den Aufbau, die Bil
 
 Eine persönliche digitale Werkstatt für 3D-Druck-Projekte, dargestellt als räumliche Welt aus schwebenden Inseln über einem Alpental: jede Insel ist ein Lebensbereich der Werkstatt, Licht und Wetter sind echt, alle Daten gehören dem Nutzer und bleiben in seinem Browser.
 
-**Leitmotive:** „Ideen. Machen. Erleben.“ · Ruhe statt Dashboard-Hektik · Ein Blick genügt (Heute-Welt) · Alles hat einen Ort (Inseln) · Zeit ist sichtbar (Tagesring, Sonnenstand, Jahreszeiten) · Ehrlichkeit über Schätzung vs. Messung.
+**Leitmotive:** „Ideen. Machen. Erleben.“ · Ruhe statt Dashboard-Hektik · Ein Blick genügt (Heute-Welt) · Alles hat einen Ort (Inseln) · Zeit ist sichtbar (Tagesportal, Sonnenstand, Jahreszeiten) · Ehrlichkeit über Schätzung vs. Messung.
 
 **Standort:** Weitra, Niederösterreich (Wetter und Sonnenstand werden dafür geladen).
 
@@ -37,7 +37,7 @@ Eine persönliche digitale Werkstatt für 3D-Druck-Projekte, dargestellt als rä
 
 **Funktioniert bereits**
 - Startwelt, räumliche Navigation mit Parallaxe, Wolken unter den Inseln, Landschaft nach echtem Sonnenstand und Wetter.
-- Info-Ring auf der Heute-Insel: liegt im gemalten Leuchtring, zeigt Tageslichtbogen, Solarfenster, Drucke, Aufgaben, Termine, Sonne/Mond als Jetzt-Marke und die Uhr in der Mitte.
+- Tagesportal auf der Heute-Insel: der gemalte Ring ist ein Fenster auf den Tag: innen bleibt er durchsichtig, die echte Landschaft und das echte Wetter scheinen durch; am Rand ein einziger Bogen, der Sonnenweg von Aufgang (links) bis Untergang (rechts), der vergangene Teil leuchtet, eine Sonne oder ein Mond markiert jetzt; in der Mitte die Uhr und der nächste Lichtwechsel. Auf der Startseite nur Uhr und Bogen. Drucke, Aufgaben und Termine stehen in den Panels, nicht am Ring.
 - Echtes Wetter von Open-Meteo: aktuell, 24 h mit Temperaturkurve, 7 Tage, Tageslicht, Luftdruck, UV, regelbasierte Hinweise, beste Stunden nach Solar-Regel.
 - Projekt-Flow in fünf Schritten: Idee → Projektart (11 + eigene) → Einsatzbereiche (12 + eigene) → Projektwelt (drei Vorschläge oder eigenes Bild mit Rahmen) → Details; Meilenstein-Vorlagen je Projektart.
 - Projekte: Karussell, Status, Fortschritt, Aktuelles, Ähnliche, Filter. Innenwelt mit allen Panels, Versionen mit Vergleich, Werkzeuge, Historie.
@@ -98,7 +98,7 @@ Demodaten: fünf aktive Projekte (Sensorhalter Garten, Bewässerungsclip, Werkze
 
 **Landschaften (1672 × 941, Bergsee mit gleichbleibendem Bildaufbau):** je Jahreszeit vier Bilder (früher Morgen, Mittag, Sonnenuntergang, Nacht) für Frühling, Sommer, Herbst und Winter, dazu ein regennasser Bergsee für bedeckt, Nebel und Regen. Die zwölf Licht-Looks (Dämmerung bis Mondnacht) steuern weiter Sonnenstand, Himmelsfarbe und Wolken und werden auf die vier Tagesbilder der aktuellen Jahreszeit abgebildet (`src/scene/looks.ts`, `LOOK_PHASE`). Die früheren zwölf Tal-Landschaften liegen in `reference/alte-assets/`.
 
-**Hauptinseln (1536 × 1024, freigestellt geliefert):** Heute (Garten mit stehendem Leuchtring, Bank und Hütte; der Info-Ring liegt im gemalten Ring), Projekte (Werkstatthütte mit Baum), 3D-Druck (Druckwerkstatt mit AMS), Material (Spulenregal), Wetter (Kuppel, Wettermast, Wasserfall), Archiv (Bibliothek mit Vitrinen).
+**Hauptinseln (1536 × 1024, freigestellt geliefert):** Heute (Garten mit stehendem Leuchtring, Bank und Hütte; darin das Tagesportal), Projekte (Werkstatthütte mit Baum), 3D-Druck (Druckwerkstatt mit AMS), Material (Spulenregal), Wetter (Kuppel, Wettermast, Wasserfall), Archiv (Bibliothek mit Vitrinen).
 
 **Bibliotheksinseln für Projekte (1254 × 1254):** Werkstatt, Elektronik, Ideen, Drucker, acht Projektwelten (Garten, Haushalt, Fahrzeug, Büro, Hobby, Technik, Deko, Modellbau) sowie 16 weitere Motive: Haus & Bauen, Sammlung, Druckhütte, Pergola-Garten, Holzwerkstatt, Computerstudio, Elektroniklabor, Spulenlager, Solarpavillon, Metallwerkstatt, Atelier, Observatorium, Planungsgarten, Garten mit Ring, Werkstatt-Pavillon; für eigene Fotos zwei Rahmen-Inseln (Holztafel, Staffelei).
 

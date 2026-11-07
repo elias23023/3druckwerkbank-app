@@ -22,8 +22,8 @@ check('Start world has no status cards', (await page.locator('.minicard').count(
 check('Hints bell has a badge', (await page.locator('.topbar .badge').count()) === 1);
 await page.mouse.move(960, 540); await page.mouse.wheel(0, 400); await page.waitForTimeout(600);
 check('Wheel on start dives into Heute', (await page.evaluate(() => location.hash)) === '#/heute');
-check('Heute info ring sits inside the island', (await page.locator('.island--active .inforing').count()) === 1);
-check('Info ring shows the clock, no tags over the island', await page.evaluate(() => { const c = document.querySelector('.inforing__centre b'); return !!c && /\d{2}:\d{2}/.test(c.textContent || '') && document.querySelectorAll('.inforing__tag').length === 0; }));
+check('Heute portal sits inside the island', (await page.locator('.island--active .portal').count()) === 1);
+check('Portal shows the clock and the next light change', await page.evaluate(() => { const c = document.querySelector('.portal__centre b'); const l = document.querySelector('.portal__centre span'); return !!c && /\d{2}:\d{2}/.test(c.textContent || '') && /Sonnen(aufgang|untergang)/.test(l?.textContent || ''); }));
 for (const w of ['projekte', 'druck', 'material', 'wetter', 'archiv']) { await page.goto(`${base}/#/${w}`); await page.waitForTimeout(400); check(`World ${w} title`, (await page.locator('.world-title h1').count()) === 1); }
 await page.goto(`${base}/#/druck`); await page.waitForTimeout(500);
 check('Druck: Eingang shows imported print', (await page.getByText('Kabelclip_v2.gcode').count()) > 0);
@@ -119,7 +119,7 @@ for (const [iso, look, key] of [[`${TODAY}T06:05:00+01:00`, 'daemmerung', 'herbs
     const c = await browser.newContext(ctxOpts); const pg = await c.newPage();
     await pg.clock.install({ time: new Date(iso) });
     await pg.goto(`${base}/#/heute`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(2000);
-    marks[key] = await pg.evaluate(() => document.querySelector('.inforing .ring-now')?.getAttribute('data-kind'));
+    marks[key] = await pg.evaluate(() => document.querySelector('.portal .portal__now')?.getAttribute('data-kind'));
     await c.close();
   }
   check('Sun marker by day, moon at night', marks.mittag === 'sonne' && marks.nacht === 'mond', JSON.stringify(marks));

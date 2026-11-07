@@ -16,9 +16,9 @@ node scripts/verify.mjs   # Playwright-Prüfungen gegen den Preview-Server
 
 Die räumliche Inselwelt ist für Desktop und Tablet quer gebaut. Unter 900 px Breite (Handy, Tablet hochkant) rendert `src/App.tsx` stattdessen den mobilen Begleiter aus `src/mobile/Mobile.tsx`: fünf Reiter (Start, Heute, Projekte, Material, Mehr), je Reiter eine gemalte Szene als Hintergrund, keine Parallaxe, große Touchziele. Beide Ansichten nutzen denselben Store, dieselben Sheets und Formulare. Mobil-Screenshots: `node scripts/shot-mobile.mjs <url> <ordner>`.
 
-## Info-Ring auf der Heute-Insel
+## Tagesportal auf der Heute-Insel
 
-Die Heute-Insel hat einen gemalten, aufrecht stehenden Leuchtring. `src/ui/InfoRing.tsx` legt den 24-Stunden-Ring (`src/ui/Tagesring.tsx`) als Glas-Inlay hinein: Position und Neigung sind in `global.css` (`.inforing--stand`) und über die Props `turn` (Drehung um die Hochachse) und `lean` (Schräglage) eingestellt. Für eine liegende Insel gibt es weiterhin den Modus `stand={false}` mit `tilt`.
+Die Heute-Insel hat einen gemalten, aufrecht stehenden Ring. `src/ui/Tagesportal.tsx` macht daraus ein Fenster auf den Tag: innen bleibt er durchsichtig (die echte Landschaft scheint durch); am Rand der Sonnenweg von Aufgang (links) bis Untergang (rechts) mit leuchtendem vergangenem Teil und einer Sonne oder einem Mond als Jetzt-Marke; in der Mitte die Uhr und der nächste Lichtwechsel. Position und Neigung stehen in `global.css` (`.portal`) und in den Props `turn` und `lean`. Auf der Startseite läuft es als `compact` nur mit Uhr.
 
 ## Domains
 

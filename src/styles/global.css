@@ -191,11 +191,6 @@ p { margin: 0; }
 :root[data-motion="reduziert"] .island__body, :root[data-motion="reduziert"] .cloud, :root[data-motion="reduziert"] .fog::after { animation: none !important; }
 :root[data-motion="reduziert"] .island { --par: 0px !important; }
 .prop { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.tagesring { position: relative; }
-.tagesring svg { display: block; filter: drop-shadow(0 10px 30px rgba(0,0,0,.4)); }
-.tagesring__centre { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; }
-.tagesring__centre b { font-size: 34px; font-weight: 600; letter-spacing: -.02em; line-height: 1; }
-.tagesring__centre span { font-size: 12px; color: var(--text-2); margin-top: 4px; }
 .heute-ring { position: absolute; left: calc(50% - 150px); top: calc(50% - 150px); animation: rise var(--t-mid) var(--ease) both; }
 .heute-greet { position: absolute; left: 3.2%; top: 10%; max-width: 26%; animation: rise var(--t-mid) var(--ease) both; }
 .heute-greet h1 { font-size: clamp(26px, 3cqw, 44px); font-weight: 600; letter-spacing: -.02em; text-shadow: 0 2px 20px rgba(0,0,0,.45); line-height: 1.05; }
@@ -253,7 +248,7 @@ p { margin: 0; }
 .gcard div { padding: 6px 8px 8px; display: flex; flex-direction: column; gap: 2px; }
 
 /* ---------- light theme refinements: text over the landscape stays white ---------- */
-.world-title, .heute-greet, .topbar__clock, .brand, .tagesring__centre, .tagesring__centre span, .island__label { color: #f4f6fb; }
+.world-title, .heute-greet, .topbar__clock, .brand, .island__label { color: #f4f6fb; }
 .world-title p, .heute-greet p, .topbar__clock span, .brand span, .island__label small { color: rgba(244,246,251,.78); }
 :root[data-theme="hell"] .pill--warn { background: rgba(255,160,40,.3); color: #5a3200; }
 :root[data-theme="hell"] .pill--ok { background: rgba(40,170,90,.25); color: #0d4a26; }
@@ -341,8 +336,6 @@ p { margin: 0; }
 .tile:hover { background: rgba(255,255,255,.12); }
 .tile.on { border-color: var(--accent); background: rgba(255,189,107,.15); }
 .tile small { color: var(--text-2); font-size: 11px; }
-.ring-legend { position: absolute; left: 30%; top: 65%; width: 40%; display: flex; justify-content: center; gap: 12px; font-size: 11px; color: rgba(255,255,255,.85); text-shadow: 0 1px 6px rgba(0,0,0,.7); pointer-events: none; }
-.ring-legend span { display: inline-flex; align-items: center; gap: 4px; }
 /* weather chips around the island */
 .wchip { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 12px; border-radius: 14px; font-size: 12px; min-width: 86px; animation: rise var(--t-mid) var(--ease) both; animation-delay: var(--delay, 0ms); }
 .wchip b { font-size: 16px; }
@@ -400,25 +393,16 @@ p { margin: 0; }
 .panel-col > .panel > .panel__body { overflow: auto; min-height: 0; flex: 1 1 auto; scrollbar-width: thin; }
 
 /* ---------- Heute info ring: floating glass ring over the island platform ---------- */
-.inforing { position: absolute; left: 11.5%; top: -0.8%; width: 76%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; }
 /* standing ring: laid into the painted gold ring of the Heute island (measured: centre 43.5 % / 30.7 %, height 37.4 % of the island) */
-.inforing--stand { left: 32.2%; top: 11.6%; width: 25.2%; }
-.inforing--stand .inforing__h { font-size: clamp(6px, 7cqw, 14px); }
-.inforing--stand .inforing__centre b { font-size: clamp(11px, 14cqw, 34px); }
-.inforing--stand .inforing__centre span { font-size: clamp(6px, 6.2cqw, 12px); margin-top: 2px; }
-.inforing__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
-.inforing__shadow { position: absolute; left: 10%; right: 10%; top: 34%; height: 34%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 50%, rgba(20,10,0,.38), transparent 70%); filter: blur(4px); }
-@keyframes ring-hover { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1.2%; } }
-@keyframes ring-hover-shadow { 0%, 100% { opacity: 1; scale: 1; } 50% { opacity: .8; scale: 1.04; } }
-.inforing__h { position: absolute; transform: translate(-50%, -50%); font-size: clamp(9px, .7cqw, 12px); font-weight: 700; letter-spacing: .04em; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 6px rgba(0,0,0,.5); }
-.inforing__centre { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -62%); text-align: center; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.7); white-space: nowrap; }
-.inforing__centre b { display: block; font-size: clamp(16px, 1.9cqw, 32px); font-weight: 700; letter-spacing: -.02em; line-height: 1; }
-.inforing__centre span { display: block; font-size: clamp(8px, .68cqw, 11px); color: rgba(255,255,255,.85); margin-top: 3px; }
-.inforing__tagwrap { position: absolute; inset: 0; }
-.inforing__lead { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.inforing__tag { position: absolute; transform: translate(0, -100%); display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; font-size: clamp(8px, .66cqw, 11px); white-space: nowrap; color: var(--text); animation: rise var(--t-mid) var(--ease) both; }
-.inforing__tagwrap--l .inforing__tag { transform: translate(-100%, -100%); }
-.inforing__tag .dot { background: var(--c); width: 7px; height: 7px; box-shadow: 0 0 6px var(--c); }
-.inforing__tag b { font-weight: 700; }
-.inforing__tag span { color: var(--text-2); max-width: 11cqw; overflow: hidden; text-overflow: ellipsis; }
-:root[data-motion="reduziert"] .inforing__tilt, :root[data-motion="reduziert"] .inforing__shadow { animation: none; }
+
+/* ---- Tagesportal: the painted standing ring of the Heute island (measured: centre 43.5 % / 30.7 %, height 37.4 % of the island) ---- */
+.portal { position: absolute; left: 32.2%; top: 11.6%; width: 25.2%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; }
+.portal__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+.portal__centre { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -54%); text-align: center; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.75), 0 0 2px rgba(0,0,0,.6); white-space: nowrap; }
+.portal__centre b { display: block; font-size: clamp(12px, 17cqw, 40px); font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+.portal__centre span { display: block; font-size: clamp(6px, 5.6cqw, 11px); color: rgba(255,255,255,.88); margin-top: 3px; }
+.portal__centre .portal__sub { margin-top: 1px; color: rgba(255,255,255,.7); }
+.portal--compact .portal__centre b { font-size: clamp(12px, 19cqw, 40px); }
+.portal__halo { animation: portal-pulse 4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes portal-pulse { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.25); } }
+:root[data-motion="reduziert"] .portal * { animation: none !important; }
