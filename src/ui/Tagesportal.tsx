@@ -13,21 +13,19 @@ function arc(from: number, to: number, r: number) {
   const [x1, y1] = pt(from, r); const [x2, y2] = pt(to, r);
   return `M ${f(x1)} ${f(y1)} A ${r} ${r} 0 ${to - from > 12 ? 1 : 0} 1 ${f(x2)} ${f(y2)}`;
 }
-/** Wooden mount holding the ring: a trestle on the stone pedestal (sill, two posts, cross bar), a beam on top, two curved oak cheeks hugging the ring from outside, two short slats inside, brass bolts at every joint. */
-const sector = (h1: number, h2: number, r1: number, r2: number) => { const [ax, ay] = pt(h1, r2); const [bx, by] = pt(h2, r2); const [cx, cy] = pt(h2, r1); const [dx, dy] = pt(h1, r1); return `M ${f(ax)} ${f(ay)} A ${r2} ${r2} 0 0 1 ${f(bx)} ${f(by)} L ${f(cx)} ${f(cy)} A ${r1} ${r1} 0 0 0 ${f(dx)} ${f(dy)} Z`; };
+/** Wooden stand under the ring: a low trestle on the stone pedestal (sill, two posts, cross bar) and a beam on top; brass bolts at the joints. No side holders. */
 const CRADLE = (() => {
   const beam = 'M 42 191 L 158 191 L 158 198.5 L 42 198.5 Z';
-  const slat = (hour: number, bx: number, w = 3.2) => { const [rx, ry] = pt(hour, 92); const dx = rx - bx, dy = ry - 191.5; const L = Math.hypot(dx, dy); const nx = (-dy / L) * w, ny = (dx / L) * w; return `M ${f(bx + nx)} ${f(191.5 + ny)} L ${f(rx + nx)} ${f(ry + ny)} L ${f(rx - nx)} ${f(ry - ny)} L ${f(bx - nx)} ${f(191.5 - ny)} Z`; };
   // the trestle under the beam, down to the stone pedestal: sill, two slanted posts, a cross bar; low, with top and side faces so it reads as solid wood
   const postL = 'M 56 198 L 63 198 L 69 218 L 62 218 Z'; const postR = 'M 144 198 L 137 198 L 131 218 L 138 218 Z';
   const cross = 'M 58 206 L 142 206 L 142 210 L 58 210 Z';
   const sill = 'M 52 218 L 148 218 L 148 223 L 52 223 Z';
-  const parts = [sill, postL, postR, cross, beam, sector(1.4, 4.9, 97.5, 106), sector(19.1, 22.6, 97.5, 106), slat(3.6, 66), slat(20.4, 134)];
+  const parts = [sill, postL, postR, cross, beam];
   // oblique faces (offset +4 / -3): lit tops and shaded right sides, plus the rear pair of posts
   const tops = ['M 52 218 L 148 218 L 152 215 L 56 215 Z', 'M 58 206 L 142 206 L 146 203 L 62 203 Z', 'M 42 191 L 158 191 L 162 188 L 46 188 Z', 'M 56 198 L 63 198 L 67 195 L 60 195 Z', 'M 137 198 L 144 198 L 148 195 L 141 195 Z'];
   const sides = ['M 148 218 L 152 215 L 152 220 L 148 223 Z', 'M 142 206 L 146 203 L 146 207 L 142 210 Z', 'M 158 191 L 162 188 L 162 195.5 L 158 198.5 Z', 'M 63 198 L 67 195 L 73 215 L 69 218 Z', 'M 144 198 L 148 195 L 142 215 L 138 218 Z'];
   const rear = ['M 60 195 L 67 195 L 73 215 L 66 215 Z', 'M 148 195 L 141 195 L 135 215 L 142 215 Z', 'M 56 215 L 152 215 L 152 220 L 56 220 Z'];
-  return { parts, tops, sides, rear, bolts: [[66, 194.8], [134, 194.8], pt(3.6, 92), pt(20.4, 92), pt(2.2, 102), pt(4.1, 102), pt(19.9, 102), pt(21.8, 102), [64, 208], [136, 208], [58, 220.5], [142, 220.5]] as [number, number][] };
+  return { parts, tops, sides, rear, bolts: [[48, 194.8], [152, 194.8], [64, 208], [136, 208], [58, 220.5], [142, 220.5]] as [number, number][] };
 })();
 /** Night-side stars on the inner band (fixed hours, only those outside daylight are drawn). */
 const STAR_HOURS = [0.6, 1.8, 3.1, 4.4, 20.4, 21.7, 22.9];
