@@ -49,29 +49,29 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
         ))}
         <svg viewBox="0 0 200 200" width="100%" height="100%" role="img" aria-label={`Tagesportal, jetzt ${fmtTime(now)}`} style={{ overflow: 'visible', position: 'relative' }}>
           <defs>
-            <linearGradient id="portalOak" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f1d9a8" /><stop offset=".25" stopColor="#d4ab6c" /><stop offset=".55" stopColor="#a87a42" /><stop offset=".8" stopColor="#c99c5e" /><stop offset="1" stopColor="#ecd09c" /></linearGradient>
+            <linearGradient id="portalOak" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f2cf96" /><stop offset=".25" stopColor="#d9985a" /><stop offset=".55" stopColor="#b26f3a" /><stop offset=".8" stopColor="#d08f4f" /><stop offset="1" stopColor="#eec58c" /></linearGradient>
             <linearGradient id="portalOakHi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="rgba(255,236,200,.75)" /><stop offset=".4" stopColor="rgba(255,236,200,.08)" /><stop offset="1" stopColor="rgba(255,255,255,0)" /></linearGradient>
             <linearGradient id="portalFar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="rgba(255,240,215,.1)" /><stop offset=".45" stopColor="rgba(0,0,0,0)" /><stop offset="1" stopColor="rgba(0,0,0,.38)" /></linearGradient>
             <linearGradient id="portalBrass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f3dca0" /><stop offset=".4" stopColor="#b98a3e" /><stop offset=".7" stopColor="#7d561c" /><stop offset="1" stopColor="#dcb86a" /></linearGradient>
             {/* wood grain: coarse long fibres, fine short fibres and darker growth lines, each clipped to the ring */}
             <filter id="portalGrain" x="-10%" y="-10%" width="120%" height="120%">
               <feTurbulence type="fractalNoise" baseFrequency="0.01 0.22" numOctaves="4" seed="7" result="n" />
-              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.22  0 0 0 0 0.12  0 0 0 0 0.04  0 0 0 1.6 -0.35" result="g" />
+              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.17  0 0 0 0 0.05  0 0 0 1.6 -0.35" result="g" />
               <feComposite in="g" in2="SourceAlpha" operator="in" />
             </filter>
             <filter id="portalGrainMid" x="-10%" y="-10%" width="120%" height="120%">
               <feTurbulence type="fractalNoise" baseFrequency="0.02 0.5" numOctaves="3" seed="19" result="n" />
-              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.45  0 0 0 0 0.28  0 0 0 0 0.1  0 0 0 1.8 -0.55" result="g" />
+              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.6  0 0 0 0 0.32  0 0 0 0 0.1  0 0 0 1.8 -0.55" result="g" />
               <feComposite in="g" in2="SourceAlpha" operator="in" />
             </filter>
             <filter id="portalGrainFine" x="-10%" y="-10%" width="120%" height="120%">
               <feTurbulence type="fractalNoise" baseFrequency="0.035 0.9" numOctaves="2" seed="3" result="n" />
-              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.95  0 0 0 0 0.78  0 0 0 0 0.5  0 0 0 1.4 -0.45" result="g" />
+              <feColorMatrix in="n" type="matrix" values="0 0 0 0 1.0  0 0 0 0 0.8  0 0 0 0 0.45  0 0 0 1.4 -0.45" result="g" />
               <feComposite in="g" in2="SourceAlpha" operator="in" />
             </filter>
             <filter id="portalGrainDark" x="-10%" y="-10%" width="120%" height="120%">
               <feTurbulence type="turbulence" baseFrequency="0.006 0.5" numOctaves="2" seed="11" result="n" />
-              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.16  0 0 0 0 0.08  0 0 0 0 0.02  0 0 0 2.2 -0.9" result="g" />
+              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.12  0 0 0 0 0.03  0 0 0 2.2 -0.9" result="g" />
               <feComposite in="g" in2="SourceAlpha" operator="in" />
             </filter>
             <linearGradient id="portalDay" gradientUnits="userSpaceOnUse" x1={f(pt(sr, R)[0])} y1={f(pt(sr, R)[1])} x2={f(pt(ss, R)[0])} y2={f(pt(ss, R)[1])}><stop offset="0" stopColor="#ff9c7a" /><stop offset=".3" stopColor="#ffe08a" /><stop offset=".55" stopColor="#fff6cc" /><stop offset=".8" stopColor="#ffc872" /><stop offset="1" stopColor="#ff8a4a" /></linearGradient>
@@ -99,7 +99,7 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
           <circle cx="100" cy="100" r="95.6" fill="none" stroke="rgba(255,236,200,.42)" strokeWidth="1.8" filter="url(#portalSoft)" />
           <circle cx="100" cy="100" r="90.3" fill="none" stroke="rgba(22,10,2,.5)" strokeWidth="2.2" filter="url(#portalSoft)" />
           <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalFar)" strokeWidth="11" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOakHi)" strokeWidth="9" opacity=".7" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOakHi)" strokeWidth="9" opacity=".55" />
           <circle cx="100" cy="100" r="98.2" fill="none" stroke="rgba(255,235,200,.55)" strokeWidth=".9" />
           <circle cx="100" cy="100" r="98.8" fill="none" stroke="rgba(40,22,6,.5)" strokeWidth=".6" />
           <circle cx="100" cy="100" r="87.2" fill="none" stroke="url(#portalBrass)" strokeWidth="2.2" />
