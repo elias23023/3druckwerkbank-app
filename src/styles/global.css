@@ -396,13 +396,13 @@ p { margin: 0; }
 /* ---------- Heute info ring: floating glass ring over the island platform ---------- */
 /* standing ring: laid into the painted gold ring of the Heute island (measured: centre 43.5 % / 30.7 %, height 37.4 % of the island) */
 
-/* ---- Tagesportal: a brass ring drawn on the pedestal of the Heute island (pedestal top measured at 45.9 % / 51.3 % of the sprite) ---- */
-.portal { position: absolute; left: 32.55%; top: 11.3%; width: 26.7%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; perspective: 520px; perspective-origin: 50% 40%; }
+/* ---- Tagesportal: oak ring on a trestle on the stone pedestal of the Heute island (pedestal top at 45.9 % / 51.3 % of the sprite; the trestle is drawn below the box) ---- */
+.portal { position: absolute; left: 33.9%; top: 8.4%; width: 24%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; perspective: 520px; perspective-origin: 50% 40%; }
 .portal__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; transform-style: preserve-3d; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
 .portal__depth { position: absolute; inset: 0; overflow: visible; }
-.portal__foot { position: absolute; left: 28%; right: 28%; top: 96%; height: 7%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 50%, rgba(20,12,0,.5), transparent 70%); filter: blur(2px); }
+.portal__foot { position: absolute; left: 24%; right: 24%; top: 117%; height: 7%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 50%, rgba(20,12,0,.5), transparent 70%); filter: blur(2px); }
 /* light of the ring spilling onto the pedestal and the terrace */
-.portal__pool { position: absolute; left: 8%; right: 8%; top: 80%; height: 38%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 45%, rgba(255,196,110,.3), rgba(255,170,80,.1) 45%, transparent 72%); filter: blur(5px); animation: portal-breathe 6s ease-in-out infinite; }
+.portal__pool { position: absolute; left: 8%; right: 8%; top: 98%; height: 38%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 45%, rgba(255,196,110,.3), rgba(255,170,80,.1) 45%, transparent 72%); filter: blur(5px); animation: portal-breathe 6s ease-in-out infinite; }
 .portal[data-day="false"] .portal__pool { background: radial-gradient(50% 50% at 50% 45%, rgba(170,195,255,.26), rgba(140,170,255,.08) 45%, transparent 72%); }
 .portal__centre { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -54%); text-align: center; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.75), 0 0 2px rgba(0,0,0,.6), 0 0 14px rgba(255,220,150,.25); white-space: nowrap; }
 .portal__centre b { display: block; font-size: clamp(12px, 17cqw, 40px); font-weight: 700; letter-spacing: -.02em; line-height: 1; }
