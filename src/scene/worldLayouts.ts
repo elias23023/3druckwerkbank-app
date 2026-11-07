@@ -10,8 +10,9 @@ export const LABELS: Record<WorldId, [string, string]> = {
 
 /** Start world: six large islands in two rows. */
 export const START_POS: Record<WorldId, [number, number, number, number]> = {
-  heute: [50, 27, 29, 0], projekte: [27, 31, 18, 0.12], druck: [73, 31, 18, 0.12],
-  material: [21, 67, 19, 0.05], wetter: [50, 69, 18.5, 0.08], archiv: [79, 67, 19, 0.05],
+  // Heute in the middle, the five others small on an ellipse around it (pentagon, point down)
+  heute: [50, 44, 25, 0], projekte: [27, 36, 14, 0.1], druck: [73, 36, 14, 0.1],
+  material: [24, 66, 14, 0.1], wetter: [50, 74, 12, 0.1], archiv: [76, 66, 14, 0.1],
 };
 export function startIslands(): Placement[] {
   return ORDER.map((w) => { const [x, y, size, depth] = START_POS[w]; return { key: `w-${w}`, x, y, size, depth, world: w, label: LABELS[w][0], sub: LABELS[w][1] }; });
