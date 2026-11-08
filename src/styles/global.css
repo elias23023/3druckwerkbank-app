@@ -402,10 +402,14 @@ p { margin: 0; }
 /* light of the ring spilling onto the pedestal and the terrace */
 .portal__pool { position: absolute; left: 10%; right: 10%; top: 84%; height: 34%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 45%, rgba(255,196,110,.3), rgba(255,170,80,.1) 45%, transparent 72%); filter: blur(5px); animation: portal-breathe 6s ease-in-out infinite; }
 .portal[data-day="false"] .portal__pool { background: radial-gradient(50% 50% at 50% 45%, rgba(170,195,255,.26), rgba(140,170,255,.08) 45%, transparent 72%); }
-.portal__centre { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -54%); text-align: center; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.75), 0 0 2px rgba(0,0,0,.6), 0 0 14px rgba(255,220,150,.25); white-space: nowrap; }
-.portal__centre b { display: block; font-size: clamp(12px, 17cqw, 40px); font-weight: 700; letter-spacing: -.02em; line-height: 1; }
-.portal__centre span { display: block; font-size: clamp(6px, 5.6cqw, 11px); color: rgba(255,255,255,.88); margin-top: 3px; }
-.portal__centre .portal__sub { margin-top: 1px; color: rgba(255,255,255,.7); }
+.portal__centre { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -54%); text-align: center; white-space: nowrap; }
+/* the clock: warm golden gradient by day, moonlit silver-blue by night, with a soft coloured glow */
+.portal__centre b { display: block; font-size: clamp(12px, 17cqw, 40px); font-weight: 800; letter-spacing: -.02em; line-height: 1; background: linear-gradient(180deg, #fff8e6 0%, #ffdc8a 45%, #f3a63f 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 6px rgba(0,0,0,.65)) drop-shadow(0 0 14px rgba(255,190,90,.45)); }
+.portal[data-day="false"] .portal__centre b { background: linear-gradient(180deg, #ffffff 0%, #d6e4ff 45%, #8fb2ff 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 2px 6px rgba(0,0,0,.7)) drop-shadow(0 0 14px rgba(150,180,255,.5)); }
+.portal__centre span { display: block; font-size: clamp(6px, 5.6cqw, 11px); font-weight: 600; margin-top: 4px; color: #ffe2b0; text-shadow: 0 1px 4px rgba(0,0,0,.8), 0 0 10px rgba(255,170,80,.35); }
+.portal__centre .portal__sub { margin-top: 1px; font-weight: 500; color: #ffbf78; }
+.portal[data-day="false"] .portal__centre span { color: #dbe6ff; text-shadow: 0 1px 4px rgba(0,0,0,.8), 0 0 10px rgba(140,170,255,.4); }
+.portal[data-day="false"] .portal__centre .portal__sub { color: #9db8ff; }
 .portal--compact .portal__centre b { font-size: clamp(12px, 19cqw, 40px); }
 .portal__halo { animation: portal-pulse 4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
 .portal__rays { animation: portal-rays 60s linear infinite; }
