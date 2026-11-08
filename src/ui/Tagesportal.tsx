@@ -49,8 +49,8 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
         ))}
         <svg viewBox="0 0 200 200" width="100%" height="100%" role="img" aria-label={`Tagesportal, jetzt ${fmtTime(now)}`} style={{ overflow: 'visible', position: 'relative' }}>
           <defs>
-            <linearGradient id="portalOak" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f2cf96" /><stop offset=".25" stopColor="#d9985a" /><stop offset=".55" stopColor="#b26f3a" /><stop offset=".8" stopColor="#d08f4f" /><stop offset="1" stopColor="#eec58c" /></linearGradient>
-            <linearGradient id="portalOakHi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="rgba(255,236,200,.75)" /><stop offset=".4" stopColor="rgba(255,236,200,.08)" /><stop offset="1" stopColor="rgba(255,255,255,0)" /></linearGradient>
+            <linearGradient id="portalOak" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#e2a054" /><stop offset=".3" stopColor="#c47d31" /><stop offset=".6" stopColor="#8f5219" /><stop offset=".82" stopColor="#b9742c" /><stop offset="1" stopColor="#dd9a4d" /></linearGradient>
+            <linearGradient id="portalOakHi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="rgba(255,226,170,.8)" /><stop offset=".35" stopColor="rgba(255,226,170,.16)" /><stop offset="1" stopColor="rgba(255,255,255,0)" /></linearGradient>
             <linearGradient id="portalFar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="rgba(255,240,215,.1)" /><stop offset=".45" stopColor="rgba(0,0,0,0)" /><stop offset="1" stopColor="rgba(0,0,0,.38)" /></linearGradient>
             <linearGradient id="portalBrass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f3dca0" /><stop offset=".4" stopColor="#b98a3e" /><stop offset=".7" stopColor="#7d561c" /><stop offset="1" stopColor="#dcb86a" /></linearGradient>
             {/* wood grain: coarse long fibres, fine short fibres and darker growth lines, each clipped to the ring */}
@@ -88,18 +88,17 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
 
           {/* the oak ring: turned wood with grain, a soft sheen on the upper left, bevel edges, brass on the inner lip */}
           <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOak)" strokeWidth="11" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrain)" opacity=".95" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrainMid)" opacity=".75" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrainFine)" opacity=".7" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrainDark)" opacity=".8" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrain)" opacity=".38" />
           {/* growth rings of the turned wood: thin concentric lines, slightly uneven */}
-          {[90.2, 91.6, 93.1, 94.7, 96.1].map((r, i) => <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="rgba(70,40,12,.55)" strokeWidth={i % 2 ? .4 : .65} strokeDasharray={i % 2 ? '14 6 22 4' : '30 5 12 8'} strokeDashoffset={i * 9} />)}
+          {[90.2, 91.6, 93.1, 94.7, 96.1].map((r, i) => <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="rgba(70,38,10,.22)" strokeWidth={i % 2 ? .35 : .5} strokeDasharray={i % 2 ? '14 6 22 4' : '30 5 12 8'} strokeDashoffset={i * 9} />)}
           {/* rounded tube: dark outer edge, bright ridge just inside it, shadow trough towards the inner lip, far side a little darker */}
           <circle cx="100" cy="100" r="97.9" fill="none" stroke="rgba(28,14,3,.6)" strokeWidth="1" />
           <circle cx="100" cy="100" r="95.6" fill="none" stroke="rgba(255,236,200,.42)" strokeWidth="1.8" filter="url(#portalSoft)" />
           <circle cx="100" cy="100" r="90.3" fill="none" stroke="rgba(22,10,2,.5)" strokeWidth="2.2" filter="url(#portalSoft)" />
           <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalFar)" strokeWidth="11" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOakHi)" strokeWidth="9" opacity=".55" />
+          <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOakHi)" strokeWidth="9" opacity=".75" />
+          {/* lacquer: a soft specular band on the upper left like the varnished beams of the hut */}
+          <path d={arc(8.2, 12.4, 94.8)} fill="none" stroke="rgba(255,240,205,.55)" strokeWidth="2.6" strokeLinecap="round" filter="url(#portalSoft)" />
           <circle cx="100" cy="100" r="98.2" fill="none" stroke="rgba(255,235,200,.55)" strokeWidth=".9" />
           <circle cx="100" cy="100" r="98.8" fill="none" stroke="rgba(40,22,6,.5)" strokeWidth=".6" />
           <circle cx="100" cy="100" r="87.2" fill="none" stroke="url(#portalBrass)" strokeWidth="2.2" />
