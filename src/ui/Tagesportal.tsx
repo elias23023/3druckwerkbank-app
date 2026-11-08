@@ -17,10 +17,10 @@ function arc(from: number, to: number, r: number) {
 const STAR_HOURS = [0.6, 1.8, 3.1, 4.4, 20.4, 21.7, 22.9];
 
 /**
- * The Tagesportal: a turned oak ring with a brass inlay, resting in the notch of the wooden stand painted on the Heute island. The inside stays
- * transparent (the real landscape shows through). Natural materials only: oak with real grain (turbulence filter), a soft sheen,
- * brass edge; inside the inlay the sun's path from sunrise (left) to sunset (right) glows like amber, the passed part bright,
- * the night side dark slate with small stars; a warm sun or a pale moon marks now. Centre: the clock, and (not in compact mode) the next change of light.
+ * The Tagesportal: the wooden ring is painted in the Heute island image (wood band, slate channel inside, on a stand). The app only lays the
+ * living part into it: the sun's path in the slate channel from sunrise (left) to sunset (right) glowing like amber, the passed part bright,
+ * the night side dark with small stars; a warm sun or a pale moon marks now; 24 notches and hour numbers engraved on the wood; the clock and
+ * (not in compact mode) the next change of light in the centre. Position and size follow the painted ring (global.css .portal).
  */
 export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?: boolean; turn?: number; lean?: number }) {
   const now = useNow(1000);
@@ -29,7 +29,7 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
   const sr = today ? hourOf(today.sunrise) : 7; const ss = today ? hourOf(today.sunset) : 17;
   const h = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
   const isDay = h >= sr && h <= ss;
-  const R = 81; const [bx, by] = pt(h, R);
+  const R = 87; const [bx, by] = pt(h, R);
   const tomorrow = weather?.data.daily?.[1];
   const at = (iso: string | undefined, fallbackHour: number) => fmtTime(iso ? new Date(iso) : new Date(new Date(now).setHours(fallbackHour, 0, 0, 0)));
   const line = h < sr ? [`Sonnenaufgang ${at(today?.sunrise, 7)}`, `noch ${fmtDuration(Math.round((sr - h) * 60))}`]
@@ -40,40 +40,8 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
     <div className={`portal${compact ? ' portal--compact' : ''}`} data-testid="portal" data-kind={isDay ? 'sonne' : 'mond'} data-day={isDay ? 'true' : 'false'}>
       <div className="portal__pool" />
       <div className="portal__tilt" style={{ transform: `rotate(${lean}deg) rotateY(${turn}deg)` }}>
-        {/* the body of the ring: slices stacked behind the front face give it real thickness once the ring is turned in perspective */}
-        {Array.from({ length: 7 }, (_, i) => (
-          <svg key={i} className="portal__depth" viewBox="0 0 200 200" width="100%" height="100%" aria-hidden style={{ transform: `translateZ(${-(i + 1) * 1.4}px)` }}>
-            <circle cx="100" cy="100" r="93" fill="none" stroke={i < 6 ? `rgba(${70 - i * 6},${40 - i * 4},${14 - i},1)` : 'rgba(30,16,4,1)'} strokeWidth="11" />
-            <circle cx="100" cy="100" r="98.3" fill="none" stroke="rgba(0,0,0,.35)" strokeWidth=".8" />
-          </svg>
-        ))}
         <svg viewBox="0 0 200 200" width="100%" height="100%" role="img" aria-label={`Tagesportal, jetzt ${fmtTime(now)}`} style={{ overflow: 'visible', position: 'relative' }}>
           <defs>
-            <linearGradient id="portalOak" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#e2a054" /><stop offset=".3" stopColor="#c47d31" /><stop offset=".6" stopColor="#8f5219" /><stop offset=".82" stopColor="#b9742c" /><stop offset="1" stopColor="#dd9a4d" /></linearGradient>
-            <linearGradient id="portalOakHi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="rgba(255,226,170,.8)" /><stop offset=".35" stopColor="rgba(255,226,170,.16)" /><stop offset="1" stopColor="rgba(255,255,255,0)" /></linearGradient>
-            <linearGradient id="portalFar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="rgba(255,240,215,.1)" /><stop offset=".45" stopColor="rgba(0,0,0,0)" /><stop offset="1" stopColor="rgba(0,0,0,.38)" /></linearGradient>
-            <linearGradient id="portalBrass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f3dca0" /><stop offset=".4" stopColor="#b98a3e" /><stop offset=".7" stopColor="#7d561c" /><stop offset="1" stopColor="#dcb86a" /></linearGradient>
-            {/* wood grain: coarse long fibres, fine short fibres and darker growth lines, each clipped to the ring */}
-            <filter id="portalGrain" x="-10%" y="-10%" width="120%" height="120%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.01 0.22" numOctaves="4" seed="7" result="n" />
-              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.17  0 0 0 0 0.05  0 0 0 1.6 -0.35" result="g" />
-              <feComposite in="g" in2="SourceAlpha" operator="in" />
-            </filter>
-            <filter id="portalGrainMid" x="-10%" y="-10%" width="120%" height="120%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.02 0.5" numOctaves="3" seed="19" result="n" />
-              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.6  0 0 0 0 0.32  0 0 0 0 0.1  0 0 0 1.8 -0.55" result="g" />
-              <feComposite in="g" in2="SourceAlpha" operator="in" />
-            </filter>
-            <filter id="portalGrainFine" x="-10%" y="-10%" width="120%" height="120%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.035 0.9" numOctaves="2" seed="3" result="n" />
-              <feColorMatrix in="n" type="matrix" values="0 0 0 0 1.0  0 0 0 0 0.8  0 0 0 0 0.45  0 0 0 1.4 -0.45" result="g" />
-              <feComposite in="g" in2="SourceAlpha" operator="in" />
-            </filter>
-            <filter id="portalGrainDark" x="-10%" y="-10%" width="120%" height="120%">
-              <feTurbulence type="turbulence" baseFrequency="0.006 0.5" numOctaves="2" seed="11" result="n" />
-              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.12  0 0 0 0 0.03  0 0 0 2.2 -0.9" result="g" />
-              <feComposite in="g" in2="SourceAlpha" operator="in" />
-            </filter>
             <linearGradient id="portalDay" gradientUnits="userSpaceOnUse" x1={f(pt(sr, R)[0])} y1={f(pt(sr, R)[1])} x2={f(pt(ss, R)[0])} y2={f(pt(ss, R)[1])}><stop offset="0" stopColor="#ff9c7a" /><stop offset=".3" stopColor="#ffe08a" /><stop offset=".55" stopColor="#fff6cc" /><stop offset=".8" stopColor="#ffc872" /><stop offset="1" stopColor="#ff8a4a" /></linearGradient>
             <linearGradient id="portalNight" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#1b2a6b" /><stop offset="1" stopColor="#3b5bc4" /></linearGradient>
             <radialGradient id="portalText" cx="50%" cy="50%" r="50%"><stop offset="0" stopColor="rgba(8,14,30,.55)" /><stop offset=".7" stopColor="rgba(8,14,30,.22)" /><stop offset="1" stopColor="rgba(8,14,30,0)" /></radialGradient>
@@ -82,44 +50,22 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
             <filter id="portalGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
           </defs>
 
-          {/* a faint warm halo: the light of the inlay spilling out, not a neon glow */}
-          <circle cx="100" cy="100" r="92" fill="none" stroke={glow} strokeWidth="12" filter="url(#portalBloom)" opacity=".5" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="rgba(0,0,0,.38)" strokeWidth="12" filter="url(#portalSoft)" />
-
-          {/* the oak ring: turned wood with grain, a soft sheen on the upper left, bevel edges, brass on the inner lip */}
-          <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOak)" strokeWidth="11" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="#000" strokeWidth="11" filter="url(#portalGrain)" opacity=".38" />
-          {/* growth rings of the turned wood: thin concentric lines, slightly uneven */}
-          {[90.2, 91.6, 93.1, 94.7, 96.1].map((r, i) => <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="rgba(70,38,10,.22)" strokeWidth={i % 2 ? .35 : .5} strokeDasharray={i % 2 ? '14 6 22 4' : '30 5 12 8'} strokeDashoffset={i * 9} />)}
-          {/* rounded tube: dark outer edge, bright ridge just inside it, shadow trough towards the inner lip, far side a little darker */}
-          <circle cx="100" cy="100" r="97.9" fill="none" stroke="rgba(28,14,3,.6)" strokeWidth="1" />
-          <circle cx="100" cy="100" r="95.6" fill="none" stroke="rgba(255,236,200,.42)" strokeWidth="1.8" filter="url(#portalSoft)" />
-          <circle cx="100" cy="100" r="90.3" fill="none" stroke="rgba(22,10,2,.5)" strokeWidth="2.2" filter="url(#portalSoft)" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalFar)" strokeWidth="11" />
-          <circle cx="100" cy="100" r="93" fill="none" stroke="url(#portalOakHi)" strokeWidth="9" opacity=".75" />
-          {/* lacquer: a soft specular band on the upper left like the varnished beams of the hut */}
-          <path d={arc(8.2, 12.4, 94.8)} fill="none" stroke="rgba(255,240,205,.55)" strokeWidth="2.6" strokeLinecap="round" filter="url(#portalSoft)" />
-          <circle cx="100" cy="100" r="98.2" fill="none" stroke="rgba(255,235,200,.55)" strokeWidth=".9" />
-          <circle cx="100" cy="100" r="98.8" fill="none" stroke="rgba(40,22,6,.5)" strokeWidth=".6" />
-          <circle cx="100" cy="100" r="87.2" fill="none" stroke="url(#portalBrass)" strokeWidth="2.2" />
-          <circle cx="100" cy="100" r="88.4" fill="none" stroke="rgba(255,245,215,.6)" strokeWidth=".5" />
-          <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(40,22,6,.6)" strokeWidth=".6" />
-
-          {/* hour scale: 24 notches in the brass lip (longer every 6 h), hour numbers every 3 h engraved into the wood */}
-          {Array.from({ length: 24 }, (_, i) => { const major = i % 6 === 0; const mid = i % 3 === 0; const [x1, y1] = pt(i, 88.4); const [x2, y2] = pt(i, 88.4 - (major ? 3.6 : mid ? 2.6 : 1.6)); return <g key={i}><line x1={f(x1 + .35)} y1={f(y1 + .35)} x2={f(x2 + .35)} y2={f(y2 + .35)} stroke="rgba(255,245,215,.55)" strokeWidth={major ? 1 : .6} /><line x1={f(x1)} y1={f(y1)} x2={f(x2)} y2={f(y2)} stroke="rgba(45,25,6,.9)" strokeWidth={major ? 1 : .6} /></g>; })}
-          {[0, 3, 6, 9, 12, 15, 18, 21].map((t) => { const [x, y] = pt(t, 93.2); const major = t % 6 === 0; return <g key={t} fontFamily="Georgia, 'Times New Roman', serif" fontSize={major ? 10.6 : 8.6} fontWeight="700" textAnchor="middle"><text x={f(x)} y={f(y + 3.7)} fill="#2a1605" stroke="rgba(255,243,215,.85)" strokeWidth="1.1" strokeLinejoin="round" style={{ paintOrder: 'stroke' }}>{t}</text></g>; })}
-
-          {/* inside stays transparent; only a soft dark centre keeps the clock readable */}
+          {/* the ring itself is painted in the island image (wood band with a slate channel inside); the app only lays light and scale into it */}
+          <circle cx="100" cy="100" r={R} fill="none" stroke={glow} strokeWidth="9" filter="url(#portalBloom)" opacity=".35" />
           <circle cx="100" cy="100" r="46" fill="url(#portalText)" />
 
-          {/* the sun's path in the inlay: a dark slate channel, the daylight glowing like amber, the passed part bright; stars on the night side */}
-          <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(14,18,30,.55)" strokeWidth="6" />
-          <circle cx="100" cy="100" r={R} fill="none" stroke="#2b3447" strokeWidth="3.8" opacity=".85" />
-          {STAR_HOURS.filter((s) => s < sr || s > ss).map((s) => { const [x, y] = pt(s, R); return <circle key={s} className="portal__star" cx={f(x)} cy={f(y)} r=".75" fill="#e8eefb" />; })}
-          <path d={arc(sr, ss, R)} fill="none" stroke="url(#portalDay)" strokeWidth="3.8" strokeLinecap="round" opacity=".4" />
-          {h > sr ? <path d={arc(sr, Math.min(h, ss), R)} fill="none" stroke="#ffd48a" strokeWidth="8" strokeLinecap="round" opacity=".4" filter="url(#portalBloom)" /> : null}
-          {h > sr ? <path d={arc(sr, Math.min(h, ss), R)} fill="none" stroke="url(#portalDay)" strokeWidth="3.8" strokeLinecap="round" filter="url(#portalGlow)" /> : null}
-          {[sr, ss].map((t, i) => { const [x1, y1] = pt(t, R - 4.5); const [x2, y2] = pt(t, R + 4.5); return <line key={i} x1={f(x1)} y1={f(y1)} x2={f(x2)} y2={f(y2)} stroke="rgba(255,240,205,.9)" strokeWidth="1.2" />; })}
+          {/* hour scale on the painted wood band: 24 notches (longer every 6 h), numbers every 3 h engraved into the wood */}
+          {Array.from({ length: 24 }, (_, i) => { const major = i % 6 === 0; const mid = i % 3 === 0; const [x1, y1] = pt(i, 91.6); const [x2, y2] = pt(i, 91.6 + (major ? 3.8 : mid ? 2.8 : 1.7)); return <g key={i}><line x1={f(x1 + .3)} y1={f(y1 + .3)} x2={f(x2 + .3)} y2={f(y2 + .3)} stroke="rgba(255,245,215,.55)" strokeWidth={major ? .9 : .55} /><line x1={f(x1)} y1={f(y1)} x2={f(x2)} y2={f(y2)} stroke="rgba(45,25,6,.9)" strokeWidth={major ? .9 : .55} /></g>; })}
+          {[0, 3, 6, 9, 12, 15, 18, 21].map((t) => { const [x, y] = pt(t, 96.2); const major = t % 6 === 0; return <g key={t} fontFamily="Georgia, 'Times New Roman', serif" fontSize={major ? 7.4 : 6.2} fontWeight="700" textAnchor="middle"><text x={f(x)} y={f(y + 2.6)} fill="#2a1605" stroke="rgba(255,243,215,.85)" strokeWidth=".9" strokeLinejoin="round" style={{ paintOrder: 'stroke' }}>{t}</text></g>; })}
+
+          {/* the sun's path in the painted slate channel: night side dark with stars, daylight glowing like amber, the passed part bright */}
+          <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(10,14,28,.4)" strokeWidth="5" />
+          <circle cx="100" cy="100" r={R} fill="none" stroke="#2b3447" strokeWidth="3.4" opacity=".8" />
+          {STAR_HOURS.filter((s) => s < sr || s > ss).map((s) => { const [x, y] = pt(s, R); return <circle key={s} className="portal__star" cx={f(x)} cy={f(y)} r=".7" fill="#e8eefb" />; })}
+          <path d={arc(sr, ss, R)} fill="none" stroke="url(#portalDay)" strokeWidth="3.4" strokeLinecap="round" opacity=".4" />
+          {h > sr ? <path d={arc(sr, Math.min(h, ss), R)} fill="none" stroke="#ffd48a" strokeWidth="7" strokeLinecap="round" opacity=".4" filter="url(#portalBloom)" /> : null}
+          {h > sr ? <path d={arc(sr, Math.min(h, ss), R)} fill="none" stroke="url(#portalDay)" strokeWidth="3.4" strokeLinecap="round" filter="url(#portalGlow)" /> : null}
+          {[sr, ss].map((t, i) => { const [x1, y1] = pt(t, R - 4); const [x2, y2] = pt(t, R + 4); return <line key={i} x1={f(x1)} y1={f(y1)} x2={f(x2)} y2={f(y2)} stroke="rgba(255,240,205,.9)" strokeWidth="1.1" />; })}
 
           {/* now: a radiant sun by day, a glowing moon by night */}
           <g className="portal__now" data-kind={isDay ? 'sonne' : 'mond'}>
@@ -142,7 +88,6 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
           </g>
         </svg>
       </div>
-      <div className="portal__foot" />
       <div className="portal__centre"><b>{fmtTime(now)}</b>{compact ? null : <><span>{line[0]}</span><span className="portal__sub">{line[1]}</span></>}</div>
     </div>
   );

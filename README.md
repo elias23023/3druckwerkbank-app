@@ -18,7 +18,7 @@ Die räumliche Inselwelt ist für Desktop und Tablet quer gebaut. Unter 900 px B
 
 ## Tagesportal auf der Heute-Insel
 
-Die Heute-Insel trägt auf dem Steinsockel ein gemaltes Holzgestell; `src/ui/Tagesportal.tsx` setzt in dessen Mulde einen stehenden Eichenring mit Messing-Einlage als Fenster auf den Tag: innen bleibt er durchsichtig (die echte Landschaft scheint durch); am Rand der Sonnenweg von Aufgang (links) bis Untergang (rechts) mit leuchtendem vergangenem Teil und einer Sonne oder einem Mond als Jetzt-Marke; in der Mitte die Uhr und der nächste Lichtwechsel. Position und Neigung stehen in `global.css` (`.portal`) und in den Props `turn` und `lean`. Auf der Startseite läuft es als `compact` nur mit Uhr.
+Die Heute-Insel trägt auf dem Steinsockel einen gemalten Holzring auf einem Gestell; `src/ui/Tagesportal.tsx` legt nur das Lebendige hinein, der Ring ist Teil des Bildes: innen bleibt er durchsichtig (die echte Landschaft scheint durch); am Rand der Sonnenweg von Aufgang (links) bis Untergang (rechts) mit leuchtendem vergangenem Teil und einer Sonne oder einem Mond als Jetzt-Marke; in der Mitte die Uhr und der nächste Lichtwechsel. Position und Neigung stehen in `global.css` (`.portal`) und in den Props `turn` und `lean`. Auf der Startseite läuft es als `compact` nur mit Uhr.
 
 ## Domains
 
