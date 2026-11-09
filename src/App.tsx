@@ -21,7 +21,7 @@ import { Wetter } from './worlds/Wetter';
 import { Archiv } from './worlds/Archiv';
 import { Mobile } from './mobile/Mobile';
 import { Tagesportal } from './ui/Tagesportal';
-import { useSession, startSync, stopSync } from './lib/cloud';
+import { useAuth, useCloudBoot, startSync, stopSync } from './lib/cloud';
 import { resolveSeason } from './lib/season';
 import type { LibraryIsland, WorldId } from './types';
 
@@ -62,8 +62,11 @@ export function App() {
   const look = sceneLook(now, today?.sunrise, today?.sunset, weather?.data.hourly.length ? weather.data.current.code : undefined);
   const season = resolveSeason(settings.season, now);
   // Konto: sobald eine Sitzung da ist, Stand laden und Änderungen synchron halten
-  const { session } = useSession();
-  useEffect(() => { if (session) void startSync(session.user.id, session.user.email ?? undefined); else stopSync(); }, [session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useCloudBoot();
+  const auth = useAuth();
+  useEffect(() => { if (auth.user) void startSync(auth.user.id); else stopSync(); }, [auth.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Link aus der Passwort-E-Mail: #/konto/reset/<token> öffnet das Konto-Panel mit dem Formular für das neue Passwort
+  useEffect(() => { const m = /^#\/konto\/reset\/([A-Za-z0-9]+)/.exec(window.location.hash); if (m) { useStore.getState().openSheet({ kind: 'konto', resetToken: m[1] }); window.location.hash = '#/start'; } }, []);
   useEffect(() => {
     const theme = mobile ? 'dunkel' : settings.theme === 'auto' ? (DARK_LOOKS.has(look) ? 'dunkel' : 'hell') : settings.theme;
     document.documentElement.dataset.theme = theme;

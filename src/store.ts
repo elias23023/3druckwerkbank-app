@@ -18,7 +18,7 @@ export type SheetKind =
   | { kind: 'abschliessen'; projectId: string }
   | { kind: 'projektDetail'; projectId: string; tab: 'meilensteine' | 'aufgaben' | 'versionen' | 'drucke' | 'dateien' | 'material' | 'werkzeuge' | 'notizen' | 'historie' }
   | { kind: 'hinweise' }
-  | { kind: 'konto' }
+  | { kind: 'konto'; resetToken?: string }
   | { kind: 'bereich' };
 
 interface UiState { sheet?: SheetKind; commandOpen: boolean; drafts: Record<string, unknown>; toast?: { id: number; text: string }; recent: string[]; spotlight?: { projectId: string; until: number } }

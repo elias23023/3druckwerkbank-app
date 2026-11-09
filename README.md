@@ -24,9 +24,9 @@ Die Heute-Insel trägt auf dem Steinsockel einen gemalten Holzring auf einem Ges
 
 Die App hat zwei getrennte Bereiche mit eigenem Speicher (`src/lib/workspace.ts`): **Beispiel-Werkstatt** (Demodaten, Speicher `3druckwerkbank:v1`) zum Ausprobieren und Weiterentwickeln, und **Meine Werkstatt** (Speicher `3druckwerkbank:echt:v1`), die leer startet, nur mit Druckern, AMS, Trockner und Werkzeugen als Ausgangspunkt. Umschalten über den Chip neben dem Logo oder in den Einstellungen; der Wechsel lädt die Seite neu. Nur „Meine Werkstatt“ wird mit dem Konto synchronisiert. Export/Import gilt für den aktiven Bereich.
 
-## Konto und Synchronisation (optional)
+## Konto und Synchronisation
 
-Anmeldung mit Google oder E-Mail und Abgleich der Daten über alle Geräte laufen über Supabase; die App bleibt statisch. Einrichtung in `docs/Login-Einrichtung.md`. Ohne die beiden Werte `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` in `.env.production` ist das Konto-Panel nur ein Hinweis und die Daten bleiben wie bisher im Browser. Code: `src/lib/cloud.ts` (Sitzung, Sync), `src/ui/Konto.tsx` (Panel).
+Anmeldung mit Google oder E-Mail und Abgleich über alle Geräte laufen direkt auf Hostinger: PHP-Schnittstelle in `public/api/` (gleiche Domain) und MySQL-Datenbank `u685288958_werkbank`. Konfiguration liegt außerhalb des Webroots in `/werkbank-private/config.php` (Vorlage `docs/werkbank-config.example.php`). Details und Google-Einrichtung: `docs/Login-Einrichtung.md`. Code im Browser: `src/lib/cloud.ts`, Panel `src/ui/Konto.tsx`. Im lokalen Vorschau-Modus gibt es keinen Server, das Panel zeigt dann nur einen Hinweis.
 
 ## Domains
 

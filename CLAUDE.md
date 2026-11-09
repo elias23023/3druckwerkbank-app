@@ -16,8 +16,8 @@ Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store 
 ## Bereiche
 - Zwei Bereiche mit getrenntem Speicher (`src/lib/workspace.ts`): `demo` = Beispiel-Werkstatt (Demodaten, `3druckwerkbank:v1`), `echt` = Meine Werkstatt (`3druckwerkbank:echt:v1`, startet mit `makeEmptySeed()`). Umschalten per Chip in der Kopfzeile (Sheet `bereich`). Neue Features müssen in beiden Bereichen laufen, besonders mit leeren Listen; `verify.mjs` prüft den leeren Bereich. Sync nur in `echt`.
 
-## Konto (Supabase)
-- Login (Google, E-Mail) und Sync liegen in `src/lib/cloud.ts` und `src/ui/Konto.tsx`; Konfiguration nur über `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (`.env.production`, nicht im Git: `.env.local`). Ohne Werte ist das Feature aus. Einrichtung: `docs/Login-Einrichtung.md`. Der anon-Key ist öffentlich; Schutz kommt aus den Row-Level-Security-Regeln der Tabelle `werkstatt`.
+## Konto (Hostinger, PHP + MySQL)
+- Login (Google, E-Mail) und Sync: PHP in `public/api/` (`_lib.php`, `auth.php`, `state.php`, `health.php`), MySQL `u685288958_werkbank`, Konfiguration **außerhalb** des Webroots in `/werkbank-private/config.php` (Vorlage `docs/werkbank-config.example.php`; echte Werte nie ins Git). Browser-Seite `src/lib/cloud.ts`, Panel `src/ui/Konto.tsx`. `.htaccess` leitet `/api/` nicht auf `index.html` um. Google-Knopf erscheint erst mit `google_client_id` in der Konfiguration. Einrichtung: `docs/Login-Einrichtung.md`. PHP-Dateien vor dem Deploy mit `php -l` prüfen.
 
 ## Prüfen
 - `npm run build` muss fehlerfrei sein. `npm run preview` + `node scripts/verify.mjs http://localhost:4173` (51 Playwright-Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code).

@@ -1,64 +1,30 @@
-# Login mit Google und E-Mail einrichten (Supabase)
+# Login mit Google und E-Mail (direkt auf Hostinger)
 
-Die App bleibt eine statische Seite. Konto und Synchronisation laufen über **Supabase** (kostenloser Free-Plan reicht): Anmeldung mit Google oder E-Mail und Passwort, Daten in einer Postgres-Tabelle, die jede Person nur für sich selbst lesen und schreiben darf.
+Konto und Synchronisation laufen vollständig auf dem eigenen Hostinger-Webspace von 3druckwerkbank.com: eine kleine PHP-Schnittstelle unter `/api` und eine MySQL-Datenbank auf demselben Server. Kein Fremddienst.
 
-## 1. Supabase-Projekt anlegen (ca. 5 Minuten)
-1. https://supabase.com → „Start your project“ → mit GitHub oder E-Mail anmelden.
-2. „New project“: Name `3druckwerkbank`, Region **Frankfurt (eu-central-1)**, Datenbank-Passwort vergeben (irgendwo sicher notieren, wir brauchen es nicht in der App).
-3. Nach dem Anlegen: **Project Settings → API**. Dort zwei Werte kopieren:
-   - **Project URL** (z. B. `https://abcdefgh.supabase.co`)
-   - **anon public** Key (langer Text, beginnt mit `eyJ…`). Der darf öffentlich sein, er steckt später im Browser-Code; geschützt wird alles über die Regeln in Schritt 2.
+## Was läuft wo
+- **Code:** `public/api/_lib.php` (Datenbank, Sitzungen, Google-Prüfung), `auth.php` (Registrieren, Anmelden, Google, Abmelden, Passwort zurücksetzen), `state.php` (Werkstatt-Stand lesen und schreiben), `health.php` (Status). Wird mit dem normalen Build deployt.
+- **Datenbank:** `u685288958_werkbank` (MySQL auf srv1700, Zugriff von PHP über 127.0.0.1). Tabellen `users`, `sessions`, `werkstatt` (eine Zeile pro Nutzer mit dem ganzen Stand als JSON), `resets`, `attempts` werden beim ersten Aufruf automatisch angelegt.
+- **Konfiguration:** `/werkbank-private/config.php` **neben** `public_html` (nicht über das Web erreichbar, nicht im Git). Vorlage: `docs/werkbank-config.example.php`. Enthält Datenbankzugang, ein App-Geheimnis, die Google-Client-ID und die Absenderadresse.
+- **Sitzung:** httpOnly-Cookie `wb_session`, 60 Tage, SameSite=Lax, nur über HTTPS; Token nur als SHA-256-Hash in der Datenbank. Passwörter mit `password_hash` (bcrypt). Höchstens 20 Anmeldeversuche je IP in 15 Minuten. Schreibende Aufrufe nur von der eigenen Domain (Origin-Prüfung).
 
-## 2. Tabelle und Regeln anlegen
-**SQL Editor** (links im Menü) → „New query“ → folgendes einfügen → **Run**:
-
-```sql
-create table if not exists public.werkstatt (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  state jsonb not null,
-  updated_at timestamptz not null default now()
-);
-
-alter table public.werkstatt enable row level security;
-
-create policy "eigene zeile lesen" on public.werkstatt
-  for select using (auth.uid() = user_id);
-create policy "eigene zeile anlegen" on public.werkstatt
-  for insert with check (auth.uid() = user_id);
-create policy "eigene zeile ändern" on public.werkstatt
-  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "eigene zeile löschen" on public.werkstatt
-  for delete using (auth.uid() = user_id);
-```
-
-## 3. Anmeldung einstellen
-**Authentication → URL Configuration**
-- Site URL: `https://3druckwerkbank.com`
-- Redirect URLs: `https://3druckwerkbank.com`, `https://3druckwerkbank.com/`, `http://localhost:4173`, `http://localhost:5173`
-
-**Authentication → Providers → Email**: eingeschaltet lassen. „Confirm email“ kann an bleiben (dann kommt beim Registrieren eine Bestätigungsmail) oder aus (sofort angemeldet).
-
-## 4. Google-Anmeldung aktivieren
-1. https://console.cloud.google.com → Projekt anlegen (z. B. `3Druckwerkbank`).
-2. **APIs & Dienste → OAuth-Zustimmungsbildschirm**: Typ „Extern“, App-Name `3Druckwerkbank`, Support-E-Mail und Kontakt-E-Mail eintragen, speichern. Unter „Zielgruppe“ ggf. auf „In Produktion“ stellen, sonst dürfen sich nur eingetragene Test-Nutzer anmelden.
-3. **APIs & Dienste → Anmeldedaten → Anmeldedaten erstellen → OAuth-Client-ID**: Typ „Webanwendung“.
+## Google-Anmeldung aktivieren (ca. 10 Minuten)
+1. https://console.cloud.google.com → Projekt anlegen, z. B. `3Druckwerkbank`.
+2. **APIs & Dienste → OAuth-Zustimmungsbildschirm**: Typ „Extern“, App-Name `3Druckwerkbank`, Support-E-Mail, Kontakt-E-Mail, speichern. Unter „Zielgruppe“ auf „In Produktion“ stellen, sonst dürfen sich nur eingetragene Test-Nutzer anmelden.
+3. **APIs & Dienste → Anmeldedaten → Anmeldedaten erstellen → OAuth-Client-ID**, Typ „Webanwendung“:
    - Autorisierte JavaScript-Quellen: `https://3druckwerkbank.com`
-   - Autorisierte Weiterleitungs-URI: die Callback-URL aus Supabase. Sie steht in Supabase unter **Authentication → Providers → Google** als „Callback URL (for OAuth)“ und sieht so aus: `https://<projekt>.supabase.co/auth/v1/callback`
-   - Erstellen → **Client-ID** und **Client-Secret** kopieren.
-4. Zurück in Supabase: **Authentication → Providers → Google** einschalten, Client-ID und Client-Secret eintragen, speichern.
+   - Autorisierte Weiterleitungs-URIs: keine nötig (die App nutzt das Google-ID-Token direkt im Browser).
+4. Die **Client-ID** (endet auf `.apps.googleusercontent.com`) dem Hauptchat schicken. Ein Client-Secret wird nicht gebraucht. Der Hauptchat trägt die ID in `/werkbank-private/config.php` ein; danach erscheint der Google-Knopf im Konto-Panel.
 
-## 5. Werte in die App
-Die beiden Werte aus Schritt 1 gehören in die Datei `.env.production` im Projekt (der anon-Key ist öffentlich, das ist bei Supabase so vorgesehen):
+Prüfung im Server: Das Google-ID-Token wird gegen Googles aktuelle öffentliche Schlüssel verifiziert (Signatur, Aussteller, Ablauf, Client-ID), erst dann wird das Konto angelegt oder verknüpft.
 
-```
-VITE_SUPABASE_URL=https://abcdefgh.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ…
-```
-
-Danach Build und Deploy wie gewohnt. Ohne diese Werte zeigt das Konto-Panel nur den Hinweis, dass der Dienst nicht eingerichtet ist, und die App arbeitet wie bisher nur im Browser.
+## E-Mail-Anmeldung
+Funktioniert sofort: Registrieren mit E-Mail und Passwort (mindestens 8 Zeichen), Anmelden, Abmelden. „Passwort vergessen“ schickt per PHP `mail()` einen Link `https://3druckwerkbank.com/#/konto/reset/<token>` (eine Stunde gültig). Falls Hostinger-Mails im Spam landen, die Absenderadresse in der Konfiguration auf eine echte Mailbox der Domain setzen.
 
 ## Was synchronisiert wird
-Projekte, Geräte, Rollen, Aufgaben, Drucke, Berichte, Termine, Einkaufsliste, Einstellungen und Energiewerte, also genau das, was auch der JSON-Export enthält. Der Wetter-Cache und Entwürfe bleiben lokal. Pro Konto liegt eine Zeile mit dem ganzen Stand als JSON; jede Änderung wird nach 1,5 Sekunden Ruhe gespeichert, beim Wechsel in den Tab wird ein neuerer Stand von anderen Geräten geladen.
+Nur „Meine Werkstatt“: Projekte, Geräte, Rollen, Aufgaben, Drucke, Berichte, Termine, Einkaufsliste, Einstellungen, Energiewerte (Inhalt des JSON-Exports). Wetter-Cache und Entwürfe bleiben lokal. Jede Änderung wird 1,5 Sekunden nach der letzten Eingabe gespeichert; beim Wechsel in den Tab wird ein neuerer Stand eines anderen Geräts geladen. Schreibt ein anderes Gerät dazwischen, meldet das Panel einen Konflikt und bietet „Stand aus dem Konto übernehmen“ oder „Diesen Stand ins Konto schreiben“. Ein Stand darf bis zu 12 MB groß sein.
 
-## Grenzen (Free-Plan)
-500 MB Datenbank, 50.000 monatlich aktive Nutzer, Projekt pausiert nach 7 Tagen ohne Zugriff (wird beim nächsten Zugriff wieder geweckt). Für eine persönliche Werkstatt mehr als genug.
+## Pflege
+- Neue Konfiguration hochladen: TUS-Upload nach `werkbank-private/config.php` (Pfad relativ zum Domain-Ordner, wie `public_html`).
+- Tabellen ansehen: hPanel → Datenbanken → phpMyAdmin für `u685288958_werkbank`.
+- Test-Konten aus der Entwicklung: `werkbank-test@example.com`, `werkbank-test2@example.com` (können in phpMyAdmin gelöscht werden).

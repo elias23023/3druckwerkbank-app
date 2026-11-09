@@ -22,7 +22,7 @@ export function SheetHost({ sheet }: { sheet: SheetKind }) {
     case 'ueber': return <UeberSheet />;
     case 'projektDetail': return <ProjektDetailSheet key={sheet.projectId + sheet.tab} projectId={sheet.projectId} tab={sheet.tab} />;
     case 'hinweise': return <HinweiseSheet />;
-    case 'konto': return <KontoSheet />;
+    case 'konto': return <KontoSheet resetToken={sheet.resetToken} />;
     case 'bereich': return <BereichSheet />;
   }
 }

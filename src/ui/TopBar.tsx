@@ -2,7 +2,7 @@ import { useStore } from '../store';
 import { useNow } from '../lib/time';
 import { fmtLongDate, fmtTime, fmtNum } from '../lib/format';
 import { IBolt, IGear, ISearch, IUser } from './Icons';
-import { useSession, cloudConfigured } from '../lib/cloud';
+import { useAuth } from '../lib/cloud';
 import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { WeatherIcon } from './WeatherIcon';
 import { wmo } from '../lib/weather';
@@ -24,7 +24,7 @@ export function TopBar() {
   const now = useNow(1000);
   const weather = useStore((s) => s.weather);
   const settings = useStore((s) => s.settings);
-  const { session } = useSession(); const avatar = session?.user.user_metadata?.avatar_url as string | undefined;
+  const auth = useAuth(); const session = auth.user; const avatar = session?.avatar ?? undefined;
   const openSheet = useStore((s) => s.openSheet);
   const setCommand = useStore((s) => s.setCommand);
   const hints = useHints();
@@ -43,7 +43,7 @@ export function TopBar() {
       </div>
       <button className="glass chip btn--icon" onClick={() => setCommand(true)} aria-label="Suche" style={{ width: 40, height: 40 }}><ISearch /></button>
       <button className="glass chip btn--icon" onClick={() => openSheet({ kind: 'hinweise' })} aria-label={`Hinweise (${shown.length})`} style={{ width: 40, height: 40, position: 'relative' }}><IBolt />{shown.length ? <span className="badge">{shown.length}</span> : null}</button>
-      <button className="glass chip btn--icon topbar__konto" onClick={() => openSheet({ kind: 'konto' })} aria-label={session ? `Konto: ${session.user.email ?? ''}` : 'Konto'} title={session ? session.user.email ?? 'Konto' : cloudConfigured ? 'Anmelden' : 'Konto'} style={{ width: 40, height: 40 }}>{avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : session ? <span className="topbar__initial">{(session.user.email ?? 'K').slice(0, 1).toUpperCase()}</span> : <IUser />}</button>
+      <button className="glass chip btn--icon topbar__konto" onClick={() => openSheet({ kind: 'konto' })} aria-label={session ? `Konto: ${session.email}` : 'Konto'} title={session ? session.email : auth.configured ? 'Anmelden' : 'Konto'} style={{ width: 40, height: 40 }}>{avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : session ? <span className="topbar__initial">{(session.name || session.email || 'K').slice(0, 1).toUpperCase()}</span> : <IUser />}</button>
       <button className="glass chip btn--icon" onClick={() => openSheet({ kind: 'einstellungen' })} aria-label="Einstellungen" style={{ width: 40, height: 40 }}><IGear /></button>
       <div className="topbar__user desktop-only"><span className="xs muted">Schön, dass du da bist!</span><b className="small">{settings.userName || 'Werkstatt'}</b></div>
     </header>
