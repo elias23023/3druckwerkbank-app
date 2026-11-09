@@ -55,7 +55,7 @@ export function DruckSheet({ printId }: { printId: string }) {
   const used = Number(grams) >= 0 && grams !== '' ? Number(grams) : p.gramsPlanned;
   const busy = s.prints.some((x) => x.printerId === p.printerId && x.status === 'läuft');
   const first = s.prints.filter((x) => x.printerId === p.printerId && x.status === 'wartend').sort((a, b) => a.queueOrder - b.queueOrder)[0]?.id === p.id;
-  const cancel = () => { if (confirm(p.status === 'läuft' ? `Laufenden Druck „${p.name}“ abbrechen? Es wird kein Material gebucht.` : `„${p.name}“ aus der Warteschlange entfernen?`)) { s.cancelPrint(p.id); s.closeSheet(); s.toast(p.status === 'läuft' ? 'Druck abgebrochen' : 'Aus der Warteschlange entfernt'); } };
+  const cancel = () => { if (confirm(p.status === 'läuft' ? `Laufenden Druck „${p.name}“ abbrechen? Es wird kein Material gebucht.` : `„${p.name}“ aus der Warteschlange entfernen?`)) { s.cancelPrint(p.id); s.closeSheet(); } };
   return (
     <Sheet title={p.name} icon={<IPrinter />} onClose={s.closeSheet}
       foot={p.status === 'läuft' || p.status === 'wartend' ? <>

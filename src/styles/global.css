@@ -171,7 +171,7 @@ p { margin: 0; }
 .cmd__item.on { background: rgba(124,198,255,.18); }
 .cmd__item small { color: var(--text-2); }
 
-.toast { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); z-index: var(--z-toast); padding: 10px 16px; font-size: 13px; animation: rise var(--t-fast) both; }
+.toast { display: flex; align-items: center; gap: 14px; position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); z-index: var(--z-toast); padding: 10px 16px; font-size: 13px; animation: rise var(--t-fast) both; }
 
 /* ring + misc svg */
 .ring-wrap { position: absolute; display: flex; align-items: center; justify-content: center; }
@@ -468,3 +468,8 @@ p { margin: 0; }
 .bereich-card--on { border-color: var(--c); box-shadow: inset 3px 0 0 var(--c); }
 .bereich-card b { font-size: 14px; }
 .bereich-card .btn { align-self: flex-start; }
+
+.toast__undo { background: none; border: 0; padding: 2px 4px; color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.toast__undo:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+.place-hit { width: 100%; text-align: left; border: 0; color: inherit; cursor: pointer; padding: 7px 10px; }
+.place-hit:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }

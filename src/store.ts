@@ -24,16 +24,16 @@ export type SheetKind =
   | { kind: 'konto'; resetToken?: string }
   | { kind: 'bereich' };
 
-interface UiState { sheet?: SheetKind; commandOpen: boolean; drafts: Record<string, unknown>; toast?: { id: number; text: string }; recent: string[]; spotlight?: { projectId: string; until: number } }
+interface UiState { sheet?: SheetKind; commandOpen: boolean; drafts: Record<string, unknown>; toast?: { id: number; text: string; undo?: boolean }; recent: string[]; spotlight?: { projectId: string; until: number } }
 
 export interface Store extends PersistedState {
   ui: UiState;
   // ui
   openSheet: (s: SheetKind) => void; closeSheet: () => void; setCommand: (open: boolean) => void;
   applyCloudState: (state: PersistedState) => void;
-  setDraft: (key: string, value: unknown) => void; clearDraft: (key: string) => void; toast: (text: string) => void;
+  setDraft: (key: string, value: unknown) => void; clearDraft: (key: string) => void; toast: (text: string) => void; undo: () => void;
   // settings / data mgmt
-  setSettings: (patch: Partial<Settings>) => void; setWeather: (w: WeatherCache) => void;
+  setSettings: (patch: Partial<Settings>) => void; setLocation: (loc: Settings['location']) => void; setWeather: (w: WeatherCache) => void;
   resetDemo: () => void; exportJson: () => string; importJson: (text: string) => { ok: boolean; error?: string };
   // projects
   upsertProject: (p: Project) => void; deleteProject: (pid: string) => void; duplicateProject: (pid: string) => string;
@@ -115,7 +115,19 @@ export const useStore = create<Store>()(
       const updSpool = (sid: string, fn: (sp: Spool) => Spool) => set((s) => ({ spools: s.spools.map((sp) => (sp.id === sid ? fn(sp) : sp)) }));
       const updDevice = (did: string, fn: (d: Device) => Device) => set((s) => ({ devices: s.devices.map((d) => (d.id === did ? fn(d) : d)) }));
       let toastN = 0;
-      return {
+      const showToast = (text: string, ms = 3200, undo = false) => { toastN += 1; const n = toastN; set((s) => ({ ui: { ...s.ui, toast: { id: n, text, undo: undo || undefined } } })); setTimeout(() => set((s) => (s.ui.toast?.id === n ? { ui: { ...s.ui, toast: undefined } } : {})), ms); return n; };
+      // Löschen und Abbrechen lassen sich einige Sekunden lang zurücknehmen: der Stand davor wird als Ganzes gemerkt (unveränderliche Listen, also nur Verweise)
+      const UNDO_KEYS = ['projects', 'devices', 'spools', 'tasks', 'prints', 'reports', 'appointments', 'shopping', 'settings', 'energy'] as const;
+      let undoSnap: { id: number; data: Partial<PersistedState> } | null = null; let undoDepth = 0;
+      const undoable = <T,>(label: string, fn: () => T): T => {
+        if (undoDepth > 0) return fn();
+        const before = get(); const data: Record<string, unknown> = {}; for (const k of UNDO_KEYS) data[k] = before[k];
+        undoDepth += 1; let r: T; try { r = fn(); } finally { undoDepth -= 1; }
+        const after = get(); if (UNDO_KEYS.every((k) => after[k] === data[k])) return r; // nichts geändert (z. B. abgelehnt)
+        undoSnap = { id: showToast(label, 8000, true), data: data as Partial<PersistedState> };
+        return r;
+      };
+      const api: Store = {
         ...(isDemo ? makeSeed() : makeEmptySeed()),
         ui: { commandOpen: false, drafts: {}, recent: [] },
 
@@ -124,7 +136,10 @@ export const useStore = create<Store>()(
         setCommand: (commandOpen) => set((s) => ({ ui: { ...s.ui, commandOpen } })),
         setDraft: (key, value) => set((s) => ({ ui: { ...s.ui, drafts: { ...s.ui.drafts, [key]: value } } })),
         clearDraft: (key) => set((s) => { const drafts = { ...s.ui.drafts }; delete drafts[key]; return { ui: { ...s.ui, drafts } }; }),
-        toast: (text) => { toastN += 1; const n = toastN; set((s) => ({ ui: { ...s.ui, toast: { id: n, text } } })); setTimeout(() => set((s) => (s.ui.toast?.id === n ? { ui: { ...s.ui, toast: undefined } } : {})), 3200); },
+        toast: (text) => { showToast(text); },
+        // Rückgängig: gilt nur, solange der Hinweis mit dem Knopf sichtbar ist
+        undo: () => { const t = get().ui.toast; if (!undoSnap || !t || t.id !== undoSnap.id) return; const data = undoSnap.data; undoSnap = null; set((s) => ({ ...data, ui: { ...s.ui, toast: undefined } })); showToast('Wiederhergestellt'); },
+        setLocation: (location) => set((s) => ({ settings: { ...s.settings, location }, weather: undefined })),
 
         setSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
         setWeather: (weather) => set({ weather }),
@@ -326,6 +341,22 @@ export const useStore = create<Store>()(
         toggleShopping: (sid) => set((s) => ({ shopping: s.shopping.map((x) => (x.id === sid ? { ...x, done: !x.done } : x)) })),
         addShopping: (item) => set((s) => (s.shopping.some((x) => !x.done && x.title.trim().toLowerCase() === item.title.trim().toLowerCase()) ? {} : { shopping: [...s.shopping, { ...item, id: id('sh'), done: false }] })),
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const wrap = <K extends keyof Store>(key: K, label: (...a: any[]) => string) => { const orig = api[key] as unknown as (...a: unknown[]) => unknown; (api as unknown as Record<string, unknown>)[key] = (...a: unknown[]) => undoable(label(...a), () => orig(...a)); };
+      wrap('deleteProject', () => 'In den Papierkorb verschoben');
+      wrap('purgeProject', () => 'Projekt endgültig gelöscht');
+      wrap('archiveProject', () => 'Projekt abgeschlossen und archiviert');
+      wrap('deleteSpool', () => 'Rolle gelöscht');
+      wrap('deleteDevice', (did: string) => `„${get().devices.find((d) => d.id === did)?.name ?? 'Gerät'}“ gelöscht`);
+      wrap('deleteTask', () => 'Aufgabe gelöscht');
+      wrap('cancelPrint', (prid: string) => (get().prints.find((p) => p.id === prid)?.status === 'läuft' ? 'Druck abgebrochen' : 'Aus der Warteschlange entfernt'));
+      wrap('deleteMaintenance', () => 'Wartung gelöscht');
+      wrap('removeFile', () => 'Datei entfernt');
+      wrap('deleteShopping', () => 'Von der Einkaufsliste entfernt');
+      wrap('deleteEnergy', () => 'Eintrag gelöscht');
+      wrap('resetDemo', () => (isDemo ? 'Demodaten zurückgesetzt' : 'Werkstatt geleert'));
+      wrap('importJson', () => 'Daten importiert');
+      return api;
     },
     {
       name: storageName,

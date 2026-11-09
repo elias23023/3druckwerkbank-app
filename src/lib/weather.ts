@@ -14,9 +14,21 @@ export const WMO: Record<number, { label: string; icon: 'sonne' | 'teils' | 'wol
 };
 export const wmo = (code: number) => WMO[code] ?? { label: 'Unbekannt', icon: 'wolke' as const };
 
+export interface Place { name: string; detail: string; lat: number; lon: number; tz: string }
+/** Ortssuche über die Geocoding-Schnittstelle von Open-Meteo (Name oder Postleitzahl, kein Schlüssel nötig). */
+export async function searchPlaces(query: string, signal?: AbortSignal): Promise<Place[]> {
+  const p = new URLSearchParams({ name: query.trim(), count: '8', language: 'de', format: 'json' });
+  const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${p}`, { signal });
+  if (!res.ok) throw new Error(`Ortssuche ${res.status}`);
+  const j = await res.json();
+  const list: { name?: string; admin1?: string; admin2?: string; country?: string; latitude?: number; longitude?: number; timezone?: string }[] = Array.isArray(j?.results) ? j.results : [];
+  return list.filter((r) => typeof r.name === 'string' && typeof r.latitude === 'number' && typeof r.longitude === 'number')
+    .map((r) => ({ name: r.name!, detail: [r.admin2 !== r.name ? r.admin2 : undefined, r.admin1, r.country].filter(Boolean).join(', '), lat: Math.round(r.latitude! * 10000) / 10000, lon: Math.round(r.longitude! * 10000) / 10000, tz: r.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone }));
+}
+
 export async function fetchWeather(loc: Settings['location'], signal?: AbortSignal): Promise<WeatherData> {
   const p = new URLSearchParams({
-    latitude: String(loc.lat), longitude: String(loc.lon), timezone: loc.tz, forecast_days: '7',
+    latitude: String(loc.lat), longitude: String(loc.lon), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || loc.tz, forecast_days: '7', // Zeiten immer in der Zeitzone des Geräts, passend zur Uhr der App
     current: 'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,wind_speed_10m,surface_pressure',
     hourly: 'temperature_2m,precipitation_probability,precipitation,weather_code,cloud_cover,shortwave_radiation,is_day,wind_speed_10m,wind_gusts_10m,surface_pressure,uv_index',
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,precipitation_sum,shortwave_radiation_sum,wind_gusts_10m_max,uv_index_max',

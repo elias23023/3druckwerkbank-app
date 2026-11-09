@@ -17,9 +17,10 @@ import { Check, Progress, Stack } from '../ui/Glass';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import { SheetHost } from '../ui/SheetHost';
 import { CommandBar } from '../ui/CommandBar';
+import { Toast } from '../ui/Toast';
 import { useHints } from '../ui/Hinweise';
 import { STAGES, type Project } from '../types';
-import { IHome, IClock, IFlag, ILayers, IList, ISearch, IBolt, IGear, IUser, IPrinter, ISun, IArchive, IArrowL, IChevR, IPlus, ISkip, IPlay, ISpool, IWrench, ICal } from '../ui/Icons';
+import { IHome, IClock, IFlag, ILayers, IList, ISearch, IBolt, IGear, IUser, IPrinter, ISun, IArchive, IArrowL, IChevR, IPlus, ISkip, IPlay, ISpool, IWrench, ICal, ICart, ITrash } from '../ui/Icons';
 
 type Tab = 'start' | 'heute' | 'projekte' | 'material' | 'mehr';
 /** Uhrzeit für heute, „Morgen“ für den Folgetag, sonst Wochentag und Datum. */
@@ -36,7 +37,7 @@ function Card({ title, icon, count, children, onMore }: { title?: string; icon?:
 export function Mobile() {
   const route = useRoute();
   const now = useNow(1000);
-  const s = useStore(useShallow((st) => ({ settings: st.settings, weather: st.weather, sheet: st.ui.sheet, commandOpen: st.ui.commandOpen, toast: st.ui.toast, projects: st.projects })));
+  const s = useStore(useShallow((st) => ({ settings: st.settings, weather: st.weather, sheet: st.ui.sheet, commandOpen: st.ui.commandOpen, projects: st.projects })));
   const openSheet = useStore((st) => st.openSheet); const setCommand = useStore((st) => st.setCommand);
   const hints = useHints();
   const today = todayDaily(s.weather?.data, now);
@@ -67,7 +68,7 @@ export function Mobile() {
       </nav>
       {s.sheet ? <SheetHost sheet={s.sheet} /> : null}
       {s.commandOpen ? <CommandBar /> : null}
-      {s.toast ? <div className="glass glass--strong toast" role="status">{s.toast.text}</div> : null}
+      <Toast />
     </div>
   );
 }
@@ -192,21 +193,30 @@ function MProjekt({ p, now }: { p: Project; now: Date }) {
 }
 
 function MMaterial() {
-  const { spools, projects } = useStore(useShallow((st) => ({ spools: st.spools, projects: st.projects })));
+  const { spools, projects, shopping } = useStore(useShallow((st) => ({ spools: st.spools, projects: st.projects, shopping: st.shopping })));
   const openSheet = useStore((st) => st.openSheet);
-  const [mat, setMat] = useState('alle');
+  const sh = useStore(useShallow((st) => ({ add: st.addShopping, toggle: st.toggleShopping, remove: st.deleteShopping })));
+  const [mat, setMat] = useState('alle'); const [buy, setBuy] = useState('');
+  const addBuy = () => { if (!buy.trim()) return; sh.add({ title: buy.trim(), qty: '1' }); setBuy(''); };
+  const openItems = shopping.filter((x) => !x.done).length;
   const mats = [...new Set(spools.map((x) => x.material))];
   const list = spools.filter((x) => mat === 'alle' || x.material === mat).sort((a, b) => a.material.localeCompare(b.material) || a.label.localeCompare(b.label));
-  const shortages = liveProjects(projects).filter((p) => !p.archivedAt).flatMap((p) => p.requiredSpools.map((r) => { const sp = spools.find((x) => x.id === r.spoolId); return sp && availableGrams(sp) < r.grams ? `${sp.label} (${p.name})` : null; }).filter(Boolean));
+  const shortages = liveProjects(projects).filter((p) => !p.archivedAt).flatMap((p) => p.requiredSpools.map((r) => { const sp = spools.find((x) => x.id === r.spoolId); return sp && availableGrams(sp) < r.grams ? { sp, p, missing: r.grams - availableGrams(sp) } : null; }).filter((x): x is NonNullable<typeof x> => !!x));
   return (
     <>
       <div className="m-grid2"><div className="glass m-stat"><b>{spools.length}</b><span>Rollen</span></div><div className="glass m-stat"><b>{fmtGrams(spools.reduce((a, x) => a + availableGrams(x), 0))}</b><span>verfügbar</span></div></div>
-      {shortages.length ? <Card title="Fehlmengen" icon={<IBolt />}>{shortages.map((x, i) => <span key={i} className="small" style={{ color: '#ffb0b0' }}>• {x}</span>)}</Card> : null}
+      {shortages.length ? <Card title="Fehlmengen" icon={<IBolt />}>{shortages.map((x, i) => { const title = `${x.sp.label} nachkaufen`; const listed = shopping.some((it) => !it.done && it.title === title); return <div key={i} className="m-row"><div className="col grow" style={{ gap: 1 }}><span className="small" style={{ color: '#ffb0b0' }}>{x.sp.label}: fehlen {fmtGrams(x.missing)}</span><span className="xs muted">{x.p.name}</span></div><button className="btn btn--sm" disabled={listed} onClick={() => sh.add({ title, qty: '1', price: x.sp.price, projectId: x.p.id, url: x.sp.reorderUrl })}>{listed ? 'Auf der Liste' : '+ Liste'}</button></div>; })}</Card> : null}
       <Card title="Rollen" icon={<ISpool />}>
         <div className="pills"><button className={`pill${mat === 'alle' ? ' pill--on' : ''}`} onClick={() => setMat('alle')}>Alle</button>{mats.map((m) => <button key={m} className={`pill${mat === m ? ' pill--on' : ''}`} onClick={() => setMat(m)}>{m}</button>)}</div>
         {spools.length === 0 ? <span className="muted small">Noch keine Rolle angelegt. Mit deinen Rollen behältst du Bestand und Verbrauch im Blick.</span> : null}
         {list.map((x) => <div key={x.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'spule', spoolId: x.id })}><span className="swatch" style={{ background: x.colorHex }} /><div className="col grow" style={{ gap: 3 }}><div className="row row--between"><b className="small">{x.label}</b><span className="xs muted">{x.brand}</span></div><Stack parts={[{ value: availableGrams(x), color: '#4ccf7a' }, { value: x.reservedGrams, color: '#ffb547' }, { value: x.initialGrams - x.remainingGrams, color: 'rgba(255,255,255,.15)' }]} /><span className="xs muted">{fmtGrams(availableGrams(x))} frei · {x.location}</span></div><IChevR className="muted" /></div>)}
         <button className="btn" onClick={() => openSheet({ kind: 'spule' })}><IPlus width={14} height={14} /> Neue Rolle</button>
+      </Card>
+      <Card title="Einkaufsliste" icon={<ICart />} count={openItems}>
+        {shopping.length === 0 ? <span className="muted small">Noch nichts auf der Liste.</span> : null}
+        {[...shopping].sort((a, b) => Number(a.done) - Number(b.done)).map((it) => <div key={it.id} className="m-row m-shop"><Check on={it.done} onClick={() => sh.toggle(it.id)} label={it.done ? `${it.title}: erledigt` : `${it.title}: offen`} /><div className="col grow" style={{ gap: 1, minWidth: 0 }}><span className="ellipsis" style={{ textDecoration: it.done ? 'line-through' : undefined, opacity: it.done ? .6 : 1 }}>{it.title}</span><span className="xs muted">{[it.qty && it.qty !== '1' ? `× ${it.qty}` : '', it.price ? `${fmtNum(it.price, 2)} €` : '', projects.find((p) => p.id === it.projectId)?.name ?? ''].filter(Boolean).join(' · ') || 'ohne Angaben'}</span></div>{it.url && /^https?:\/\//i.test(it.url) ? <a className="btn btn--sm btn--ghost" href={it.url} target="_blank" rel="noreferrer noopener">Link</a> : null}<button className="btn btn--icon btn--ghost" aria-label={`${it.title} von der Liste entfernen`} onClick={() => sh.remove(it.id)}><ITrash width={18} height={18} /></button></div>)}
+        <div className="row" style={{ gap: 8 }}><input className="input grow" placeholder="Was fehlt? z. B. PETG Schwarz" aria-label="Auf die Einkaufsliste" value={buy} maxLength={80} onChange={(e) => setBuy(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addBuy(); }} /><button className="btn" disabled={!buy.trim()} onClick={addBuy}><IPlus width={14} height={14} /> Dazu</button></div>
+        <span className="xs faint">Produktlinks lösen keine Bestellung aus.</span>
       </Card>
     </>
   );

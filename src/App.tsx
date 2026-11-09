@@ -12,6 +12,7 @@ import { TopBar } from './ui/TopBar';
 import { Dock } from './ui/Dock';
 import { SheetHost } from './ui/SheetHost';
 import { CommandBar } from './ui/CommandBar';
+import { Toast } from './ui/Toast';
 import { Heute } from './worlds/Heute';
 import { Projekte } from './worlds/Projekte';
 import { ProjektInnen } from './worlds/ProjektInnen';
@@ -46,7 +47,6 @@ export function App() {
   const setCommand = useStore((s) => s.setCommand);
   const sheet = useStore((s) => s.ui.sheet);
   const commandOpen = useStore((s) => s.ui.commandOpen);
-  const toast = useStore((s) => s.ui.toast);
   const spot = useStore((s) => s.ui.spotlight);
   const devices = useStore((s) => s.devices);
   const prints = useStore((s) => s.prints);
@@ -161,7 +161,7 @@ export function App() {
         <Dock active={route.world} />
         {sheet ? <SheetHost sheet={sheet} /> : null}
         {commandOpen ? <CommandBar /> : null}
-        {toast ? <div className="glass glass--strong toast" role="status">{toast.text}</div> : null}
+        <Toast />
       </div>
     </Stage>
   );

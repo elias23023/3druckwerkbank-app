@@ -29,7 +29,7 @@ export function SpuleForm({ spoolId }: { spoolId?: string }) {
   const usedBy = s.projects.filter((p) => !p.archivedAt && p.requiredSpools.some((r) => r.spoolId === d.id));
   return (
     <Sheet title={existing ? existing.label : 'Neue Rolle'} icon={<ISpool />} onClose={close}
-      foot={<><button className="btn btn--primary" onClick={save} disabled={!d.label.trim()}>Speichern</button><button className="btn" onClick={close}>Abbrechen</button>{existing ? <button className="btn btn--ghost btn--danger" style={{ marginLeft: 'auto' }} aria-label="Rolle löschen" title="Rolle löschen" onClick={() => { if (confirm(`Rolle „${existing.label}“ löschen? Sie wird auch aus AMS-Slots und dem Materialbedarf der Projekte entfernt.`)) { s.deleteSpool(existing.id); close(); s.toast('Rolle gelöscht'); } }}><ITrash width={13} height={13} /></button> : null}</>}>
+      foot={<><button className="btn btn--primary" onClick={save} disabled={!d.label.trim()}>Speichern</button><button className="btn" onClick={close}>Abbrechen</button>{existing ? <button className="btn btn--ghost btn--danger" style={{ marginLeft: 'auto' }} aria-label="Rolle löschen" title="Rolle löschen" onClick={() => { if (confirm(`Rolle „${existing.label}“ löschen? Sie wird auch aus AMS-Slots und dem Materialbedarf der Projekte entfernt.`)) { s.deleteSpool(existing.id); close(); } }}><ITrash width={13} height={13} /></button> : null}</>}>
       {existing ? (
         <div className="col" style={{ gap: 6 }}>
           <Stack parts={[{ value: availableGrams(existing), color: '#4ccf7a' }, { value: existing.reservedGrams, color: '#ffb547' }, { value: Math.max(0, existing.initialGrams - existing.remainingGrams), color: 'rgba(255,255,255,.14)' }]} />

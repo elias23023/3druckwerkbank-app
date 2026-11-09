@@ -153,6 +153,11 @@ for (const [iso, look, key] of [[`${TODAY}T06:05:00+01:00`, 'daemmerung', 'herbs
   await pg.locator('.sheet__foot button', { hasText: 'Löschen' }).click(); await pg.waitForTimeout(300);
   d = await devs();
   check('Delete own tool', d.length === 1 && d[0].kind === 'drucker', JSON.stringify(d.map((x) => x.name)));
+  await pg.locator('.toast__undo').click(); await pg.waitForTimeout(300);
+  d = await devs();
+  check('Undo restores the deleted tool', d.length === 2 && d.some((x) => x.name === 'Entgrater') && await pg.locator('.sheet .item', { hasText: 'Entgrater' }).count() === 1, JSON.stringify(d.map((x) => x.name)));
+  await pg.locator('.sheet .item', { hasText: 'Entgrater' }).locator('button', { hasText: 'Bearbeiten' }).click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet__foot button', { hasText: 'Löschen' }).click(); await pg.waitForTimeout(300);
   await pg.locator('.sheet .tabs button', { hasText: 'Drucker' }).click(); await pg.waitForTimeout(200);
   await pg.locator('.sheet .item', { hasText: 'Werkstattdrucker' }).locator('button', { hasText: 'Bearbeiten' }).click(); await pg.waitForTimeout(250);
   await pg.locator('.sheet__foot button', { hasText: 'Löschen' }).click(); await pg.waitForTimeout(300);
@@ -160,6 +165,15 @@ for (const [iso, look, key] of [[`${TODAY}T06:05:00+01:00`, 'daemmerung', 'herbs
   const def2 = await pg.evaluate(() => JSON.parse(localStorage.getItem('3druckwerkbank:echt:v1')).state.settings.defaultPrinterId ?? null);
   check('Delete own printer (default printer cleared)', d.length === 0 && def2 === null, `${d.length} ${def2}`);
   check('Device management without console errors', errs.length === 0, errs.join(' | '));
+  // free choice of the weather location: search (stubbed), pick, forecast is requested for the new coordinates
+  await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
+  await pg.route('**/geocoding-api.open-meteo.com/**', (r) => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ results: [{ name: 'Linz', admin1: 'Oberösterreich', country: 'Österreich', latitude: 48.30639, longitude: 14.28611, timezone: 'Europe/Vienna' }] }) }));
+  const asked = []; pg.on('request', (r) => { if (r.url().includes('api.open-meteo.com/v1/forecast')) asked.push(r.url()); });
+  await pg.locator('.topbar button[aria-label="Einstellungen"]').click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet input[aria-label="Ort suchen"]').fill('Linz'); await pg.locator('.sheet button', { hasText: /^Suchen$/ }).click(); await pg.waitForTimeout(500);
+  await pg.locator('.sheet .place-hit', { hasText: 'Linz' }).click(); await pg.waitForTimeout(1200);
+  const loc = await pg.evaluate(() => JSON.parse(localStorage.getItem('3druckwerkbank:echt:v1')).state.settings.location);
+  check('Weather location can be chosen freely', loc.name === 'Linz, Oberösterreich' && loc.lat === 48.3064 && asked.some((u) => u.includes('latitude=48.3064')), `${JSON.stringify(loc)} requests=${asked.length}`);
   await c.close();
 }
 // ---- demo workspace: tools can be created from a project and are assigned to it ----
@@ -236,6 +250,17 @@ check('Mobile: spool list', (await pm.locator('.m-main .m-row--click').count()) 
 const tabBox = await pm.locator('.m-tabs').boundingBox();
 check('Mobile: tab bar inside viewport', !!tabBox && tabBox.y + tabBox.height <= 845, JSON.stringify(tabBox));
 check('Mobile: no console errors', errM.filter((e) => !/open-meteo|ERR_FAILED|Failed to fetch|CORS/i.test(e)).length === 0, errM.join(' | ').slice(0, 300));
+// mobile shopping list: add, tick, remove, undo
+await pm.locator('.m-main input[aria-label="Auf die Einkaufsliste"]').fill('Testfilament Rot'); await pm.keyboard.press('Enter'); await pm.waitForTimeout(250);
+const shopRow = pm.locator('.m-main .m-shop', { hasText: 'Testfilament Rot' });
+const added = await shopRow.count();
+await shopRow.locator('.check').click(); await pm.waitForTimeout(200);
+const ticked = await pm.evaluate(() => JSON.parse(localStorage.getItem('3druckwerkbank:v1')).state.shopping.find((x) => x.title === 'Testfilament Rot')?.done);
+await shopRow.locator('button[aria-label$="von der Liste entfernen"]').click(); await pm.waitForTimeout(250);
+const removed = await pm.locator('.m-main .m-shop', { hasText: 'Testfilament Rot' }).count();
+await pm.locator('.toast__undo').click(); await pm.waitForTimeout(250);
+const back = await pm.locator('.m-main .m-shop', { hasText: 'Testfilament Rot' }).count();
+check('Mobile: shopping list add, tick, remove, undo', added === 1 && ticked === true && removed === 0 && back === 1, `${added} ${ticked} ${removed} ${back}`);
 await ctxM.close();
 await browser.close();
 const fails = results.filter((r) => !r.ok).length;
