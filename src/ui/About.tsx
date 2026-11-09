@@ -4,9 +4,10 @@ import { Sheet } from './Sheet';
 import { Field, Seg } from './Glass';
 import { IGear, IInfo, IDownload, IUpload, IRefresh, ITrash, IUser } from './Icons';
 import { fmtDate, fmtNum } from '../lib/format';
+import { workspace, WORKSPACE_META, isDemo, storageName } from '../lib/workspace';
 
 function storageBytes(): { total: number; photos: number } {
-  try { const raw = localStorage.getItem('3druckwerkbank:v1') ?? ''; const photos = (raw.match(/data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+/g) ?? []).reduce((a, m) => a + m.length, 0); return { total: raw.length, photos }; } catch { return { total: 0, photos: 0 }; }
+  try { const raw = localStorage.getItem(storageName) ?? ''; const photos = (raw.match(/data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+/g) ?? []).reduce((a, m) => a + m.length, 0); return { total: raw.length, photos }; } catch { return { total: 0, photos: 0 }; }
 }
 
 export function EinstellungenSheet() {
@@ -55,6 +56,9 @@ export function EinstellungenSheet() {
         <span className="xs muted">Gesamt: {fmtNum(energy.reduce((a, e) => a + e.wh, 0) / 1000, 2)} kWh · {fmtNum(energy.reduce((a, e) => a + (e.wh / 1000) * e.pricePerKwh, 0), 2)} € (Verbrauch × Preis). Messung und Schätzung bleiben getrennt; fehlende Werte sind keine Nullkosten.</span>
       </Field>
       <div className="hr" />
+      <Field label="Bereich">
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}><span className={`ws-chip ws-chip--${workspace}`}><i className="dot" />{WORKSPACE_META[workspace].label}</span><button className="btn btn--sm" onClick={() => s.openSheet({ kind: 'bereich' })}>Bereich wechseln</button><span className="xs muted">{WORKSPACE_META[workspace].hint}</span></div>
+      </Field>
       <Field label="Konto">
         <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}><button className="btn btn--sm" onClick={() => s.openSheet({ kind: 'konto' })}><IUser width={13} height={13} /> Konto &amp; Synchronisation</button><span className="xs muted">Anmelden mit Google oder E-Mail, Daten auf allen Geräten.</span></div>
       </Field>
@@ -63,7 +67,7 @@ export function EinstellungenSheet() {
           <button className="btn btn--sm" onClick={exportJson}><IDownload width={13} height={13} /> JSON exportieren</button>
           <button className="btn btn--sm" onClick={() => file.current?.click()}><IUpload width={13} height={13} /> JSON importieren</button>
           <input ref={file} type="file" accept="application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; f.text().then((t) => { if (confirm('Import ersetzt alle aktuellen Daten in diesem Browser. Fortfahren?')) { const r = s.importJson(t); setErr(r.ok ? '' : r.error ?? 'Fehler'); } }); e.currentTarget.value = ''; }} />
-          <button className="btn btn--sm btn--ghost btn--danger" onClick={() => { if (confirm('Alle Daten durch die Demodaten ersetzen?')) s.resetDemo(); }}><IRefresh width={13} height={13} /> Demodaten zurücksetzen</button>
+          <button className="btn btn--sm btn--ghost btn--danger" onClick={() => { if (confirm(isDemo ? 'Alle Daten durch die Demodaten ersetzen?' : 'Wirklich alle Projekte, Rollen, Drucke und Termine in „Meine Werkstatt“ löschen? Drucker und Werkzeuge bleiben.')) s.resetDemo(); }}><IRefresh width={13} height={13} /> {isDemo ? 'Demodaten zurücksetzen' : 'Werkstatt leeren'}</button>
         </div>
         {err ? <span className="pill pill--bad xs">{err}</span> : null}
         <span className="xs muted">Speicher: {fmtNum(bytes.total / 1024)} KB von ≈ 5 MB belegt, davon {fmtNum(bytes.photos / 1024)} KB Fotos. Alle Daten liegen nur in diesem Browser.</span>

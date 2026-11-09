@@ -10,6 +10,7 @@ import { createClient, type Session, type SupabaseClient } from '@supabase/supab
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useStore } from '../store';
 import type { PersistedState } from '../types';
+import { isDemo } from './workspace';
 
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -95,7 +96,7 @@ function applyRemote(state: PersistedState) {
 
 /** Beim Start einer Sitzung: Stand aus dem Konto holen oder den lokalen Stand hochladen; danach jede Änderung zeitversetzt speichern. */
 export async function startSync(userId: string, email?: string) {
-  if (!supabase || currentUser === userId) return;
+  if (!supabase || currentUser === userId || isDemo) { if (isDemo) setSync({ status: 'aus', email }); return; }
   stopSync();
   currentUser = userId;
   setSync({ status: 'lädt', email, error: undefined });

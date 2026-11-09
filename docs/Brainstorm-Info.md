@@ -16,6 +16,8 @@ Eine persönliche digitale Werkstatt für 3D-Druck-Projekte, dargestellt als rä
 
 ---
 
+**Zwei Bereiche:** Die App läuft wahlweise als Beispiel-Werkstatt (Demodaten, Spielwiese zum Weiterentwickeln) oder als Meine Werkstatt (echte Projekte, startet leer, wird mit dem Konto synchronisiert). Umschalten über den Chip neben dem Logo.
+
 ## 2. Die Welten (Inseln)
 
 | Welt | Insel-Motiv | Was man dort sieht und tut |

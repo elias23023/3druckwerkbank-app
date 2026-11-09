@@ -432,3 +432,14 @@ p { margin: 0; }
 .konto-user img, .konto-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
 .konto-avatar { display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; background: linear-gradient(135deg, #ffd27a, #f0a540); color: #3a2208; }
 .link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---- Bereich (Beispiel / Meine Werkstatt) ---- */
+.ws-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .01em; cursor: pointer; white-space: nowrap; }
+.ws-chip .dot { width: 8px; height: 8px; box-shadow: 0 0 8px currentColor; }
+.ws-chip--demo { color: #ffd59a; } .ws-chip--demo .dot { background: #ffb547; }
+.ws-chip--echt { color: #bff3cf; } .ws-chip--echt .dot { background: #4ccf7a; }
+.ws-chip--mini { padding: 1px 0 0; font-size: 10px; background: none; }
+.bereich-card { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: var(--radius-sm); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); margin-bottom: 10px; }
+.bereich-card--on { border-color: var(--c); box-shadow: inset 3px 0 0 var(--c); }
+.bereich-card b { font-size: 14px; }
+.bereich-card .btn { align-self: flex-start; }

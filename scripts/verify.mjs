@@ -105,6 +105,19 @@ for (const [iso, look, key] of [[`${TODAY}T06:05:00+01:00`, 'daemmerung', 'herbs
   check('Account sheet opens with login or setup hint', /Konto/.test(txt) && (/Mit Google anmelden/.test(txt) || /noch nicht eingerichtet/.test(txt)) && errs.length === 0, (txt.slice(0, 80) + ' ' + errs.join('|')).trim());
   await c.close();
 }
+// ---- workspaces: 'Meine Werkstatt' starts empty and every world renders without errors ----
+{
+  const c = await browser.newContext(ctxOpts); const pg = await c.newPage(); const errs = []; pg.on('pageerror', (e) => errs.push(String(e)));
+  await pg.addInitScript(() => { try { localStorage.setItem('3druckwerkbank:bereich', 'echt'); } catch {} });
+  await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(600);
+  const chip = await pg.locator('.topbar .ws-chip').textContent() ?? '';
+  for (const w of ['heute', 'projekte', 'druck', 'material', 'wetter', 'archiv']) { await pg.goto(`${base}/#/${w}`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(400); }
+  const n = await pg.evaluate(() => JSON.parse(localStorage.getItem('3druckwerkbank:echt:v1') || '{}').state?.projects?.length);
+  check('Real workspace: chip, empty start, all worlds render', /Meine Werkstatt/.test(chip) && n === 0 && errs.length === 0, `${chip} projects=${n} ${errs.join('|')}`);
+  const demo = await pg.evaluate(() => JSON.parse(localStorage.getItem('3druckwerkbank:v1') || '{}').state?.projects?.length ?? -1);
+  check('Demo workspace storage untouched by real workspace', demo === -1 || demo > 0, String(demo));
+  await c.close();
+}
 // ---- seasons: override in settings changes stage, particles and island filter ----
 {
   const c = await browser.newContext(ctxOpts); const pg = await c.newPage();

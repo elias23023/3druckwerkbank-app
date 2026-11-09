@@ -20,6 +20,10 @@ Die räumliche Inselwelt ist für Desktop und Tablet quer gebaut. Unter 900 px B
 
 Die Heute-Insel trägt auf dem Steinsockel einen gemalten Holzring auf einem Gestell; `src/ui/Tagesportal.tsx` legt nur das Lebendige hinein, der Ring ist Teil des Bildes: innen bleibt er durchsichtig (die echte Landschaft scheint durch); am Rand der Sonnenweg von Aufgang (links) bis Untergang (rechts) mit leuchtendem vergangenem Teil und einer Sonne oder einem Mond als Jetzt-Marke; in der Mitte die Uhr und der nächste Lichtwechsel. Position und Neigung stehen in `global.css` (`.portal`) und in den Props `turn` und `lean`. Auf der Startseite läuft es als `compact` nur mit Uhr.
 
+## Zwei Bereiche: Beispiel und Meine Werkstatt
+
+Die App hat zwei getrennte Bereiche mit eigenem Speicher (`src/lib/workspace.ts`): **Beispiel-Werkstatt** (Demodaten, Speicher `3druckwerkbank:v1`) zum Ausprobieren und Weiterentwickeln, und **Meine Werkstatt** (Speicher `3druckwerkbank:echt:v1`), die leer startet, nur mit Druckern, AMS, Trockner und Werkzeugen als Ausgangspunkt. Umschalten über den Chip neben dem Logo oder in den Einstellungen; der Wechsel lädt die Seite neu. Nur „Meine Werkstatt“ wird mit dem Konto synchronisiert. Export/Import gilt für den aktiven Bereich.
+
 ## Konto und Synchronisation (optional)
 
 Anmeldung mit Google oder E-Mail und Abgleich der Daten über alle Geräte laufen über Supabase; die App bleibt statisch. Einrichtung in `docs/Login-Einrichtung.md`. Ohne die beiden Werte `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` in `.env.production` ist das Konto-Panel nur ein Hinweis und die Daten bleiben wie bisher im Browser. Code: `src/lib/cloud.ts` (Sitzung, Sync), `src/ui/Konto.tsx` (Panel).

@@ -6,6 +6,7 @@ import { EinstellungenSheet, UeberSheet } from './About';
 import { ProjektDetailSheet } from '../forms/ProjektDetail';
 import { HinweiseSheet } from './Hinweise';
 import { KontoSheet } from './Konto';
+import { BereichSheet } from './Bereich';
 
 export function SheetHost({ sheet }: { sheet: SheetKind }) {
   switch (sheet.kind) {
@@ -22,5 +23,6 @@ export function SheetHost({ sheet }: { sheet: SheetKind }) {
     case 'projektDetail': return <ProjektDetailSheet key={sheet.projectId + sheet.tab} projectId={sheet.projectId} tab={sheet.tab} />;
     case 'hinweise': return <HinweiseSheet />;
     case 'konto': return <KontoSheet />;
+    case 'bereich': return <BereichSheet />;
   }
 }

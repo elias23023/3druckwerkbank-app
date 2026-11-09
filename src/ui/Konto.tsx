@@ -5,6 +5,7 @@ import { Field } from './Glass';
 import { IUser, IRefresh } from './Icons';
 import { cloudConfigured, useSession, useSyncState, signInWithGoogle, signInWithEmail, signUpWithEmail, sendPasswordReset, signOut, syncNow, authMessage } from '../lib/cloud';
 import { fmtTime, fmtDate } from '../lib/format';
+import { isDemo } from '../lib/workspace';
 
 function GoogleMark() {
   return (
@@ -55,13 +56,14 @@ export function KontoSheet() {
     return (
       <Sheet title="Konto" icon={<IUser />} onClose={close} foot={<><button className="btn btn--sm" onClick={() => { void syncNow(); toast('Speichere …'); }}><IRefresh width={13} height={13} /> Jetzt speichern</button><button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={async () => { await signOut(); toast('Abgemeldet. Die Daten bleiben in diesem Browser.'); }}>Abmelden</button></>}>
         <div className="konto-user">{avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : <span className="konto-avatar">{name.slice(0, 1).toUpperCase()}</span>}<div className="col" style={{ gap: 2 }}><b className="small">{name}</b><span className="xs muted">{u.email}{u.app_metadata?.provider === 'google' ? ' · Google' : ' · E-Mail'}</span></div></div>
-        <Field label="Synchronisation">
+        {isDemo ? <Field label="Synchronisation"><span className="small">Die Beispiel-Werkstatt wird nicht synchronisiert. Wechsle zu „Meine Werkstatt“ (Chip oben links), dort landen deine echten Daten im Konto.</span></Field> : null}
+        {isDemo ? null : <Field label="Synchronisation">
           <div className="row small" style={{ gap: 8 }}>
             <i className="dot" style={{ background: sync.status === 'fehler' ? '#ff6b6b' : sync.status === 'bereit' ? '#4ccf7a' : '#ffd36e' }} />
             <span>{sync.status === 'lädt' ? 'Lade deinen Stand …' : sync.status === 'speichert' ? 'Speichere …' : sync.status === 'fehler' ? `Fehler: ${sync.error}` : sync.lastSyncAt ? `Gespeichert, zuletzt ${fmtDate(sync.lastSyncAt)} ${fmtTime(sync.lastSyncAt)}` : 'Bereit'}</span>
           </div>
           <span className="xs muted">Jede Änderung wird kurz danach in deinem Konto gespeichert. Auf einem anderen Gerät genügt dort die Anmeldung, der neueste Stand wird geladen. Eigene Fotos zählen mit; große Fotos machen das Speichern langsamer.</span>
-        </Field>
+        </Field>}
       </Sheet>
     );
   }

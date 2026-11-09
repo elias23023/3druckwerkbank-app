@@ -166,3 +166,10 @@ export function makeSeed(now = new Date()): PersistedState {
   ];
   return { version: 1, seededAt: now.toISOString(), projects, devices, spools, tasks, prints, reports, appointments, shopping, settings: DEFAULT_SETTINGS, energy };
 }
+
+/** Start für „Meine Werkstatt“: keine Projekte, Rollen, Drucke oder Termine; Drucker, AMS, Trockner und Werkzeuge bleiben als Ausgangspunkt (bearbeitbar), ohne Wartungseinträge und ohne AMS-Belegung. */
+export function makeEmptySeed(now = new Date()): PersistedState {
+  const demo = makeSeed(now);
+  const devices = demo.devices.map((d) => ({ ...d, status: d.kind === 'drucker' || d.kind === 'ams' ? 'bereit' as const : d.kind === 'trockner' ? 'bereit' as const : d.status, hoursTotal: d.kind === 'werkzeug' ? 0 : d.hoursTotal, maintenance: [], notes: undefined, slots: d.slots ? d.slots.map((sl) => ({ index: sl.index })) : undefined }));
+  return { version: 1, seededAt: now.toISOString(), projects: [], devices, spools: [], tasks: [], prints: [], reports: [], appointments: [], shopping: [], settings: { ...DEFAULT_SETTINGS, showQuote: DEFAULT_SETTINGS.showQuote }, energy: [] };
+}

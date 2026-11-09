@@ -9,6 +9,7 @@ import { bestPvWindow, todayDaily, wmo, pvKw } from '../lib/weather';
 import { sceneLook, type Look } from '../scene/looks';
 import { resolveSeason, SEASON_META, daysUntilNextSeason } from '../lib/season';
 import { islandSrc } from '../scene/Island';
+import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { Logo } from '../ui/TopBar';
 import { Check, Progress, Stack } from '../ui/Glass';
 import { WeatherIcon } from '../ui/WeatherIcon';
@@ -44,7 +45,7 @@ export function Mobile() {
     <div className="m-shell" data-look={look}>
       <div className="m-bg" aria-hidden><img key={scene} src={`/img/szene-${scene}-1280.webp`} srcSet={`/img/szene-${scene}-640.webp 640w, /img/szene-${scene}-1280.webp 1280w`} sizes="100vw" alt="" /></div>
       <header className="m-head">
-        <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b></div></button>
+        <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
         <span className="spacer" />
         <button className="glass m-ico" onClick={() => setCommand(true)} aria-label="Suche"><ISearch /></button>
         <button className="glass m-ico" onClick={() => openSheet({ kind: 'hinweise' })} aria-label={`Hinweise (${hints.length})`}><IBolt />{hints.length ? <span className="badge">{hints.length}</span> : null}</button>

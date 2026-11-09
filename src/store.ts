@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ArchiveReport, Device, EnergyEntry, HistoryEvent, HistoryType, Milestone, PersistedState, PrintJob, Project, Settings, ShoppingItem, Spool, Task, Version, VersionStatus, WeatherCache } from './types';
-import { makeSeed, DEFAULT_SETTINGS } from './seed';
+import { makeSeed, makeEmptySeed, DEFAULT_SETTINGS } from './seed';
+import { isDemo, storageName } from './lib/workspace';
 import { id, nowIso, clamp } from './lib/format';
 
 export type SheetKind =
@@ -17,7 +18,8 @@ export type SheetKind =
   | { kind: 'abschliessen'; projectId: string }
   | { kind: 'projektDetail'; projectId: string; tab: 'meilensteine' | 'aufgaben' | 'versionen' | 'drucke' | 'dateien' | 'material' | 'werkzeuge' | 'notizen' | 'historie' }
   | { kind: 'hinweise' }
-  | { kind: 'konto' };
+  | { kind: 'konto' }
+  | { kind: 'bereich' };
 
 interface UiState { sheet?: SheetKind; commandOpen: boolean; drafts: Record<string, unknown>; toast?: { id: number; text: string }; recent: string[]; spotlight?: { projectId: string; until: number } }
 
@@ -72,7 +74,7 @@ export const useStore = create<Store>()(
       const updDevice = (did: string, fn: (d: Device) => Device) => set((s) => ({ devices: s.devices.map((d) => (d.id === did ? fn(d) : d)) }));
       let toastN = 0;
       return {
-        ...makeSeed(),
+        ...(isDemo ? makeSeed() : makeEmptySeed()),
         ui: { commandOpen: false, drafts: {}, recent: [] },
 
         openSheet: (sheet) => set((s) => ({ ui: { ...s.ui, sheet } })),
@@ -84,7 +86,7 @@ export const useStore = create<Store>()(
 
         setSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
         setWeather: (weather) => set({ weather }),
-        resetDemo: () => { const seed = makeSeed(); set({ ...seed, weather: get().weather, ui: { commandOpen: false, drafts: {}, recent: [] } }); get().toast('Demodaten zurückgesetzt'); },
+        resetDemo: () => { const seed = isDemo ? makeSeed() : makeEmptySeed(); set({ ...seed, weather: get().weather, ui: { commandOpen: false, drafts: {}, recent: [] } }); get().toast(isDemo ? 'Demodaten zurückgesetzt' : 'Werkstatt geleert'); },
         exportJson: () => {
           const s = get();
           const data: PersistedState = { version: 1, seededAt: s.seededAt, projects: s.projects, devices: s.devices, spools: s.spools, tasks: s.tasks, prints: s.prints, reports: s.reports, appointments: s.appointments, shopping: s.shopping, settings: s.settings, energy: s.energy };
@@ -254,7 +256,7 @@ export const useStore = create<Store>()(
       };
     },
     {
-      name: '3druckwerkbank:v1',
+      name: storageName,
       version: 1,
       partialize: (s) => ({ version: s.version, seededAt: s.seededAt, projects: s.projects, devices: s.devices, spools: s.spools, tasks: s.tasks, prints: s.prints, reports: s.reports, appointments: s.appointments, shopping: s.shopping, settings: s.settings, weather: s.weather, energy: s.energy, ui: { drafts: s.ui.drafts, recent: s.ui.recent } }) as unknown as Store,
       merge: (persisted, current) => {

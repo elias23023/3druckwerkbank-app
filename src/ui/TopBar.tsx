@@ -3,6 +3,7 @@ import { useNow } from '../lib/time';
 import { fmtLongDate, fmtTime, fmtNum } from '../lib/format';
 import { IBolt, IGear, ISearch, IUser } from './Icons';
 import { useSession, cloudConfigured } from '../lib/cloud';
+import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { WeatherIcon } from './WeatherIcon';
 import { wmo } from '../lib/weather';
 import { navigate } from '../router';
@@ -32,6 +33,7 @@ export function TopBar() {
   return (
     <header className="topbar">
       <button className="brand" onClick={() => navigate({ world: 'start' })} title="Zur Startwelt"><Logo /><div><b>3Druckwerkbank</b><span>Ideen. Machen. Erleben.</span></div></button>
+      <button className={`glass chip ws-chip ws-chip--${workspace}`} onClick={() => openSheet({ kind: 'bereich' })} title={WORKSPACE_META[workspace].hint} aria-label={`Bereich: ${WORKSPACE_META[workspace].label}`}><i className="dot" />{WORKSPACE_META[workspace].short}</button>
       <button className="glass chip topbar__search desktop-only" onClick={() => setCommand(true)} aria-label="Suche öffnen (Strg+K)">
         <ISearch /> <span className="muted">Befehl eingeben oder suchen …</span> <kbd className="pill xs" style={{ marginLeft: 'auto' }}>Strg K</kbd>
       </button>
