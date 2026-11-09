@@ -2,7 +2,7 @@
  * Zwei Bereiche in einer App:
  *  - „Beispiel“ (demo): die Demodaten zum Ausprobieren und Weiterentwickeln, Speicher `3druckwerkbank:v1` (wie bisher).
  *  - „Meine Werkstatt“ (echt): die echten Projekte des Nutzers, eigener Speicher `3druckwerkbank:echt:v1`, startet leer
- *    (nur Drucker, AMS, Trockner und Werkzeuge bleiben als Ausgangspunkt). Nur dieser Bereich wird mit dem Konto synchronisiert.
+ *    (auch ohne Geräte: Drucker, AMS, Trockner und Werkzeuge legt der Nutzer selbst an). Nur dieser Bereich wird mit dem Konto synchronisiert.
  * Der Bereich wird beim Laden gelesen; ein Wechsel schreibt den Schlüssel und lädt die Seite neu, damit der Store sauber neu startet.
  */
 export type Workspace = 'demo' | 'echt';

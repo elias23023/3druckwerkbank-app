@@ -9,7 +9,7 @@ export function parseHash(h: string): Route {
   const worlds: WorldId[] = ['heute', 'projekte', 'druck', 'material', 'wetter', 'archiv'];
   if (!w || parts[0] === 'start') return { world: 'start' };
   if (!worlds.includes(w)) return { world: 'start' };
-  if (w === 'projekte' && parts[1]) return { world: 'projekte', projectId: decodeURIComponent(parts[1]) };
+  if (w === 'projekte' && parts[1]) { try { return { world: 'projekte', projectId: decodeURIComponent(parts[1]) }; } catch { return { world: 'projekte' }; } }
   return { world: w };
 }
 

@@ -28,7 +28,7 @@ export function Projekte({ index, setIndex, projects }: { index: number; setInde
   const total = projects.length;
   const go = (dir: -1 | 1) => { if (!total) return; let i = index; for (let k = 0; k < total; k++) { i = (i + dir + total) % total; if (matches(projects[i])) break; } setIndex(i); };
   useEffect(() => {
-    const on = (e: KeyboardEvent) => { const t = e.target as HTMLElement; if (t && ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return; if (e.key === 'ArrowLeft') go(-1); if (e.key === 'ArrowRight') go(1); if (e.key === 'Enter' && p) navigate({ world: 'projekte', projectId: p.id }); };
+    const on = (e: KeyboardEvent) => { const t = e.target as HTMLElement; const ui = useStore.getState().ui; if (ui.sheet || ui.commandOpen) return; if (t && (['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName) || (e.key === 'Enter' && t.closest?.('button, a, [role="button"]')))) return; if (e.key === 'ArrowLeft') go(-1); if (e.key === 'ArrowRight') go(1); if (e.key === 'Enter' && p) navigate({ world: 'projekte', projectId: p.id }); };
     window.addEventListener('keydown', on); return () => window.removeEventListener('keydown', on);
   });
   useEffect(() => { if (p && !matches(p)) go(1); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -47,17 +47,17 @@ export function Projekte({ index, setIndex, projects }: { index: number; setInde
     <>
       <div className="world-title">
         <h1>Projekte</h1><p>Deine Ideen. Schritt für Schritt.</p>
-        <div className="pills" style={{ marginTop: 14 }}>
+        {total > 0 ? <div className="pills" style={{ marginTop: 14 }}>
           {([['alle', 'Alle'], ['aktiv', 'Aktiv'], ['geplant', 'Geplant'], ['blockiert', 'Blockiert'], ['fav', 'Favoriten']] as [StatusF, string][]).map(([k, l]) => <button key={k} className={`glass pill${pillOn(k)}`} style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => setFilter({ ...filter, status: k })}>{k === 'fav' ? <IStar width={12} height={12} /> : null}{l} <span className="pill xs" style={{ padding: '0 6px', background: 'rgba(255,255,255,.14)' }}>{counts[k]}</span></button>)}
-        </div>
-        <div className="pills" style={{ marginTop: 8 }}>
-          {types.map((t) => <button key={t} className={`glass pill xs${filter.typ === t ? ' pill--on' : ''}`} onClick={() => setFilter({ ...filter, typ: filter.typ === t ? undefined : t })}>{t}</button>)}
-          {areas.map((a) => <button key={a} className={`glass pill xs${filter.bereich === a ? ' pill--on' : ''}`} style={{ opacity: .85 }} onClick={() => setFilter({ ...filter, bereich: filter.bereich === a ? undefined : a })}>{a}</button>)}
-        </div>
-        <p className="xs faint" style={{ marginTop: 6 }}>{projects.filter(matches).length} von {total} · ← → blättern · Enter öffnen</p>
+        </div> : null}
+        {types.length + areas.length > 1 ? <div className="pills" style={{ marginTop: 8 }}>
+          {types.length > 1 ? <select className={`glass select filter-select${filter.typ ? ' on' : ''}`} value={filter.typ ?? ''} aria-label="Nach Projektart filtern" onChange={(e) => setFilter({ ...filter, typ: e.target.value || undefined })}><option value="">Alle Arten</option>{types.map((t) => <option key={t} value={t}>{t}</option>)}</select> : null}
+          {areas.length > 1 ? <select className={`glass select filter-select${filter.bereich ? ' on' : ''}`} value={filter.bereich ?? ''} aria-label="Nach Bereich filtern" onChange={(e) => setFilter({ ...filter, bereich: e.target.value || undefined })}><option value="">Alle Bereiche</option>{areas.map((a) => <option key={a} value={a}>{a}</option>)}</select> : null}
+        </div> : null}
+        {total > 0 ? (projects.some(matches) ? <p className="xs faint" style={{ marginTop: 6 }}>{projects.filter(matches).length} von {total}{total > 1 ? ' · ← → blättern · Enter öffnen' : ' · Enter öffnen'}</p> : <p className="xs" style={{ marginTop: 6 }}>Kein Projekt passt zu diesem Filter. <button className="link" onClick={() => setFilter({ status: 'alle' })}>Filter zurücksetzen</button></p>) : null}
       </div>
-      <button className="glass carousel-nav desktop-only" style={{ left: '29%' }} onClick={() => go(-1)} aria-label="Vorheriges Projekt"><IChevL /></button>
-      <button className="glass carousel-nav desktop-only" style={{ right: '29%' }} onClick={() => go(1)} aria-label="Nächstes Projekt"><IChevR /></button>
+      {total > 1 ? <><button className="glass carousel-nav desktop-only" style={{ left: '29%' }} onClick={() => go(-1)} aria-label="Vorheriges Projekt"><IChevL /></button>
+      <button className="glass carousel-nav desktop-only" style={{ right: '29%' }} onClick={() => go(1)} aria-label="Nächstes Projekt"><IChevR /></button></> : null}
       <div className="mobile-only carousel-mobile"><button className="btn" onClick={() => go(-1)}><IChevL /> Zurück</button><button className="btn" onClick={() => go(1)}>Weiter <IChevR /></button></div>
 
       {p ? (
@@ -80,8 +80,8 @@ export function Projekte({ index, setIndex, projects }: { index: number; setInde
             <div className="row" style={{ gap: 8, marginTop: 4 }}>
               <button className="btn btn--primary" onClick={() => navigate({ world: 'projekte', projectId: p.id })}>Projekt öffnen <IArrowR width={14} height={14} /></button>
               <button className="glass btn btn--sm" onClick={() => openSheet({ kind: 'projektForm', projectId: p.id })}>Bearbeiten</button>
-              <button className="glass btn btn--sm btn--icon" title="Duplizieren" onClick={() => { duplicateProject(p.id); setIndex(0); }}><ICopy width={14} height={14} /></button>
-              <button className="glass btn btn--sm btn--icon" title="Favorit" onClick={() => toggleFavorite(p.id)} style={{ color: p.favorite ? '#ffd77a' : undefined }}><IStar width={14} height={14} fill={p.favorite ? 'currentColor' : 'none'} /></button>
+              <button className="glass btn btn--sm btn--icon" title="Duplizieren" aria-label="Projekt duplizieren" onClick={() => { duplicateProject(p.id); setIndex(0); }}><ICopy width={14} height={14} /></button>
+              <button className="glass btn btn--sm btn--icon" title="Favorit" aria-label={p.favorite ? 'Favorit entfernen' : 'Als Favorit merken'} aria-pressed={p.favorite} onClick={() => toggleFavorite(p.id)} style={{ color: p.favorite ? '#ffd77a' : undefined }}><IStar width={14} height={14} fill={p.favorite ? 'currentColor' : 'none'} /></button>
               <button className="glass btn btn--sm" onClick={() => openSheet({ kind: 'projektForm' })}><IPlus width={14} height={14} /> Neu</button>
             </div>
           </div>
@@ -94,11 +94,11 @@ export function Projekte({ index, setIndex, projects }: { index: number; setInde
           </Panel>
 
           <Panel title="Ähnliche Projekte" icon={<IStar />} className="side-panel-r" delay={160}>
-            {similar.length === 0 ? <p className="muted small">Keine ähnlichen Projekte.</p> : similar.map((x) => <div key={x.id} className="sim-item" onClick={() => setIndex(projects.findIndex((y) => y.id === x.id))}><img src={islandSrc(x.island.libraryId, 256)} alt="" /><div className="col grow" style={{ gap: 0 }}><b className="small ellipsis">{x.name}</b><span className="xs muted">{x.areas[0] ?? x.type} · {x.stage}</span></div><IChevR width={14} height={14} className="muted" /></div>)}
+            {similar.length === 0 ? <p className="muted small">Keine ähnlichen Projekte.</p> : similar.map((x) => <div key={x.id} className="sim-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setIndex(projects.findIndex((y) => y.id === x.id)); } }} onClick={() => setIndex(projects.findIndex((y) => y.id === x.id))}><img src={islandSrc(x.island.libraryId, 256)} alt="" /><div className="col grow" style={{ gap: 0 }}><b className="small ellipsis">{x.name}</b><span className="xs muted">{x.areas[0] ?? x.type} · {x.stage}</span></div><IChevR width={14} height={14} className="muted" /></div>)}
           </Panel>
         </>
       ) : (
-        <Panel className="project-card" strong><h2>Noch keine Projekte</h2><p className="muted small">Leg dein erstes Projekt an.</p><button className="btn btn--primary" onClick={() => openSheet({ kind: 'projektForm' })}><IPlus width={14} height={14} /> Neues Projekt</button></Panel>
+        <Panel className="project-card" strong><h2>Dein erstes Projekt</h2><p className="small">Jedes Projekt bekommt eine eigene Insel: mit Meilensteinen, Versionen, Drucken, Material und Notizen. Eine Idee und ein Name reichen für den Anfang.</p><div className="row" style={{ gap: 8, flexWrap: 'wrap' }}><button className="btn btn--primary" onClick={() => openSheet({ kind: 'projektForm' })}><IPlus width={14} height={14} /> Neues Projekt</button>{devices.every((d) => d.kind !== 'drucker') ? <button className="btn" onClick={() => openSheet({ kind: 'geraetForm', deviceKind: 'drucker' })}><IPrinter width={14} height={14} /> Drucker anlegen</button> : null}</div></Panel>
       )}
       <div className="hand hand--tr">{'„Aus Ideen\nentstehen Lieblingsstücke.“'}</div>
     </>

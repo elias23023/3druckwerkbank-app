@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { fmtDate, fmtGrams, fmtNum, fold } from '../lib/format';
 import { PanelColumn, Panel, Stat } from '../ui/Glass';
 import { islandSrc } from '../scene/Island';
-import { IArchive, ISparkle, IStar, IImage, IHistory, ICopy } from '../ui/Icons';
+import { ISparkle, IStar, IImage, IHistory, ICopy } from '../ui/Icons';
 import { navigate } from '../router';
 
 export function Archiv() {
@@ -18,7 +18,7 @@ export function Archiv() {
   const lessons = reports.flatMap((r) => r.lessons.map((l) => ({ l, p: projects.find((p) => p.id === r.projectId)?.name })));
   const totals = { prints: reports.reduce((a, r) => a + r.printsTotal, 0), g: reports.reduce((a, r) => a + r.gramsUsed, 0), h: reports.reduce((a, r) => a + r.hours, 0) };
   const tags = useMemo(() => { const m = new Map<string, number>(); all.forEach((p) => p.tags.forEach((t) => m.set(t, (m.get(t) ?? 0) + 1))); return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8); }, [all]);
-  const months = useMemo(() => Array.from({ length: 12 }, (_, i) => { const d = new Date(); d.setMonth(d.getMonth() - (11 - i), 1); const key = d.toISOString().slice(0, 7); return { key, label: d.toLocaleDateString('de-AT', { month: 'short' }), n: all.filter((p) => p.archivedAt?.slice(0, 7) === key).length }; }), [all]);
+  const months = useMemo(() => Array.from({ length: 12 }, (_, i) => { const d = new Date(); d.setMonth(d.getMonth() - (11 - i), 1); const key = `${d.getFullYear()}-${d.getMonth()}`; return { key, label: d.toLocaleDateString('de-AT', { month: 'short' }), n: all.filter((p) => { if (!p.archivedAt) return false; const a = new Date(p.archivedAt); return `${a.getFullYear()}-${a.getMonth()}` === key; }).length }; }), [all]);
   const rediscover = useMemo(() => [...all].sort((a, b) => (a.archivedAt ?? '').localeCompare(b.archivedAt ?? '')).slice(0, 3), [all]);
   const templates = liveProjects(projects).filter((p) => p.isTemplate);
   const opts = (xs: string[]) => [...new Set(xs)].filter(Boolean);
@@ -69,7 +69,6 @@ export function Archiv() {
       </Panel>
       </PanelColumn>
       <div className="hand hand--bl" style={{ bottom: '4%' }}>{'Aus Ideen.\nWird morgen.'}</div>
-      <IArchive style={{ display: 'none' }} />
     </>
   );
 }

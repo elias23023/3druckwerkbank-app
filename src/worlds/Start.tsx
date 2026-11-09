@@ -17,8 +17,8 @@ export function Start() {
   const pv = weather?.data.hourly.length ? bestPvWindow(weather.data.hourly, settings.pvKwp, 3, now) : null;
   // "Scrollen = erkunden": a wheel gesture on the start world dives into Heute.
   useEffect(() => {
-    let acc = 0; let armed = true;
-    const on = (e: WheelEvent) => { if (!armed) return; acc += e.deltaY; if (acc > 260) { armed = false; navigate({ world: 'heute' }); } if (acc < 0) acc = 0; };
+    let acc = 0; let armed = true; let last = 0;
+    const on = (e: WheelEvent) => { const ui = useStore.getState().ui; if (!armed || ui.sheet || ui.commandOpen) return; if (e.timeStamp - last > 600) acc = 0; last = e.timeStamp; acc += e.deltaY; if (acc > 260) { armed = false; navigate({ world: 'heute' }); } if (acc < 0) acc = 0; };
     window.addEventListener('wheel', on, { passive: true }); return () => window.removeEventListener('wheel', on);
   }, []);
   return (

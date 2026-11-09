@@ -102,7 +102,7 @@ for (const [iso, look, key] of [[`${TODAY}T06:05:00+01:00`, 'daemmerung', 'herbs
   await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(500);
   await pg.locator('.topbar button[aria-label^="Konto"]').click(); await pg.waitForTimeout(300);
   const txt = await pg.locator('.sheet').textContent() ?? '';
-  check('Account sheet opens with login or setup hint', /Konto/.test(txt) && (/Mit Google anmelden/.test(txt) || /noch nicht eingerichtet/.test(txt)) && errs.length === 0, (txt.slice(0, 80) + ' ' + errs.join('|')).trim());
+  check('Account sheet opens with login or setup hint', /Konto/.test(txt) && (/Mit Google anmelden/.test(txt) || /noch nicht eingerichtet/.test(txt) || /Passwort vergessen/.test(txt)) && errs.length === 0, (txt.slice(0, 80) + ' ' + errs.join('|')).trim());
   await c.close();
 }
 // ---- workspaces: 'Meine Werkstatt' starts empty and every world renders without errors ----
@@ -116,6 +116,69 @@ for (const [iso, look, key] of [[`${TODAY}T06:05:00+01:00`, 'daemmerung', 'herbs
   check('Real workspace: chip, empty start, all worlds render', /Meine Werkstatt/.test(chip) && n === 0 && errs.length === 0, `${chip} projects=${n} ${errs.join('|')}`);
   const demo = await pg.evaluate(() => JSON.parse(localStorage.getItem('3druckwerkbank:v1') || '{}').state?.projects?.length ?? -1);
   check('Demo workspace storage untouched by real workspace', demo === -1 || demo > 0, String(demo));
+  await c.close();
+}
+// ---- own devices and tools: create, edit, delete in 'Meine Werkstatt' (starts without any device) ----
+{
+  const c = await browser.newContext(ctxOpts); const pg = await c.newPage(); const errs = []; pg.on('pageerror', (e) => errs.push(String(e)));
+  pg.on('dialog', (d) => d.accept());
+  await pg.addInitScript(() => { try { localStorage.setItem('3druckwerkbank:bereich', 'echt'); } catch {} });
+  const devs = () => pg.evaluate(() => JSON.parse(localStorage.getItem('3druckwerkbank:echt:v1') || '{}').state?.devices ?? []);
+  await pg.goto(`${base}/#/druck`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(500);
+  check('Real workspace starts without devices', (await devs()).length === 0, String((await devs()).length));
+  await pg.locator('.ui .panel button', { hasText: 'Drucker anlegen' }).first().click();
+  await pg.locator('.sheet input[placeholder="z. B. X1C"]').fill('Mein Drucker');
+  await pg.locator('.sheet input[placeholder="z. B. Bambu Lab X1 Carbon"]').fill('Prusa MK4');
+  await pg.locator('.sheet__foot button', { hasText: 'Speichern' }).click(); await pg.waitForTimeout(400);
+  let d = await devs();
+  check('Create own printer', d.length === 1 && d[0].name === 'Mein Drucker' && d[0].kind === 'drucker' && await pg.locator('.panel-col .item', { hasText: 'Mein Drucker' }).count() === 1, JSON.stringify(d.map((x) => x.name)));
+  const def = await pg.evaluate(() => JSON.parse(localStorage.getItem('3druckwerkbank:echt:v1')).state.settings.defaultPrinterId);
+  check('First printer becomes the default printer', def === d[0].id, String(def));
+  await pg.locator('.panel-col .item', { hasText: 'Mein Drucker' }).click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet__foot button', { hasText: 'Bearbeiten' }).click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet input[placeholder="z. B. X1C"]').fill('Werkstattdrucker');
+  await pg.locator('.sheet__foot button', { hasText: 'Speichern' }).click(); await pg.waitForTimeout(300);
+  d = await devs();
+  check('Edit own printer', d.length === 1 && d[0].name === 'Werkstattdrucker' && d[0].model === 'Prusa MK4', JSON.stringify(d.map((x) => x.name)));
+  await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
+  // tool via settings
+  await pg.locator('.topbar button[aria-label="Einstellungen"]').click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet button', { hasText: 'Werkzeuge (' }).click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet__foot button', { hasText: 'Werkzeug anlegen' }).click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet input[placeholder="z. B. Seitenschneider"]').fill('Entgrater');
+  await pg.locator('.sheet__foot button', { hasText: 'Speichern' }).click(); await pg.waitForTimeout(300);
+  d = await devs();
+  check('Create own tool', d.length === 2 && d.some((x) => x.kind === 'werkzeug' && x.name === 'Entgrater' && x.status === 'verfügbar') && await pg.locator('.sheet .item', { hasText: 'Entgrater' }).count() === 1, JSON.stringify(d.map((x) => `${x.kind}:${x.name}`)));
+  await pg.locator('.sheet .item', { hasText: 'Entgrater' }).locator('button', { hasText: 'Bearbeiten' }).click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet__foot button', { hasText: 'Löschen' }).click(); await pg.waitForTimeout(300);
+  d = await devs();
+  check('Delete own tool', d.length === 1 && d[0].kind === 'drucker', JSON.stringify(d.map((x) => x.name)));
+  await pg.locator('.sheet .tabs button', { hasText: 'Drucker' }).click(); await pg.waitForTimeout(200);
+  await pg.locator('.sheet .item', { hasText: 'Werkstattdrucker' }).locator('button', { hasText: 'Bearbeiten' }).click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet__foot button', { hasText: 'Löschen' }).click(); await pg.waitForTimeout(300);
+  d = await devs();
+  const def2 = await pg.evaluate(() => JSON.parse(localStorage.getItem('3druckwerkbank:echt:v1')).state.settings.defaultPrinterId ?? null);
+  check('Delete own printer (default printer cleared)', d.length === 0 && def2 === null, `${d.length} ${def2}`);
+  check('Device management without console errors', errs.length === 0, errs.join(' | '));
+  await c.close();
+}
+// ---- demo workspace: tools can be created from a project and are assigned to it ----
+{
+  const c = await browser.newContext(ctxOpts); const pg = await c.newPage(); const errs = []; pg.on('pageerror', (e) => errs.push(String(e)));
+  await pg.goto(`${base}/#/projekte/p-zahnrad`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(500);
+  await pg.locator('.bottom-row .panel', { hasText: 'Werkzeuge' }).locator('button', { hasText: 'Werkzeug zuordnen' }).click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet button', { hasText: 'Neues Werkzeug' }).click(); await pg.waitForTimeout(250);
+  await pg.locator('.sheet input[placeholder="z. B. Seitenschneider"]').fill('Zahnradlehre');
+  await pg.locator('.sheet__foot button', { hasText: 'Speichern' }).click(); await pg.waitForTimeout(300);
+  const st = await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem('3druckwerkbank:v1')).state; const t = s.devices.find((x) => x.name === 'Zahnradlehre'); return { tool: !!t, assigned: !!t && (s.projects.find((p) => p.id === 'p-zahnrad').toolIds ?? []).includes(t.id) }; });
+  await pg.keyboard.press('Escape'); await pg.waitForTimeout(250);
+  const shown = await pg.locator('.bottom-row .panel', { hasText: 'Werkzeuge' }).locator('text=Zahnradlehre').count();
+  check('Tool created from a project is assigned and shown', st.tool && st.assigned && shown === 1 && errs.length === 0, `${JSON.stringify(st)} shown=${shown} ${errs.join('|')}`);
+  // a finished estimate never books by itself: the print waits for the result
+  await pg.evaluate(() => { const k = '3druckwerkbank:v1'; const j = JSON.parse(localStorage.getItem(k)); const p = j.state.prints.find((x) => x.status === 'läuft'); p.startedAt = new Date(Date.now() - (p.estimatedMinutes + 5) * 60000).toISOString(); localStorage.setItem(k, JSON.stringify(j)); });
+  await pg.goto(`${base}/#/druck`, { waitUntil: 'networkidle' }); await pg.reload({ waitUntil: 'networkidle' }); await pg.waitForTimeout(1600);
+  const pr = await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem('3druckwerkbank:v1')).state; const p = s.prints.find((x) => x.id === 'pr-1'); return { status: p.status, due: !!p.resultDue, booked: !!p.booked, running: s.prints.filter((x) => x.status === 'läuft').length }; });
+  check('Elapsed print waits for the result instead of booking itself', pr.status === 'läuft' && pr.due && !pr.booked && pr.running === 1, JSON.stringify(pr));
   await c.close();
 }
 // ---- seasons: override in settings changes stage, particles and island filter ----

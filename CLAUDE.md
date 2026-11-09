@@ -15,12 +15,15 @@ Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store 
 
 ## Bereiche
 - Zwei Bereiche mit getrenntem Speicher (`src/lib/workspace.ts`): `demo` = Beispiel-Werkstatt (Demodaten, `3druckwerkbank:v1`), `echt` = Meine Werkstatt (`3druckwerkbank:echt:v1`, startet mit `makeEmptySeed()`). Umschalten per Chip in der Kopfzeile (Sheet `bereich`). Neue Features müssen in beiden Bereichen laufen, besonders mit leeren Listen; `verify.mjs` prüft den leeren Bereich. Sync nur in `echt`.
+- `echt` startet ganz leer, auch ohne Geräte. Drucker, AMS, Trockner und Werkzeuge legt der Nutzer selbst an (`src/forms/GeraetForm.tsx`: Formular `geraetForm`, Übersicht `geraete`; Store `upsertDevice`, `deleteDevice`). Nie Demo-Ids (`d-x1c`, `d-p1s`) voraussetzen; jede Ansicht braucht einen Zustand ohne Drucker.
+- Drucke buchen sich nie selbst: Ist die geschätzte Zeit um, setzt `tickPrints` nur `resultDue`; das Ergebnis bestätigt der Nutzer.
+- Fremde Daten (Import, Konto, alter Speicher) laufen immer durch `normalizeState` (`src/store.ts`).
 
 ## Konto (Hostinger, PHP + MySQL)
-- Login (Google, E-Mail) und Sync: PHP in `public/api/` (`_lib.php`, `auth.php`, `state.php`, `health.php`), MySQL `u685288958_werkbank`, Konfiguration **außerhalb** des Webroots in `/werkbank-private/config.php` (Vorlage `docs/werkbank-config.example.php`; echte Werte nie ins Git). Browser-Seite `src/lib/cloud.ts`, Panel `src/ui/Konto.tsx`. `.htaccess` leitet `/api/` nicht auf `index.html` um. Google-Knopf erscheint erst mit `google_client_id` in der Konfiguration. Einrichtung: `docs/Login-Einrichtung.md`. PHP-Dateien vor dem Deploy mit `php -l` prüfen.
+- Login (Google, E-Mail) und Sync: PHP in `public/api/` (`_lib.php`, `auth.php`, `state.php`, `health.php`), MySQL `u685288958_werkbank`, Konfiguration **außerhalb** des Webroots in `/werkbank-private/config.php` (Vorlage `docs/werkbank-config.example.php`; echte Werte nie ins Git). Browser-Seite `src/lib/cloud.ts`, Panel `src/ui/Konto.tsx`. `.htaccess` leitet `/api/` nicht auf `index.html` um. Google-Knopf erscheint erst mit `google_client_id` in der Konfiguration. Schema-Änderungen in `migrate()` (`_lib.php`) eintragen und `SCHEMA_VERSION` erhöhen. Sync (`src/lib/cloud.ts`) überschreibt nie still: Bei unterschiedlichen Ständen wählt der Nutzer, der Server verlangt `ifUpdatedAt` oder `force`. Einrichtung: `docs/Login-Einrichtung.md`. PHP-Dateien vor dem Deploy mit `php -l` prüfen.
 
 ## Prüfen
-- `npm run build` muss fehlerfrei sein. `npm run preview` + `node scripts/verify.mjs http://localhost:4173` (51 Playwright-Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code).
+- `npm run build` muss fehlerfrei sein. `npm run preview` + `node scripts/verify.mjs http://localhost:4173` (66 Playwright-Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code).
 - Screenshots: `node scripts/shot.mjs <url> <out.png> 1920 1080`, mit fester Uhrzeit `node scripts/shot-day.mjs <url> <out.png> 2026-11-06T13:40:00+01:00`, Mobil `node scripts/shot-mobile.mjs <base> <ordner>`. Playwright liegt unter `/opt/node-tools/node_modules/playwright/index.js`.
 - Layout immer in zwei Formaten prüfen: 1920×1080 und 2000×993 (Bildschirm des Nutzers, 2:1). Inseln dürfen nicht von Texten oder Panels überdeckt werden; Seitenpanels liegen in `PanelColumn`-Spalten.
 

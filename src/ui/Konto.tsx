@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { Sheet } from './Sheet';
 import { Field } from './Glass';
 import { IUser, IRefresh } from './Icons';
-import { useAuth, useSyncState, signInWithEmail, signUpWithEmail, signInWithGoogleCredential, sendPasswordReset, resetPassword, signOut, syncNow, takeRemote, renderGoogleButton } from '../lib/cloud';
+import { useAuth, useSyncState, signInWithEmail, signUpWithEmail, signInWithGoogleCredential, sendPasswordReset, resetPassword, signOut, syncNow, takeRemote, renderGoogleButton, readBackup, restoreBackup, type SyncCounts } from '../lib/cloud';
 import { fmtTime, fmtDate } from '../lib/format';
 import { isDemo } from '../lib/workspace';
 
@@ -11,6 +11,8 @@ import { isDemo } from '../lib/workspace';
  * Konto: Anmelden mit Google oder E-Mail, Registrieren, Passwort vergessen / zurücksetzen; angemeldet: Stand der Synchronisation,
  * Konfliktauflösung, jetzt speichern, abmelden. Backend: /api auf derselben Domain (Hostinger, PHP + MySQL).
  */
+const describe = (c?: SyncCounts) => (c ? `${c.projects} Projekte · ${c.spools} Rollen · ${c.devices} Geräte${c.updatedAt ? ` · gespeichert ${fmtDate(c.updatedAt)} ${fmtTime(c.updatedAt)}` : ''}` : 'Stand unbekannt');
+
 export function KontoSheet({ resetToken }: { resetToken?: string }) {
   const close = useStore((s) => s.closeSheet);
   const toast = useStore((s) => s.toast);
@@ -48,17 +50,22 @@ export function KontoSheet({ resetToken }: { resetToken?: string }) {
   }
 
   if (auth.user) {
-    const u = auth.user; const name = u.name || u.email;
+    const u = auth.user; const name = u.name || u.email; const backup = isDemo ? null : readBackup();
     return (
-      <Sheet title="Konto" icon={<IUser />} onClose={close} foot={<><button className="btn btn--sm" disabled={isDemo} onClick={() => { void syncNow(); toast('Speichere …'); }}><IRefresh width={13} height={13} /> Jetzt speichern</button><button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={async () => { await signOut(); toast('Abgemeldet. Die Daten bleiben in diesem Browser.'); }}>Abmelden</button></>}>
+      <Sheet title="Konto" icon={<IUser />} onClose={close} foot={<><button className="btn btn--sm" disabled={isDemo || sync.status === 'konflikt' || sync.status === 'lädt'} onClick={() => { void syncNow(); }}><IRefresh width={13} height={13} /> Jetzt speichern</button><button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={async () => { try { await signOut(); toast('Abgemeldet. Die Daten bleiben in diesem Browser.'); } catch { toast('Abmelden nicht möglich: keine Verbindung zum Server.'); } }}>Abmelden</button></>}>
         <div className="konto-user">{u.avatar ? <img src={u.avatar} alt="" referrerPolicy="no-referrer" /> : <span className="konto-avatar">{name.slice(0, 1).toUpperCase()}</span>}<div className="col" style={{ gap: 2 }}><b className="small">{name}</b><span className="xs muted">{u.email}{u.provider === 'google' ? ' · Google' : ' · E-Mail'}</span></div></div>
         {isDemo ? <Field label="Synchronisation"><span className="small">Die Beispiel-Werkstatt wird nicht synchronisiert. Wechsle zu „Meine Werkstatt“ (Chip oben links), dort landen deine echten Daten im Konto.</span></Field> : (
           <Field label="Synchronisation">
             <div className="row small" style={{ gap: 8 }}>
               <i className="dot" style={{ background: sync.status === 'fehler' || sync.status === 'konflikt' ? '#ff6b6b' : sync.status === 'bereit' ? '#4ccf7a' : '#ffd36e' }} />
-              <span>{sync.status === 'lädt' ? 'Lade deinen Stand …' : sync.status === 'speichert' ? 'Speichere …' : sync.status === 'fehler' ? `Fehler: ${sync.error}` : sync.status === 'konflikt' ? 'Auf einem anderen Gerät gibt es einen neueren Stand.' : sync.lastSyncAt ? `Gespeichert, zuletzt ${fmtDate(sync.lastSyncAt)} ${fmtTime(sync.lastSyncAt)}` : 'Bereit'}</span>
+              <span>{sync.status === 'lädt' ? 'Lade deinen Stand …' : sync.status === 'speichert' ? 'Speichere …' : sync.status === 'fehler' ? `Fehler: ${sync.error}` : sync.status === 'konflikt' ? (sync.error ?? 'Im Konto liegt ein anderer Stand als in diesem Browser.') : sync.lastSyncAt ? `Gespeichert, zuletzt ${fmtDate(sync.lastSyncAt)} ${fmtTime(sync.lastSyncAt)}` : 'Bereit'}</span>
             </div>
-            {sync.status === 'konflikt' ? <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}><button className="btn btn--sm" onClick={() => { void takeRemote(); }}>Stand aus dem Konto übernehmen</button><button className="btn btn--sm btn--ghost" onClick={() => { void syncNow(true); }}>Diesen Stand ins Konto schreiben</button></div> : null}
+            {sync.status === 'konflikt' ? <div className="col" style={{ gap: 8 }}>
+              <div className="grid2 small"><div className="konto-side"><b>Dieser Browser</b><span className="xs muted">{describe(sync.local)}</span><button className="btn btn--sm" onClick={() => { if (confirm('Diesen Stand ins Konto schreiben? Der Stand im Konto wird ersetzt.')) void syncNow(true); }}>Diesen Stand behalten</button></div><div className="konto-side"><b>Konto</b><span className="xs muted">{describe(sync.remote)}</span><button className="btn btn--sm" onClick={() => { void takeRemote(); }}>Stand aus dem Konto übernehmen</button></div></div>
+              <span className="xs muted">Solange du nicht gewählt hast, wird nichts überschrieben. Beim Übernehmen aus dem Konto wird der Stand dieses Browsers vorher gesichert.</span>
+            </div> : null}
+            {sync.status === 'fehler' ? <button className="btn btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => { void syncNow(); }}>Noch einmal versuchen</button> : null}
+            {backup ? <div className="row xs" style={{ gap: 8, flexWrap: 'wrap' }}><span className="muted">Sicherung vom {fmtDate(backup.at)} {fmtTime(backup.at)} ({backup.reason}).</span><button className="link" type="button" onClick={() => { if (confirm('Die Sicherung zurückholen? Der aktuelle Stand wird dabei selbst gesichert.')) { restoreBackup(); toast('Sicherung wiederhergestellt'); } }}>Wiederherstellen</button></div> : null}
             <span className="xs muted">Jede Änderung wird kurz danach in deinem Konto gespeichert. Auf einem anderen Gerät genügt dort die Anmeldung, der neueste Stand wird geladen. Eigene Fotos zählen mit; große Fotos machen das Speichern langsamer.</span>
           </Field>
         )}
@@ -68,7 +75,7 @@ export function KontoSheet({ resetToken }: { resetToken?: string }) {
 
   return (
     <Sheet title="Konto" icon={<IUser />} onClose={close}>
-      {mode === 'neuesPasswort' ? <p className="small">Wähle ein neues Passwort für dein Konto.</p> : <p className="small">Melde dich an, um deine Werkstatt auf allen Geräten zu nutzen. Was jetzt in „Meine Werkstatt“ liegt, wird beim ersten Anmelden in dein Konto übernommen.</p>}
+      {mode === 'neuesPasswort' ? <p className="small">Wähle ein neues Passwort für dein Konto.</p> : <p className="small">Melde dich an, um deine Werkstatt auf allen Geräten zu nutzen. Ist dein Konto noch leer, wird „Meine Werkstatt“ aus diesem Browser dorthin übernommen. Liegen auf beiden Seiten Daten, entscheidest du, welcher Stand gilt.</p>}
       {mode !== 'neuesPasswort' && auth.google ? <><div ref={gref} className="konto-google-slot" /><div className="konto-oder"><span>oder mit E-Mail</span></div></> : null}
       <form onSubmit={submit} className="col" style={{ gap: 10 }}>
         {mode !== 'neuesPasswort' ? <Field label="E-Mail"><input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field> : null}

@@ -34,11 +34,11 @@ export function ProjektInnen({ project: p }: { project: Project }) {
         <p className="small">{p.description}</p>
         <div className="pills" style={{ marginTop: 8 }}>
           <select className="glass select" style={{ width: 'auto', padding: '3px 8px', fontSize: 12 }} value={p.stage} onChange={(e) => s.setStage(p.id, e.target.value as Project['stage'])} aria-label="Entwicklungsstation">{STAGES.map((st) => <option key={st}>{st}</option>)}</select>
-          <span className="glass pill xs">{p.type}</span>{p.areas.map((a) => <span key={a} className="glass pill xs">{a}</span>)}
+          <span className="glass pill xs">{p.type}</span>{p.areas.slice(0, 2).map((a) => <span key={a} className="glass pill xs">{a}</span>)}{p.areas.length > 2 ? <span className="glass pill xs" title={p.areas.slice(2).join(', ')}>+{p.areas.length - 2}</span> : null}
         </div>
         <div className="row" style={{ marginTop: 8, gap: 6, flexWrap: 'wrap' }}>
           <button className="glass btn btn--sm" onClick={() => s.openSheet({ kind: 'projektForm', projectId: p.id })}>Bearbeiten</button>
-          <button className="glass btn btn--sm" onClick={() => { const nid = s.duplicateProject(p.id); navigate({ world: 'projekte', projectId: nid }); }}><ICopy width={13} height={13} /> Duplizieren</button>
+          <button className="glass btn btn--sm" onClick={() => { const nid = s.duplicateProject(p.id); if (nid) navigate({ world: 'projekte', projectId: nid }); }}><ICopy width={13} height={13} /> Duplizieren</button>
           <button className="glass btn btn--sm" onClick={() => s.setTemplate(p.id, !p.isTemplate)}>{p.isTemplate ? '★ Vorlage' : 'Als Vorlage'}</button>
           {!p.archivedAt ? <button className="btn btn--sm btn--primary" onClick={() => s.openSheet({ kind: 'abschliessen', projectId: p.id })}><IArchive width={13} height={13} /> Abschließen</button> : <span className="pill pill--acc">Archiviert {fmtDate(p.archivedAt)}</span>}
         </div>
@@ -47,7 +47,7 @@ export function ProjektInnen({ project: p }: { project: Project }) {
       {/* top centre: milestones */}
       <Panel title="Meilensteine" icon={<IFlag />} right={<><span className="xs muted">{p.progress} %</span><More t="meilensteine" /></>} style={{ left: '30%', top: '10%', width: '40%' }} delay={40}>
         <div className="milestone-path">
-          {ms.map((m) => <div key={m.id} className={`ms${m.done ? ' done' : ''}${m.skipped ? ' skip' : ''}${curMs?.id === m.id ? ' cur' : ''}`}><button onClick={() => s.setMilestone(p.id, m.id, { done: !m.done, skipped: false })} title={m.done ? 'Als offen markieren' : 'Als erreicht markieren'} style={{ display: 'contents' }}><i /></button><span style={{ textDecoration: m.skipped ? 'line-through' : undefined }}>{m.title}</span></div>)}
+          {ms.map((m) => <div key={m.id} className={`ms${m.done ? ' done' : ''}${m.skipped ? ' skip' : ''}${curMs?.id === m.id ? ' cur' : ''}`}><button className="ms__btn" onClick={() => s.setMilestone(p.id, m.id, { done: !m.done, skipped: false })} title={m.done ? 'Als offen markieren' : 'Als erreicht markieren'} aria-label={`${m.title}: ${m.done ? 'als offen markieren' : 'als erreicht markieren'}`} aria-pressed={m.done}><i /></button><span style={{ textDecoration: m.skipped ? 'line-through' : undefined }}>{m.title}</span></div>)}
         </div>
         <Progress value={p.progress} />
       </Panel>
@@ -71,11 +71,11 @@ export function ProjektInnen({ project: p }: { project: Project }) {
       <Panel title="Drucke" icon={<IPrinter />} right={<More t="drucke" />} style={{ right: '3.2%', top: '28%', width: '22%' }} delay={100}
         foot={<button className="btn btn--sm" onClick={() => s.openSheet({ kind: 'neuerDruck', projectId: p.id })}><IPlus width={12} height={12} /> Neuen Druck planen</button>}>
         {prints.length === 0 ? <p className="muted small">Noch kein Druck.</p> : prints.slice(0, 3).map((pr) => (
-          <div key={pr.id} className="row small item--click" style={{ gap: 8 }} onClick={() => s.openSheet({ kind: 'druck', printId: pr.id })}>
+          <div key={pr.id} className="row small item--click" style={{ gap: 8 }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') s.openSheet({ kind: 'druck', printId: pr.id }); }} onClick={() => s.openSheet({ kind: 'druck', printId: pr.id })}>
             <span className="dot" style={{ background: pr.status === 'läuft' ? '#7cc6ff' : pr.result === 'erfolg' ? '#4ccf7a' : pr.result === 'fehldruck' ? '#ff6b6b' : pr.result === 'nacharbeit' ? '#ffb547' : '#8a8f96' }} />
             <span className="grow ellipsis">{pr.name}</span>
-            <span className="xs muted">{pr.status === 'läuft' ? `${Math.round(printProgress(pr, now.getTime()) * 100)} %` : pr.status === 'fertig' ? fmtDate(pr.finishedAt) : pr.status}</span>
-            <span className="xs faint" style={{ width: 44, textAlign: 'right' }}>{fmtDuration(pr.estimatedMinutes)}</span>
+            <span className="xs muted" style={{ flex: 'none', whiteSpace: 'nowrap' }}>{pr.status === 'läuft' ? (pr.resultDue ? 'Ergebnis buchen' : `${Math.round(printProgress(pr, now.getTime()) * 100)} %`) : pr.status === 'fertig' ? fmtDate(pr.finishedAt).slice(0, 6) : pr.status}</span>
+            <span className="xs faint" style={{ flex: 'none', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtDuration(pr.estimatedMinutes)}</span>
           </div>
         ))}
       </Panel>
@@ -88,11 +88,11 @@ export function ProjektInnen({ project: p }: { project: Project }) {
       <div className="bottom-row">
         <Panel title="Aufgaben" icon={<ICheck />} right={<More t="aufgaben" />} delay={180}
           foot={<input className="input" style={{ padding: '4px 8px', fontSize: 12 }} placeholder="Aufgabe hinzufügen … (Enter)" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newTask.trim()) { s.addTask({ projectId: p.id, title: newTask.trim(), kind: 'allgemein' }); setNewTask(''); } }} />}>
-          {tasks.filter((t) => !t.done && !t.skipped).slice(0, 3).map((t) => <div key={t.id} className="row small"><Check on={t.done} onClick={() => s.toggleTask(t.id)} /><span className="grow ellipsis">{t.title}</span>{t.due ? <span className="xs muted">{fmtDate(t.due).slice(0, 5)}</span> : null}</div>)}
+          {tasks.filter((t) => !t.done && !t.skipped).slice(0, 3).map((t) => <div key={t.id} className="row small"><Check on={t.done} onClick={() => s.toggleTask(t.id)} /><span className="grow ellipsis">{t.title}</span>{t.due ? <span className="xs muted" style={{ flex: 'none' }}>{fmtDate(t.due).slice(0, 6)}</span> : null}</div>)}
           {tasks.filter((t) => !t.done && !t.skipped).length === 0 ? <p className="muted small">Keine offenen Aufgaben.</p> : null}
         </Panel>
         <Panel title="Werkzeuge" icon={<IWrench />} right={<More t="werkzeuge" />} delay={220}>
-          {tools.length === 0 ? <p className="muted small">Keine Werkzeuge zugeordnet.</p> : tools.slice(0, 3).map((t) => <div key={t.id} className="row small"><IWrench width={14} height={14} className="muted" /><span className="grow ellipsis">{t.name}</span><span className="row xs" style={{ gap: 4 }}><i className="dot" style={{ background: toolCol[t.status] ?? '#8a8f96' }} />{t.status}</span></div>)}
+          {tools.length === 0 ? <div className="col" style={{ gap: 4 }}><p className="muted small">Keine Werkzeuge zugeordnet.</p><button className="btn btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => open('werkzeuge')}><IPlus width={12} height={12} /> Werkzeug zuordnen</button></div> : tools.slice(0, 3).map((t) => <div key={t.id} className="row small"><IWrench width={14} height={14} className="muted" /><span className="grow ellipsis">{t.name}</span><span className="row xs" style={{ gap: 4 }}><i className="dot" style={{ background: toolCol[t.status] ?? '#8a8f96' }} />{t.status}</span></div>)}
         </Panel>
         <Panel title={tab === 'bilder' ? 'Bilder' : tab === '3d' ? '3D-Ansicht' : 'Notizen'} icon={tab === 'notizen' ? <ISparkle /> : <IImage />} right={<div className="tabs" style={{ padding: 2 }}><button className={tab === 'bilder' ? 'on' : ''} onClick={() => setTab('bilder')} style={{ padding: '2px 8px' }}>Bilder</button><button className={tab === '3d' ? 'on' : ''} onClick={() => setTab('3d')} style={{ padding: '2px 8px' }}>3D</button><button className={tab === 'notizen' ? 'on' : ''} onClick={() => setTab('notizen')} style={{ padding: '2px 8px' }}>Notizen</button></div>} delay={260}>
           {tab === 'bilder' ? (
@@ -105,7 +105,7 @@ export function ProjektInnen({ project: p }: { project: Project }) {
           )}
         </Panel>
         <Panel title="Historie" icon={<IHistory />} right={<More t="historie" />} delay={300}>
-          {p.history.slice(0, 3).map((h) => <div key={h.id} className="row small"><span className="dot" style={{ background: HCOL[h.type] ?? '#fff' }} /><span className="grow ellipsis">{h.title}</span><span className="xs muted">{fmtDate(h.at).slice(0, 5)}</span></div>)}
+          {p.history.slice(0, 3).map((h) => <div key={h.id} className="row small"><span className="dot" style={{ background: HCOL[h.type] ?? '#fff' }} /><span className="grow ellipsis">{h.title}</span><span className="xs muted" style={{ flex: 'none' }}>{fmtDate(h.at).slice(0, 6)}</span></div>)}
         </Panel>
       </div>
       <div className="hand hand--tr" style={{ top: '10%' }}>{'„Aus Ideen\nentstehen Lieblingsstücke.“'}</div>

@@ -115,7 +115,7 @@ Demodaten: fünf aktive Projekte (Sensorhalter Garten, Bewässerungsclip, Werkze
 - Vite + React + TypeScript, Zustand-Store mit Speicherung im Browser (localStorage), Hash-Routing (#/start, #/heute, #/projekte/<id> …). Keine UI-, Router- oder Animationsbibliothek.
 - Bild-Pipeline mit sharp: Freistellen (Flood-Fill auf Weiß), Trimmen, WebP / AVIF in mehreren Größen; Zeiger als Vite-Asset mit Hash im Dateinamen (verhindert CDN-Stau).
 - Wetter: eine Open-Meteo-Anfrage (aktuell, stündlich 7 Tage inkl. Einstrahlung, Luftdruck, UV; täglich Sonnenauf- / -untergang), 30-Minuten-Cache, Fehlerzustand „Wetter nicht verfügbar“.
-- Qualität: 48 automatische Playwright-Prüfungen (Desktop und iPhone), Screenshots und Video-Rundgang per Skript.
+- Qualität: 66 automatische Playwright-Prüfungen (Desktop und iPhone), Screenshots und Video-Rundgang per Skript.
 - Deploy: Build → Zip → Upload zu Hostinger → statisches Deploy; Live-Bundle wird gegen den lokalen Build geprüft. Lokales Git-Repository mit allen Schritten.
 
 ---

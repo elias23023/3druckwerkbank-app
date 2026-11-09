@@ -7,4 +7,5 @@ return [
   'app_secret' => 'ZUFAELLIGE-ZEICHENKETTE',
   'google_client_id' => '', // Web-Client-ID aus der Google Cloud Console, leer = Google-Knopf aus
   'mail_from' => 'no-reply@3druckwerkbank.com',
+  'base_url' => 'https://3druckwerkbank.com', // Adresse für den Link in der Passwort-E-Mail
 ];

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../store';
 import { Sheet } from '../ui/Sheet';
 import { Field, Seg } from '../ui/Glass';
@@ -53,13 +53,15 @@ export function ProjektForm({ projectId }: { projectId?: string }) {
   const s = useStore();
   const existing = projectId ? s.projects.find((p) => p.id === projectId) : undefined;
   const key = `projekt:${projectId ?? 'neu'}`;
-  const [d, setD] = useState<Draft>(() => (s.ui.drafts[key] as Draft) ?? (existing ? { name: existing.name, description: existing.description, type: existing.type, areas: existing.areas, tags: existing.tags, priority: existing.priority, difficulty: existing.difficulty, island: existing.island, requiredSpools: existing.requiredSpools, plannedHours: existing.plannedHours, plannedStart: existing.plannedStart, plannedEnd: existing.plannedEnd, difficultyReason: existing.difficultyReason } : blank()));
+  const [d, setD] = useState<Draft>(() => (existing ? undefined : (s.ui.drafts[key] as Draft | undefined)) ?? (existing ? { name: existing.name, description: existing.description, type: existing.type, areas: existing.areas, tags: existing.tags, priority: existing.priority, difficulty: existing.difficulty, island: existing.island, requiredSpools: existing.requiredSpools, plannedHours: existing.plannedHours, plannedStart: existing.plannedStart, plannedEnd: existing.plannedEnd, difficultyReason: existing.difficultyReason } : blank()));
   const [step, setStep] = useState(existing ? 5 : 1);
   const [tagText, setTagText] = useState(d.tags.join(', '));
   const [custom, setCustom] = useState(''); const [customArea, setCustomArea] = useState(''); const [showAll, setShowAll] = useState(false); const [showMore, setShowMore] = useState(false);
-  const upd = (patch: Partial<Draft>) => { const nd = { ...d, ...patch }; setD(nd); s.setDraft(key, nd); };
+  // Entwurf nur für neue Projekte merken (ohne Fotos, zeitversetzt): beim Bearbeiten gelten immer die aktuellen Werte des Projekts
+  const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (draftTimer.current) clearTimeout(draftTimer.current); }, []);
+  const upd = (patch: Partial<Draft>) => { const nd = { ...d, ...patch }; setD(nd); if (existing) return; if (draftTimer.current) clearTimeout(draftTimer.current); draftTimer.current = setTimeout(() => useStore.getState().setDraft(key, { ...nd, photoDataUrl: undefined, island: { ...nd.island, photoDataUrl: undefined, kind: nd.island.photoDataUrl ? 'bibliothek' : nd.island.kind } }), 500); };
   const close = () => s.closeSheet();
-  const printers = s.devices.filter((x) => x.kind === 'drucker');
   const suggested = useMemo(() => {
     const score = (l: typeof LIB[number]) => (l.types.includes(d.type) ? 2 : 0) + l.areas.filter((a) => d.areas.includes(a)).length;
     const used = new Map<string, number>(); s.projects.forEach((p) => used.set(p.island.libraryId, (used.get(p.island.libraryId) ?? 0) + 1));
@@ -73,6 +75,7 @@ export function ProjektForm({ projectId }: { projectId?: string }) {
     const tmpl = MILESTONE_TEMPLATES[d.type] ?? MILESTONE_TEMPLATES.default;
     const files = photoDataUrl ? [{ id: id('f'), name: 'Idee.jpg', kind: 'skizze' as const, createdAt: nowIso(), dataUrl: photoDataUrl }] : [];
     const p: Project = existing ? { ...existing, ...rest, tags } : { ...rest, tags, type: d.type || 'Sonstiges / Universal', id: id('p'), stage: 'Idee', progress: 0, favorite: false, createdAt: nowIso(), updatedAt: nowIso(), milestones: tmpl.map((t, i) => ({ id: id('ms'), title: t, done: false, order: i })), versions: [], files, notes: '', experiences: [], history: [] };
+    if (draftTimer.current) { clearTimeout(draftTimer.current); draftTimer.current = null; }
     s.upsertProject(p); s.clearDraft(key); close(); s.toast(existing ? 'Projekt gespeichert' : `Projekt „${p.name}“ angelegt`);
     if (!existing) { navigate({ world: 'projekte' }); s.spotlight(p.id); }
   };
@@ -147,7 +150,6 @@ export function ProjektForm({ projectId }: { projectId?: string }) {
       {(step === 5 || existing) ? (
         <>
           <div className="grid2">
-            <Field label="Drucker"><select className="select" value={d.printerId ?? s.settings.defaultPrinterId ?? ''} onChange={(e) => upd({ printerId: e.target.value })}>{printers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>
             <Field label="Tags (Komma-getrennt)"><input className="input" value={tagText} onChange={(e) => setTagText(e.target.value)} placeholder="PETG, wetterfest, Wandmontage" /></Field>
           </div>
           {suggestedTags.length ? <div className="row small" style={{ gap: 6, flexWrap: 'wrap' }}><span className="muted xs">Vorschläge:</span>{suggestedTags.map((t) => <button key={t} className="pill xs" onClick={() => { const nt = [...tagText.split(',').map((x) => x.trim()).filter(Boolean), t]; setTagText(nt.join(', ')); upd({ tags: nt }); }}>+ {t}</button>)}</div> : null}

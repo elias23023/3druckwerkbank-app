@@ -3,7 +3,7 @@ import { useStore, availableGrams, liveProjects } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { fmtDate, fmtGrams, fmtNum, fold } from '../lib/format';
 import { PanelColumn, Panel, Stack, Stat } from '../ui/Glass';
-import { ILayers, ISpool, ICart, IPlus, IList, IStar } from '../ui/Icons';
+import { ILayers, ISpool, ICart, IPlus, IList, IStar, IX } from '../ui/Icons';
 import { FILAMENT_CATALOG } from '../types';
 
 const MCOL: Record<string, string> = { PLA: '#4ccf7a', PETG: '#ffbd6b', ABS: '#7cc6ff', TPU: '#ff6b6b', ASA: '#c59bff', PA: '#9fd4ff', PC: '#dfe9ff' };
@@ -17,7 +17,7 @@ const PROPS: Record<string, { nozzle: string; bed: string; strength: number; fle
 
 export function Material() {
   const { spools, projects, shopping, prints, settings } = useStore(useShallow((s) => ({ spools: s.spools, projects: s.projects, shopping: s.shopping, prints: s.prints, settings: s.settings })));
-  const openSheet = useStore((s) => s.openSheet); const toggleShopping = useStore((s) => s.toggleShopping); const addShopping = useStore((s) => s.addShopping);
+  const openSheet = useStore((s) => s.openSheet); const toggleShopping = useStore((s) => s.toggleShopping); const addShopping = useStore((s) => s.addShopping); const deleteShopping = useStore((s) => s.deleteShopping); const [buy, setBuy] = useState('');
   const [sort, setSort] = useState<'label' | 'avail' | 'material'>('material'); const [mat, setMat] = useState<string>('alle'); const [q, setQ] = useState(''); const [cmpTab, setCmpTab] = useState<'material' | 'produkte'>('material');
   const mats = useMemo(() => [...new Set(spools.map((s) => s.material))], [spools]);
   const list = useMemo(() => spools.filter((s) => (mat === 'alle' || s.material === mat) && (!q || fold(`${s.label} ${s.brand} ${s.colorName} ${s.location}`).includes(fold(q)))).sort((a, b) => sort === 'label' ? a.label.localeCompare(b.label) : sort === 'avail' ? availableGrams(b) - availableGrams(a) : a.material.localeCompare(b.material) || a.label.localeCompare(b.label)), [spools, sort, mat, q]);
@@ -48,16 +48,17 @@ export function Material() {
 
       <Panel title="Top Materialien" icon={<IStar />} delay={120}>
         {top.map((t) => <div key={t.m} className="row small"><span className="dot" style={{ background: MCOL[t.m] ?? '#aaa' }} /><b style={{ width: 44 }}>{t.m}</b><span className="muted grow">{fmtGrams(t.used)} verdruckt · {t.projects} Projekte</span>{settings.preferredMaterials?.includes(t.m) ? <span className="pill xs pill--acc">bevorzugt</span> : null}</div>)}
-        <div className="row" style={{ gap: 6, marginTop: 4 }}><button className="btn btn--sm" onClick={() => openSheet({ kind: 'spule' })}><IPlus width={12} height={12} /> Neue Rolle</button><button className="btn btn--sm btn--ghost" onClick={() => setSort('label')}>Lagerorte</button></div>
+        <div className="row" style={{ gap: 6, marginTop: 4 }}><button className="btn btn--sm" onClick={() => openSheet({ kind: 'spule' })}><IPlus width={12} height={12} /> Neue Rolle</button><button className="btn btn--sm btn--ghost" onClick={() => setSort('label')}>Nach Name sortieren</button></div>
       </Panel>
       </PanelColumn>
 
       <Panel title="Rollen" icon={<ISpool />} style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100}
         right={<div className="row" style={{ gap: 6 }}><input className="input" style={{ width: 130, padding: '4px 8px', fontSize: 12 }} placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} /><select className="select" style={{ width: 'auto', padding: '4px 6px', fontSize: 12 }} value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}><option value="material">nach Material</option><option value="avail">nach Verfügbarkeit</option><option value="label">nach Name / Lagerort</option></select></div>}
         foot={<><div className="pills"><button className={`pill xs${mat === 'alle' ? ' pill--on' : ''}`} onClick={() => setMat('alle')}>Alle</button>{mats.map((m) => <button key={m} className={`pill xs${mat === m ? ' pill--on' : ''}`} onClick={() => setMat(m)}>{m}</button>)}</div></>}>
+        {spools.length === 0 ? <div className="col" style={{ gap: 8, alignItems: 'flex-start' }}><p className="small">Noch keine Rolle angelegt. Mit deinen Rollen siehst du Bestand, Reservierungen und Verbrauch auf einen Blick.</p><button className="btn btn--primary btn--sm" onClick={() => openSheet({ kind: 'spule' })}><IPlus width={12} height={12} /> Erste Rolle anlegen</button></div> : list.length === 0 ? <p className="muted small">Keine Rolle passt zur Suche.</p> : null}
         <div className="spool-grid">
           {list.map((s) => (
-            <div key={s.id} className="item item--click" style={{ alignItems: 'flex-start' }} onClick={() => openSheet({ kind: 'spule', spoolId: s.id })}>
+            <div key={s.id} className="item item--click" style={{ alignItems: 'flex-start' }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') openSheet({ kind: 'spule', spoolId: s.id }); }} onClick={() => openSheet({ kind: 'spule', spoolId: s.id })}>
               <span className="swatch" style={{ background: s.colorHex }} />
               <div className="grow col" style={{ gap: 3 }}>
                 <div className="row"><b className="small ellipsis grow">{s.label}</b><span className="xs muted">{s.brand}</span></div>
@@ -86,9 +87,10 @@ export function Material() {
       <Panel title="Fehlmengen & Einkauf" icon={<ICart />} delay={200}>
         {shortages.map((x, i) => <div key={i} className="row small"><span className="pill pill--bad xs">fehlt {fmtGrams(x.missing)}</span><span className="ellipsis grow">{x.sp.label}</span><button className="btn btn--sm btn--ghost" style={{ fontSize: 11, padding: '1px 6px' }} onClick={() => addShopping({ title: `${x.sp.label} nachkaufen`, qty: '1', price: x.sp.price, projectId: x.p.id, url: x.sp.reorderUrl })}>+ Liste</button></div>)}
         {low.map((s) => <div key={s.id} className="row small"><span className="pill pill--warn xs">wenig</span><span className="ellipsis grow">{s.label}</span><span className="xs muted">{fmtGrams(availableGrams(s))}</span></div>)}
-        {shortages.length + low.length === 0 ? <p className="muted small">Bestand reicht für alle geplanten Drucke.</p> : null}
+        {shortages.length + low.length === 0 ? <p className="muted small">{spools.length ? 'Bestand reicht für alle geplanten Drucke.' : 'Noch kein Bestand erfasst.'}</p> : null}
         <div className="hr" />
-        {shopping.map((it) => <label key={it.id} className="row small" style={{ cursor: 'pointer' }}><input type="checkbox" checked={it.done} onChange={() => toggleShopping(it.id)} /><span className="grow" style={{ textDecoration: it.done ? 'line-through' : undefined }}>{it.title} <span className="muted">× {it.qty}</span></span>{it.price ? <span className="muted">{fmtNum(it.price, 2)} €</span> : null}{it.url ? <a href={it.url} target="_blank" rel="noreferrer" className="xs">Link</a> : null}</label>)}
+        {shopping.map((it) => <label key={it.id} className="row small" style={{ cursor: 'pointer' }}><input type="checkbox" checked={it.done} onChange={() => toggleShopping(it.id)} /><span className="grow" style={{ textDecoration: it.done ? 'line-through' : undefined }}>{it.title} <span className="muted">× {it.qty}</span></span>{it.price ? <span className="muted">{fmtNum(it.price, 2)} €</span> : null}{it.url && /^https?:\/\//i.test(it.url) ? <a href={it.url} target="_blank" rel="noreferrer noopener" className="xs">Link</a> : null}<button className="btn btn--icon btn--ghost" style={{ width: 20, height: 20 }} aria-label={`${it.title} von der Liste entfernen`} title="Entfernen" onClick={(e) => { e.preventDefault(); deleteShopping(it.id); }}><IX width={10} height={10} /></button></label>)}
+        <input className="input" style={{ padding: '4px 8px', fontSize: 12 }} placeholder="Auf die Einkaufsliste … (Enter)" value={buy} maxLength={80} onChange={(e) => setBuy(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && buy.trim()) { addShopping({ title: buy.trim(), qty: '1' }); setBuy(''); } }} />
         <p className="xs faint">Produktlinks lösen keine Bestellung aus.</p>
       </Panel>
       </PanelColumn>

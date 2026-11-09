@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CHECKLISTS, type Project } from '../types';
 import { useStore, suggestedProgress, availableGrams, printProgress } from '../store';
 import { Sheet } from '../ui/Sheet';
 import { Check, Progress, Stack } from '../ui/Glass';
-import { IPlus, IUp, IDown, IFlag, ICheck, IGit, IPrinter, IFile, ILayers, IHistory, ISkip, ISparkle, IImage, IWrench } from '../ui/Icons';
+import { IPlus, IUp, IDown, IFlag, ICheck, IGit, IPrinter, IFile, ILayers, IHistory, ISkip, ISparkle, IImage, IWrench, ITrash } from '../ui/Icons';
 import { fmtDate, fmtDuration, fmtGrams, relTime, id, nowIso } from '../lib/format';
 import { useNow } from '../lib/time';
 
@@ -27,9 +27,9 @@ export function MilestonesFull({ p }: { p: Project }) {
           <div key={m.id} className="item" style={{ padding: '6px 8px' }}>
             <Check on={m.done} skip={m.skipped} onClick={() => s.setMilestone(p.id, m.id, { done: !m.done, skipped: false })} />
             <span className="grow small" style={{ textDecoration: m.skipped ? 'line-through' : undefined }}>{m.title}</span>
-            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} title="Überspringen" onClick={() => s.setMilestone(p.id, m.id, { skipped: !m.skipped, done: false })}><ISkip width={12} height={12} /></button>
-            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} disabled={i === 0} onClick={() => s.moveMilestone(p.id, m.id, -1)}><IUp width={12} height={12} /></button>
-            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} disabled={i === ms.length - 1} onClick={() => s.moveMilestone(p.id, m.id, 1)}><IDown width={12} height={12} /></button>
+            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} title="Überspringen" aria-label="Überspringen" onClick={() => s.setMilestone(p.id, m.id, { skipped: !m.skipped, done: false })}><ISkip width={12} height={12} /></button>
+            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} disabled={i === 0} aria-label="Nach oben" onClick={() => s.moveMilestone(p.id, m.id, -1)}><IUp width={12} height={12} /></button>
+            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} disabled={i === ms.length - 1} aria-label="Nach unten" onClick={() => s.moveMilestone(p.id, m.id, 1)}><IDown width={12} height={12} /></button>
           </div>
         ))}
       </div>
@@ -48,9 +48,10 @@ export function TasksFull({ p }: { p: Project }) {
           <div key={t.id} className="item" style={{ padding: '6px 8px' }}>
             <Check on={t.done} skip={t.skipped} onClick={() => s.toggleTask(t.id)} />
             <span className="grow small ellipsis" style={{ textDecoration: t.skipped ? 'line-through' : undefined, opacity: t.done || t.skipped ? .6 : 1 }}>{t.title}{t.kind !== 'allgemein' ? <span className="xs faint"> · {t.kind}</span> : null}</span>
-            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} title="Überspringen" onClick={() => s.skipTask(t.id)}><ISkip width={12} height={12} /></button>
-            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} disabled={i === 0} onClick={() => s.moveTask(t.id, -1)}><IUp width={12} height={12} /></button>
-            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} disabled={i === tasks.length - 1} onClick={() => s.moveTask(t.id, 1)}><IDown width={12} height={12} /></button>
+            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} title="Überspringen" aria-label="Überspringen" onClick={() => s.skipTask(t.id)}><ISkip width={12} height={12} /></button>
+            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} disabled={i === 0} aria-label="Nach oben" onClick={() => s.moveTask(t.id, -1)}><IUp width={12} height={12} /></button>
+            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} disabled={i === tasks.length - 1} aria-label="Nach unten" onClick={() => s.moveTask(t.id, 1)}><IDown width={12} height={12} /></button>
+            <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} title="Löschen" aria-label={`Aufgabe „${t.title}“ löschen`} onClick={() => s.deleteTask(t.id)}><ITrash width={12} height={12} /></button>
           </div>
         ))}
       </div>
@@ -99,7 +100,7 @@ export function PrintsFull({ p }: { p: Project }) {
           <div key={pr.id} className="item item--click" style={{ padding: '6px 8px' }} onClick={() => s.openSheet({ kind: 'druck', printId: pr.id })}>
             <div className="grow col" style={{ gap: 2 }}>
               <div className="row"><span className="small ellipsis grow">{pr.name}</span><span className={`pill xs ${pr.status === 'läuft' ? 'pill--on' : pr.result === 'erfolg' ? 'pill--ok' : pr.result === 'fehldruck' ? 'pill--bad' : pr.result === 'nacharbeit' ? 'pill--warn' : ''}`}>{pr.status === 'fertig' ? pr.result : pr.status}</span></div>
-              {pr.status === 'läuft' ? <Progress value={printProgress(pr, now.getTime()) * 100} /> : <span className="xs muted">{pr.kind === 'test' ? 'Testdruck' : 'Finaldruck'} · {s.devices.find((d) => d.id === pr.printerId)?.name} · {fmtDuration(pr.estimatedMinutes)} · {pr.gramsUsed ?? pr.gramsPlanned} g{pr.finishedAt ? ` · ${relTime(pr.finishedAt, now.getTime())}` : ''}{pr.notes ? ` · ${pr.notes}` : ''}</span>}
+              {pr.status === 'läuft' ? <Progress value={printProgress(pr, now.getTime()) * 100} /> : <span className="xs muted">{pr.kind === 'test' ? 'Testdruck' : 'Finaldruck'} · {s.devices.find((d) => d.id === pr.printerId)?.name ?? 'Drucker'} · {fmtDuration(pr.estimatedMinutes)} · {pr.gramsUsed ?? pr.gramsPlanned} g{pr.finishedAt ? ` · ${relTime(pr.finishedAt, now.getTime())}` : ''}{pr.notes ? ` · ${pr.notes}` : ''}</span>}
             </div>
           </div>
         ))}
@@ -113,18 +114,18 @@ export function useAddPhoto(p: Project) {
   const s = useStore();
   return (file: File) => {
     const r = new FileReader();
-    r.onload = () => { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); const k = Math.min(1, 640 / Math.max(img.width, img.height)); c.width = img.width * k; c.height = img.height * k; c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height); s.addFile(p.id, { id: id('f'), name: file.name, kind: 'foto', createdAt: nowIso(), dataUrl: c.toDataURL('image/jpeg', .8), size: file.size }); s.addHistory(p.id, 'notiz', `Foto hinzugefügt: ${file.name}`); }; img.src = String(r.result); };
+    r.onload = () => { const img = new Image(); img.onerror = () => s.toast('Das Bild konnte nicht gelesen werden.'); img.onload = () => { const c = document.createElement('canvas'); const k = Math.min(1, 640 / Math.max(img.width, img.height)); c.width = img.width * k; c.height = img.height * k; c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height); s.addFile(p.id, { id: id('f'), name: file.name, kind: 'foto', createdAt: nowIso(), dataUrl: c.toDataURL('image/jpeg', .8), size: file.size }); s.addHistory(p.id, 'notiz', `Foto hinzugefügt: ${file.name}`); }; img.src = String(r.result); };
     r.readAsDataURL(file);
   };
 }
 
 export function FilesFull({ p }: { p: Project }) {
-  const addPhoto = useAddPhoto(p);
+  const addPhoto = useAddPhoto(p); const removeFile = useStore((st) => st.removeFile);
   return (
     <>
       {p.files.length === 0 ? <p className="muted small">Noch keine Dateien.</p> : (
         <div className="grid3">
-          {p.files.map((f) => <div key={f.id} className="col" style={{ alignItems: 'center', gap: 3 }} title={f.name}><div className="thumb" style={{ width: '100%', height: 64, borderRadius: 8 }}>{f.dataUrl ? <img src={f.dataUrl} alt="" /> : <span className="xs muted" style={{ textTransform: 'uppercase' }}>{f.kind}</span>}</div><span className="xs ellipsis" style={{ maxWidth: '100%' }}>{f.name}</span><span className="xs faint">{f.size ? `${(f.size / 1e6).toFixed(1)} MB` : fmtDate(f.createdAt)}</span></div>)}
+          {p.files.map((f) => <div key={f.id} className="col" style={{ alignItems: 'center', gap: 3 }} title={f.name}><div className="thumb" style={{ width: '100%', height: 64, borderRadius: 8 }}>{f.dataUrl ? <img src={f.dataUrl} alt="" /> : <span className="xs muted" style={{ textTransform: 'uppercase' }}>{f.kind}</span>}</div><span className="xs ellipsis" style={{ maxWidth: '100%' }}>{f.name}</span><span className="row xs faint" style={{ gap: 4 }}>{f.size ? `${(f.size / 1e6).toFixed(1)} MB` : fmtDate(f.createdAt)}<button className="btn btn--icon btn--ghost" style={{ width: 20, height: 20 }} title="Datei entfernen" aria-label={`${f.name} entfernen`} onClick={() => { if (confirm(`„${f.name}“ aus dem Projekt entfernen?`)) removeFile(p.id, f.id); }}><ITrash width={11} height={11} /></button></span></div>)}
         </div>
       )}
       <label className="btn btn--sm" style={{ alignSelf: 'flex-start' }}><IImage width={12} height={12} /> Foto hinzufügen<input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) addPhoto(f); e.currentTarget.value = ''; }} /></label>
@@ -155,30 +156,45 @@ export function MaterialFull({ p }: { p: Project }) {
 
 export function ToolsFull({ p }: { p: Project }) {
   const s = useStore();
-  const tools = s.devices.filter((d) => d.kind === 'werkzeug');
+  const tools = s.devices.filter((d) => d.kind === 'werkzeug').sort((a, b) => a.name.localeCompare(b.name, 'de'));
   const ids = p.toolIds ?? [];
   const col: Record<string, string> = { 'verfügbar': 'pill--ok', 'im Einsatz': 'pill--warn', fehlt: 'pill--bad' };
   return (
     <>
-      <div className="list">
-        {tools.map((t) => (
-          <label key={t.id} className="item" style={{ padding: '6px 8px', cursor: 'pointer' }}>
-            <input type="checkbox" checked={ids.includes(t.id)} onChange={(e) => s.setProjectTools(p.id, e.target.checked ? [...ids, t.id] : ids.filter((x) => x !== t.id))} />
-            <div className="grow col" style={{ gap: 0 }}><b className="small">{t.name}</b><span className="xs muted">{t.model} · {t.location}{t.notes ? ` · ${t.notes}` : ''}</span></div>
-            <select className={`select pill xs ${col[t.status] ?? ''}`} style={{ width: 'auto', padding: '2px 6px' }} value={t.status} onChange={(e) => s.setToolStatus(t.id, e.target.value as typeof t.status)}><option value="verfügbar">verfügbar</option><option value="im Einsatz">im Einsatz</option><option value="fehlt">fehlt</option></select>
-          </label>
-        ))}
-      </div>
-      <p className="xs faint">Werkzeuge sind wiederverwendbar und werden nicht wie Material verbraucht.</p>
+      {tools.length === 0 ? <p className="muted small">Noch kein Werkzeug angelegt. Leg dein erstes Werkzeug an, es wird diesem Projekt gleich zugeordnet.</p> : (
+        <div className="list">
+          {tools.map((t) => (
+            <div key={t.id} className="item" style={{ padding: '6px 8px' }}>
+              <label className="row grow" style={{ cursor: 'pointer', minWidth: 0 }}>
+                <input type="checkbox" checked={ids.includes(t.id)} onChange={(e) => s.setProjectTools(p.id, e.target.checked ? [...ids, t.id] : ids.filter((x) => x !== t.id))} />
+                <div className="grow col" style={{ gap: 0, minWidth: 0 }}><b className="small">{t.name}</b><span className="xs muted ellipsis">{[t.model, t.location, t.notes].filter(Boolean).join(' · ') || 'ohne Angaben'}</span></div>
+              </label>
+              <select className={`select pill xs ${col[t.status] ?? ''}`} style={{ width: 'auto', padding: '2px 6px' }} value={t.status} aria-label={`Status ${t.name}`} onChange={(e) => s.setToolStatus(t.id, e.target.value as typeof t.status)}><option value="verfügbar">verfügbar</option><option value="im Einsatz">im Einsatz</option><option value="fehlt">fehlt</option></select>
+              <button className="btn btn--sm btn--ghost" onClick={() => s.openSheet({ kind: 'geraetForm', deviceId: t.id, projectId: p.id })}>Bearbeiten</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}><button className="btn btn--sm btn--primary" onClick={() => s.openSheet({ kind: 'geraetForm', deviceKind: 'werkzeug', projectId: p.id })}><IPlus width={12} height={12} /> Neues Werkzeug</button><button className="btn btn--sm" onClick={() => s.openSheet({ kind: 'geraete', tab: 'werkzeuge' })}>Alle Werkzeuge verwalten</button></div>
+      <p className="xs faint">Haken setzen, um ein Werkzeug diesem Projekt zuzuordnen. Werkzeuge sind wiederverwendbar und werden nicht wie Material verbraucht.</p>
     </>
   );
+}
+
+/** Notizfeld, das beim Verlassen des Felds und beim Schließen speichert (kein Verlust bei Esc oder Klick daneben). */
+export function NotesField({ p, minHeight }: { p: Project; minHeight?: number }) {
+  const [notes, setNotes] = useState(p.notes);
+  const ref = useRef(notes); ref.current = notes;
+  const save = () => { const cur = useStore.getState().projects.find((x) => x.id === p.id); if (cur && cur.notes !== ref.current) useStore.getState().setNotes(p.id, ref.current); };
+  useEffect(() => save, [p.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <textarea className="textarea" value={notes} placeholder="Notizen zum Projekt …" onChange={(e) => setNotes(e.target.value)} onBlur={save} style={minHeight ? { minHeight } : undefined} />;
 }
 
 export function NotesFull({ p }: { p: Project }) {
   const s = useStore(); const [exp, setExp] = useState('');
   return (
     <>
-      <textarea className="textarea" defaultValue={p.notes} key={p.id} placeholder="Notizen zum Projekt …" onBlur={(e) => { if (e.target.value !== p.notes) s.setNotes(p.id, e.target.value); }} style={{ minHeight: 90 }} />
+      <NotesField p={p} key={p.id} minHeight={90} />
       <b className="small">Erfahrungen</b>
       {p.experiences.length === 0 ? <p className="muted small">Noch keine festgehalten.</p> : p.experiences.map((x, i) => <div key={i} className="row small"><ISparkle width={13} height={13} style={{ color: '#ffe29a', flex: 'none' }} /><span>{x}</span></div>)}
       <input className="input" placeholder="Erfahrung festhalten … (Enter)" value={exp} onChange={(e) => setExp(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && exp.trim()) { s.addExperience(p.id, exp.trim()); setExp(''); } }} />

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useStore, printProgress, printRemainingMin, availableGrams } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { useNow, greeting, quoteOfDay, sameDay, type DayPhase } from '../lib/time';
-import { fmtDuration, fmtNum, fmtTime, relTime, fmtGrams } from '../lib/format';
+import { fmtDuration, fmtNum, fmtTime, relTime, fmtGrams, fmtDate } from '../lib/format';
 import { bestPvWindow, todayDaily, wmo, dryWindow } from '../lib/weather';
 import { PanelColumn, Panel, Check, Progress } from '../ui/Glass';
 import { WeatherIcon } from '../ui/WeatherIcon';
@@ -39,18 +39,18 @@ export function Heute({ phase }: { phase: DayPhase }) {
         <p className="small faint" style={{ marginTop: 8 }}>{settings.location.name}</p>
       </div>
 
-      <div className="heute-time"><span>{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length} Druck{running.length === 1 ? '' : 'e'} läuft</span></div>
+      <div className="heute-time"><span>{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length === 0 ? 'kein Druck läuft' : running.length === 1 ? '1 Druck läuft' : `${running.length} Drucke laufen`}</span></div>
 
       <PanelColumn side="left" top="38%" bottom="27%" width="23%">
       <Panel title="Aktive Drucke" icon={<IPrinter />} right={<span className="pill xs">{running.length}</span>} delay={60}
-        foot={<>{printers.map((d) => <button key={d.id} className="btn btn--sm" disabled={prints.some((p) => p.printerId === d.id && p.status === 'läuft') || !queued.some((p) => p.printerId === d.id)} onClick={() => startNextPrint(d.id)}><IPlay width={12} height={12} /> {d.name}</button>)}<button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={() => navigate({ world: 'druck' })}>Alle</button></>}>
-        {running.length === 0 ? <p className="muted small">Kein Druck läuft gerade.{queued[0] ? ` Nächster: ${queued[0].name}.` : ''}</p> : running.map((p) => (
+        foot={<>{printers.length === 0 ? <button className="btn btn--sm btn--primary" onClick={() => openSheet({ kind: 'geraetForm', deviceKind: 'drucker' })}>Drucker anlegen</button> : null}{printers.filter((d) => d.status === 'bereit' && queued.some((p) => p.printerId === d.id) && !prints.some((p) => p.printerId === d.id && p.status === 'läuft')).slice(0, 2).map((d) => <button key={d.id} className="btn btn--sm" title={`Nächsten Druck auf ${d.name} starten`} onClick={() => startNextPrint(d.id)}><IPlay width={12} height={12} /> {d.name}</button>)}<button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={() => navigate({ world: 'druck' })}>Alle</button></>}>
+        {running.length === 0 ? <p className="muted small">{printers.length === 0 ? 'Noch kein Drucker angelegt.' : `Kein Druck läuft gerade.${queued[0] ? ` Nächster: ${queued[0].name}.` : ''}`}</p> : running.map((p) => (
           <div key={p.id} className="item item--click" onClick={() => openSheet({ kind: 'druck', printId: p.id })}>
             <div className="thumb--part"><ICube width={28} height={28} style={{ color: '#9fd4ff' }} /></div>
             <div className="grow col" style={{ gap: 4 }}>
               <div className="row row--between"><b className="small ellipsis">{p.name}</b><b className="small">{fmtNum(printProgress(p, now.getTime()) * 100)} %</b></div>
               <Progress value={printProgress(p, now.getTime()) * 100} />
-              <span className="xs muted">noch {fmtDuration(printRemainingMin(p, now.getTime()))} · {devices.find((d) => d.id === p.printerId)?.name} · {spools.find((s) => s.id === p.spoolId)?.label ?? pname(p.projectId)}</span>
+              <span className="xs muted ellipsis">{[p.resultDue ? 'Ergebnis buchen' : `noch ${fmtDuration(printRemainingMin(p, now.getTime()))}`, devices.find((d) => d.id === p.printerId)?.name, spools.find((s) => s.id === p.spoolId)?.label ?? pname(p.projectId)].filter(Boolean).join(' · ')}</span>
             </div>
           </div>
         ))}
@@ -89,11 +89,11 @@ export function Heute({ phase }: { phase: DayPhase }) {
 
       <div className="bottom-row">
         <Panel title="Nächste Termine" icon={<ICal />} delay={200}>
-          {upcoming.map((a) => <div key={a.id} className="row small"><span className="dot" style={{ background: '#c59bff' }} /><span className="muted" style={{ width: 52 }}>{sameDay(new Date(a.at), now) ? fmtTime(a.at) : 'Morgen'}</span><span className="ellipsis">{a.title}</span></div>)}
+          {upcoming.map((a) => <div key={a.id} className="row small"><span className="dot" style={{ background: '#c59bff' }} /><span className="muted" style={{ width: 58, flex: 'none' }}>{sameDay(new Date(a.at), now) ? fmtTime(a.at) : sameDay(new Date(a.at), new Date(now.getTime() + 86400_000)) ? 'Morgen' : fmtDate(a.at).slice(0, 6)}</span><span className="ellipsis">{a.title}</span></div>)}
           {upcoming.length === 0 ? <p className="muted small">Keine Termine.</p> : null}
         </Panel>
         <Panel title="Materialhinweis" icon={<ISpool />} delay={240}>
-          {matSpool ? <div className="row"><span className="swatch" style={{ background: matSpool.colorHex, width: 28, height: 28 }} /><div className="col grow" style={{ gap: 2 }}><b className="small">{matSpool.label}</b><span className="xs muted">{fmtGrams(availableGrams(matSpool))} frei · für {matJob?.name}</span><Progress value={(availableGrams(matSpool) / matSpool.initialGrams) * 100} /></div></div> : <p className="muted small">Kein Druck geplant.</p>}
+          {matSpool ? <div className="row"><span className="swatch" style={{ background: matSpool.colorHex, width: 28, height: 28 }} /><div className="col grow" style={{ gap: 2 }}><b className="small">{matSpool.label}</b><span className="xs muted">{fmtGrams(availableGrams(matSpool))} frei · für {matJob?.name}</span><Progress value={(availableGrams(matSpool) / Math.max(1, matSpool.initialGrams)) * 100} /></div></div> : <p className="muted small">Kein Druck geplant.</p>}
           <button className="btn btn--sm btn--ghost" style={{ alignSelf: 'flex-start' }} onClick={() => navigate({ world: 'material' })}>Material ansehen</button>
         </Panel>
         <Panel title="Wartung" icon={<IWrench />} delay={280}>

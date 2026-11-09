@@ -74,6 +74,7 @@ export function Wetter() {
       </PanelColumn>
 
       <Panel title="Nächste 24 Stunden" icon={<IClock />} style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100} right={<span className="xs faint">Kurve: Temperatur · Balken: Solarstrom-Schätzung ({settings.pvKwp} kWp)</span>}>
+        {!hours.length ? <p className="muted small">{weather?.error ? 'Die Wetterdaten sind gerade nicht erreichbar. Ein neuer Versuch folgt automatisch in wenigen Minuten.' : 'Wetter wird geladen …'}</p> : null}
         {hours.length ? <svg className="tcurve" viewBox="0 0 200 70" preserveAspectRatio="none"><polyline points={curve} fill="none" stroke="#ffbd6b" strokeWidth="1.5" vectorEffect="non-scaling-stroke" /><circle cx="0" cy={60 - ((hours[0].temp - tmin) / Math.max(1, tmax - tmin)) * 50} r="2.5" fill="#fff" /></svg> : null}
         <div className="hours">
           {hours.map((h, i) => (
@@ -90,6 +91,7 @@ export function Wetter() {
 
       <PanelColumn side="right" top="38%" bottom="2.5%" width="24%">
       <Panel title="7 Tage" icon={<ICal />} delay={140}>
+        {!(d?.daily ?? []).length ? <p className="muted small">{weather?.error ? 'Keine Vorhersage verfügbar.' : 'Wird geladen …'}</p> : null}
         <div className="days">
           {(d?.daily ?? []).map((day, i) => <div key={day.date}><span className="muted">{i === 0 ? 'Heute' : fmtDayShort(day.date)}</span><WeatherIcon code={day.code} size={18} /><span className="xs muted ellipsis">{wmo(day.code).label}</span><span><b>{fmtNum(day.tmax)}°</b> <span className="muted">{fmtNum(day.tmin)}°</span></span><span className="xs muted" style={{ textAlign: 'right' }}>{fmtNum(day.precipSum, 1)} mm</span></div>)}
         </div>

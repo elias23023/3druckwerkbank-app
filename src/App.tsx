@@ -57,6 +57,8 @@ export function App() {
   const mobile = useMedia('(max-width: 900px), (orientation: portrait) and (max-width: 1100px)');
   const motionReduced = settings.motion === 'reduziert' || (settings.motion === 'auto' && reducedPref);
   useEffect(() => { document.documentElement.dataset.motion = motionReduced ? 'reduziert' : 'voll'; }, [motionReduced]);
+  // Panels sind für 1920×1080 gesetzt: auf flacheren oder kleineren Bildschirmen werden sie als Ganzes kleiner, statt Inhalte abzuschneiden
+  useEffect(() => { const on = () => document.documentElement.style.setProperty('--ui-scale', Math.max(0.78, Math.min(1.2, window.innerWidth / 1920, window.innerHeight / 1080)).toFixed(3)); on(); window.addEventListener('resize', on); return () => window.removeEventListener('resize', on); }, []);
   const today = todayDaily(weather?.data, now);
   const phase = dayPhase(now, today?.sunrise, today?.sunset);
   const look = sceneLook(now, today?.sunrise, today?.sunset, weather?.data.hourly.length ? weather.data.current.code : undefined);
@@ -73,16 +75,18 @@ export function App() {
   }, [settings.theme, look, mobile]);
 
   // weather fetch with 30 min cache
+  const [weatherTick, setWeatherTick] = useState(0);
+  useEffect(() => { const t = setInterval(() => { if (document.visibilityState === 'visible') setWeatherTick((n) => n + 1); }, 60_000); const on = () => { if (document.visibilityState === 'visible') setWeatherTick((n) => n + 1); }; document.addEventListener('visibilitychange', on); window.addEventListener('online', on); return () => { clearInterval(t); document.removeEventListener('visibilitychange', on); window.removeEventListener('online', on); }; }, []);
   useEffect(() => {
     const age = weather ? Date.now() - new Date(weather.fetchedAt).getTime() : Infinity;
-    const stale = !weather || age > 30 * 60_000 || (!!weather.error && age > 5 * 60_000);
+    const stale = !weather || age > 30 * 60_000 || (!!weather.error && age > 3 * 60_000);
     if (!stale) return;
     const ac = new AbortController();
     fetchWeather(settings.location, ac.signal).then((data) => setWeather({ fetchedAt: new Date().toISOString(), data }))
       .catch((e) => { if (e.name !== 'AbortError') setWeather(weather?.data ? { ...weather, fetchedAt: new Date().toISOString(), error: String(e.message || e) } : { fetchedAt: new Date().toISOString(), data: emptyWeather(), error: String(e.message || e) }); });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.location.lat, settings.location.lon, weather?.fetchedAt]);
+  }, [settings.location.lat, settings.location.lon, weather?.fetchedAt, weatherTick]);
 
   useEffect(() => { tickPrints(now.getTime()); }, [now, tickPrints]);
 
@@ -92,18 +96,18 @@ export function App() {
       const t = e.target as HTMLElement;
       const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setCommand(true); return; }
-      if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (typing || e.ctrlKey || e.metaKey || e.altKey || sheet || commandOpen) return;
       const worlds: WorldId[] = ['heute', 'projekte', 'druck', 'material', 'wetter', 'archiv'];
       if (/^[1-6]$/.test(e.key)) navigate({ world: worlds[Number(e.key) - 1] });
       if (e.key === '0') navigate({ world: 'start' });
-      if (e.key === 'Escape' && route.world === 'projekte' && route.projectId && !sheet && !commandOpen) navigate({ world: 'projekte' });
-      else if (e.key === 'Escape' && route.world !== 'start' && !sheet && !commandOpen) navigate({ world: 'start' });
+      if (e.key === 'Escape' && route.world === 'projekte' && route.projectId) navigate({ world: 'projekte' });
+      else if (e.key === 'Escape' && route.world !== 'start') navigate({ world: 'start' });
     };
     window.addEventListener('keydown', on); return () => window.removeEventListener('keydown', on);
   }, [route, sheet, commandOpen, setCommand]);
 
   const active = useMemo(() => activeProjects(projects), [projects]);
-  const current = route.projectId ? projects.find((p) => p.id === route.projectId) : undefined;
+  const current = route.projectId ? projects.find((p) => p.id === route.projectId && !p.deletedAt) : undefined;
   useEffect(() => { if (route.world === 'projekte' && route.projectId && !current) navigate({ world: 'projekte' }); }, [route, current]);
   useEffect(() => { if (carousel >= active.length) setCarousel(0); }, [active.length, carousel]);
 
@@ -119,7 +123,7 @@ export function App() {
     if (pl.key === 'd-p1s') {
       const d = devices.find((x) => x.kind === 'drucker' && x.id !== settings.defaultPrinterId) ?? devices.find((x) => x.kind === 'drucker');
       const job = d ? prints.find((x) => x.printerId === d.id && x.status === 'läuft') : undefined;
-      return <Island key={pl.key} image="drucker" x={pl.x} y={pl.y} size={mobile ? 0 : pl.size} depth={pl.depth} label={d?.name ?? 'P1S'} labelSize="small" status={d ? { text: job ? `Druckt ${Math.round(printProgress(job, now.getTime()) * 100)} %` : d.status, color: job ? '#7cc6ff' : '#4ccf7a' } : undefined} onClick={d ? () => useStore.getState().openSheet({ kind: 'geraet', deviceId: d.id }) : undefined} />;
+      return <Island key={pl.key} image="drucker" x={pl.x} y={pl.y} size={mobile ? 0 : pl.size} depth={pl.depth} label={d?.name ?? 'Drucker anlegen'} labelSize="small" title={d ? `${d.name} öffnen` : 'Drucker anlegen'} status={d ? { text: job ? (job.resultDue ? 'Ergebnis buchen' : `Druckt ${Math.round(printProgress(job, now.getTime()) * 100)} %`) : d.status, color: job ? '#7cc6ff' : d.status === 'bereit' ? '#4ccf7a' : '#ffb547' } : undefined} onClick={() => useStore.getState().openSheet(d ? { kind: 'geraet', deviceId: d.id } : { kind: 'geraetForm', deviceKind: 'drucker' })} />;
     }
     if (pl.world) {
       const w = pl.world; const isStart = route.world === 'start'; const isActive = !isStart && pl.depth === 0;
@@ -130,7 +134,7 @@ export function App() {
           onClick={isActive ? undefined : () => navigate({ world: w })}>{(isActive || isStart) && w === 'heute' ? <Tagesportal compact={isStart} /> : null}</Island>
       );
     }
-    const p = projects.find((x) => x.id === pl.projectId)!;
+    const p = projects.find((x) => x.id === pl.projectId); if (!p) return null;
     const isActive = pl.depth === 0;
     return (
       <Island key={pl.key} image={p.island.libraryId} x={pl.x} y={pl.y} size={mobile && !isActive ? 0 : pl.size} depth={pl.depth} active={isActive && !!current} opacity={mobile && !isActive ? 0 : pl.opacity} label={current || isActive ? undefined : pl.label} labelSize="small" status={current || isActive || !pl.label ? undefined : { text: blocked(p.id) ? 'Blockiert' : p.stage, color: blocked(p.id) ? '#ff6b6b' : STAGE_COLOR[p.stage] ?? '#8a8f96' }} eager={isActive} halo={blocked(p.id) ? 'rgba(255,107,107,.55)' : undefined} spotlight={spot?.projectId === p.id && spot.until > now.getTime()}

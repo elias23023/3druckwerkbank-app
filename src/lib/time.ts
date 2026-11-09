@@ -45,7 +45,7 @@ export const QUOTES = [
   'Werkstattzeit ist gute Zeit.',
 ];
 export function quoteOfDay(now: Date): string {
-  const dayN = Math.floor(now.getTime() / 86400000);
+  const dayN = Math.floor((now.getTime() - now.getTimezoneOffset() * 60_000) / 86400000); // wechselt um Mitternacht Ortszeit
   return QUOTES[dayN % QUOTES.length];
 }
 

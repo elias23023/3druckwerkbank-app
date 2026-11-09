@@ -85,6 +85,8 @@ export interface PrintJob {
   status: PrintStatus; result?: 'erfolg' | 'fehldruck' | 'nacharbeit';
   estimatedMinutes: number; startedAt?: ISODate; finishedAt?: ISODate;
   gramsPlanned: number; gramsUsed?: number; booked?: boolean; notes?: string; queueOrder: number; imported?: boolean; ignored?: boolean; waitReason?: string;
+  /** geschätzte Druckzeit ist um, das Ergebnis ist noch nicht gebucht */
+  resultDue?: boolean;
 }
 export interface FileRef { id: Id; name: string; kind: 'foto' | 'skizze' | 'stl' | '3mf' | 'zeitraffer' | 'sonstiges'; createdAt: ISODate; dataUrl?: string; size?: number }
 export type HistoryType = 'angelegt' | 'meilenstein' | 'version' | 'druck' | 'entscheidung' | 'fehler' | 'erfahrung' | 'material' | 'abgeschlossen' | 'notiz';

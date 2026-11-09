@@ -5,4 +5,4 @@ require __DIR__ . '/_lib.php';
 $c = cfg();
 $u = null;
 try { $u = current_user(); } catch (Throwable $e) { $u = null; }
-ok(['configured' => true, 'google' => !empty($c['google_client_id']), 'googleClientId' => $c['google_client_id'] ?? null, 'user' => $u ? user_out($u) : null, 'php' => PHP_VERSION]);
+ok(['configured' => true, 'google' => !empty($c['google_client_id']), 'googleClientId' => $c['google_client_id'] ?? null, 'user' => $u ? user_out($u) : null]);

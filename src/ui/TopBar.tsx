@@ -41,7 +41,6 @@ export function TopBar() {
       <div className="glass chip" title={weather ? `Open-Meteo, aktualisiert ${fmtTime(weather.fetchedAt)}` : 'Wetter wird geladen'}>
         {cur ? <><WeatherIcon code={cur.code} isDay={cur.isDay} /> <span>{fmtNum(cur.temp)} °C</span><span className="muted small desktop-only">{wmo(cur.code).label}</span></> : weather?.error ? <span className="muted small">Wetter nicht verfügbar</span> : <span className="muted small">Wetter …</span>}
       </div>
-      <button className="glass chip btn--icon" onClick={() => setCommand(true)} aria-label="Suche" style={{ width: 40, height: 40 }}><ISearch /></button>
       <button className="glass chip btn--icon" onClick={() => openSheet({ kind: 'hinweise' })} aria-label={`Hinweise (${shown.length})`} style={{ width: 40, height: 40, position: 'relative' }}><IBolt />{shown.length ? <span className="badge">{shown.length}</span> : null}</button>
       <button className="glass chip btn--icon topbar__konto" onClick={() => openSheet({ kind: 'konto' })} aria-label={session ? `Konto: ${session.email}` : 'Konto'} title={session ? session.email : auth.configured ? 'Anmelden' : 'Konto'} style={{ width: 40, height: 40 }}>{avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : session ? <span className="topbar__initial">{(session.name || session.email || 'K').slice(0, 1).toUpperCase()}</span> : <IUser />}</button>
       <button className="glass chip btn--icon" onClick={() => openSheet({ kind: 'einstellungen' })} aria-label="Einstellungen" style={{ width: 40, height: 40 }}><IGear /></button>

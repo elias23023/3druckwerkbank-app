@@ -4,7 +4,9 @@ import { useStore, availableGrams, activeProjects, archivedProjects, printProgre
 import { useShallow } from 'zustand/react/shallow';
 import { navigate, useRoute } from '../router';
 import { useNow, greeting, quoteOfDay, sameDay } from '../lib/time';
-import { fmtLongDate, fmtTime, fmtNum, fmtGrams, fmtDuration, relTime, fmtDate } from '../lib/format';
+import { fmtLongDate, fmtTime, fmtNum, fmtGrams, fmtDuration, relTime, fmtDate, fmtDayShort } from '../lib/format';
+import { NotesField } from '../forms/ProjektDetail';
+import { STATUS_COLOR } from '../forms/GeraetForm';
 import { bestPvWindow, todayDaily, wmo, pvKw } from '../lib/weather';
 import { sceneLook, type Look } from '../scene/looks';
 import { resolveSeason, SEASON_META, daysUntilNextSeason } from '../lib/season';
@@ -20,10 +22,15 @@ import { STAGES, type Project } from '../types';
 import { IHome, IClock, IFlag, ILayers, IList, ISearch, IBolt, IGear, IUser, IPrinter, ISun, IArchive, IArrowL, IChevR, IPlus, ISkip, IPlay, ISpool, IWrench, ICal } from '../ui/Icons';
 
 type Tab = 'start' | 'heute' | 'projekte' | 'material' | 'mehr';
+/** Uhrzeit für heute, „Morgen“ für den Folgetag, sonst Wochentag und Datum. */
+function dayLabel(iso: string, now: Date): string {
+  const d = new Date(iso); if (sameDay(d, now)) return fmtTime(iso);
+  return sameDay(d, new Date(now.getTime() + 86400_000)) ? 'Morgen' : `${fmtDayShort(iso)} ${d.getDate()}.${d.getMonth() + 1}.`;
+}
 const STAGE_COLOR: Record<string, string> = { Idee: '#c59bff', Konstruktion: '#7cc6ff', Planung: '#7cc6ff', Vorbereitung: '#ffe29a', Druck: '#4ccf7a', Nacharbeit: '#ffb547', 'Qualität': '#ffb547', Abgeschlossen: '#8a8f96' };
 
 function Card({ title, icon, count, children, onMore }: { title?: string; icon?: React.ReactNode; count?: number | string; children: React.ReactNode; onMore?: () => void }) {
-  return <section className="glass m-card">{title ? <h3>{icon}{title}{count !== undefined ? <span className="cnt pill xs">{count}</span> : null}{onMore ? <button className="btn btn--icon btn--ghost" style={{ marginLeft: count === undefined ? 'auto' : 0 }} onClick={onMore}><IChevR /></button> : null}</h3> : null}{children}</section>;
+  return <section className="glass m-card">{title ? <h3>{icon}{title}{count !== undefined ? <span className="cnt pill xs">{count}</span> : null}{onMore ? <button className="btn btn--icon btn--ghost" style={{ marginLeft: count === undefined ? 'auto' : 0 }} onClick={onMore} aria-label={`${title}: alles anzeigen`}><IChevR /></button> : null}</h3> : null}{children}</section>;
 }
 
 export function Mobile() {
@@ -35,7 +42,7 @@ export function Mobile() {
   const today = todayDaily(s.weather?.data, now);
   const look: Look = sceneLook(now, today?.sunrise, today?.sunset, s.weather?.data.hourly.length ? s.weather.data.current.code : undefined);
   const tab: Tab = route.world === 'heute' ? 'heute' : route.world === 'projekte' ? 'projekte' : route.world === 'material' ? 'material' : route.world === 'start' ? 'start' : 'mehr';
-  const project = route.world === 'projekte' && route.projectId ? s.projects.find((p) => p.id === route.projectId) : undefined;
+  const project = route.world === 'projekte' && route.projectId ? s.projects.find((p) => p.id === route.projectId && !p.deletedAt) : undefined;
   const go = (t: Tab) => navigate({ world: t === 'mehr' ? 'druck' : t });
   // background: one of the eight painted scenes (island over the lake), chosen by tab / view
   const scene = project ? 'innen' : tab === 'mehr' ? (route.world === 'wetter' ? 'wetter' : route.world === 'archiv' ? 'archiv' : 'druck') : tab;
@@ -45,7 +52,7 @@ export function Mobile() {
     <div className="m-shell" data-look={look}>
       <div className="m-bg" aria-hidden><img key={scene} src={`/img/szene-${scene}-1280.webp`} srcSet={`/img/szene-${scene}-640.webp 640w, /img/szene-${scene}-1280.webp 1280w`} sizes="100vw" alt="" /></div>
       <header className="m-head">
-        <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
+        <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
         <span className="spacer" />
         <button className="glass m-ico" onClick={() => setCommand(true)} aria-label="Suche"><ISearch /></button>
         <button className="glass m-ico" onClick={() => openSheet({ kind: 'hinweise' })} aria-label={`Hinweise (${hints.length})`}><IBolt />{hints.length ? <span className="badge">{hints.length}</span> : null}</button>
@@ -72,12 +79,12 @@ function MStart({ now }: { now: Date }) {
   const running = prints.filter((p) => p.status === 'läuft');
   const pv = weather?.data.hourly.length ? bestPvWindow(weather.data.hourly, settings.pvKwp, 3, now) : null;
   const events = useMemo(() => {
-    const ev: { t: string; text: string; color: string }[] = [];
-    running.forEach((p) => ev.push({ t: fmtTime(new Date(new Date(p.startedAt!).getTime() + p.estimatedMinutes * 60_000)), text: `Druck fertig: ${p.name}`, color: '#7cc6ff' }));
-    appointments.filter((a) => new Date(a.at).getTime() > now.getTime() - 3600_000).forEach((a) => ev.push({ t: sameDay(new Date(a.at), now) ? fmtTime(a.at) : 'Morgen', text: a.title, color: '#c59bff' }));
-    devices.forEach((d) => d.maintenance.filter((m) => !m.done && new Date(m.due).getTime() < now.getTime() + 86400_000).forEach((m) => ev.push({ t: 'Heute', text: `${d.name}: ${m.title}`, color: '#ffb547' })));
-    tasks.filter((t) => !t.done && !t.skipped && t.due && sameDay(new Date(t.due), now)).forEach((t) => ev.push({ t: fmtTime(t.due!), text: t.title, color: '#4ccf7a' }));
-    return ev.sort((a, b) => a.t.localeCompare(b.t)).slice(0, 3);
+    const ev: { at: number; t: string; text: string; color: string }[] = [];
+    running.filter((p) => p.startedAt).forEach((p) => { const end = new Date(p.startedAt!).getTime() + p.estimatedMinutes * 60_000; ev.push({ at: end, t: p.resultDue ? 'Jetzt' : fmtTime(new Date(end)), text: p.resultDue ? `Ergebnis buchen: ${p.name}` : `Druck fertig: ${p.name}`, color: '#7cc6ff' }); });
+    appointments.filter((a) => new Date(a.at).getTime() > now.getTime() - 3600_000).forEach((a) => ev.push({ at: new Date(a.at).getTime(), t: dayLabel(a.at, now), text: a.title, color: '#c59bff' }));
+    devices.forEach((d) => d.maintenance.filter((m) => !m.done && new Date(m.due).getTime() < now.getTime() + 86400_000).forEach((m) => ev.push({ at: Math.max(now.getTime(), new Date(m.due).getTime()), t: 'Heute', text: `${d.name}: ${m.title}`, color: '#ffb547' })));
+    tasks.filter((t) => !t.done && !t.skipped && t.due && sameDay(new Date(t.due), now)).forEach((t) => ev.push({ at: new Date(t.due!).getTime(), t: fmtTime(t.due!), text: t.title, color: '#4ccf7a' }));
+    return ev.sort((a, b) => a.at - b.at).slice(0, 3);
   }, [running, appointments, devices, tasks, now]);
   return (
     <>
@@ -88,7 +95,7 @@ function MStart({ now }: { now: Date }) {
       <Card title="Läuft gerade" icon={<IPrinter />} count={running.length} onMore={() => navigate({ world: 'druck' })}>
         {running.length === 0 ? <span className="muted small">Kein Druck läuft.</span> : running.map((p) => (
           <div key={p.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'druck', printId: p.id })}>
-            <div className="col grow" style={{ gap: 5 }}><div className="row row--between"><b className="small">{p.name}</b><b className="small">{fmtNum(printProgress(p, now.getTime()) * 100)} %</b></div><Progress value={printProgress(p, now.getTime()) * 100} /><span className="xs muted">noch {fmtDuration(printRemainingMin(p, now.getTime()))} · {devices.find((d) => d.id === p.printerId)?.name} · {projects.find((x) => x.id === p.projectId)?.name}</span></div>
+            <div className="col grow" style={{ gap: 5 }}><div className="row row--between"><b className="small">{p.name}</b><b className="small">{fmtNum(printProgress(p, now.getTime()) * 100)} %</b></div><Progress value={printProgress(p, now.getTime()) * 100} /><span className="xs muted">{[p.resultDue ? 'Zeit abgelaufen, Ergebnis buchen' : `noch ${fmtDuration(printRemainingMin(p, now.getTime()))}`, devices.find((d) => d.id === p.printerId)?.name, projects.find((x) => x.id === p.projectId)?.name].filter(Boolean).join(' · ')}</span></div>
           </div>
         ))}
       </Card>
@@ -101,7 +108,7 @@ function MStart({ now }: { now: Date }) {
 
 function MHeute({ now }: { now: Date }) {
   const { tasks, appointments, devices, projects, prints, settings, weather } = useStore(useShallow((st) => ({ tasks: st.tasks, appointments: st.appointments, devices: st.devices, projects: st.projects, prints: st.prints, settings: st.settings, weather: st.weather })));
-  const a = useStore(useShallow((st) => ({ toggleTask: st.toggleTask, skipTask: st.skipTask, toggleMaintenance: st.toggleMaintenance, startNextPrint: st.startNextPrint })));
+  const a = useStore(useShallow((st) => ({ toggleTask: st.toggleTask, skipTask: st.skipTask, toggleMaintenance: st.toggleMaintenance, startNextPrint: st.startNextPrint, openSheet: st.openSheet })));
   const open = tasks.filter((t) => !t.done && !t.skipped).sort((x, y) => x.order - y.order);
   const done = tasks.filter((t) => t.done).length;
   const due = devices.flatMap((d) => d.maintenance.filter((m) => !m.done && new Date(m.due).getTime() < now.getTime() + 86400_000 * 3).map((m) => ({ d, m })));
@@ -112,16 +119,17 @@ function MHeute({ now }: { now: Date }) {
   return (
     <>
       <Card title="Aufgaben" icon={<IClock />} count={`${open.length} offen`}>
-        {open.length === 0 ? <span className="muted small">Alles erledigt. {done} erledigt.</span> : open.map((t) => (
+        {open.length === 0 ? <span className="muted small">{done ? `Alles erledigt (${done}).` : 'Noch keine Aufgaben. Aufgaben legst du im Projekt an.'}</span> : open.map((t) => (
           <div key={t.id} className="m-row"><Check on={t.done} onClick={() => a.toggleTask(t.id)} /><div className="col grow" style={{ gap: 1 }}><span>{t.title}</span><span className="xs muted">{projects.find((p) => p.id === t.projectId)?.name ?? devices.find((d) => d.id === t.deviceId)?.name ?? t.kind}{t.due ? ` · ${relTime(t.due, now.getTime())}` : ''}</span></div><button className="btn btn--icon btn--ghost" onClick={() => a.skipTask(t.id)} aria-label="Überspringen"><ISkip width={16} height={16} /></button></div>
         ))}
       </Card>
       <Card title="Drucker" icon={<IPrinter />}>
-        {printers.map((d) => { const job = prints.find((p) => p.printerId === d.id && p.status === 'läuft'); return <div key={d.id} className="m-row"><i className="dot" style={{ background: job ? '#7cc6ff' : '#4ccf7a' }} /><div className="col grow" style={{ gap: 1 }}><b className="small">{d.name}</b><span className="xs muted">{job ? `${job.name} · ${fmtNum(printProgress(job, now.getTime()) * 100)} %` : 'bereit'}</span></div>{!job && queued.some((q) => q.printerId === d.id) ? <button className="btn btn--sm btn--primary" onClick={() => a.startNextPrint(d.id)}><IPlay width={12} height={12} /> Start</button> : null}</div>; })}
+        {printers.length === 0 ? <div className="col" style={{ gap: 8 }}><span className="muted small">Noch kein Drucker angelegt.</span><button className="btn btn--primary" onClick={() => a.openSheet({ kind: 'geraetForm', deviceKind: 'drucker' })}><IPlus width={14} height={14} /> Drucker anlegen</button></div> : null}
+        {printers.map((d) => { const job = prints.find((p) => p.printerId === d.id && p.status === 'läuft'); return <div key={d.id} className="m-row m-row--click" onClick={() => a.openSheet(job ? { kind: 'druck', printId: job.id } : { kind: 'geraet', deviceId: d.id })}><i className="dot" style={{ background: job ? '#7cc6ff' : STATUS_COLOR[d.status] ?? '#4ccf7a' }} /><div className="col grow" style={{ gap: 1 }}><b className="small">{d.name}</b><span className="xs muted">{job ? (job.resultDue ? `${job.name} · Ergebnis buchen` : `${job.name} · ${fmtNum(printProgress(job, now.getTime()) * 100)} %`) : d.status}</span></div>{!job && d.status === 'bereit' && queued.some((q) => q.printerId === d.id) ? <button className="btn btn--sm btn--primary" onClick={(e) => { e.stopPropagation(); a.startNextPrint(d.id); }}><IPlay width={12} height={12} /> Start</button> : null}</div>; })}
         <span className="xs muted">{pv ? `Solarfenster ${fmtTime(pv.start)} Uhr, ≈ ${fmtNum(pv.kwh, 1)} kWh (Schätzung)` : 'Kein Solarfenster in 48 h.'}</span>
       </Card>
       <Card title="Termine & Wartung" icon={<ICal />}>
-        {upcoming.map((x) => <div key={x.id} className="m-row"><i className="dot" style={{ background: '#c59bff' }} /><span className="muted" style={{ width: 52 }}>{sameDay(new Date(x.at), now) ? fmtTime(x.at) : 'Morgen'}</span><span className="grow ellipsis">{x.title}</span></div>)}
+        {upcoming.map((x) => <div key={x.id} className="m-row"><i className="dot" style={{ background: '#c59bff' }} /><span className="muted" style={{ width: 62 }}>{dayLabel(x.at, now)}</span><span className="grow ellipsis">{x.title}</span></div>)}
         {due.map(({ d, m }) => <div key={m.id} className="m-row"><Check on={m.done} onClick={() => a.toggleMaintenance(d.id, m.id)} /><div className="col grow" style={{ gap: 1 }}><span>{d.name}: {m.title}</span><span className="xs muted">{new Date(m.due).getTime() < now.getTime() ? 'überfällig' : relTime(m.due, now.getTime())}</span></div></div>)}
         {upcoming.length + due.length === 0 ? <span className="muted small">Nichts anstehend.</span> : null}
       </Card>
@@ -135,6 +143,7 @@ function MProjekte() {
   const blocked = (p: Project) => p.requiredSpools.some((r) => { const sp = spools.find((x) => x.id === r.spoolId); return sp && availableGrams(sp) < r.grams; });
   return (
     <Card title="Projekte" icon={<IFlag />} count={list.length}>
+      {list.length === 0 ? <span className="muted small">Noch kein Projekt. Leg dein erstes Projekt an: eine Idee und ein Name reichen für den Anfang.</span> : null}
       {list.map((p) => (
         <div key={p.id} className="m-row m-row--click" onClick={() => navigate({ world: 'projekte', projectId: p.id })}>
           <div className="thumb"><img src={p.island.kind === 'eigenes' && p.island.photoDataUrl ? p.island.photoDataUrl : islandSrc(p.island.libraryId, 256)} alt="" style={{ objectFit: 'contain' }} /></div>
@@ -176,7 +185,7 @@ function MProjekt({ p, now }: { p: Project; now: Date }) {
         {p.requiredSpools.length === 0 ? <span className="muted small">Kein Bedarf hinterlegt.</span> : p.requiredSpools.map((r) => { const sp = st.spools.find((x) => x.id === r.spoolId); if (!sp) return null; const avail = availableGrams(sp); return <div key={r.spoolId} className="m-row"><span className="swatch" style={{ background: sp.colorHex }} /><div className="col grow" style={{ gap: 3 }}><div className="row row--between small"><span>{sp.label}</span><b>{r.grams} g</b></div><Stack parts={[{ value: avail, color: '#4ccf7a' }, { value: sp.reservedGrams, color: '#ffb547' }, { value: sp.initialGrams - sp.remainingGrams, color: 'rgba(255,255,255,.15)' }]} /><span className={`xs ${avail < r.grams ? 'pill pill--bad' : 'muted'}`} style={{ alignSelf: 'flex-start' }}>{avail < r.grams ? `fehlen ${fmtGrams(r.grams - avail)}` : `${fmtGrams(avail)} verfügbar`}</span></div></div>; })}
       </Card>
       <Card title="Notizen" icon={<IList />} onMore={() => st.openSheet({ kind: 'projektDetail', projectId: p.id, tab: 'notizen' })}>
-        <textarea className="textarea" defaultValue={p.notes} key={p.id} placeholder="Notizen …" onBlur={(e) => { if (e.target.value !== p.notes) st.setNotes(p.id, e.target.value); }} />
+        <NotesField p={p} key={p.id} />
       </Card>
     </>
   );
@@ -195,6 +204,7 @@ function MMaterial() {
       {shortages.length ? <Card title="Fehlmengen" icon={<IBolt />}>{shortages.map((x, i) => <span key={i} className="small" style={{ color: '#ffb0b0' }}>• {x}</span>)}</Card> : null}
       <Card title="Rollen" icon={<ISpool />}>
         <div className="pills"><button className={`pill${mat === 'alle' ? ' pill--on' : ''}`} onClick={() => setMat('alle')}>Alle</button>{mats.map((m) => <button key={m} className={`pill${mat === m ? ' pill--on' : ''}`} onClick={() => setMat(m)}>{m}</button>)}</div>
+        {spools.length === 0 ? <span className="muted small">Noch keine Rolle angelegt. Mit deinen Rollen behältst du Bestand und Verbrauch im Blick.</span> : null}
         {list.map((x) => <div key={x.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'spule', spoolId: x.id })}><span className="swatch" style={{ background: x.colorHex }} /><div className="col grow" style={{ gap: 3 }}><div className="row row--between"><b className="small">{x.label}</b><span className="xs muted">{x.brand}</span></div><Stack parts={[{ value: availableGrams(x), color: '#4ccf7a' }, { value: x.reservedGrams, color: '#ffb547' }, { value: x.initialGrams - x.remainingGrams, color: 'rgba(255,255,255,.15)' }]} /><span className="xs muted">{fmtGrams(availableGrams(x))} frei · {x.location}</span></div><IChevR className="muted" /></div>)}
         <button className="btn" onClick={() => openSheet({ kind: 'spule' })}><IPlus width={14} height={14} /> Neue Rolle</button>
       </Card>
@@ -212,9 +222,11 @@ function MMehr({ now }: { now: Date }) {
   const queue = prints.filter((p) => p.status === 'wartend').sort((a, b) => a.queueOrder - b.queueOrder);
   return (
     <>
-      <Card title="Drucker & Warteschlange" icon={<IPrinter />}>
-        {devices.filter((d) => d.kind !== 'werkzeug').map((d) => <div key={d.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'geraet', deviceId: d.id })}><i className="dot" style={{ background: d.status === 'druckt' ? '#7cc6ff' : d.status === 'bereit' ? '#4ccf7a' : '#ffb547' }} /><div className="col grow" style={{ gap: 1 }}><b className="small">{d.name}</b><span className="xs muted">{d.model} · {d.status}{d.maintenance.some((m) => !m.done && new Date(m.due).getTime() < now.getTime()) ? ' · Wartung fällig' : ''}</span></div><IChevR className="muted" /></div>)}
-        {queue.map((q, i) => <div key={q.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'druck', printId: q.id })}><span className="xs muted" style={{ width: 16 }}>{i + 1}</span><div className="col grow" style={{ gap: 1 }}><span className="small">{q.name}</span><span className="xs muted">{devices.find((d) => d.id === q.printerId)?.name} · {fmtDuration(q.estimatedMinutes)} · {q.gramsPlanned} g</span></div></div>)}
+      <Card title="Drucker & Warteschlange" icon={<IPrinter />} onMore={() => openSheet({ kind: 'geraete' })}>
+        {devices.every((d) => d.kind === 'werkzeug') ? <span className="muted small">Noch kein Gerät angelegt.</span> : null}
+        {devices.filter((d) => d.kind !== 'werkzeug').map((d) => <div key={d.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'geraet', deviceId: d.id })}><i className="dot" style={{ background: STATUS_COLOR[d.status] ?? '#ffb547' }} /><div className="col grow" style={{ gap: 1 }}><b className="small">{d.name}</b><span className="xs muted">{[d.model, d.status].filter(Boolean).join(' · ')}{d.maintenance.some((m) => !m.done && new Date(m.due).getTime() < now.getTime()) ? ' · Wartung fällig' : ''}</span></div><IChevR className="muted" /></div>)}
+        {queue.map((q, i) => <div key={q.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'druck', printId: q.id })}><span className="xs muted" style={{ width: 16 }}>{i + 1}</span><div className="col grow" style={{ gap: 1 }}><span className="small">{q.name}</span><span className="xs muted">{devices.find((d) => d.id === q.printerId)?.name ?? 'Drucker fehlt'} · {fmtDuration(q.estimatedMinutes)} · {q.gramsPlanned} g</span></div></div>)}
+        <button className="btn" onClick={() => openSheet({ kind: 'geraetForm', deviceKind: 'drucker' })}><IPlus width={14} height={14} /> Gerät hinzufügen</button>
       </Card>
       <Card title="Wetter" icon={<ISun />}>
         {cur ? <div className="row" style={{ gap: 12 }}><WeatherIcon code={cur.code} isDay={cur.isDay} size={36} /><div className="col grow"><b className="m-big">{fmtNum(cur.temp)} °C</b><span className="small muted">{wmo(cur.code).label} · Wind {fmtNum(cur.wind)} km/h · {cur.humidity} %</span></div></div> : <span className="muted small">Wetter nicht verfügbar</span>}
@@ -222,10 +234,13 @@ function MMehr({ now }: { now: Date }) {
         <span className="xs faint">Balken: Solarstrom-Schätzung · Quelle Open-Meteo</span>
       </Card>
       <Card title="Archiv" icon={<IArchive />} count={arch.length}>
+        {arch.length === 0 ? <span className="muted small">Noch nichts abgeschlossen. Fertige Projekte landen mit Bericht hier.</span> : null}
         {arch.map((p) => { const r = reports.find((x) => x.projectId === p.id); return <div key={p.id} className="m-row m-row--click" onClick={() => r ? openSheet({ kind: 'bericht', reportId: r.id }) : navigate({ world: 'projekte', projectId: p.id })}><div className="thumb"><img src={islandSrc(p.island.libraryId, 256)} alt="" style={{ objectFit: 'contain' }} /></div><div className="col grow" style={{ gap: 1 }}><b className="small">{p.name}</b><span className="xs muted">{fmtDate(p.archivedAt)}{r ? ` · ${r.result}` : ''}</span></div><IChevR className="muted" /></div>; })}
       </Card>
-      <Card title="Werkzeuge" icon={<IWrench />}>
-        {devices.filter((d) => d.kind === 'werkzeug').map((t) => <div key={t.id} className="m-row"><i className="dot" style={{ background: t.status === 'verfügbar' ? '#4ccf7a' : t.status === 'fehlt' ? '#ff6b6b' : '#ffb547' }} /><span className="grow small">{t.name}</span><span className="xs muted">{t.status}</span></div>)}
+      <Card title="Werkzeuge" icon={<IWrench />} onMore={() => openSheet({ kind: 'geraete', tab: 'werkzeuge' })}>
+        {devices.every((d) => d.kind !== 'werkzeug') ? <span className="muted small">Noch kein Werkzeug angelegt.</span> : null}
+        {devices.filter((d) => d.kind === 'werkzeug').map((t) => <div key={t.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'geraetForm', deviceId: t.id })}><i className="dot" style={{ background: STATUS_COLOR[t.status] ?? '#ffb547' }} /><span className="grow small">{t.name}</span><span className="xs muted">{t.status}</span><IChevR className="muted" /></div>)}
+        <button className="btn" onClick={() => openSheet({ kind: 'geraetForm', deviceKind: 'werkzeug' })}><IPlus width={14} height={14} /> Werkzeug anlegen</button>
       </Card>
       <div className="row" style={{ gap: 8 }}><button className="btn grow" onClick={() => openSheet({ kind: 'einstellungen' })}><IGear width={14} height={14} /> Einstellungen</button><button className="btn grow" onClick={() => openSheet({ kind: 'ueber' })}>Über diesen Entwurf</button></div>
       <p className="xs faint" style={{ textAlign: 'center', padding: '4px 0' }}>Mobiler Begleiter: Status, Aufgaben, Projekte, Material. Die vollständige räumliche Werkstatt gibt es am Desktop.</p>

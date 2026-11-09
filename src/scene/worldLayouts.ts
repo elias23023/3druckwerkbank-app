@@ -11,7 +11,7 @@ export const LABELS: Record<WorldId, [string, string]> = {
 /** Start world: six large islands in two rows. */
 export const START_POS: Record<WorldId, [number, number, number, number]> = {
   // Heute in the middle, the five others small on an ellipse around it (pentagon, point down)
-  heute: [50, 34, 38, 0], projekte: [21, 40, 14, 0.1], druck: [79, 40, 14, 0.1],
+  heute: [50, 34, 38, 0], projekte: [22, 42.5, 14, 0.1], druck: [78, 42.5, 14, 0.1],
   material: [23, 69, 14, 0.1], wetter: [50, 76, 9, 0.1], archiv: [77, 69, 14, 0.1],
 };
 export function startIslands(): Placement[] {
@@ -21,10 +21,11 @@ export function startIslands(): Placement[] {
 const RING: [number, number, number, number][] = [[12, 47, 16, 0.5], [88, 47, 16, 0.5], [29, 20, 12.5, 0.66], [71, 20, 12.5, 0.66], [50, 13, 10.5, 0.78]];
 
 /** Per-world overrides so neighbour islands stay visible beside that world's panels (side columns start lower there). */
-const HIGH_RING: typeof RING = [[11, 27, 10.5, 0.5], [89, 27, 10.5, 0.5], [25, 9, 9.5, 0.66], [75, 9, 9.5, 0.66], [50, 6, 8, 0.78]];
+// the fifth slot sits right of the search field (top centre is covered by it)
+const HIGH_RING: typeof RING = [[11, 27, 10.5, 0.5], [89, 27, 10.5, 0.5], [25, 9, 9.5, 0.66], [75, 9.5, 9.5, 0.66], [61.5, 9, 8, 0.78]];
 const RING_BY_WORLD: Partial<Record<WorldId, typeof RING>> = { heute: HIGH_RING, druck: HIGH_RING, material: HIGH_RING, wetter: HIGH_RING, archiv: HIGH_RING };
 // the main islands are wide (3:2), so they get more width than the old square sprites
-const CENTRE_BY_WORLD: Partial<Record<WorldId, [number, number, number]>> = { heute: [50, 34, 40], druck: [50, 33, 30], material: [50, 33, 30], wetter: [50, 33, 30], archiv: [50, 33, 30] };
+const CENTRE_BY_WORLD: Partial<Record<WorldId, [number, number, number]>> = { heute: [50, 34, 40], druck: [50, 34.5, 30], material: [50, 34.5, 30], wetter: [50, 34.5, 30], archiv: [50, 34.5, 30] };
 
 export function worldIslands(active: WorldId, centre?: [number, number, number]): Placement[] {
   const out: Placement[] = [];
@@ -52,8 +53,8 @@ export function projectCarousel(projects: Project[], activeIndex: number): Place
     if (r === 0) out.push({ key: `p-${p.id}`, x: 50, y: 40, size: 30, depth: 0, projectId: p.id });
     else if (r === -1) out.push({ key: `p-${p.id}`, x: 16, y: 52, size: 17, depth: 0.4, projectId: p.id, label: p.name, labelSize: 'small' });
     else if (r === 1) out.push({ key: `p-${p.id}`, x: 84, y: 52, size: 17, depth: 0.4, projectId: p.id, label: p.name, labelSize: 'small' });
-    else if (r === -2) out.push({ key: `p-${p.id}`, x: 3, y: 36, size: 10, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
-    else if (r === 2) out.push({ key: `p-${p.id}`, x: 97, y: 36, size: 10, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
+    else if (r === -2) out.push({ key: `p-${p.id}`, x: 6.5, y: 39, size: 9, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
+    else if (r === 2) out.push({ key: `p-${p.id}`, x: 93.5, y: 39, size: 9, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
     else out.push({ key: `p-${p.id}`, x: 50 + (r < 0 ? -34 : 34), y: 22, size: 6, depth: 0.92, projectId: p.id, opacity: 0.35 });
   });
   return out;
