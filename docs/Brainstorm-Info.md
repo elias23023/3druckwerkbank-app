@@ -123,7 +123,7 @@ Demodaten: fünf aktive Projekte (Sensorhalter Garten, Bewässerungsclip, Werkze
 - Weitere Wetter-Landschaften je Jahreszeit: Gewitter, Schnee, nach dem Regen (derzeit ein Regenbild für alle Jahreszeiten).
 - Nacht auf der Heute-Insel: Laterne als Lichtquelle, Mondschatten.
 - Mobiler Begleiter: was fehlt, was ist zu viel.
-- Inhalte aus „Später“ priorisieren: Druckeranbindung (Bambu), Slicer-Import, STL-Vorschau, Synchronisation / Login, Kalender.
+- Inhalte aus „Später“ priorisieren: Druckeranbindung (Bambu), Slicer-Import, STL-Vorschau, Kalender. Login und Synchronisation sind gebaut (Supabase, Google oder E-Mail), brauchen aber noch die Einrichtung nach `docs/Login-Einrichtung.md`.
 - Eigene Projektinseln: weitere Motive (Garten, Küche, Fahrzeug), Rahmen-Stile für eigene Fotos.
 - Hinweise und Konflikte: welche Regeln fehlen noch (z. B. Filament-Alter, Düsenverschleiß).
 - Energie: echte Messwerte (Shelly / Tasmota), Stromtarife.

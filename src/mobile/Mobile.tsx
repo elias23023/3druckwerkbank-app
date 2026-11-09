@@ -16,7 +16,7 @@ import { SheetHost } from '../ui/SheetHost';
 import { CommandBar } from '../ui/CommandBar';
 import { useHints } from '../ui/Hinweise';
 import { STAGES, type Project } from '../types';
-import { IHome, IClock, IFlag, ILayers, IList, ISearch, IBolt, IGear, IPrinter, ISun, IArchive, IArrowL, IChevR, IPlus, ISkip, IPlay, ISpool, IWrench, ICal } from '../ui/Icons';
+import { IHome, IClock, IFlag, ILayers, IList, ISearch, IBolt, IGear, IUser, IPrinter, ISun, IArchive, IArrowL, IChevR, IPlus, ISkip, IPlay, ISpool, IWrench, ICal } from '../ui/Icons';
 
 type Tab = 'start' | 'heute' | 'projekte' | 'material' | 'mehr';
 const STAGE_COLOR: Record<string, string> = { Idee: '#c59bff', Konstruktion: '#7cc6ff', Planung: '#7cc6ff', Vorbereitung: '#ffe29a', Druck: '#4ccf7a', Nacharbeit: '#ffb547', 'Qualität': '#ffb547', Abgeschlossen: '#8a8f96' };
@@ -48,6 +48,7 @@ export function Mobile() {
         <span className="spacer" />
         <button className="glass m-ico" onClick={() => setCommand(true)} aria-label="Suche"><ISearch /></button>
         <button className="glass m-ico" onClick={() => openSheet({ kind: 'hinweise' })} aria-label={`Hinweise (${hints.length})`}><IBolt />{hints.length ? <span className="badge">{hints.length}</span> : null}</button>
+        <button className="glass m-ico" onClick={() => openSheet({ kind: 'konto' })} aria-label="Konto"><IUser /></button>
         <button className="glass m-ico" onClick={() => openSheet({ kind: 'einstellungen' })} aria-label="Einstellungen"><IGear /></button>
       </header>
       <main className="m-main" key={tab + (project?.id ?? '')}>

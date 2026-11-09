@@ -16,7 +16,8 @@ export type SheetKind =
   | { kind: 'version'; projectId: string; versionId?: string }
   | { kind: 'abschliessen'; projectId: string }
   | { kind: 'projektDetail'; projectId: string; tab: 'meilensteine' | 'aufgaben' | 'versionen' | 'drucke' | 'dateien' | 'material' | 'werkzeuge' | 'notizen' | 'historie' }
-  | { kind: 'hinweise' };
+  | { kind: 'hinweise' }
+  | { kind: 'konto' };
 
 interface UiState { sheet?: SheetKind; commandOpen: boolean; drafts: Record<string, unknown>; toast?: { id: number; text: string }; recent: string[]; spotlight?: { projectId: string; until: number } }
 
@@ -24,6 +25,7 @@ export interface Store extends PersistedState {
   ui: UiState;
   // ui
   openSheet: (s: SheetKind) => void; closeSheet: () => void; setCommand: (open: boolean) => void;
+  applyCloudState: (state: PersistedState) => void;
   setDraft: (key: string, value: unknown) => void; clearDraft: (key: string) => void; toast: (text: string) => void;
   // settings / data mgmt
   setSettings: (patch: Partial<Settings>) => void; setWeather: (w: WeatherCache) => void;
@@ -88,6 +90,7 @@ export const useStore = create<Store>()(
           const data: PersistedState = { version: 1, seededAt: s.seededAt, projects: s.projects, devices: s.devices, spools: s.spools, tasks: s.tasks, prints: s.prints, reports: s.reports, appointments: s.appointments, shopping: s.shopping, settings: s.settings, energy: s.energy };
           return JSON.stringify(data, null, 2);
         },
+        applyCloudState: (j) => set({ version: 1, seededAt: j.seededAt, projects: j.projects, devices: j.devices ?? [], spools: j.spools ?? [], tasks: j.tasks ?? [], prints: j.prints ?? [], reports: j.reports ?? [], appointments: j.appointments ?? [], shopping: j.shopping ?? [], settings: { ...DEFAULT_SETTINGS, ...(j.settings ?? {}) }, energy: j.energy ?? [] }),
         importJson: (text) => {
           try {
             const j = JSON.parse(text);

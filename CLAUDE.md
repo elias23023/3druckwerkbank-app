@@ -13,6 +13,9 @@ Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store 
 - Neue Landschaft: `assets-src/landschaft-<jahreszeit>-<morgen|mittag|abend|nacht>.png` oder `landschaft-regen.png` → `node scripts/optimize-landscapes.mjs`; Zuordnung Look → Bild in `LOOK_PHASE` (`src/scene/looks.ts`).
 - Szene für Mobil: `assets-src/szenen/szene-<key>.png` → `node scripts/optimize-scenes.mjs`.
 
+## Konto (Supabase)
+- Login (Google, E-Mail) und Sync liegen in `src/lib/cloud.ts` und `src/ui/Konto.tsx`; Konfiguration nur über `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (`.env.production`, nicht im Git: `.env.local`). Ohne Werte ist das Feature aus. Einrichtung: `docs/Login-Einrichtung.md`. Der anon-Key ist öffentlich; Schutz kommt aus den Row-Level-Security-Regeln der Tabelle `werkstatt`.
+
 ## Prüfen
 - `npm run build` muss fehlerfrei sein. `npm run preview` + `node scripts/verify.mjs http://localhost:4173` (51 Playwright-Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code).
 - Screenshots: `node scripts/shot.mjs <url> <out.png> 1920 1080`, mit fester Uhrzeit `node scripts/shot-day.mjs <url> <out.png> 2026-11-06T13:40:00+01:00`, Mobil `node scripts/shot-mobile.mjs <base> <ordner>`. Playwright liegt unter `/opt/node-tools/node_modules/playwright/index.js`.

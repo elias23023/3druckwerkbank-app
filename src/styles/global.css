@@ -420,3 +420,15 @@ p { margin: 0; }
 @keyframes portal-rays { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes portal-twinkle { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
 :root[data-motion="reduziert"] .portal * { animation: none !important; }
+
+/* ---- Konto ---- */
+.topbar__konto img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+.topbar__initial { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: linear-gradient(135deg, #ffd27a, #f0a540); color: #3a2208; }
+.konto-google { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 10px 14px; background: #fff; color: #1f1f1f; border: 1px solid rgba(0,0,0,.12); font-weight: 600; }
+.konto-google:hover { background: #f6f6f6; }
+.konto-oder { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; color: var(--text-2); font-size: 12px; }
+.konto-oder::before, .konto-oder::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.18); }
+.konto-user { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.konto-user img, .konto-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.konto-avatar { display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; background: linear-gradient(135deg, #ffd27a, #f0a540); color: #3a2208; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }

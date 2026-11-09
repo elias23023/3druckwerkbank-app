@@ -21,6 +21,7 @@ import { Wetter } from './worlds/Wetter';
 import { Archiv } from './worlds/Archiv';
 import { Mobile } from './mobile/Mobile';
 import { Tagesportal } from './ui/Tagesportal';
+import { useSession, startSync, stopSync } from './lib/cloud';
 import { resolveSeason } from './lib/season';
 import type { LibraryIsland, WorldId } from './types';
 
@@ -60,6 +61,9 @@ export function App() {
   const phase = dayPhase(now, today?.sunrise, today?.sunset);
   const look = sceneLook(now, today?.sunrise, today?.sunset, weather?.data.hourly.length ? weather.data.current.code : undefined);
   const season = resolveSeason(settings.season, now);
+  // Konto: sobald eine Sitzung da ist, Stand laden und Änderungen synchron halten
+  const { session } = useSession();
+  useEffect(() => { if (session) void startSync(session.user.id, session.user.email ?? undefined); else stopSync(); }, [session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const theme = mobile ? 'dunkel' : settings.theme === 'auto' ? (DARK_LOOKS.has(look) ? 'dunkel' : 'hell') : settings.theme;
     document.documentElement.dataset.theme = theme;

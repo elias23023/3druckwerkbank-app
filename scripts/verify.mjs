@@ -96,6 +96,15 @@ for (const [iso, look, key] of [[`${TODAY}T06:05:00+01:00`, 'daemmerung', 'herbs
   check(`Landscape at ${iso.slice(11, 16)} (${look}) is ${key}`, (await pg.locator(`.land img[src*="landschaft-${key}-"]`).count()) >= 1 || /bedeckt|nebel|regen/.test(dl ?? ''), `${dl} ${await pg.locator('.land img').first().getAttribute('src') ?? ''}`);
   await c.close();
 }
+// ---- account sheet opens from the top bar (unconfigured install explains itself, configured one shows the login) ----
+{
+  const c = await browser.newContext(ctxOpts); const pg = await c.newPage(); const errs = []; pg.on('pageerror', (e) => errs.push(String(e)));
+  await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(500);
+  await pg.locator('.topbar button[aria-label^="Konto"]').click(); await pg.waitForTimeout(300);
+  const txt = await pg.locator('.sheet').textContent() ?? '';
+  check('Account sheet opens with login or setup hint', /Konto/.test(txt) && (/Mit Google anmelden/.test(txt) || /noch nicht eingerichtet/.test(txt)) && errs.length === 0, (txt.slice(0, 80) + ' ' + errs.join('|')).trim());
+  await c.close();
+}
 // ---- seasons: override in settings changes stage, particles and island filter ----
 {
   const c = await browser.newContext(ctxOpts); const pg = await c.newPage();

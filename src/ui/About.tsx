@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useStore } from '../store';
 import { Sheet } from './Sheet';
 import { Field, Seg } from './Glass';
-import { IGear, IInfo, IDownload, IUpload, IRefresh, ITrash } from './Icons';
+import { IGear, IInfo, IDownload, IUpload, IRefresh, ITrash, IUser } from './Icons';
 import { fmtDate, fmtNum } from '../lib/format';
 
 function storageBytes(): { total: number; photos: number } {
@@ -55,6 +55,9 @@ export function EinstellungenSheet() {
         <span className="xs muted">Gesamt: {fmtNum(energy.reduce((a, e) => a + e.wh, 0) / 1000, 2)} kWh · {fmtNum(energy.reduce((a, e) => a + (e.wh / 1000) * e.pricePerKwh, 0), 2)} € (Verbrauch × Preis). Messung und Schätzung bleiben getrennt; fehlende Werte sind keine Nullkosten.</span>
       </Field>
       <div className="hr" />
+      <Field label="Konto">
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}><button className="btn btn--sm" onClick={() => s.openSheet({ kind: 'konto' })}><IUser width={13} height={13} /> Konto &amp; Synchronisation</button><span className="xs muted">Anmelden mit Google oder E-Mail, Daten auf allen Geräten.</span></div>
+      </Field>
       <Field label="Daten">
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
           <button className="btn btn--sm" onClick={exportJson}><IDownload width={13} height={13} /> JSON exportieren</button>
