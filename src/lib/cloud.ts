@@ -15,8 +15,9 @@ export interface CloudHealth { configured: boolean; google: boolean; googleClien
 const API = '/api';
 async function call<T = Record<string, unknown>>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
   const r = await fetch(`${API}${path}`, { method: init?.method ?? (init?.json !== undefined ? 'POST' : 'GET'), credentials: 'same-origin', headers: init?.json !== undefined ? { 'Content-Type': 'application/json' } : undefined, body: init?.json !== undefined ? JSON.stringify(init.json) : undefined });
-  let j: Record<string, unknown> = {};
-  try { j = await r.json(); } catch { /* keine JSON-Antwort */ }
+  let j: Record<string, unknown> | null = null;
+  try { j = await r.json(); } catch { j = null; }
+  if (!j || typeof j !== 'object') { const e = new Error('Konto-Dienst nicht erreichbar.') as Error & { kind?: string; status?: number }; e.kind = 'no_api'; e.status = r.status; throw e; } // z. B. SPA-Fallback statt PHP
   if (!r.ok || j.ok === false) { const e = new Error(String(j.error ?? `Fehler ${r.status}`)) as Error & { kind?: string; status?: number }; e.kind = String(j.kind ?? ''); e.status = r.status; throw e; }
   return j as T;
 }
@@ -30,7 +31,7 @@ export function useAuth(): AuthState { return useSyncExternalStore((l) => { auth
 let healthPromise: Promise<void> | null = null;
 export function loadHealth(): Promise<void> {
   if (healthPromise) return healthPromise;
-  healthPromise = call<CloudHealth>('/health.php').then((h) => setAuth({ ready: true, configured: true, google: !!h.google, googleClientId: h.googleClientId ?? null, user: h.user ?? null })).catch(() => setAuth({ ready: true, configured: false, google: false, user: null }));
+  healthPromise = call<CloudHealth>('/health.php').then((h) => setAuth({ ready: true, configured: !!h.configured, google: !!h.google, googleClientId: h.googleClientId ?? null, user: h.user ?? null })).catch(() => setAuth({ ready: true, configured: false, google: false, user: null }));
   return healthPromise;
 }
 /** Beim ersten Einbinden einmal laden. */
