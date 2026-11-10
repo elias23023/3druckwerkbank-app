@@ -1,0 +1,17 @@
+{
+  "name": "3druckwerkbank-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "jose": "^5.9.6",
+    "mysql2": "^3.11.5",
+    "nodemailer": "^6.9.16",
+    "ws": "^8.18.0"
+  }
+}

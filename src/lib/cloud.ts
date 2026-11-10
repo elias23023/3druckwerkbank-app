@@ -14,8 +14,11 @@ export interface CloudUser { id: number; email: string; name?: string | null; av
 export interface CloudHealth { configured: boolean; google: boolean; googleClientId?: string | null; user: CloudUser | null }
 
 const API = '/api';
+// Umstieg von PHP auf den Node.js-Server: gleiche Aufrufe, andere Adressen (/auth.php?a=login wird /auth/login). Gesteuert beim Build über VITE_API=node.
+const NODE_API = import.meta.env.VITE_API === 'node';
+const route = (p: string) => (NODE_API ? p.replace(/\.php\?a=/, '/').replace(/\.php$/, '') : p);
 async function call<T = Record<string, unknown>>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
-  const r = await fetch(`${API}${path}`, { method: init?.method ?? (init?.json !== undefined ? 'POST' : 'GET'), credentials: 'same-origin', headers: init?.json !== undefined ? { 'Content-Type': 'application/json' } : undefined, body: init?.json !== undefined ? JSON.stringify(init.json) : undefined });
+  const r = await fetch(`${API}${route(path)}`, { method: init?.method ?? (init?.json !== undefined ? 'POST' : 'GET'), credentials: 'same-origin', headers: init?.json !== undefined ? { 'Content-Type': 'application/json' } : undefined, body: init?.json !== undefined ? JSON.stringify(init.json) : undefined });
   let j: Record<string, unknown> | null = null;
   try { j = await r.json(); } catch { j = null; }
   if (!j || typeof j !== 'object') { const e = new Error('Konto-Dienst nicht erreichbar.') as Error & { kind?: string; status?: number }; e.kind = 'no_api'; e.status = r.status; throw e; } // z. B. SPA-Fallback statt PHP

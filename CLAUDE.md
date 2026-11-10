@@ -24,6 +24,13 @@ Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store 
 ## Konto (Hostinger, PHP + MySQL)
 - Login (Google, E-Mail) und Sync: PHP in `public/api/` (`_lib.php`, `auth.php`, `state.php`, `health.php`), MySQL `u685288958_werkbank`, Konfiguration **außerhalb** des Webroots in `/werkbank-private/config.php` (Vorlage `docs/werkbank-config.example.php`; echte Werte nie ins Git). Browser-Seite `src/lib/cloud.ts`, Panel `src/ui/Konto.tsx`. `.htaccess` leitet `/api/` nicht auf `index.html` um. Google-Knopf erscheint erst mit `google_client_id` in der Konfiguration. Schema-Änderungen in `migrate()` (`_lib.php`) eintragen und `SCHEMA_VERSION` erhöhen. Sync (`src/lib/cloud.ts`) überschreibt nie still: Bei unterschiedlichen Ständen wählt der Nutzer, der Server verlangt `ifUpdatedAt` oder `force`. Einrichtung: `docs/Login-Einrichtung.md`. PHP-Dateien vor dem Deploy mit `php -l` prüfen.
 
+## Umstieg auf Node.js (Branch `server-node`, in Arbeit)
+- Ziel: gemeinsame Werkstatt mit Live-Abgleich, Fotos als Dateien, Bambu-Cloud-Anbindung. Dafür ersetzt `server/index.js` (Express, mysql2, gleiche Tabellen, gleiches Cookie- und Passwortformat) die PHP-Dateien. Der Server liefert auch die gebaute Oberfläche aus `server/public/` aus.
+- Baustelle: https://antiquewhite-falcon-428175.hostingersite.com (Node.js-Website im selben Paket, gleiche Datenbank). **3druckwerkbank.com bleibt bis zur Freigabe des Nutzers auf PHP.**
+- Konfiguration: Der Server liest die bestehende `werkbank-private/config.php` der Hauptdomain (Umgebungsvariablen haben Vorrang). Keine Zugangsdaten kopieren.
+- Bauen und ausliefern: `VITE_API=node npm run build`, `dist/` nach `server/public/` kopieren (ohne `api/`), `package.json`, `package-lock.json`, `index.js`, `public/` als `app.zip` per TUS hochladen, dann `hosting_nodejs_start-build` (express, Node 22, `entry_file: index.js`, Quelle Archiv).
+- Geprüft auf Hostinger: WebSocket und Server-Sent Events bleiben offen, ausgehende Verbindung zur Bambu-Cloud (MQTT 8883) geht.
+
 ## Prüfen
 - `npm run build` muss fehlerfrei sein. `npm run preview` + `node scripts/verify.mjs http://localhost:4173` (69 Playwright-Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code).
 - Screenshots: `node scripts/shot.mjs <url> <out.png> 1920 1080`, mit fester Uhrzeit `node scripts/shot-day.mjs <url> <out.png> 2026-11-06T13:40:00+01:00`, Mobil `node scripts/shot-mobile.mjs <base> <ordner>`. Playwright liegt unter `/opt/node-tools/node_modules/playwright/index.js`.

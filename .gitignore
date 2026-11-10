@@ -7,3 +7,4 @@ video-raw/
 screenshots/
 .env.local
 .env.*.local
+server/public/
