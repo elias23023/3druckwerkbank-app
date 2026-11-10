@@ -34,7 +34,7 @@ export interface Store extends PersistedState {
   setDraft: (key: string, value: unknown) => void; clearDraft: (key: string) => void; toast: (text: string) => void; undo: () => void;
   // settings / data mgmt
   setSettings: (patch: Partial<Settings>) => void; setLocation: (loc: Settings['location']) => void; setWeather: (w: WeatherCache) => void;
-  resetDemo: () => void; exportJson: () => string; importJson: (text: string) => { ok: boolean; error?: string };
+  resetDemo: () => void; exportJson: () => string; importJson: (text: string, mode?: 'ersetzen' | 'hinzufuegen') => { ok: boolean; error?: string; added?: number };
   // projects
   upsertProject: (p: Project) => void; deleteProject: (pid: string) => void; duplicateProject: (pid: string) => string;
   toggleFavorite: (pid: string) => void; setProgress: (pid: string, progress: number, manual?: boolean) => void; setStage: (pid: string, stage: Project['stage']) => void;
@@ -162,13 +162,19 @@ export const useStore = create<Store>()(
         // Live-Abgleich: Daten ersetzen, die Oberfläche (offene Panels, Entwürfe) bleibt unberührt
         applyLive: (j) => set(() => ({ ...normalizeState(j) })),
         applyCloudState: (j) => set((s) => ({ ...normalizeState(j), ui: { ...s.ui, sheet: s.ui.sheet && ['konto', 'einstellungen', 'bereich', 'ueber'].includes(s.ui.sheet.kind) ? s.ui.sheet : undefined } })),
-        importJson: (text) => {
+        importJson: (text, mode = 'ersetzen') => {
           try {
             const j = JSON.parse(text);
             if (!j || j.version !== 1 || !Array.isArray(j.projects)) return { ok: false, error: 'Keine gültige 3Druckwerkbank-Datei (version 1 erwartet).' };
             try { localStorage.setItem(`${storageName}:vor-import`, get().exportJson()); } catch { /* Speicher voll: ohne Kopie */ }
+            if (mode === 'hinzufuegen') {
+              // zusammenführen: nur Einträge, deren Kennung es noch nicht gibt; Einstellungen bleiben
+              const n = normalizeState(j); const cur = get(); let added = 0;
+              const join = <T extends { id: string }>(have: T[], more: T[]) => { const ids = new Set(have.map((x) => x.id)); const extra = more.filter((x) => !ids.has(x.id)); added += extra.length; return [...have, ...extra]; };
+              set({ projects: join(cur.projects, n.projects), devices: join(cur.devices, n.devices), spools: join(cur.spools, n.spools), tasks: join(cur.tasks, n.tasks), prints: join(cur.prints, n.prints), reports: join(cur.reports, n.reports), appointments: join(cur.appointments, n.appointments), shopping: join(cur.shopping, n.shopping), energy: join(cur.energy ?? [], n.energy ?? []) });
+              return { ok: true, added };
+            }
             set((s) => ({ ...normalizeState(j), ui: { ...s.ui, sheet: undefined, drafts: {} } }));
-            get().toast('Daten importiert');
             return { ok: true };
           } catch (e) { return { ok: false, error: (e as Error).message }; }
         },

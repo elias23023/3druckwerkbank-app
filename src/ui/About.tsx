@@ -48,7 +48,7 @@ function OrtFeld() {
 export function EinstellungenSheet() {
   const s = useStore();
   const st = s.settings;
-  const file = useRef<HTMLInputElement>(null);
+  const file = useRef<HTMLInputElement>(null); const addFile = useRef<HTMLInputElement>(null);
   const [err, setErr] = useState('');
   const [en, setEn] = useState({ wh: '', projectId: '', source: 'messung' as 'messung' | 'schaetzung', note: '' });
   const exportJson = () => { const blob = new Blob([s.exportJson()], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `3druckwerkbank-export-${new Date().toISOString().slice(0, 10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
@@ -105,6 +105,8 @@ export function EinstellungenSheet() {
           <button className="btn btn--sm" onClick={exportJson}><IDownload width={13} height={13} /> JSON exportieren</button>
           <button className="btn btn--sm" onClick={() => file.current?.click()}><IUpload width={13} height={13} /> JSON importieren</button>
           <input ref={file} type="file" accept="application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; f.text().then((t) => { if (confirm('Import ersetzt alle aktuellen Daten in diesem Browser. Fortfahren?')) { const r = s.importJson(t); setErr(r.ok ? '' : r.error ?? 'Fehler'); } }); e.currentTarget.value = ''; }} />
+          <button className="btn btn--sm" title="Fügt die Einträge einer Datei zu deinen Daten hinzu, ohne etwas zu ersetzen" onClick={() => addFile.current?.click()}><IUpload width={13} height={13} /> Aus Datei hinzufügen</button>
+          <input ref={addFile} type="file" accept="application/json" aria-label="Aus Datei hinzufügen" hidden onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; f.text().then((t) => { const r = s.importJson(t, 'hinzufuegen'); setErr(r.ok ? '' : r.error ?? 'Fehler'); }); e.currentTarget.value = ''; }} />
           <button className="btn btn--sm btn--ghost btn--danger" onClick={() => { if (confirm(isDemo ? 'Alle Daten durch die Demodaten ersetzen?' : 'Wirklich alle Projekte, Rollen, Drucke und Termine in „Meine Werkstatt“ löschen? Deine Geräte, Werkzeuge und Einstellungen bleiben. Bist du angemeldet, wird der leere Stand auch in dein Konto übernommen.')) s.resetDemo(); }}><IRefresh width={13} height={13} /> {isDemo ? 'Demodaten zurücksetzen' : 'Werkstatt leeren'}</button>
         </div>
         {err ? <span className="pill pill--bad xs">{err}</span> : null}
