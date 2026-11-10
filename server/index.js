@@ -14,6 +14,7 @@ import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { migrateWorkshops, mountWorkshops } from './workshops.js';
 
 import os from 'node:os';
 
@@ -67,6 +68,7 @@ async function migrate() {
   // registrations waiting for the confirmation link from the mail
   await q(`CREATE TABLE IF NOT EXISTS pending (token_hash CHAR(64) PRIMARY KEY, email VARCHAR(190) NOT NULL, password_hash VARCHAR(255) NOT NULL, expires_at DATETIME NOT NULL, INDEX (email), INDEX (expires_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await q(`CREATE TABLE IF NOT EXISTS attempts (ip VARBINARY(45) NOT NULL, at DATETIME NOT NULL, INDEX (ip, at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await migrateWorkshops(q);
 }
 
 // ---- helpers shared by the routes ----
@@ -193,7 +195,7 @@ api.use((req, res, next) => {
 // small bodies everywhere; the large one only for /state and only after the session has been checked (see putState)
 const smallBody = express.json({ limit: '10kb' });
 const bigBody = express.json({ limit: '13mb' });
-api.use((req, res, next) => (req.path === '/state' ? next() : smallBody(req, res, next)));
+api.use((req, res, next) => (req.path === '/state' || /^\/workshops\/\d+\/ops$/.test(req.path) ? next() : smallBody(req, res, next)));
 api.use((req, _res, next) => (configured || req.path === '/health' ? next() : next(new ApiError(503, 'Konto-Dienst nicht eingerichtet (Konfiguration fehlt).', 'not_configured'))));
 
 api.get('/health', wrap(async (req, res) => {
@@ -352,11 +354,12 @@ const putState = wrap(async (req, res) => {
   } catch (e) { try { await conn.rollback(); } catch { /* already closed */ } throw e; } finally { conn.release(); }
 });
 api.put('/state', gate, putState); api.post('/state', gate, putState);
+mountWorkshops(api, { q, one, pool, requireUser, fail, wrap, sha256, str, validEmail, throttle, mayMail, sendMail, mailReady: () => mailReady, BASE_URL, bigBody, writeLimit });
 api.use((_req, _res, next) => next(new ApiError(404, 'Unbekannte Aktion.')));
 // errors always as a short JSON answer; details only in the server log
 api.use((err, req, res, _next) => {
   if (err instanceof ApiError) return res.status(err.status).json({ ok: false, error: err.message, kind: err.kind });
-  if (err?.type === 'entity.too.large') return res.status(413).json({ ok: false, error: req.path === '/state' ? 'Der Stand ist zu groß (über 12 MB). Bitte große Fotos verkleinern.' : 'Die Anfrage ist zu groß.', kind: 'error' });
+  if (err?.type === 'entity.too.large') return res.status(413).json({ ok: false, error: req.path === '/state' || req.path.endsWith('/ops') ? 'Der Stand ist zu groß (über 12 MB). Bitte große Fotos verkleinern.' : 'Die Anfrage ist zu groß.', kind: 'error' });
   if (err?.type === 'entity.parse.failed') return res.status(400).json({ ok: false, error: 'Ungültige Anfrage.', kind: 'error' });
   console.error('api error:', err?.code ?? err?.name ?? 'error'); // no message text: it can contain data
   const db = ['ECONNREFUSED', 'PROTOCOL_CONNECTION_LOST', 'ER_ACCESS_DENIED_ERROR', 'ETIMEDOUT'].includes(err?.code);
