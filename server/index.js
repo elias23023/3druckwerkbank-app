@@ -23,6 +23,9 @@ import os from 'node:os';
  */
 function loadConfig() {
   const e = process.env; const out = { ...e };
+  if (!out.DB_PASS && out.DB_PASSWORD) out.DB_PASS = out.DB_PASSWORD; // name used by Hostinger's database setup
+  // a database from the environment is used as a whole: never mix its name with the password of another database from the file
+  const ownDb = !!(out.DB_NAME || out.DB_USER || out.DB_PASS);
   // the app directory lies below .../domains/<domain>/; the PHP config belongs to the main domain next to its public_html
   const here = path.dirname(fileURLToPath(import.meta.url)); const cut = here.indexOf('/domains/');
   const rel = ['3druckwerkbank.com', 'werkbank-private', 'config.php'];
@@ -30,9 +33,8 @@ function loadConfig() {
   try {
     const file = candidates.find((c) => fs.existsSync(c)); if (!file) throw new Error('none');
     const php = fs.readFileSync(file, 'utf8'); const map = { db_name: 'DB_NAME', db_user: 'DB_USER', db_pass: 'DB_PASS', google_client_id: 'GOOGLE_CLIENT_ID', mail_from: 'MAIL_FROM', base_url: 'BASE_URL' };
-    for (const m of php.matchAll(/'(\w+)'\s*=>\s*'((?:[^'\\]|\\.)*)'/g)) { const k = map[m[1]]; if (k && !out[k]) out[k] = m[2].replace(/\\(['\\])/g, '$1'); }
+    for (const m of php.matchAll(/'(\w+)'\s*=>\s*'((?:[^'\\]|\\.)*)'/g)) { const k = map[m[1]]; if (k && !out[k] && !(ownDb && k.startsWith('DB_'))) out[k] = m[2].replace(/\\(['\\])/g, '$1'); }
   } catch { /* no PHP config here: environment only */ }
-  if (!out.DB_PASS && out.DB_PASSWORD) out.DB_PASS = out.DB_PASSWORD; // name used by Hostinger's database setup
   return out;
 }
 const env = loadConfig();
@@ -157,7 +159,7 @@ app.set('trust proxy', Number(env.TRUST_PROXY ?? 1)); // number of proxies in fr
 app.set('query parser', 'simple');
 app.disable('x-powered-by');
 // Content-Security-Policy as a second line of defence: only our own scripts plus Google sign-in; styles need 'unsafe-inline' (React inline styles)
-const CSP = ["default-src 'self'", "script-src 'self' https://accounts.google.com", "style-src 'self' 'unsafe-inline' https://accounts.google.com", "img-src 'self' data: blob: https:", "font-src 'self' data:",
+const CSP = ["default-src 'self'", "script-src 'self' https://accounts.google.com", "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com", "img-src 'self' data: blob: https:", "font-src 'self' data: https://fonts.gstatic.com",
   "connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://accounts.google.com", "frame-src https://accounts.google.com", "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'", "object-src 'none'"].join('; ');
 app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Strict-Transport-Security': 'max-age=15552000', 'Content-Security-Policy': CSP,
   'Permissions-Policy': 'geolocation=(self), camera=(), microphone=(), payment=(), usb=()', 'Cross-Origin-Opener-Policy': 'same-origin-allow-popups' }); next(); });

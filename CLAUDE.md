@@ -30,6 +30,9 @@ Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store 
 - Konfiguration: Der Server liest die bestehende `werkbank-private/config.php` der Hauptdomain (Umgebungsvariablen haben Vorrang). Keine Zugangsdaten kopieren.
 - Bauen und ausliefern: `VITE_API=node npm run build`, `dist/` nach `server/public/` kopieren (ohne `api/`), `package.json`, `package-lock.json`, `index.js`, `public/` als `app.zip` per TUS hochladen, dann `hosting_nodejs_start-build` (express, Node 22, `entry_file: index.js`, Quelle Archiv).
 - Geprüft auf Hostinger: WebSocket und Server-Sent Events bleiben offen, ausgehende Verbindung zur Bambu-Cloud (MQTT 8883) geht.
+- Die Baustelle hat eine **eigene Datenbank** `u685288958_wb_test` (Umgebungsvariablen `DB_*` der Website); sie arbeitet nicht auf den echten Konten. Testkonto dort: `werkbank-test2@example.com`.
+- Sicherheit im Node-Server (Audit vom 10.11.): kleine Anfragegrenze, große nur für `/state` nach der Sitzungsprüfung; Limits je Aktion (`throttle`, `hit`, `count`); `checkState` prüft jeden gespeicherten Stand; CSP in `CSP` (neue Fremdadressen dort eintragen, sonst blockiert der Browser sie); Cookie `__Host-wb_session`, 30 Tage gleitend; `trust proxy` 1 ist an der Hostinger-Kette geprüft. Vor jedem Einspielen `npm audit` in `server/`.
+- Offen aus dem Audit: Registrierung verrät, ob eine Adresse ein Konto hat (braucht Mailversand mit Bestätigung).
 
 ## Prüfen
 - `npm run build` muss fehlerfrei sein. `npm run preview` + `node scripts/verify.mjs http://localhost:4173` (69 Playwright-Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code).
