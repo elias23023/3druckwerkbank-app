@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 
 export const COLLECTIONS = ['projects', 'devices', 'spools', 'tasks', 'prints', 'reports', 'appointments', 'shopping', 'energy', 'settings'];
 const ROLES = ['owner', 'editor', 'reader'];
+const FILE_URL = /^\/api\/files\/[a-f0-9]{32}$/; // a file stored by files.js
 const IMAGE_DATA = /^data:image\/(jpeg|png|webp|gif|avif);base64,[A-Za-z0-9+/=]+$/;
 const MAX_ITEM_BYTES = 3 * 1024 * 1024;
 const MAX_OPS = 2000;
@@ -26,11 +27,12 @@ export function checkItem(coll, id, value, fail) {
   if (value === null) return;
   if (!value || typeof value !== 'object' || Array.isArray(value)) bad('Aufbau');
   if (coll !== 'settings' && value.id !== id) bad('Kennung');
-  const image = (v) => v === undefined || v === null || (typeof v === 'string' && IMAGE_DATA.test(v));
+  const image = (v) => v === undefined || v === null || (typeof v === 'string' && (IMAGE_DATA.test(v) || FILE_URL.test(v)));
+  const link = (v) => v === undefined || v === null || (typeof v === 'string' && FILE_URL.test(v));
   if (coll === 'projects') {
     if (!image(value.island?.photoDataUrl)) bad('Bild');
     if (value.files !== undefined && !Array.isArray(value.files)) bad('Dateien');
-    for (const f of value.files ?? []) if (!f || typeof f !== 'object' || !image(f.dataUrl)) bad('Bild');
+    for (const f of value.files ?? []) if (!f || typeof f !== 'object' || !image(f.dataUrl) || !link(f.url)) bad('Bild');
   }
   if (coll === 'shopping' && value.url !== undefined && value.url !== null && value.url !== '' && !(typeof value.url === 'string' && /^https?:\/\//i.test(value.url) && value.url.length <= 2000)) bad('Link');
 }
@@ -104,7 +106,7 @@ export function mountWorkshops(api, d) {
   api.post('/workshops/:id/delete', wrap(async (req, res) => {
     const { id } = await access(req, 'owner');
     if (Number((await one('SELECT personal FROM workshops WHERE id = ?', [id])).personal)) fail(400, 'Die persönliche Werkstatt lässt sich nicht löschen.');
-    await q('DELETE FROM workshops WHERE id = ?', [id]); tell(id, { gone: true }); res.json({ ok: true });
+    await q('DELETE FROM workshops WHERE id = ?', [id]); tell(id, { gone: true }); for (const fn of d.gone ?? []) { try { fn(id); } catch { /* cleanup only */ } } res.json({ ok: true });
   }));
 
   // entries changed since a revision (0 = everything that exists)
@@ -202,4 +204,5 @@ export function mountWorkshops(api, d) {
     if ((await roleOf(uid, id)) === 'owner') fail(400, 'Die Eigentümerin oder der Eigentümer kann die Werkstatt nicht verlassen.');
     await q('DELETE FROM members WHERE workshop_id = ? AND user_id = ?', [id, uid]); tell(id, { members: true, removed: uid }); res.json({ ok: true });
   }));
+  return { access, tell };
 }

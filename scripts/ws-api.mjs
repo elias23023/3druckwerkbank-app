@@ -32,8 +32,32 @@ r = await A(`/workshops/${W}/items?since=0`); ok('full load leaves deleted entri
 r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'projects', id: 'p-2', value: { id: 'p-2', files: [{ id: 'f', dataUrl: 'https://example.org/x.png' }] } }] } }); ok('foreign picture address refused', r.s === 400, String(r.s));
 r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'settings', id: 'u1', value: { theme: 'hell' } }] } }); ok('foreign settings refused', r.s === 403, String(r.s));
 r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'users', id: 'x', value: { id: 'x' } }] } }); ok('unknown list refused', r.s === 400, String(r.s));
+// files as real files
+const cookieB = (await B('/auth/me')).cookie(), cookieC = (await C('/auth/me')).cookie();
+const up = (cookie, body, name) => fetch(`${H}/api/workshops/${W}/files`, { method: 'POST', headers: { Origin: H, Cookie: cookie, 'Content-Type': 'application/octet-stream', 'X-File-Name': encodeURIComponent(name) }, body }).then(async (x) => ({ s: x.status, j: await x.json().catch(() => ({})) }));
+const get = (cookie, url) => fetch(H + url, { headers: cookie ? { Cookie: cookie } : {} }).then(async (x) => ({ s: x.status, type: x.headers.get('content-type'), disp: x.headers.get('content-disposition') ?? '', buf: Buffer.from(await x.arrayBuffer()) }));
+const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+r = await (await fetch(H + '/api/health')).json(); ok('file store ready', r.files === true, JSON.stringify(r));
+let f1 = await up(cookieB, png, 'Foto ä.png'); ok('editor uploads a picture', f1.s === 200 && f1.j.image === true && /^\/api\/files\/[a-f0-9]{32}$/.test(f1.j.url ?? ''), JSON.stringify(f1));
+let g = await get(cookieA, f1.j.url); ok('member reads the same bytes inline', g.s === 200 && g.type === 'image/png' && g.buf.equals(png) && g.disp.startsWith('inline'), `${g.s} ${g.type} ${g.disp}`);
+g = await get(cookieC, f1.j.url); ok('stranger cannot read the file', g.s === 404, String(g.s));
+g = await get('', f1.j.url); ok('no file without a session', g.s === 401, String(g.s));
+const f2 = await up(cookieB, Buffer.from('<html><script>alert(1)</script></html>'), 'böse.html'); g = await get(cookieA, f2.j.url ?? '/x');
+ok('other files only as a download', f2.s === 200 && f2.j.image === false && g.type === 'application/octet-stream' && g.disp.startsWith('attachment'), `${f2.s} ${g.type} ${g.disp}`);
+r = await up(cookieC, png, 'x.png'); ok('stranger cannot upload', r.s === 404, String(r.s));
+r = await up(cookieB, Buffer.alloc(0), 'leer.bin'); ok('empty file refused', r.s === 400, String(r.s));
+r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'projects', id: 'p-3', value: { id: 'p-3', files: [{ id: 'f', dataUrl: f1.j.url }, { id: 'g', url: f2.j.url }] } }] } }); ok('entry may point to stored files', r.s === 200, JSON.stringify(r.j));
+r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'projects', id: 'p-4', value: { id: 'p-4', files: [{ id: 'g', url: 'https://example.org/x.stl' }] } }] } }); ok('foreign file address refused', r.s === 400, String(r.s));
+r = await C(`/files/${f2.j.url.split('/').pop()}/delete`, { json: {} }); ok('stranger cannot delete a file', r.s === 404, String(r.s));
+r = await B(`/files/${f2.j.url.split('/').pop()}/delete`, { json: {} }); g = await get(cookieA, f2.j.url); ok('editor deletes a file', r.s === 200 && g.s === 404, `${r.s} ${g.s}`);
+// printers through the Bambu cloud: only the rights, no real sign-in
+r = await B(`/workshops/${W}/bambu`); ok('member sees the printer link status', r.s === 200 && r.j.linked === false && r.j.canManage === false && r.j.status === 'aus', JSON.stringify(r.j));
+r = await B(`/workshops/${W}/bambu/login`, { json: { account: 'x@example.com', password: 'x' } }); ok('only the owner may link printers', r.s === 403, String(r.s));
+r = await A(`/workshops/${W}/bambu/login`, { json: { account: 'keine-adresse', password: 'x' } }); ok('link needs a valid account address', r.s === 400 || r.s === 503, String(r.s));
 r = await A(`/workshops/${W}/members/${idB}`, { json: { role: 'reader' } }); ok('A makes B a reader', r.s === 200);
 r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'tasks', id: 't-2', value: { id: 't-2', title: 'x' } }] } }); ok('reader cannot write', r.s === 403 && r.j.kind === 'forbidden', JSON.stringify(r.j));
+r = await up(cookieB, png, 'y.png'); ok('reader cannot upload', r.s === 403, String(r.s));
+g = await get(cookieB, f1.j.url); ok('reader can still read files', g.s === 200, String(g.s));
 r = await B(`/workshops/${W}/invites`, { json: { email: mailC } }); ok('reader cannot invite', r.s === 403, String(r.s));
 r = await A(`/workshops/${W}/members`); ok('member list', r.s === 200 && r.j.members.length === 2 && r.j.members[0].role === 'owner', JSON.stringify(r.j).slice(0, 160));
 r = await B(`/workshops/${W}/members/${idB}/remove`, { json: {} }); ok('B leaves', r.s === 200);

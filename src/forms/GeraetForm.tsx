@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useBambu } from '../lib/bambu';
 import { useStore } from '../store';
 import { Sheet } from '../ui/Sheet';
 import { Field, Seg } from '../ui/Glass';
@@ -30,6 +31,7 @@ export function GeraetForm({ deviceId, deviceKind, projectId, returnTo }: { devi
   const existing = deviceId ? s.devices.find((x) => x.id === deviceId) : undefined;
   const [d, setD] = useState<Device>(() => existing ?? blank(deviceKind ?? 'drucker'));
   const printers = s.devices.filter((x) => x.kind === 'drucker' && x.id !== d.id);
+  const bambu = useBambu();
   const [isDefault, setIsDefault] = useState(existing ? s.settings.defaultPrinterId === existing.id : s.devices.every((x) => x.kind !== 'drucker'));
   const upd = (p: Partial<Device>) => setD((cur) => ({ ...cur, ...p }));
   const back = () => { if (projectId) s.openSheet({ kind: 'projektDetail', projectId, tab: 'werkzeuge' }); else if (returnTo) s.openSheet({ kind: 'geraete', tab: returnTo }); else if (existing && existing.kind !== 'werkzeug') s.openSheet({ kind: 'geraet', deviceId: existing.id }); else s.closeSheet(); };
@@ -67,6 +69,7 @@ export function GeraetForm({ deviceId, deviceKind, projectId, returnTo }: { devi
         <Field label={d.kind === 'werkzeug' ? 'Typ / Hersteller' : 'Modell'}><input className="input" value={d.model} maxLength={80} onChange={(e) => upd({ model: e.target.value })} placeholder={ph[1]} /></Field>
         <Field label={d.kind === 'werkzeug' ? 'Aufbewahrungsort' : 'Standort'}><input className="input" value={d.location} maxLength={80} onChange={(e) => upd({ location: e.target.value })} placeholder={ph[2]} /></Field>
         <Field label="Status"><select className="select" value={d.status} disabled={d.status === 'druckt'} onChange={(e) => upd({ status: e.target.value as Device['status'] })}>{statuses.map((x) => <option key={x} value={x}>{x}</option>)}</select></Field>
+        {d.kind === 'drucker' && (bambu.devices.length > 0 || d.bambuId) ? <Field label="Bambu-Drucker (Live-Stand)"><select className="select" value={d.bambuId ?? ''} onChange={(e) => upd({ bambuId: e.target.value || undefined })}><option value="">nicht verknüpft</option>{d.bambuId && !bambu.devices.some((x) => x.id === d.bambuId) ? <option value={d.bambuId}>verknüpft (gerade nicht erreichbar)</option> : null}{bambu.devices.map((x) => <option key={x.id} value={x.id}>{x.name}{x.model ? ` · ${x.model}` : ''}</option>)}</select></Field> : null}
         {d.kind === 'drucker' ? <Field label="Düse"><input className="input" value={d.nozzle ?? ''} maxLength={40} onChange={(e) => upd({ nozzle: e.target.value || undefined })} placeholder="0,4 mm" /></Field> : null}
         {d.kind === 'drucker' ? <Field label="Leistung im Druck (W)"><input className="input" type="number" min={0} step={10} value={d.wattage ?? ''} onChange={(e) => upd({ wattage: e.target.value ? Math.max(0, Number(e.target.value)) : undefined })} /></Field> : null}
         {d.kind !== 'werkzeug' ? <Field label="Betriebsstunden"><input className="input" type="number" min={0} step={1} value={Number.isFinite(d.hoursTotal) ? Math.round(d.hoursTotal * 10) / 10 : 0} onChange={(e) => upd({ hoursTotal: Math.max(0, Number(e.target.value) || 0) })} /></Field> : null}

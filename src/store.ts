@@ -70,7 +70,9 @@ const str = (v: unknown, fallback = '') => (typeof v === 'string' ? v : fallback
 const num = (v: unknown, fallback = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 /** Bilder nur als eingebettete Bilddaten: eine fremde Adresse würde beim Anzeigen von jedem Browser abgerufen. */
 const IMAGE_DATA = /^data:image\/(jpeg|png|webp|gif|avif);base64,/;
-const imageData = (v: unknown) => (typeof v === 'string' && IMAGE_DATA.test(v) ? v : undefined);
+const FILE_URL = /^\/api\/files\/[a-f0-9]{32}$/; // Datei auf dem eigenen Server
+const imageData = (v: unknown) => (typeof v === 'string' && (IMAGE_DATA.test(v) || FILE_URL.test(v)) ? v : undefined);
+const fileUrl = (v: unknown) => (typeof v === 'string' && FILE_URL.test(v) ? v : undefined);
 const DEFAULT_ISLAND: Project['island'] = { kind: 'bibliothek', libraryId: 'werkstatt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } };
 /** Fremde Daten (Import, Konto, alter Speicher) so ergänzen, dass die Oberfläche nie auf fehlende Felder trifft. */
 export function normalizeState(j: Partial<PersistedState> | null | undefined): Omit<PersistedState, 'weather'> {
@@ -79,7 +81,7 @@ export function normalizeState(j: Partial<PersistedState> | null | undefined): O
     ...p, name: str(p.name, 'Ohne Namen'), description: str(p.description), type: str(p.type, 'Sonstiges / Universal'), areas: arr<string>(undefined).concat(Array.isArray(p.areas) ? p.areas.filter((x) => typeof x === 'string') : []), tags: Array.isArray(p.tags) ? p.tags.filter((x) => typeof x === 'string') : [],
     stage: (STAGES.includes(p.stage) ? p.stage : 'Idee') as Project['stage'], progress: clamp(num(p.progress), 0, 100), favorite: !!p.favorite, createdAt: str(p.createdAt, nowIso()), updatedAt: str(p.updatedAt, nowIso()),
     island: p.island && typeof p.island === 'object' && typeof p.island.libraryId === 'string' ? { ...DEFAULT_ISLAND, ...p.island, photoDataUrl: imageData(p.island.photoDataUrl), kind: (p.island.kind === 'eigenes' && imageData(p.island.photoDataUrl) ? 'eigenes' : 'bibliothek') as Project['island']['kind'], frame: { ...DEFAULT_ISLAND.frame, ...(p.island.frame ?? {}) } } : DEFAULT_ISLAND,
-    milestones: arr<Milestone>(p.milestones), versions: arr<Version>(p.versions).map((v) => ({ ...v, changes: Array.isArray(v.changes) ? v.changes : [] })), files: arr<Project['files'][number]>(p.files).map((f) => ({ ...f, name: str(f.name, 'Datei'), dataUrl: imageData(f.dataUrl) })), notes: str(p.notes), experiences: Array.isArray(p.experiences) ? p.experiences.filter((x) => typeof x === 'string') : [],
+    milestones: arr<Milestone>(p.milestones), versions: arr<Version>(p.versions).map((v) => ({ ...v, changes: Array.isArray(v.changes) ? v.changes : [] })), files: arr<Project['files'][number]>(p.files).map((f) => ({ ...f, name: str(f.name, 'Datei'), dataUrl: imageData(f.dataUrl), url: fileUrl(f.url) })), notes: str(p.notes), experiences: Array.isArray(p.experiences) ? p.experiences.filter((x) => typeof x === 'string') : [],
     history: arr<HistoryEvent>(p.history), requiredSpools: arr<{ spoolId: string; grams: number }>(p.requiredSpools), toolIds: Array.isArray(p.toolIds) ? p.toolIds.filter((x) => typeof x === 'string') : undefined,
   }));
   const devices = arr<Device>(o.devices).filter((d) => typeof d.id === 'string').map((d) => ({ ...d, name: str(d.name, 'Gerät'), model: str(d.model), location: str(d.location), kind: (['drucker', 'ams', 'trockner', 'werkzeug'].includes(d.kind) ? d.kind : 'werkzeug') as DeviceKind, hoursTotal: Math.max(0, num(d.hoursTotal)), maintenance: arr<Device['maintenance'][number]>(d.maintenance), slots: Array.isArray(d.slots) ? arr<{ index: number; spoolId?: string }>(d.slots) : undefined }));

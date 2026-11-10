@@ -15,6 +15,8 @@ import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { migrateWorkshops, mountWorkshops } from './workshops.js';
+import { migrateFiles, mountFiles } from './files.js';
+import { migrateBambu, mountBambu } from './bambu.js';
 
 import os from 'node:os';
 
@@ -33,7 +35,7 @@ function loadConfig() {
   const candidates = [e.WERKBANK_CONFIG, cut >= 0 ? path.join(here.slice(0, cut), 'domains', ...rel) : null, path.join(os.homedir(), 'domains', ...rel), path.join(here, '..', 'werkbank-private', 'config.php')].filter(Boolean);
   try {
     const file = candidates.find((c) => fs.existsSync(c)); if (!file) throw new Error('none');
-    const php = fs.readFileSync(file, 'utf8'); const map = { db_name: 'DB_NAME', db_user: 'DB_USER', db_pass: 'DB_PASS', google_client_id: 'GOOGLE_CLIENT_ID', mail_from: 'MAIL_FROM', base_url: 'BASE_URL', smtp_host: 'SMTP_HOST', smtp_port: 'SMTP_PORT', smtp_user: 'SMTP_USER', smtp_pass: 'SMTP_PASS' };
+    const php = fs.readFileSync(file, 'utf8'); const map = { db_name: 'DB_NAME', db_user: 'DB_USER', db_pass: 'DB_PASS', google_client_id: 'GOOGLE_CLIENT_ID', mail_from: 'MAIL_FROM', base_url: 'BASE_URL', smtp_host: 'SMTP_HOST', smtp_port: 'SMTP_PORT', smtp_user: 'SMTP_USER', smtp_pass: 'SMTP_PASS', app_secret: 'APP_SECRET' };
     for (const m of php.matchAll(/'(\w+)'\s*=>\s*'((?:[^'\\]|\\.)*)'/g)) { const k = map[m[1]]; if (k && !out[k] && !(ownDb && k.startsWith('DB_'))) out[k] = m[2].replace(/\\(['\\])/g, '$1'); }
   } catch { /* no PHP config here: environment only */ }
   return out;
@@ -69,6 +71,8 @@ async function migrate() {
   await q(`CREATE TABLE IF NOT EXISTS pending (token_hash CHAR(64) PRIMARY KEY, email VARCHAR(190) NOT NULL, password_hash VARCHAR(255) NOT NULL, expires_at DATETIME NOT NULL, INDEX (email), INDEX (expires_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await q(`CREATE TABLE IF NOT EXISTS attempts (ip VARBINARY(45) NOT NULL, at DATETIME NOT NULL, INDEX (ip, at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await migrateWorkshops(q);
+  await migrateFiles(q);
+  await migrateBambu(q);
 }
 
 // ---- helpers shared by the routes ----
@@ -195,13 +199,13 @@ api.use((req, res, next) => {
 // small bodies everywhere; the large one only for /state and only after the session has been checked (see putState)
 const smallBody = express.json({ limit: '10kb' });
 const bigBody = express.json({ limit: '13mb' });
-api.use((req, res, next) => (req.path === '/state' || /^\/workshops\/\d+\/ops$/.test(req.path) ? next() : smallBody(req, res, next)));
+api.use((req, res, next) => (req.path === '/state' || /^\/workshops\/\d+\/(ops|files)$/.test(req.path) ? next() : smallBody(req, res, next)));
 api.use((req, _res, next) => (configured || req.path === '/health' ? next() : next(new ApiError(503, 'Konto-Dienst nicht eingerichtet (Konfiguration fehlt).', 'not_configured'))));
 
 api.get('/health', wrap(async (req, res) => {
   if (!configured) return res.status(503).json({ ok: false, error: 'Konto-Dienst nicht eingerichtet (Konfiguration fehlt).', kind: 'not_configured' });
   let u = null; try { u = await currentUser(req); if (u) await refreshSession(req, res); } catch { u = null; }
-  res.json({ ok: true, configured: true, google: !!env.GOOGLE_CLIENT_ID, googleClientId: env.GOOGLE_CLIENT_ID || null, mail: mailReady, user: u ? userOut(u) : null });
+  res.json({ ok: true, configured: true, google: !!env.GOOGLE_CLIENT_ID, googleClientId: env.GOOGLE_CLIENT_ID || null, mail: mailReady, files: files.ready, bambu: bambu.ready, user: u ? userOut(u) : null });
 }));
 api.get('/auth/me', wrap(async (req, res) => { const u = await currentUser(req); res.json({ ok: true, user: u ? userOut(u) : null }); }));
 api.post('/auth/logout', wrap(async (req, res) => { await clearSession(req, res); res.json({ ok: true }); }));
@@ -354,12 +358,16 @@ const putState = wrap(async (req, res) => {
   } catch (e) { try { await conn.rollback(); } catch { /* already closed */ } throw e; } finally { conn.release(); }
 });
 api.put('/state', gate, putState); api.post('/state', gate, putState);
-mountWorkshops(api, { q, one, pool, requireUser, fail, wrap, sha256, str, validEmail, throttle, mayMail, sendMail, mailReady: () => mailReady, BASE_URL, bigBody, writeLimit });
+const gone = []; // called with the id when a workshop is deleted
+const ws = mountWorkshops(api, { q, one, pool, requireUser, fail, wrap, sha256, str, validEmail, throttle, mayMail, sendMail, mailReady: () => mailReady, BASE_URL, bigBody, writeLimit, gone });
+const files = mountFiles(api, { q, one, requireUser, fail, wrap, env, here: path.dirname(fileURLToPath(import.meta.url)), access: ws.access, writeLimit });
+const bambu = mountBambu(api, { q, one, fail, wrap, str, validEmail, throttle, access: ws.access, tell: ws.tell, env });
+gone.push(files.removeWorkshop, bambu.stop);
 api.use((_req, _res, next) => next(new ApiError(404, 'Unbekannte Aktion.')));
 // errors always as a short JSON answer; details only in the server log
 api.use((err, req, res, _next) => {
   if (err instanceof ApiError) return res.status(err.status).json({ ok: false, error: err.message, kind: err.kind });
-  if (err?.type === 'entity.too.large') return res.status(413).json({ ok: false, error: req.path === '/state' || req.path.endsWith('/ops') ? 'Der Stand ist zu groß (über 12 MB). Bitte große Fotos verkleinern.' : 'Die Anfrage ist zu groß.', kind: 'error' });
+  if (err?.type === 'entity.too.large') return res.status(413).json({ ok: false, error: req.path.endsWith('/files') ? 'Die Datei ist zu groß (über 25 MB).' : req.path === '/state' || req.path.endsWith('/ops') ? 'Der Stand ist zu groß (über 12 MB). Bitte große Fotos verkleinern.' : 'Die Anfrage ist zu groß.', kind: 'error' });
   if (err?.type === 'entity.parse.failed') return res.status(400).json({ ok: false, error: 'Ungültige Anfrage.', kind: 'error' });
   console.error('api error:', err?.code ?? err?.name ?? 'error'); // no message text: it can contain data
   const db = ['ECONNREFUSED', 'PROTOCOL_CONNECTION_LOST', 'ER_ACCESS_DENIED_ERROR', 'ETIMEDOUT'].includes(err?.code);
@@ -373,5 +381,5 @@ app.use(express.static(pub, { index: false, setHeaders: (res, file) => res.set('
 app.get('*', (_req, res) => { const index = path.join(pub, 'index.html'); if (!fs.existsSync(index)) return res.status(404).type('text/plain').send('3Druckwerkbank-Server läuft; die Oberfläche ist noch nicht ausgeliefert.'); res.set('Cache-Control', 'no-cache').sendFile(index); });
 
 const server = http.createServer(app);
-if (configured) migrate().catch((e) => console.error('migrate failed:', e?.code ?? e?.name ?? 'error'));
+if (configured) migrate().then(() => bambu.startAll()).catch((e) => console.error('migrate failed:', e?.code ?? e?.name ?? 'error'));
 server.listen(Number(env.PORT) || 3000, () => console.log(`3druckwerkbank server on ${Number(env.PORT) || 3000}, configured=${configured}`));

@@ -80,7 +80,7 @@ export function ProjektInnen({ project: p }: { project: Project }) {
         ))}
       </Panel>
       <Panel title="Dateien" icon={<IFile />} right={<More t="dateien" />} style={{ right: '3.2%', top: '53%', width: '22%' }} delay={140}>
-        {p.files.length === 0 ? <p className="muted small">Noch keine Dateien.</p> : p.files.filter((f) => !f.dataUrl).slice(0, 3).map((f) => <div key={f.id} className="row small"><IFile width={14} height={14} className="muted" /><span className="grow ellipsis">{f.name}</span><span className="xs muted">{f.size ? `${(f.size / 1e6).toFixed(1)} MB` : f.kind}</span></div>)}
+        {p.files.length === 0 ? <p className="muted small">Noch keine Dateien.</p> : p.files.filter((f) => !f.dataUrl).slice(0, 3).map((f) => <div key={f.id} className="row small"><IFile width={14} height={14} className="muted" />{f.url ? <a className="grow ellipsis" href={f.url} download={f.name}>{f.name}</a> : <span className="grow ellipsis">{f.name}</span>}<span className="xs muted">{f.size ? `${(f.size / 1e6).toFixed(1)} MB` : f.kind}</span></div>)}
         <button className="btn btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => open('dateien')}>Dateien verwalten <IChevR width={12} height={12} /></button>
       </Panel>
 

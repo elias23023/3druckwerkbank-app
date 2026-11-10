@@ -6,6 +6,7 @@
  * Beim ersten Abgleich der persönlichen Werkstatt mit Daten auf beiden Seiten entscheidet der Nutzer.
  */
 import { useSyncExternalStore } from 'react';
+import { loadBambu } from './bambu';
 import { useStore } from '../store';
 import type { PersistedState } from '../types';
 import { internals as c } from './cloud';
@@ -147,9 +148,10 @@ function arm(g: number) {
   es.onopen = () => { setLive({ online: true }); if (g === gen) void pull(g, true).then(() => { if (g === gen && diff().length) void push(); }); };
   es.onerror = () => setLive({ online: false });
   es.onmessage = (m) => {
-    if (g !== gen) return; let d: { rev?: number; client?: string; members?: boolean; gone?: boolean; removed?: number } = {}; try { d = JSON.parse(m.data); } catch { return; }
+    if (g !== gen) return; let d: { rev?: number; client?: string; members?: boolean; gone?: boolean; removed?: number; printers?: boolean } = {}; try { d = JSON.parse(m.data); } catch { return; }
     if (d.gone || d.removed === userId) { toast(d.gone ? 'Diese Werkstatt wurde gelöscht.' : 'Du bist nicht mehr Mitglied dieser Werkstatt.'); void start(userId); return; }
     if (d.members) void loadMembers();
+    if (d.printers) void loadBambu(wid);
     if (d.rev && d.rev > rev && d.client !== clientId) { if (pullTimer) clearTimeout(pullTimer); pullTimer = setTimeout(() => { pullTimer = null; if (g === gen && !pushing) void pull(g); else if (g === gen) again = true; }, 150); }
   };
 }
@@ -157,7 +159,7 @@ function arm(g: number) {
 /** Eine Werkstatt öffnen: vollständig laden, mit der lokalen Kopie abgleichen, Live-Kanal starten. */
 async function open(id: number, g: number) {
   if (es) { es.close(); es = null; } armed = false; pendingRemote = null; synced.clear(); lastObj = new Map();
-  wid = id; setLive({ activeId: id, members: [], invites: [], online: false });
+  wid = id; setLive({ activeId: id, members: [], invites: [], online: false }); void loadBambu(id);
   try { localStorage.setItem(activeKey(userId), String(id)); } catch { /* ignore */ }
   c.setSync({ status: 'lädt', error: undefined, local: undefined, remote: undefined });
   let r: ItemsAnswer;
@@ -233,7 +235,7 @@ export function stop(keepUser = false) {
   gen += 1; if (es) { es.close(); es = null; } if (unsub) { unsub(); unsub = null; }
   for (const t of [timer, retry, pullTimer]) if (t) clearTimeout(t); timer = retry = pullTimer = null;
   armed = false; again = false; pendingRemote = null; synced.clear(); lastObj = new Map(); wid = 0; rev = 0; if (!keepUser) userId = 0;
-  setLive({ on: false, workshops: [], activeId: null, role: null, members: [], invites: [], online: false });
+  setLive({ on: false, workshops: [], activeId: null, role: null, members: [], invites: [], online: false }); void loadBambu(null);
 }
 /** Ungespeichertes jetzt senden (vor Abmelden oder Werkstattwechsel). */
 export async function flush() { if (!armed || c.getSync().status === 'konflikt') return; if (timer) { clearTimeout(timer); timer = null; } await push(); }
@@ -270,3 +272,12 @@ export async function removeMember(memberId: number) { await c.call(`${base()}/m
 /** Link aus der Einladungs-Mail merken; angenommen wird, sobald jemand angemeldet ist. */
 export function rememberInvite(token: string) { try { sessionStorage.setItem(INVITE_KEY, token); } catch { /* ignore */ } if (userId) void start(userId); }
 export const hasPendingInvite = () => { try { return !!sessionStorage.getItem(INVITE_KEY); } catch { return false; } };
+
+/** Datei in die geöffnete Werkstatt hochladen. `null`, wenn gerade keine Werkstatt mit Schreibrecht verbunden ist. */
+export async function uploadFile(file: Blob, name: string): Promise<{ url: string; size: number; image: boolean } | null> {
+  if (!live.on || !wid || live.role === 'reader') return null;
+  const r = await fetch(`/api/workshops/${wid}/files`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/octet-stream', 'X-File-Name': encodeURIComponent(name) }, body: file });
+  const j = await r.json().catch(() => null) as { ok?: boolean; url?: string; size?: number; image?: boolean; error?: string } | null;
+  if (!r.ok || !j?.ok || !j.url) throw new Error(j?.error ?? 'Die Datei konnte nicht hochgeladen werden.');
+  return { url: j.url, size: j.size ?? file.size, image: !!j.image };
+}

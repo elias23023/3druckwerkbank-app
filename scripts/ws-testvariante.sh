@@ -1,6 +1,6 @@
 #!/bin/bash
 # builds the upload-only test variant (direct registration, invite token in the answer, no mail to example.com) into <scratch>/tv
-set -e; S="${1:?Zielordner angeben}"; rm -rf $S/tv; mkdir -p $S/tv; cd "$(dirname "$0")/../server"; cp package.json package-lock.json index.js workshops.js $S/tv/; cp -r public $S/tv/public
+set -e; S="${1:?Zielordner angeben}"; rm -rf $S/tv; mkdir -p $S/tv; cd "$(dirname "$0")/../server"; cp package.json package-lock.json index.js workshops.js files.js bambu.js $S/tv/; cp -r public $S/tv/public
 python3 - "$S/tv" <<'PY'
 import sys
 d=sys.argv[1]

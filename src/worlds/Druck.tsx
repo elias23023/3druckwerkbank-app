@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useBambu, bambuLine, STATUS_TEXT } from '../lib/bambu';
 import { useStore, printProgress, printRemainingMin, liveProjects } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { useNow } from '../lib/time';
@@ -16,6 +17,7 @@ export function Druck() {
   const a = useStore(useShallow((s) => ({ openSheet: s.openSheet, startNextPrint: s.startNextPrint, movePrint: s.movePrint, cancelPrint: s.cancelPrint, toggleMaintenance: s.toggleMaintenance, finishPrint: s.finishPrint, assignPrint: s.assignPrint, ignorePrint: s.ignorePrint, projectFromPrint: s.projectFromPrint, setWaitReason: s.setWaitReason })));
   const [inboxTab, setInboxTab] = useState<'neu' | 'zugeordnet' | 'ignoriert'>('neu');
   const printers = devices.filter((d) => d.kind === 'drucker');
+  const bambu = useBambu();
   const running = prints.filter((p) => p.status === 'läuft');
   const queue = prints.filter((p) => p.status === 'wartend').sort((x, y) => x.queueOrder - y.queueOrder);
   const [pick, setPick] = useState<string | undefined>();
@@ -64,7 +66,7 @@ export function Druck() {
         {printers.map((d) => { const job = prints.find((p) => p.printerId === d.id && p.status === 'läuft'); return (
           <div key={d.id} className="item item--click" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') a.openSheet({ kind: 'geraet', deviceId: d.id }); }} onClick={() => a.openSheet({ kind: 'geraet', deviceId: d.id })}>
             <span className="dot" style={{ background: stColor[d.status] }} />
-            <div className="grow col" style={{ gap: 1, minWidth: 0 }}><div className="row"><b className="small">{d.name}</b><span className="xs muted ellipsis">{d.model}</span>{settings.defaultPrinterId === d.id ? <span className="pill xs">Standard</span> : null}</div><span className="xs muted ellipsis">{job ? (job.resultDue ? `${job.name} · Ergebnis buchen` : `${job.name} · ${fmtNum(printProgress(job, now.getTime()) * 100)} % · noch ${fmtDuration(printRemainingMin(job, now.getTime()))}`) : d.maintenance.some((m) => !m.done && new Date(m.due).getTime() < now.getTime()) ? 'Wartung fällig' : [d.status, d.nozzle].filter(Boolean).join(' · ')}</span></div>
+            <div className="grow col" style={{ gap: 1, minWidth: 0 }}><div className="row"><b className="small">{d.name}</b><span className="xs muted ellipsis">{d.model}</span>{settings.defaultPrinterId === d.id ? <span className="pill xs">Standard</span> : null}</div><span className="xs muted ellipsis">{job ? (job.resultDue ? `${job.name} · Ergebnis buchen` : `${job.name} · ${fmtNum(printProgress(job, now.getTime()) * 100)} % · noch ${fmtDuration(printRemainingMin(job, now.getTime()))}`) : d.maintenance.some((m) => !m.done && new Date(m.due).getTime() < now.getTime()) ? 'Wartung fällig' : [d.status, d.nozzle].filter(Boolean).join(' · ')}</span>{d.bambuId && bambu.linked ? <span className="xs ellipsis" style={{ color: '#7cc6ff' }} title="Gemeldet von der Bambu-Cloud">Bambu: {bambuLine(bambu.devices.find((x) => x.id === d.bambuId)) ?? STATUS_TEXT[bambu.status]}</span> : null}</div>
           </div>
         ); })}
         {others.map((d) => <div key={d.id} className="item item--click" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') a.openSheet({ kind: 'geraet', deviceId: d.id }); }} onClick={() => a.openSheet({ kind: 'geraet', deviceId: d.id })}><span className="dot" style={{ background: stColor[d.status] }} /><div className="grow col" style={{ gap: 1, minWidth: 0 }}><b className="small">{d.name}</b><span className="xs muted ellipsis">{d.notes ?? d.status}</span></div></div>)}

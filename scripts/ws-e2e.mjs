@@ -42,6 +42,16 @@ ok('B\'s change appears live at A', await waitFor(async () => (await names(A.p))
 ok('A\'s screen shows it without reload', await (async () => { await A.p.evaluate(() => { location.hash = '#/druck'; }); await A.p.locator('.panel-col button', { hasText: 'verwalten' }).first().click(); await A.p.locator('.sheet .tabs button', { hasText: 'Werkzeuge' }).click(); const n = await A.p.locator('.sheet .item', { hasText: 'Zange von B' }).count(); await closeSheet(A.p); return n === 1; })(), '');
 await addDevice(A.p, 'Feile von A');
 ok('A\'s change appears live at B', await waitFor(async () => (await names(B.p)).includes('Feile von A')), JSON.stringify(await names(B.p)));
+// a photo becomes a real file on the server and appears at the other member
+const stamp = new Date().toISOString();
+await api(A.p, `/workshops/${W}/ops`, { ops: [{ coll: 'projects', id: 'p-foto', value: { id: 'p-foto', name: 'Fotoprojekt', description: '', type: 'Sonstiges', areas: [], tags: [], priority: 2, difficulty: 2, stage: 'Idee', progress: 0, favorite: false, island: { kind: 'bibliothek', libraryId: 'werkstatt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } }, milestones: [], versions: [], files: [], notes: '', experiences: [], history: [], requiredSpools: [], createdAt: stamp, updatedAt: stamp } }] });
+ok('project from the server appears at A', await waitFor(async () => (await names(A.p, 'projects')).includes('Fotoprojekt')), JSON.stringify(await names(A.p, 'projects')));
+await closeSheet(A.p); await A.p.evaluate(() => { location.hash = '#/projekte/p-foto'; }); await A.p.waitForTimeout(1200);
+await A.p.locator('input[type="file"][accept="image/*"]').first().setInputFiles(new URL('../screenshots/' + require('fs').readdirSync(new URL('../screenshots/', import.meta.url)).find((f) => f.endsWith('.png')), import.meta.url).pathname);
+const fileOf = (p) => p.evaluate(() => (JSON.parse(localStorage.getItem('3druckwerkbank:echt:v1') || '{}').state?.projects ?? []).find((x) => x.id === 'p-foto')?.files?.[0]?.dataUrl ?? '');
+ok('A\'s photo is stored as a file address, not as picture data', await waitFor(async () => /^\/api\/files\/[a-f0-9]{32}$/.test(await fileOf(A.p)), 15000), (await fileOf(A.p)).slice(0, 60));
+ok('the photo appears live at B and loads there', await waitFor(async () => /^\/api\/files\//.test(await fileOf(B.p)), 12000) && await B.p.evaluate((src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i.naturalWidth > 600); i.onerror = () => res(false); i.src = src; }), await fileOf(B.p)), await fileOf(B.p));
+await A.p.waitForTimeout(600); ok('A\'s project page shows the photo', await A.p.locator('img[src^="/api/files/"]').count() >= 1, '');
 // same moment, different entries: nothing is lost
 await Promise.all([addDevice(A.p, 'Gleichzeitig A'), addDevice(B.p, 'Gleichzeitig B')]);
 ok('simultaneous changes to different entries both survive', await waitFor(async () => { const a = await names(A.p), bb = await names(B.p); return ['Gleichzeitig A', 'Gleichzeitig B'].every((n) => a.includes(n) && bb.includes(n)); }, 10000), JSON.stringify([await names(A.p), await names(B.p)]));

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../store';
 import { Field } from './Glass';
 import { ITrash } from './Icons';
+import { useBambu, bambuLogin, bambuSendCode, bambuLogout, bambuLine, STATUS_TEXT } from '../lib/bambu';
 import { useLive, switchWorkshop, createWorkshop, renameWorkshop, deleteWorkshop, invite, revokeInvite, setRole, removeMember, ROLE_LABEL, type Role } from '../lib/live';
 
 /** Gemeinsame Werkstatt im Konto-Panel: Werkstatt wählen oder anlegen, Mitglieder einladen, Rollen vergeben. */
@@ -50,6 +51,45 @@ export function WerkstattFeld({ userId }: { userId: number }) {
         {err ? <span className="pill pill--bad xs" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>{err}</span> : null}
         {owner ? <span className="xs muted">Die Person bekommt einen Link per E-Mail, gültig sieben Tage. Bearbeiter dürfen alles ändern, Leser nur ansehen.</span> : null}
       </Field>
+      <BambuFeld />
     </>
+  );
+}
+
+/** Bambu-Cloud verbinden: nur die Eigentümerin oder der Eigentümer meldet an, alle Mitglieder sehen den Stand. */
+function BambuFeld() {
+  const b = useBambu(); const toast = useStore((s) => s.toast);
+  const [account, setAccount] = useState(''); const [password, setPassword] = useState(''); const [code, setCode] = useState(''); const [needCode, setNeedCode] = useState(false); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
+  if (!b.available) return null;
+  const run = async (fn: () => Promise<unknown>) => { setBusy(true); setErr(''); try { await fn(); } catch (e) { setErr((e as Error).message || 'Das hat nicht geklappt.'); } finally { setBusy(false); } };
+  const login = () => run(async () => { const r = await bambuLogin(account.trim(), password, code.trim()); if (r.need === 'code') { setNeedCode(true); return; } setPassword(''); setCode(''); setNeedCode(false); toast(`Bambu verbunden: ${r.devices ?? 0} Drucker gefunden`); });
+  return (
+    <Field label="Bambu-Drucker (Versuch)">
+      {b.linked ? (
+        <>
+          <div className="row small" style={{ gap: 8, flexWrap: 'wrap' }}><span className={`pill xs ${b.status === 'verbunden' ? 'pill--ok' : 'pill--warn'}`}>{STATUS_TEXT[b.status]}</span><span className="grow ellipsis muted">{b.account}</span>{b.canManage ? <button className="link" type="button" disabled={busy} onClick={() => { if (confirm('Bambu-Konto von dieser Werkstatt trennen?')) void run(bambuLogout); }}>Trennen</button> : null}</div>
+          {b.devices.map((d) => <div key={d.id} className="row small" style={{ gap: 8 }}><span className="dot" style={{ background: d.online ? '#4ccf7a' : '#8a8f98' }} /><b className="ellipsis">{d.name}</b><span className="xs muted grow ellipsis">{[d.model, bambuLine(d)].filter(Boolean).join(' · ')}</span></div>)}
+          {b.status === 'verbunden' && b.devices.length === 0 ? <span className="xs muted">In diesem Bambu-Konto ist kein Drucker angemeldet.</span> : null}
+          {b.devices.length ? <span className="xs muted">Zum Zuordnen einen Drucker unter „Geräte“ bearbeiten und dort den Bambu-Drucker wählen.</span> : null}
+        </>
+      ) : !b.canManage ? <span className="xs muted">Noch nicht verbunden. Das Bambu-Konto verbindet die Eigentümerin oder der Eigentümer der Werkstatt.</span> : null}
+      {b.canManage && (!b.linked || b.status === 'anmeldung') ? (
+        <>
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            <input className="input grow" type="email" autoComplete="off" value={account} maxLength={190} placeholder="E-Mail des Bambu-Kontos" aria-label="E-Mail des Bambu-Kontos" onChange={(e) => setAccount(e.target.value)} />
+            {needCode ? <input className="input" style={{ width: 130 }} inputMode="numeric" autoComplete="one-time-code" value={code} maxLength={12} placeholder="Code aus der Mail" aria-label="Code aus der Bambu-Mail" onChange={(e) => setCode(e.target.value)} />
+              : <input className="input grow" type="password" autoComplete="off" value={password} maxLength={200} placeholder="Bambu-Passwort" aria-label="Bambu-Passwort" onChange={(e) => setPassword(e.target.value)} />}
+            <button className="btn btn--sm btn--primary" disabled={busy || !/^\S+@\S+\.\S+$/.test(account.trim()) || !(needCode ? code.trim() : password)} onClick={() => void login()}>Verbinden</button>
+          </div>
+          <div className="row xs" style={{ gap: 12 }}>
+            <button className="link" type="button" disabled={busy || !/^\S+@\S+\.\S+$/.test(account.trim())} onClick={() => void run(async () => { await bambuSendCode(account.trim()); setNeedCode(true); toast('Bambu schickt dir einen Code per E-Mail'); })}>{needCode ? 'Code erneut schicken' : 'Lieber mit Code aus der Mail anmelden'}</button>
+            {needCode ? <button className="link" type="button" onClick={() => { setNeedCode(false); setCode(''); }}>Mit Passwort</button> : null}
+          </div>
+          {needCode ? <span className="xs muted">Bambu hat einen Code an deine Adresse geschickt. Trag ihn hier ein.</span> : null}
+          <span className="xs muted">Dein Passwort wird nur einmal an Bambu weitergereicht und nicht gespeichert. Auf dem Server liegt nur der verschlüsselte Zugang zum Lesen des Druckerstands. Gesteuert wird nichts, gebucht wird weiter von Hand. Die Schnittstelle ist von Bambu nicht offiziell freigegeben und kann sich ändern.</span>
+        </>
+      ) : null}
+      {err ? <span className="pill pill--bad xs" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>{err}</span> : null}
+    </Field>
   );
 }

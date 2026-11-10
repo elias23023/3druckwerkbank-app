@@ -88,7 +88,7 @@ export interface PrintJob {
   /** geschätzte Druckzeit ist um, das Ergebnis ist noch nicht gebucht */
   resultDue?: boolean;
 }
-export interface FileRef { id: Id; name: string; kind: 'foto' | 'skizze' | 'stl' | '3mf' | 'zeitraffer' | 'sonstiges'; createdAt: ISODate; dataUrl?: string; size?: number }
+export interface FileRef { id: Id; name: string; kind: 'foto' | 'skizze' | 'stl' | '3mf' | 'zeitraffer' | 'sonstiges'; createdAt: ISODate; /** Bild: eingebettete Bilddaten oder Adresse einer Datei auf dem Server */ dataUrl?: string; /** Datei auf dem Server zum Herunterladen */ url?: string; size?: number }
 export type HistoryType = 'angelegt' | 'meilenstein' | 'version' | 'druck' | 'entscheidung' | 'fehler' | 'erfahrung' | 'material' | 'abgeschlossen' | 'notiz';
 export interface HistoryEvent { id: Id; at: ISODate; type: HistoryType; title: string; detail?: string }
 
@@ -108,6 +108,8 @@ export interface Device {
   id: Id; name: string; model: string; kind: DeviceKind; status: 'bereit' | 'druckt' | 'wartung' | 'offline' | 'trocknet' | 'verfügbar' | 'im Einsatz' | 'fehlt';
   location: string; nozzle?: string; slots?: { index: number; spoolId?: Id }[]; hoursTotal: number;
   maintenance: MaintenanceItem[]; notes?: string; parentId?: Id; wattage?: number;
+  /** Seriennummer des verknüpften Bambu-Druckers (Live-Status über die Bambu-Cloud) */
+  bambuId?: string;
 }
 
 export interface Spool {

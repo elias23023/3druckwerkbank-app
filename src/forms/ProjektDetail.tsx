@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { CHECKLISTS, type Project } from '../types';
+import { CHECKLISTS, type FileRef, type Project } from '../types';
+import { liveMode } from '../lib/cloud';
 import { useStore, suggestedProgress, availableGrams, printProgress } from '../store';
 import { Sheet } from '../ui/Sheet';
 import { Check, Progress, Stack } from '../ui/Glass';
@@ -110,26 +111,56 @@ export function PrintsFull({ p }: { p: Project }) {
   );
 }
 
+/** Im Node-Build mit Konto landen Fotos und Dateien als echte Dateien auf dem Server, sonst als kleines Bild im Browser. */
+const upload = async (file: Blob, name: string) => (liveMode ? (await import('../lib/live')).uploadFile(file, name) : null);
+const KIND: Record<string, FileRef['kind']> = { stl: 'stl', '3mf': '3mf', mp4: 'zeitraffer', webm: 'zeitraffer', mov: 'zeitraffer' };
+
 export function useAddPhoto(p: Project) {
   const s = useStore();
   return (file: File) => {
-    const r = new FileReader();
-    r.onload = () => { const img = new Image(); img.onerror = () => s.toast('Das Bild konnte nicht gelesen werden.'); img.onload = () => { const c = document.createElement('canvas'); const k = Math.min(1, 640 / Math.max(img.width, img.height)); c.width = img.width * k; c.height = img.height * k; c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height); s.addFile(p.id, { id: id('f'), name: file.name, kind: 'foto', createdAt: nowIso(), dataUrl: c.toDataURL('image/jpeg', .8), size: file.size }); s.addHistory(p.id, 'notiz', `Foto hinzugefügt: ${file.name}`); }; img.src = String(r.result); };
-    r.readAsDataURL(file);
+    const url = URL.createObjectURL(file); const img = new Image();
+    img.onerror = () => { URL.revokeObjectURL(url); s.toast('Das Bild konnte nicht gelesen werden.'); };
+    img.onload = async () => {
+      const draw = (max: number) => { const c = document.createElement('canvas'); const k = Math.min(1, max / Math.max(img.width, img.height)); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height); return c; };
+      const add = (dataUrl: string, size: number) => { s.addFile(p.id, { id: id('f'), name: file.name, kind: 'foto', createdAt: nowIso(), dataUrl, size }); s.addHistory(p.id, 'notiz', `Foto hinzugefügt: ${file.name}`); };
+      try {
+        const big = await new Promise<Blob | null>((ok) => draw(2000).toBlob(ok, 'image/jpeg', .86));
+        const up = big ? await upload(big, file.name) : null;
+        if (up) add(up.url, up.size); else add(draw(640).toDataURL('image/jpeg', .8), file.size);
+      } catch (e) { s.toast(e instanceof Error ? e.message : 'Das Foto konnte nicht gespeichert werden.'); }
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  };
+}
+export function useAddFile(p: Project) {
+  const s = useStore();
+  return async (file: File) => {
+    if (file.size > 25 * 1024 * 1024) { s.toast('Die Datei ist zu groß (über 25 MB).'); return; }
+    try {
+      const up = await upload(file, file.name);
+      if (!up) { s.toast('Dateien lassen sich nur speichern, wenn du angemeldet und verbunden bist.'); return; }
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+      s.addFile(p.id, { id: id('f'), name: file.name, kind: up.image ? 'foto' : KIND[ext] ?? 'sonstiges', createdAt: nowIso(), ...(up.image ? { dataUrl: up.url } : {}), url: up.url, size: up.size });
+      s.addHistory(p.id, 'notiz', `Datei hinzugefügt: ${file.name}`);
+    } catch (e) { s.toast(e instanceof Error ? e.message : 'Die Datei konnte nicht hochgeladen werden.'); }
   };
 }
 
 export function FilesFull({ p }: { p: Project }) {
-  const addPhoto = useAddPhoto(p); const removeFile = useStore((st) => st.removeFile);
+  const addPhoto = useAddPhoto(p); const addFile = useAddFile(p); const removeFile = useStore((st) => st.removeFile);
   return (
     <>
       {p.files.length === 0 ? <p className="muted small">Noch keine Dateien.</p> : (
         <div className="grid3">
-          {p.files.map((f) => <div key={f.id} className="col" style={{ alignItems: 'center', gap: 3 }} title={f.name}><div className="thumb" style={{ width: '100%', height: 64, borderRadius: 8 }}>{f.dataUrl ? <img src={f.dataUrl} alt="" /> : <span className="xs muted" style={{ textTransform: 'uppercase' }}>{f.kind}</span>}</div><span className="xs ellipsis" style={{ maxWidth: '100%' }}>{f.name}</span><span className="row xs faint" style={{ gap: 4 }}>{f.size ? `${(f.size / 1e6).toFixed(1)} MB` : fmtDate(f.createdAt)}<button className="btn btn--icon btn--ghost" style={{ width: 20, height: 20 }} title="Datei entfernen" aria-label={`${f.name} entfernen`} onClick={() => { if (confirm(`„${f.name}“ aus dem Projekt entfernen?`)) removeFile(p.id, f.id); }}><ITrash width={11} height={11} /></button></span></div>)}
+          {p.files.map((f) => <div key={f.id} className="col" style={{ alignItems: 'center', gap: 3 }} title={f.name}><div className="thumb" style={{ width: '100%', height: 64, borderRadius: 8 }}>{f.dataUrl ? <img src={f.dataUrl} alt="" /> : <span className="xs muted" style={{ textTransform: 'uppercase' }}>{f.kind}</span>}</div>{f.url ? <a className="xs ellipsis" style={{ maxWidth: '100%' }} href={f.url} download={f.name} title="Herunterladen">{f.name}</a> : <span className="xs ellipsis" style={{ maxWidth: '100%' }}>{f.name}</span>}<span className="row xs faint" style={{ gap: 4 }}>{f.size ? `${(f.size / 1e6).toFixed(1)} MB` : fmtDate(f.createdAt)}<button className="btn btn--icon btn--ghost" style={{ width: 20, height: 20 }} title="Datei entfernen" aria-label={`${f.name} entfernen`} onClick={() => { if (confirm(`„${f.name}“ aus dem Projekt entfernen?`)) removeFile(p.id, f.id); }}><ITrash width={11} height={11} /></button></span></div>)}
         </div>
       )}
-      <label className="btn btn--sm" style={{ alignSelf: 'flex-start' }}><IImage width={12} height={12} /> Foto hinzufügen<input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) addPhoto(f); e.currentTarget.value = ''; }} /></label>
-      <p className="xs faint">STL/3MF-Ansicht folgt später; Modelle sind hier Platzhalter.</p>
+      <div className="row" style={{ flexWrap: 'wrap' }}>
+        <label className="btn btn--sm"><IImage width={12} height={12} /> Foto hinzufügen<input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) addPhoto(f); e.currentTarget.value = ''; }} /></label>
+        {liveMode ? <label className="btn btn--sm"><IFile width={12} height={12} /> Datei hinzufügen<input type="file" aria-label="Datei hinzufügen" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void addFile(f); e.currentTarget.value = ''; }} /></label> : null}
+      </div>
+      <p className="xs faint">{liveMode ? 'Mit Konto liegen Fotos und Dateien (STL, 3MF, bis 25 MB) auf dem Server. Eine 3D-Ansicht folgt später.' : 'STL/3MF-Ansicht folgt später; Modelle sind hier Platzhalter.'}</p>
     </>
   );
 }
