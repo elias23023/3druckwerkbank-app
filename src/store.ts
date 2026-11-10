@@ -30,7 +30,7 @@ export interface Store extends PersistedState {
   ui: UiState;
   // ui
   openSheet: (s: SheetKind) => void; closeSheet: () => void; setCommand: (open: boolean) => void;
-  applyCloudState: (state: PersistedState) => void;
+  applyCloudState: (state: PersistedState) => void; applyLive: (state: PersistedState) => void;
   setDraft: (key: string, value: unknown) => void; clearDraft: (key: string) => void; toast: (text: string) => void; undo: () => void;
   // settings / data mgmt
   setSettings: (patch: Partial<Settings>) => void; setLocation: (loc: Settings['location']) => void; setWeather: (w: WeatherCache) => void;
@@ -157,6 +157,8 @@ export const useStore = create<Store>()(
           const data: PersistedState = { version: 1, seededAt: s.seededAt, projects: s.projects, devices: s.devices, spools: s.spools, tasks: s.tasks, prints: s.prints, reports: s.reports, appointments: s.appointments, shopping: s.shopping, settings: s.settings, energy: s.energy };
           return JSON.stringify(data, null, 2);
         },
+        // Live-Abgleich: Daten ersetzen, die Oberfläche (offene Panels, Entwürfe) bleibt unberührt
+        applyLive: (j) => set(() => ({ ...normalizeState(j) })),
         applyCloudState: (j) => set((s) => ({ ...normalizeState(j), ui: { ...s.ui, sheet: s.ui.sheet && ['konto', 'einstellungen', 'bereich', 'ueber'].includes(s.ui.sheet.kind) ? s.ui.sheet : undefined } })),
         importJson: (text) => {
           try {

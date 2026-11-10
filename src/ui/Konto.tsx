@@ -3,9 +3,10 @@ import { useStore } from '../store';
 import { Sheet } from './Sheet';
 import { Field } from './Glass';
 import { IUser, IRefresh } from './Icons';
-import { useAuth, useSyncState, signInWithEmail, signUpWithEmail, signInWithGoogleCredential, sendPasswordReset, resetPassword, signOut, signOutEverywhere, canSignOutEverywhere, syncNow, takeRemote, renderGoogleButton, readBackup, restoreBackup, type SyncCounts } from '../lib/cloud';
+import { useAuth, useSyncState, signInWithEmail, signUpWithEmail, signInWithGoogleCredential, sendPasswordReset, resetPassword, signOut, signOutEverywhere, canSignOutEverywhere, syncNow, takeRemote, renderGoogleButton, readBackup, restoreBackup, liveMode, type SyncCounts } from '../lib/cloud';
 import { fmtTime, fmtDate } from '../lib/format';
 import { isDemo } from '../lib/workspace';
+import { WerkstattFeld } from './Werkstatt';
 
 /**
  * Konto: Anmelden mit Google oder E-Mail, Registrieren, Passwort vergessen / zurücksetzen; angemeldet: Stand der Synchronisation,
@@ -66,9 +67,10 @@ export function KontoSheet({ resetToken }: { resetToken?: string }) {
             </div> : null}
             {sync.status === 'fehler' ? <button className="btn btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => { void syncNow(); }}>Noch einmal versuchen</button> : null}
             {backup ? <div className="row xs" style={{ gap: 8, flexWrap: 'wrap' }}><span className="muted">Sicherung vom {fmtDate(backup.at)} {fmtTime(backup.at)} ({backup.reason}).</span><button className="link" type="button" onClick={() => { if (confirm('Die Sicherung zurückholen? Der aktuelle Stand wird dabei selbst gesichert.')) { restoreBackup(); toast('Sicherung wiederhergestellt'); } }}>Wiederherstellen</button></div> : null}
-            <span className="xs muted">Jede Änderung wird kurz danach in deinem Konto gespeichert. Auf einem anderen Gerät genügt dort die Anmeldung, der neueste Stand wird geladen. Eigene Fotos zählen mit; große Fotos machen das Speichern langsamer.</span>
+            <span className="xs muted">{liveMode ? 'Jede Änderung wird sofort je Eintrag gespeichert und erscheint live bei allen Mitgliedern. ' : ''}Jede Änderung wird kurz danach in deinem Konto gespeichert. Auf einem anderen Gerät genügt dort die Anmeldung, der neueste Stand wird geladen. Eigene Fotos zählen mit; große Fotos machen das Speichern langsamer.</span>
           </Field>
         )}
+        {!isDemo && liveMode ? <WerkstattFeld userId={u.id} /> : null}
       </Sheet>
     );
   }

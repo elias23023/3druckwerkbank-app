@@ -1,0 +1,45 @@
+// API test of shared workshops with two accounts (test variant: direct registration, invite token in the answer)
+const H = 'https://antiquewhite-falcon-428175.hostingersite.com'; const pw = process.env.WBPW;
+const mk = () => { let cookie = ''; return async (path, { method = 'GET', json } = {}) => { const r = await fetch(H + '/api' + path, { method: json !== undefined && method === 'GET' ? 'POST' : method, headers: { Origin: H, ...(json !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}) }, body: json !== undefined ? JSON.stringify(json) : undefined }); const sc = r.headers.getSetCookie?.() ?? []; for (const c of sc) if (c.startsWith('__Host-wb_session=')) cookie = c.split(';')[0]; let j = null; try { j = await r.json(); } catch {} return { s: r.status, j, cookie: () => cookie }; }; };
+const out = []; const ok = (name, cond, info = '') => { out.push(cond); console.log(`${cond ? 'OK  ' : 'FAIL'} ${name} ${cond ? '' : info}`); };
+for (let i = 0; i < 60; i++) { const r = await fetch(H + '/api/workshops', { headers: { Origin: H } }); if (r.status === 401) break; await new Promise((r) => setTimeout(r, 5000)); }
+await new Promise((r) => setTimeout(r, 8000));
+const A = mk(), B = mk(), C = mk();
+let r = await A('/auth/login', { json: { email: 'werkbank-test2@example.com', password: pw } }); ok('A login', r.s === 200, JSON.stringify(r.j));
+const tag = Date.now().toString(36); const mailB = `wb-b-${tag}@example.com`, mailC = `wb-c-${tag}@example.com`;
+r = await B('/auth/register', { json: { email: mailB, password: pw } }); ok('B registered (test variant)', r.s === 200 && !!r.j.user, JSON.stringify(r.j)); const idB = r.j.user?.id;
+r = await C('/auth/register', { json: { email: mailC, password: pw } }); ok('C registered', r.s === 200 && !!r.j.user);
+r = await A('/workshops'); ok('A has a personal workshop', r.s === 200 && r.j.workshops.length >= 1 && r.j.workshops[0].personal && r.j.workshops[0].role === 'owner', JSON.stringify(r.j));
+r = await A('/workshops', { json: { name: 'Testwerkstatt ' + tag } }); ok('A creates a shared workshop', r.s === 200 && r.j.id > 0, JSON.stringify(r.j)); const W = r.j.id;
+r = await B(`/workshops/${W}/items?since=0`); ok('stranger cannot read', r.s === 404, String(r.s));
+// live channel for A
+const ev = []; const ac = new AbortController();
+const live = (async () => { const res = await fetch(`${H}/api/workshops/${W}/events`, { headers: { Cookie: cookieA }, signal: ac.signal }); const rd = res.body.getReader(); const dec = new TextDecoder(); for (;;) { const { value, done } = await rd.read(); if (done) break; for (const line of dec.decode(value).split('\n')) if (line.startsWith('data: ')) ev.push(JSON.parse(line.slice(6))); } });
+const cookieA = (await A('/auth/me')).cookie(); const liveP = live().catch(() => {});
+await new Promise((r) => setTimeout(r, 1500));
+const proj = { id: 'p-1', name: 'Gemeinsames Projekt', files: [] };
+r = await A(`/workshops/${W}/ops`, { json: { client: 'a', ops: [{ coll: 'projects', id: 'p-1', value: proj }, { coll: 'devices', id: 'd-1', value: { id: 'd-1', name: 'Drucker', kind: 'drucker' } }, { coll: 'settings', id: `u${(await A('/auth/me')).j.user.id}`, value: { theme: 'dunkel' } }] } }); ok('A writes entries', r.s === 200 && r.j.rev === 1, JSON.stringify(r.j));
+r = await A(`/workshops/${W}/invites`, { json: { email: mailB, role: 'editor' } }); ok('A invites B', r.s === 200 && !!r.j.testToken, JSON.stringify(r.j)); const tokB = r.j.testToken;
+r = await C('/invites/accept', { json: { token: tokB } }); ok('C cannot use B\'s invitation', r.s === 403, String(r.s));
+r = await B('/invites/accept', { json: { token: tokB } }); ok('B accepts', r.s === 200 && r.j.id === W, JSON.stringify(r.j));
+r = await B('/invites/accept', { json: { token: tokB } }); ok('invitation works once', r.s === 400, String(r.s));
+r = await B(`/workshops/${W}/items?since=0`); ok('B reads the entries, but not A\'s settings', r.s === 200 && r.j.role === 'editor' && r.j.items.length === 2 && r.j.items.every((i) => i.coll !== 'settings'), JSON.stringify(r.j).slice(0, 200));
+r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'tasks', id: 't-1', value: { id: 't-1', title: 'Von B' } }, { coll: 'projects', id: 'p-1', value: { ...proj, name: 'Umbenannt von B' } }] } }); ok('B (editor) writes', r.s === 200 && r.j.rev === 2, JSON.stringify(r.j));
+r = await A(`/workshops/${W}/items?since=1`); ok('A gets only what changed since rev 1', r.s === 200 && r.j.rev === 2 && r.j.items.length === 2 && r.j.items.find((i) => i.id === 'p-1').value.name === 'Umbenannt von B', JSON.stringify(r.j).slice(0, 200));
+r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'tasks', id: 't-1', value: null }] } }); ok('delete an entry', r.s === 200);
+r = await A(`/workshops/${W}/items?since=2`); ok('deletion arrives as null', r.j.items.length === 1 && r.j.items[0].value === null, JSON.stringify(r.j));
+r = await A(`/workshops/${W}/items?since=0`); ok('full load leaves deleted entries out', r.j.items.every((i) => i.value !== null) && !r.j.items.some((i) => i.id === 't-1'));
+r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'projects', id: 'p-2', value: { id: 'p-2', files: [{ id: 'f', dataUrl: 'https://example.org/x.png' }] } }] } }); ok('foreign picture address refused', r.s === 400, String(r.s));
+r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'settings', id: 'u1', value: { theme: 'hell' } }] } }); ok('foreign settings refused', r.s === 403, String(r.s));
+r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'users', id: 'x', value: { id: 'x' } }] } }); ok('unknown list refused', r.s === 400, String(r.s));
+r = await A(`/workshops/${W}/members/${idB}`, { json: { role: 'reader' } }); ok('A makes B a reader', r.s === 200);
+r = await B(`/workshops/${W}/ops`, { json: { ops: [{ coll: 'tasks', id: 't-2', value: { id: 't-2', title: 'x' } }] } }); ok('reader cannot write', r.s === 403 && r.j.kind === 'forbidden', JSON.stringify(r.j));
+r = await B(`/workshops/${W}/invites`, { json: { email: mailC } }); ok('reader cannot invite', r.s === 403, String(r.s));
+r = await A(`/workshops/${W}/members`); ok('member list', r.s === 200 && r.j.members.length === 2 && r.j.members[0].role === 'owner', JSON.stringify(r.j).slice(0, 160));
+r = await B(`/workshops/${W}/members/${idB}/remove`, { json: {} }); ok('B leaves', r.s === 200);
+r = await B(`/workshops/${W}/items?since=0`); ok('after leaving no access', r.s === 404, String(r.s));
+await new Promise((r) => setTimeout(r, 1500)); ac.abort(); await liveP;
+ok('live channel delivered the changes', ev.some((e) => e.hello) && ev.filter((e) => e.rev).length >= 3 && ev.some((e) => e.members), JSON.stringify(ev));
+r = await A(`/workshops/${W}/delete`, { json: {} }); ok('A deletes the shared workshop', r.s === 200);
+r = await A('/workshops'); const personal = r.j.workshops.find((w) => w.personal); r = await A(`/workshops/${personal.id}/delete`, { json: {} }); ok('personal workshop cannot be deleted', r.s === 400, String(r.s));
+console.log(`${out.filter(Boolean).length}/${out.length} passed`);

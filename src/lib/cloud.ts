@@ -45,6 +45,7 @@ export function loadHealth(): Promise<void> {
 /** Beim ersten Einbinden einmal laden. */
 export function useCloudBoot() { useEffect(() => { void loadHealth(); }, []); }
 export const cloudConfigured = () => auth.configured;
+export const useAuthUser = () => auth.user; // aktueller Wert ohne Hook, für einmalige Abfragen
 
 // ---- Auth ----
 export async function signInWithEmail(email: string, password: string) { const r = await call<{ user: CloudUser }>('/auth.php?a=login', { json: { email, password } }); setAuth({ user: r.user }); return r.user; }
@@ -211,6 +212,10 @@ async function initialLoad(userId: number, g: number) {
 /** Nach der Anmeldung: Stand abgleichen; danach jede Änderung zeitversetzt speichern. */
 export async function startSync(userId: number) {
   if (currentUser === userId) return;
+  if (NODE_API) { // gemeinsame Werkstatt: Abgleich je Eintrag mit Live-Kanal (src/lib/live.ts)
+    if (isDemo) { setSync({ status: 'aus' }); return; }
+    currentUser = userId; liveLoaded = true; const m = await liveMod(); if (currentUser === userId) await m.start(userId); return;
+  }
   stopSync();
   if (isDemo) { setSync({ status: 'aus' }); return; }
   currentUser = userId; const g = ++gen;
@@ -246,6 +251,7 @@ export async function pullIfNewer(userId: number) {
 
 /** Jetzt speichern. Im Konfliktfall entscheidet der Nutzer: `force` schreibt diesen Stand ins Konto. */
 export async function syncNow(force = false) {
+  if (NODE_API) { const m = await liveMod(); if (force) await m.keepLocal(); else await m.syncNow(); return; }
   if (!currentUser) return;
   const uid = currentUser;
   if (!armed && !force && syncState.status !== 'konflikt') { await initialLoad(uid, gen); return; }
@@ -256,6 +262,7 @@ export async function syncNow(force = false) {
 }
 /** Konflikt: den Stand aus dem Konto übernehmen. Der lokale Stand wird vorher gesichert. */
 export async function takeRemote() {
+  if (NODE_API) { (await liveMod()).takeRemote(); return; }
   if (!currentUser) return;
   const uid = currentUser; const g = gen;
   try {
@@ -276,16 +283,17 @@ export function restoreBackup(): boolean {
   return true;
 }
 /** Vor dem Abmelden: Ungespeichertes noch hochschieben (ohne Erfolgsgarantie). */
-export async function flushSync() { if (currentUser && armed && syncState.status !== 'konflikt') { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; } try { await push(currentUser); } catch { /* ignore */ } } }
+export async function flushSync() { if (NODE_API) { if (liveLoaded) { try { await (await liveMod()).flush(); } catch { /* ignore */ } } return; } if (currentUser && armed && syncState.status !== 'konflikt') { if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; } try { await push(currentUser); } catch { /* ignore */ } } }
 
 // Zweiter Tab ohne Konto-Abgleich: Änderungen aus dem anderen Tab übernehmen, statt sie später mit einem alten Stand zu überschreiben.
 // (Mit Konto läuft der Abgleich über den Server, sobald der Tab wieder sichtbar wird.)
 if (typeof window !== 'undefined') window.addEventListener('storage', (e) => {
-  if (e.key !== storageName || e.newValue === null || currentUser !== null) return;
+  if (e.key !== storageName || e.newValue === null || currentUser !== null) return; // angemeldet läuft der Abgleich über den Server
   applying = true; Promise.resolve(useStore.persist.rehydrate()).finally(() => { applying = false; });
 });
 
 export function stopSync() {
+  if (NODE_API && liveLoaded) void liveMod().then((m) => { if (currentUser === null) m.stop(); });
   gen += 1;
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
   if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
@@ -293,3 +301,9 @@ export function stopSync() {
   currentUser = null; lastSerialized = ''; lastRefs = []; knownRemote = undefined; armed = false; again = false; againForce = false;
   setSync({ status: 'aus', lastSyncAt: undefined, error: undefined, local: undefined, remote: undefined });
 }
+
+// ---- Brücke zum Live-Abgleich (src/lib/live.ts wird erst geladen, wenn jemand am Node.js-Server angemeldet ist) ----
+export const liveMode = NODE_API;
+let liveLoaded = false;
+const liveMod = () => import('./live');
+export const internals = { call, hash, hasData, snapshot, backupLocal, setSync, getSync: () => syncState, signedOut: () => { setAuth({ user: null }); stopSync(); } };

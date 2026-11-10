@@ -22,8 +22,9 @@ import { Wetter } from './worlds/Wetter';
 import { Archiv } from './worlds/Archiv';
 import { Mobile } from './mobile/Mobile';
 import { Tagesportal } from './ui/Tagesportal';
-import { useAuth, useCloudBoot, startSync, stopSync, confirmEmail } from './lib/cloud';
+import { useAuth, useCloudBoot, startSync, stopSync, confirmEmail, liveMode, useAuthUser } from './lib/cloud';
 import { resolveSeason } from './lib/season';
+import { isDemo, switchWorkspace } from './lib/workspace';
 import type { LibraryIsland, WorldId } from './types';
 
 const STAGE_COLOR: Record<string, string> = { Idee: '#c59bff', Konstruktion: '#7cc6ff', Planung: '#7cc6ff', Vorbereitung: '#ffe29a', Druck: '#4ccf7a', Nacharbeit: '#ffb547', 'Qualität': '#ffb547', Abgeschlossen: '#8a8f96' };
@@ -67,13 +68,26 @@ export function App() {
   useCloudBoot();
   const auth = useAuth();
   useEffect(() => { if (auth.user) void startSync(auth.user.id); else stopSync(); }, [auth.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Link aus der Passwort-E-Mail: #/konto/reset/<token> öffnet das Konto-Panel mit dem Formular für das neue Passwort
-  useEffect(() => { const m = /^#\/konto\/reset\/([A-Za-z0-9]+)/.exec(window.location.hash); if (m) { useStore.getState().openSheet({ kind: 'konto', resetToken: m[1] }); window.location.hash = '#/start'; } }, []);
-  // Link aus der Bestätigungs-Mail: #/konto/bestaetigen/<token> legt das Konto an, meldet an und öffnet das Konto-Panel
+  // Links aus E-Mails (Passwort, Bestätigung, Einladung): beim Start und auch, wenn die App schon offen ist und nur die Adresse wechselt
   useEffect(() => {
-    const m = /^#\/konto\/bestaetigen\/([a-f0-9]{64})/.exec(window.location.hash); if (!m) return;
-    window.location.hash = '#/start'; const st = useStore.getState();
-    confirmEmail(m[1]).then(() => { st.toast('Adresse bestätigt. Dein Konto ist angelegt.'); st.openSheet({ kind: 'konto' }); }).catch((e: Error) => { st.toast(e.message || 'Der Link ist ungültig oder abgelaufen.'); st.openSheet({ kind: 'konto' }); });
+    const handle = () => {
+      const h = window.location.hash; const st = useStore.getState(); let m: RegExpExecArray | null;
+      if ((m = /^#\/konto\/reset\/([A-Za-z0-9]+)/.exec(h))) { window.location.hash = '#/start'; st.openSheet({ kind: 'konto', resetToken: m[1] }); return; }
+      if ((m = /^#\/konto\/bestaetigen\/([a-f0-9]{64})/.exec(h))) {
+        window.location.hash = '#/start';
+        confirmEmail(m[1]).then(() => { st.toast('Adresse bestätigt. Dein Konto ist angelegt.'); st.openSheet({ kind: 'konto' }); }).catch((e: Error) => { st.toast(e.message || 'Der Link ist ungültig oder abgelaufen.'); st.openSheet({ kind: 'konto' }); });
+        return;
+      }
+      if ((m = /^#\/einladung\/([a-f0-9]{64})/.exec(h)) && liveMode) {
+        const token = m[1]; window.location.hash = '#/start';
+        void import('./lib/live').then((l) => {
+          l.rememberInvite(token);
+          if (isDemo) { switchWorkspace('echt'); return; } // gemeinsame Werkstätten gibt es nur in „Meine Werkstatt“; die Einladung übersteht das Neuladen
+          st.openSheet({ kind: 'konto' }); if (!useAuthUser()) st.toast('Einladung erkannt. Melde dich an, um sie anzunehmen.');
+        });
+      }
+    };
+    handle(); window.addEventListener('hashchange', handle); return () => window.removeEventListener('hashchange', handle);
   }, []);
   useEffect(() => {
     const theme = mobile ? 'dunkel' : settings.theme === 'auto' ? (DARK_LOOKS.has(look) ? 'dunkel' : 'hell') : settings.theme;
