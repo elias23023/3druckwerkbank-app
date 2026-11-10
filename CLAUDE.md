@@ -1,6 +1,6 @@
 # 3Druckwerkbank – Arbeitsregeln für alle Chats
 
-Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store (localStorage), Hash-Routing. Live: https://3druckwerkbank.com (Hostinger, statisch). Die alte PHP-App läuft unter https://snow-salmon-793472.hostingersite.com und bleibt unberührt.
+Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store (localStorage), Hash-Routing. Live: https://3druckwerkbank.com (Hostinger, seit 10.11. Node.js-Server aus `server/`, der auch die Oberfläche ausliefert). Die alte PHP-App läuft unter https://snow-salmon-793472.hostingersite.com und bleibt unberührt.
 
 ## Rollen der Chats
 - **Hauptchat** („3Druckbank“): einziger Chat, der baut, deployt und `main` zusammenführt.
@@ -21,12 +21,14 @@ Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store 
 - Rückgängig: Löschende Store-Aktionen sind am Ende von `src/store.ts` mit `wrap('<aktion>', …)` angemeldet und zeigen den Hinweis mit „Rückgängig“ (`src/ui/Toast.tsx`). Neue Lösch-Aktionen dort eintragen und danach keinen eigenen Toast setzen.
 - Ort für das Wetter: `settings.location`, gesetzt über `setLocation` (leert den Wetter-Cache); Suche `searchPlaces` in `src/lib/weather.ts`. Keinen Ort fest im Text nennen.
 
-## Konto (Hostinger, PHP + MySQL)
+## Konto, alter Weg (PHP + MySQL; seit 10.11. nicht mehr live, bleibt als Rückweg im Repo)
 - Login (Google, E-Mail) und Sync: PHP in `public/api/` (`_lib.php`, `auth.php`, `state.php`, `health.php`), MySQL `u685288958_werkbank`, Konfiguration **außerhalb** des Webroots in `/werkbank-private/config.php` (Vorlage `docs/werkbank-config.example.php`; echte Werte nie ins Git). Browser-Seite `src/lib/cloud.ts`, Panel `src/ui/Konto.tsx`. `.htaccess` leitet `/api/` nicht auf `index.html` um. Google-Knopf erscheint erst mit `google_client_id` in der Konfiguration. Schema-Änderungen in `migrate()` (`_lib.php`) eintragen und `SCHEMA_VERSION` erhöhen. Sync (`src/lib/cloud.ts`) überschreibt nie still: Bei unterschiedlichen Ständen wählt der Nutzer, der Server verlangt `ifUpdatedAt` oder `force`. Einrichtung: `docs/Login-Einrichtung.md`. PHP-Dateien vor dem Deploy mit `php -l` prüfen.
 
-## Umstieg auf Node.js (Branch `server-node`, in Arbeit)
+## Node.js-Server (live seit 10.11.)
+- **3druckwerkbank.com läuft auf dem Node-Server** und arbeitet auf der echten Datenbank `u685288958_werkbank` (aus `werkbank-private/config.php`, keine `DB_*`-Variablen an der Website setzen). Einspielen wie unten beschrieben, mit `domain: 3druckwerkbank.com`; danach `hosting_cache_clear` (CDN). Erst auf der Baustelle testen, dann live. Testvarianten nie auf die Hauptadresse.
+- Rückweg: Sicherung der statischen Seite samt PHP vom 10.11. liegt in `reference/backup-vor-node/public_html.zip` (nicht im Git). Die Tabellen des alten Abgleichs (`werkstatt`) sind unverändert.
 - Ziel: gemeinsame Werkstatt mit Live-Abgleich, Fotos als Dateien, Bambu-Cloud-Anbindung. Dafür ersetzt `server/index.js` (Express, mysql2, gleiche Tabellen, gleiches Cookie- und Passwortformat) die PHP-Dateien. Der Server liefert auch die gebaute Oberfläche aus `server/public/` aus.
-- Baustelle: https://antiquewhite-falcon-428175.hostingersite.com (Node.js-Website im selben Paket, eigene Datenbank, siehe unten). **3druckwerkbank.com bleibt bis zur Freigabe des Nutzers auf PHP.**
+- Baustelle: https://antiquewhite-falcon-428175.hostingersite.com (Node.js-Website im selben Paket, eigene Datenbank, siehe unten).
 - Konfiguration: Der Server liest die bestehende `werkbank-private/config.php` der Hauptdomain (Umgebungsvariablen haben Vorrang). Keine Zugangsdaten kopieren.
 - Bauen und ausliefern: `VITE_API=node npm run build`, `dist/` nach `server/public/` kopieren (ohne `api/`), `package.json`, `package-lock.json`, `index.js`, `workshops.js`, `files.js`, `bambu.js`, `public/` als `app.zip` per TUS hochladen, dann `hosting_nodejs_start-build` (express, Node 22, `entry_file: index.js`, Quelle Archiv).
 - Geprüft auf Hostinger: WebSocket und Server-Sent Events bleiben offen, ausgehende Verbindung zur Bambu-Cloud (MQTT 8883) geht.
