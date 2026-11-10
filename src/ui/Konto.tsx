@@ -32,7 +32,7 @@ export function KontoSheet({ resetToken }: { resetToken?: string }) {
     e.preventDefault(); setErr(''); setInfo(''); setBusy(true);
     try {
       if (mode === 'anmelden') { await signInWithEmail(email.trim(), password); toast('Angemeldet'); }
-      else if (mode === 'registrieren') { await signUpWithEmail(email.trim(), password); toast('Konto angelegt'); }
+      else if (mode === 'registrieren') { const u = await signUpWithEmail(email.trim(), password); if (u) toast('Konto angelegt'); else { setPassword(''); setInfo('Fast fertig: Wir haben dir eine E-Mail geschickt. Öffne den Link darin, um dein Konto zu bestätigen (gültig eine Stunde). Schau auch im Spam-Ordner nach.'); } }
       else if (mode === 'passwort') { await sendPasswordReset(email.trim()); setInfo('Wenn ein Konto zu dieser E-Mail existiert, ist ein Link zum Zurücksetzen unterwegs (gültig eine Stunde).'); }
       else if (mode === 'neuesPasswort' && resetToken) { await resetPassword(resetToken, password); toast('Neues Passwort gesetzt'); window.location.hash = '#/start'; }
     } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
@@ -81,7 +81,7 @@ export function KontoSheet({ resetToken }: { resetToken?: string }) {
         {mode !== 'neuesPasswort' ? <Field label="E-Mail"><input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field> : null}
         {mode !== 'passwort' ? <Field label={mode === 'neuesPasswort' ? 'Neues Passwort (mindestens 8 Zeichen)' : 'Passwort'}><input className="input" type="password" autoComplete={mode === 'anmelden' ? 'current-password' : 'new-password'} required minLength={mode === 'anmelden' ? 1 : 8} value={password} onChange={(e) => setPassword(e.target.value)} /></Field> : null}
         {err ? <span className="pill pill--bad xs">{err}</span> : null}
-        {info ? <span className="pill xs">{info}</span> : null}
+        {info ? <span className="pill xs" style={{ whiteSpace: 'normal', borderRadius: 10, lineHeight: 1.4 }}>{info}</span> : null}
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn--primary" type="submit" disabled={busy}>{mode === 'anmelden' ? 'Anmelden' : mode === 'registrieren' ? 'Konto anlegen' : mode === 'passwort' ? 'Link senden' : 'Passwort setzen'}</button>
           {mode !== 'anmelden' ? <button className="btn btn--ghost" type="button" onClick={() => { setMode('anmelden'); setErr(''); setInfo(''); }}>Zurück zur Anmeldung</button> : null}

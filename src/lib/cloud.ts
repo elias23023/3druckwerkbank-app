@@ -48,7 +48,10 @@ export const cloudConfigured = () => auth.configured;
 
 // ---- Auth ----
 export async function signInWithEmail(email: string, password: string) { const r = await call<{ user: CloudUser }>('/auth.php?a=login', { json: { email, password } }); setAuth({ user: r.user }); return r.user; }
-export async function signUpWithEmail(email: string, password: string) { const r = await call<{ user: CloudUser }>('/auth.php?a=register', { json: { email, password } }); setAuth({ user: r.user }); return r.user; }
+/** Registrieren. Mit dem Node.js-Server und Mailversand kommt statt des Kontos `null` zurück: dann wartet das Konto auf den Link aus der Bestätigungs-Mail. */
+export async function signUpWithEmail(email: string, password: string): Promise<CloudUser | null> { const r = await call<{ user?: CloudUser; pending?: boolean }>('/auth.php?a=register', { json: { email, password } }); if (!r.user) return null; setAuth({ user: r.user }); return r.user; }
+/** Link aus der Bestätigungs-Mail einlösen: legt das Konto an und meldet an. */
+export async function confirmEmail(token: string) { const r = await call<{ user: CloudUser }>('/auth.php?a=confirm', { json: { token } }); setAuth({ user: r.user }); return r.user; }
 export async function signInWithGoogleCredential(credential: string) { const r = await call<{ user: CloudUser }>('/auth.php?a=google', { json: { credential } }); setAuth({ user: r.user }); return r.user; }
 export async function sendPasswordReset(email: string) { await call('/auth.php?a=reset-request', { json: { email } }); }
 export async function resetPassword(token: string, password: string) { const r = await call<{ user: CloudUser }>('/auth.php?a=reset', { json: { token, password } }); setAuth({ user: r.user }); return r.user; }

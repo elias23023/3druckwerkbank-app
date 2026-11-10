@@ -32,7 +32,7 @@ function loadConfig() {
   const candidates = [e.WERKBANK_CONFIG, cut >= 0 ? path.join(here.slice(0, cut), 'domains', ...rel) : null, path.join(os.homedir(), 'domains', ...rel), path.join(here, '..', 'werkbank-private', 'config.php')].filter(Boolean);
   try {
     const file = candidates.find((c) => fs.existsSync(c)); if (!file) throw new Error('none');
-    const php = fs.readFileSync(file, 'utf8'); const map = { db_name: 'DB_NAME', db_user: 'DB_USER', db_pass: 'DB_PASS', google_client_id: 'GOOGLE_CLIENT_ID', mail_from: 'MAIL_FROM', base_url: 'BASE_URL' };
+    const php = fs.readFileSync(file, 'utf8'); const map = { db_name: 'DB_NAME', db_user: 'DB_USER', db_pass: 'DB_PASS', google_client_id: 'GOOGLE_CLIENT_ID', mail_from: 'MAIL_FROM', base_url: 'BASE_URL', smtp_host: 'SMTP_HOST', smtp_port: 'SMTP_PORT', smtp_user: 'SMTP_USER', smtp_pass: 'SMTP_PASS' };
     for (const m of php.matchAll(/'(\w+)'\s*=>\s*'((?:[^'\\]|\\.)*)'/g)) { const k = map[m[1]]; if (k && !out[k] && !(ownDb && k.startsWith('DB_'))) out[k] = m[2].replace(/\\(['\\])/g, '$1'); }
   } catch { /* no PHP config here: environment only */ }
   return out;
@@ -64,6 +64,8 @@ async function migrate() {
   await q(`CREATE TABLE IF NOT EXISTS sessions (token_hash CHAR(64) PRIMARY KEY, user_id INT UNSIGNED NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME NOT NULL, INDEX (user_id), INDEX (expires_at), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await q(`CREATE TABLE IF NOT EXISTS werkstatt (user_id INT UNSIGNED PRIMARY KEY, state LONGTEXT NOT NULL, updated_at DATETIME(3) NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await q(`CREATE TABLE IF NOT EXISTS resets (token_hash CHAR(64) PRIMARY KEY, user_id INT UNSIGNED NOT NULL, expires_at DATETIME NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  // registrations waiting for the confirmation link from the mail
+  await q(`CREATE TABLE IF NOT EXISTS pending (token_hash CHAR(64) PRIMARY KEY, email VARCHAR(190) NOT NULL, password_hash VARCHAR(255) NOT NULL, expires_at DATETIME NOT NULL, INDEX (email), INDEX (expires_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await q(`CREATE TABLE IF NOT EXISTS attempts (ip VARBINARY(45) NOT NULL, at DATETIME NOT NULL, INDEX (ip, at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 }
 
@@ -151,7 +153,19 @@ function checkState(state) {
   for (const it of state.shopping ?? []) if (it.url !== undefined && it.url !== null && it.url !== '' && !(typeof it.url === 'string' && /^https?:\/\//i.test(it.url) && it.url.length <= 2000)) bad('Link');
 }
 const googleKeys = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
-const mailer = env.SMTP_HOST ? nodemailer.createTransport({ host: env.SMTP_HOST, port: Number(env.SMTP_PORT) || 465, secure: (Number(env.SMTP_PORT) || 465) === 465, auth: { user: env.SMTP_USER, pass: env.SMTP_PASS } }) : nodemailer.createTransport({ sendmail: true, newline: 'unix' });
+// Mail goes out through the mailbox of the domain (SMTP). Without it nothing is sent and registration works without confirmation.
+const mailer = env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS ? nodemailer.createTransport({ host: env.SMTP_HOST, port: Number(env.SMTP_PORT) || 465, secure: (Number(env.SMTP_PORT) || 465) === 465, auth: { user: env.SMTP_USER, pass: env.SMTP_PASS }, connectionTimeout: 10_000, socketTimeout: 15_000 }) : null;
+let mailReady = false;
+const checkMail = () => { if (mailer) mailer.verify().then(() => { mailReady = true; }).catch((e) => { mailReady = false; console.error('mail not ready:', e?.code ?? e?.name ?? 'error'); }); };
+checkMail(); setInterval(checkMail, 30 * 60_000).unref();
+const mailFrom = () => `3Druckwerkbank <${validEmail(env.MAIL_FROM) ? env.MAIL_FROM : env.SMTP_USER}>`;
+/** One mail per address in 5 minutes and three per hour, whatever the reason and whoever asks. */
+async function mayMail(email) {
+  const key = keyOf('mail', email);
+  if (await count(key, 'INTERVAL 5 MINUTE') >= 1 || await count(key, 'INTERVAL 1 HOUR') >= 3) return false;
+  await q('INSERT INTO attempts (ip, at) VALUES (?, NOW())', [key]); return true;
+}
+const sendMail = (to, subject, text) => mailer.sendMail({ from: mailFrom(), to, subject, text });
 
 // ---- app ----
 const app = express();
@@ -159,7 +173,7 @@ app.set('trust proxy', Number(env.TRUST_PROXY ?? 1)); // number of proxies in fr
 app.set('query parser', 'simple');
 app.disable('x-powered-by');
 // Content-Security-Policy as a second line of defence: only our own scripts plus Google sign-in; styles need 'unsafe-inline' (React inline styles)
-const CSP = ["default-src 'self'", "script-src 'self' https://accounts.google.com", "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com", "img-src 'self' data: blob: https:", "font-src 'self' data: https://fonts.gstatic.com",
+const CSP = ["default-src 'self'", "script-src 'self' https://accounts.google.com", "style-src 'self' 'unsafe-inline' https://accounts.google.com", "img-src 'self' data: blob: https:", "font-src 'self' data:",
   "connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://accounts.google.com", "frame-src https://accounts.google.com", "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'", "object-src 'none'"].join('; ');
 app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Strict-Transport-Security': 'max-age=15552000', 'Content-Security-Policy': CSP,
   'Permissions-Policy': 'geolocation=(self), camera=(), microphone=(), payment=(), usb=()', 'Cross-Origin-Opener-Policy': 'same-origin-allow-popups' }); next(); });
@@ -185,7 +199,7 @@ api.use((req, _res, next) => (configured || req.path === '/health' ? next() : ne
 api.get('/health', wrap(async (req, res) => {
   if (!configured) return res.status(503).json({ ok: false, error: 'Konto-Dienst nicht eingerichtet (Konfiguration fehlt).', kind: 'not_configured' });
   let u = null; try { u = await currentUser(req); if (u) await refreshSession(req, res); } catch { u = null; }
-  res.json({ ok: true, configured: true, google: !!env.GOOGLE_CLIENT_ID, googleClientId: env.GOOGLE_CLIENT_ID || null, user: u ? userOut(u) : null });
+  res.json({ ok: true, configured: true, google: !!env.GOOGLE_CLIENT_ID, googleClientId: env.GOOGLE_CLIENT_ID || null, mail: mailReady, user: u ? userOut(u) : null });
 }));
 api.get('/auth/me', wrap(async (req, res) => { const u = await currentUser(req); res.json({ ok: true, user: u ? userOut(u) : null }); }));
 api.post('/auth/logout', wrap(async (req, res) => { await clearSession(req, res); res.json({ ok: true }); }));
@@ -197,9 +211,36 @@ api.post('/auth/register', wrap(async (req, res) => {
   await throttle(req, 'reg', 10);
   if (!validEmail(email)) fail(400, 'Bitte eine gültige E-Mail-Adresse angeben.');
   checkNewPassword(pw);
-  // an existing account (also one that only uses Google so far) never gets a password this way
-  if (await one('SELECT id FROM users WHERE email = ?', [email])) fail(409, 'Für diese E-Mail gibt es schon ein Konto. Bitte anmelden oder „Passwort vergessen“ nutzen.', 'exists');
-  const r = await q('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)', [email, await hashPw(pw), email.split('@')[0].slice(0, 120)]);
+  const exists = async () => !!(await one('SELECT id FROM users WHERE email = ?', [email]));
+  const hash = await hashPw(pw); // always computed, so the response time is the same for known and unknown addresses
+  if (!mailReady) {
+    // no mail available: direct registration (an existing account never gets a password this way)
+    if (await exists()) fail(409, 'Für diese E-Mail gibt es schon ein Konto. Bitte anmelden oder „Passwort vergessen“ nutzen.', 'exists');
+    const r = await q('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)', [email, hash, email.split('@')[0].slice(0, 120)]);
+    await setSession(req, res, r.insertId);
+    return res.json({ ok: true, user: userOut(await userById(r.insertId)) });
+  }
+  // with mail: always the same answer, so nobody learns whether the address has an account. The address gets a confirmation link, or a note that the account exists.
+  res.json({ ok: true, pending: true });
+  try {
+    if (!(await mayMail(email))) return;
+    if (await exists()) { await sendMail(email, '3Druckwerkbank: Du hast schon ein Konto', `Hallo,\n\nfür diese Adresse gibt es bereits ein Konto bei 3Druckwerkbank. Melde dich einfach an:\n${BASE_URL}/\n\nPasswort vergessen? Im Konto-Panel gibt es dafür einen Link.\n\nWenn du das nicht warst, ignoriere diese E-Mail.\n`); return; }
+    const token = crypto.randomBytes(32).toString('hex');
+    await q('DELETE FROM pending WHERE email = ? OR expires_at < NOW()', [email]);
+    await q('INSERT INTO pending (token_hash, email, password_hash, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))', [sha256(token), email, hash]);
+    await sendMail(email, '3Druckwerkbank: Konto bestätigen', `Hallo,\n\nmit diesem Link bestätigst du deine Adresse und dein Konto ist angelegt (gültig eine Stunde):\n${BASE_URL}/#/konto/bestaetigen/${token}\n\nWenn du das nicht warst, ignoriere diese E-Mail.\n`);
+  } catch (e) { console.error('register mail failed:', e?.code ?? e?.name ?? 'error'); }
+}));
+
+// the link from the confirmation mail: creates the account (address confirmed) and signs in
+api.post('/auth/confirm', wrap(async (req, res) => {
+  await throttle(req, 'confirm', 20);
+  const token = str(req.body?.token, 200);
+  const p = /^[a-f0-9]{64}$/.test(token) ? await one('SELECT email, password_hash FROM pending WHERE token_hash = ? AND expires_at > NOW()', [sha256(token)]) : null;
+  if (!p) fail(400, 'Der Link ist ungültig oder abgelaufen. Bitte noch einmal registrieren.');
+  await q('DELETE FROM pending WHERE email = ?', [p.email]);
+  if (await one('SELECT id FROM users WHERE email = ?', [p.email])) fail(409, 'Für diese E-Mail gibt es schon ein Konto. Bitte anmelden.', 'exists');
+  const r = await q('INSERT INTO users (email, password_hash, name, email_verified) VALUES (?, ?, ?, 1)', [p.email, p.password_hash, p.email.split('@')[0].slice(0, 120)]);
   await setSession(req, res, r.insertId);
   res.json({ ok: true, user: userOut(await userById(r.insertId)) });
 }));
@@ -252,16 +293,12 @@ api.post('/auth/reset-request', wrap(async (req, res) => {
   res.json({ ok: true }); // always the same answer, at once; the mail goes out afterwards
   if (!validEmail(email)) return;
   try {
-    // at most one mail per address in 5 minutes and three per hour, whoever asks (no mail flood, no effect on logging in)
-    const mailKey = keyOf('resetmail', email);
-    if (await count(mailKey, 'INTERVAL 5 MINUTE') >= 1 || await count(mailKey, 'INTERVAL 1 HOUR') >= 3) return;
-    await q('INSERT INTO attempts (ip, at) VALUES (?, NOW())', [mailKey]);
+    if (!mailReady || !(await mayMail(email))) return;
     const u = await one('SELECT id FROM users WHERE email = ?', [email]); if (!u) return;
     const token = crypto.randomBytes(32).toString('hex');
     await q('DELETE FROM resets WHERE user_id = ? OR expires_at < NOW()', [u.id]);
     await q('INSERT INTO resets (token_hash, user_id, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))', [sha256(token), u.id]);
-    const from = validEmail(env.MAIL_FROM) ? env.MAIL_FROM : `no-reply@${new URL(BASE_URL).hostname}`;
-    await mailer.sendMail({ from: `3Druckwerkbank <${from}>`, to: email, subject: '3Druckwerkbank: Passwort zurücksetzen', text: `Hallo,\n\nüber diesen Link kannst du in der nächsten Stunde ein neues Passwort setzen:\n${BASE_URL}/#/konto/reset/${token}\n\nWenn du das nicht warst, ignoriere diese E-Mail.\n` });
+    await sendMail(email, '3Druckwerkbank: Passwort zurücksetzen', `Hallo,\n\nüber diesen Link kannst du in der nächsten Stunde ein neues Passwort setzen:\n${BASE_URL}/#/konto/reset/${token}\n\nWenn du das nicht warst, ignoriere diese E-Mail.\n`);
   } catch (e) { console.error('reset mail failed:', e?.code ?? e?.name ?? 'error'); }
 }));
 
@@ -329,7 +366,7 @@ app.use('/api', api);
 
 // ---- the built React app ----
 const pub = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
-app.use(express.static(pub, { index: false, setHeaders: (res, file) => res.set('Cache-Control', /\.(js|css|avif|webp|woff2)$/.test(file) ? 'public, max-age=31536000, immutable' : 'no-cache') }));
+app.use(express.static(pub, { index: false, setHeaders: (res, file) => res.set('Cache-Control', /\.(js|css|avif|webp|woff2?)$/.test(file) ? 'public, max-age=31536000, immutable' : 'no-cache') }));
 app.get('*', (_req, res) => { const index = path.join(pub, 'index.html'); if (!fs.existsSync(index)) return res.status(404).type('text/plain').send('3Druckwerkbank-Server läuft; die Oberfläche ist noch nicht ausgeliefert.'); res.set('Cache-Control', 'no-cache').sendFile(index); });
 
 const server = http.createServer(app);

@@ -22,7 +22,7 @@ import { Wetter } from './worlds/Wetter';
 import { Archiv } from './worlds/Archiv';
 import { Mobile } from './mobile/Mobile';
 import { Tagesportal } from './ui/Tagesportal';
-import { useAuth, useCloudBoot, startSync, stopSync } from './lib/cloud';
+import { useAuth, useCloudBoot, startSync, stopSync, confirmEmail } from './lib/cloud';
 import { resolveSeason } from './lib/season';
 import type { LibraryIsland, WorldId } from './types';
 
@@ -69,6 +69,12 @@ export function App() {
   useEffect(() => { if (auth.user) void startSync(auth.user.id); else stopSync(); }, [auth.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   // Link aus der Passwort-E-Mail: #/konto/reset/<token> öffnet das Konto-Panel mit dem Formular für das neue Passwort
   useEffect(() => { const m = /^#\/konto\/reset\/([A-Za-z0-9]+)/.exec(window.location.hash); if (m) { useStore.getState().openSheet({ kind: 'konto', resetToken: m[1] }); window.location.hash = '#/start'; } }, []);
+  // Link aus der Bestätigungs-Mail: #/konto/bestaetigen/<token> legt das Konto an, meldet an und öffnet das Konto-Panel
+  useEffect(() => {
+    const m = /^#\/konto\/bestaetigen\/([a-f0-9]{64})/.exec(window.location.hash); if (!m) return;
+    window.location.hash = '#/start'; const st = useStore.getState();
+    confirmEmail(m[1]).then(() => { st.toast('Adresse bestätigt. Dein Konto ist angelegt.'); st.openSheet({ kind: 'konto' }); }).catch((e: Error) => { st.toast(e.message || 'Der Link ist ungültig oder abgelaufen.'); st.openSheet({ kind: 'konto' }); });
+  }, []);
   useEffect(() => {
     const theme = mobile ? 'dunkel' : settings.theme === 'auto' ? (DARK_LOOKS.has(look) ? 'dunkel' : 'hell') : settings.theme;
     document.documentElement.dataset.theme = theme;
