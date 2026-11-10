@@ -126,7 +126,7 @@ api.use((req, _res, next) => (configured || req.path === '/health' ? next() : ne
 api.get('/health', wrap(async (req, res) => {
   if (!configured) return res.status(503).json({ ok: false, error: 'Konto-Dienst nicht eingerichtet (Konfiguration fehlt).', kind: 'not_configured' });
   let u = null; try { u = await currentUser(req); } catch { u = null; }
-  res.json({ ok: true, configured: true, google: !!env.GOOGLE_CLIENT_ID, googleClientId: env.GOOGLE_CLIENT_ID || null, user: u ? userOut(u) : null, server: 'node' });
+  res.json({ ok: true, configured: true, google: !!env.GOOGLE_CLIENT_ID, googleClientId: env.GOOGLE_CLIENT_ID || null, user: u ? userOut(u) : null, server: 'node', upSec: Math.round(process.uptime()) });
 }));
 api.get('/auth/me', wrap(async (req, res) => { const u = await currentUser(req); res.json({ ok: true, user: u ? userOut(u) : null }); }));
 api.post('/auth/logout', wrap(async (req, res) => { await clearSession(req, res); res.json({ ok: true }); }));
