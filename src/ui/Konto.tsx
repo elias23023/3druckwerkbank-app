@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { Sheet } from './Sheet';
 import { Field } from './Glass';
 import { IUser, IRefresh } from './Icons';
-import { useAuth, useSyncState, signInWithEmail, signUpWithEmail, signInWithGoogleCredential, sendPasswordReset, resetPassword, signOut, syncNow, takeRemote, renderGoogleButton, readBackup, restoreBackup, type SyncCounts } from '../lib/cloud';
+import { useAuth, useSyncState, signInWithEmail, signUpWithEmail, signInWithGoogleCredential, sendPasswordReset, resetPassword, signOut, signOutEverywhere, canSignOutEverywhere, syncNow, takeRemote, renderGoogleButton, readBackup, restoreBackup, type SyncCounts } from '../lib/cloud';
 import { fmtTime, fmtDate } from '../lib/format';
 import { isDemo } from '../lib/workspace';
 
@@ -52,7 +52,7 @@ export function KontoSheet({ resetToken }: { resetToken?: string }) {
   if (auth.user) {
     const u = auth.user; const name = u.name || u.email; const backup = isDemo ? null : readBackup();
     return (
-      <Sheet title="Konto" icon={<IUser />} onClose={close} foot={<><button className="btn btn--sm" disabled={isDemo || sync.status === 'konflikt' || sync.status === 'lädt'} onClick={() => { void syncNow(); }}><IRefresh width={13} height={13} /> Jetzt speichern</button><button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={async () => { try { await signOut(); toast('Abgemeldet. Die Daten bleiben in diesem Browser.'); } catch { toast('Abmelden nicht möglich: keine Verbindung zum Server.'); } }}>Abmelden</button></>}>
+      <Sheet title="Konto" icon={<IUser />} onClose={close} foot={<><button className="btn btn--sm" disabled={isDemo || sync.status === 'konflikt' || sync.status === 'lädt'} onClick={() => { void syncNow(); }}><IRefresh width={13} height={13} /> Jetzt speichern</button><button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={async () => { try { await signOut(); toast('Abgemeldet. Die Daten bleiben in diesem Browser.'); } catch { toast('Abmelden nicht möglich: keine Verbindung zum Server.'); } }}>Abmelden</button>{canSignOutEverywhere ? <button className="btn btn--sm btn--ghost" title="Beendet die Anmeldung auf allen Geräten" onClick={async () => { if (!confirm('Auf allen Geräten abmelden? Du musst dich überall neu anmelden.')) return; try { await signOutEverywhere(); toast('Auf allen Geräten abgemeldet.'); } catch { toast('Abmelden nicht möglich: keine Verbindung zum Server.'); } }}>Überall abmelden</button> : null}</>}>
         <div className="konto-user">{u.avatar ? <img src={u.avatar} alt="" referrerPolicy="no-referrer" /> : <span className="konto-avatar">{name.slice(0, 1).toUpperCase()}</span>}<div className="col" style={{ gap: 2 }}><b className="small">{name}</b><span className="xs muted">{u.email}{u.provider === 'google' ? ' · Google' : ' · E-Mail'}</span></div></div>
         {isDemo ? <Field label="Synchronisation"><span className="small">Die Beispiel-Werkstatt wird nicht synchronisiert. Wechsle zu „Meine Werkstatt“ (Chip oben links), dort landen deine echten Daten im Konto.</span></Field> : (
           <Field label="Synchronisation">

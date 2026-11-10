@@ -32,12 +32,14 @@ function loadConfig() {
     const php = fs.readFileSync(file, 'utf8'); const map = { db_name: 'DB_NAME', db_user: 'DB_USER', db_pass: 'DB_PASS', google_client_id: 'GOOGLE_CLIENT_ID', mail_from: 'MAIL_FROM', base_url: 'BASE_URL' };
     for (const m of php.matchAll(/'(\w+)'\s*=>\s*'((?:[^'\\]|\\.)*)'/g)) { const k = map[m[1]]; if (k && !out[k]) out[k] = m[2].replace(/\\(['\\])/g, '$1'); }
   } catch { /* no PHP config here: environment only */ }
+  if (!out.DB_PASS && out.DB_PASSWORD) out.DB_PASS = out.DB_PASSWORD; // name used by Hostinger's database setup
   return out;
 }
 const env = loadConfig();
 const BASE_URL = /^https:\/\/[a-z0-9.-]+$/i.test(env.BASE_URL ?? '') ? env.BASE_URL : 'https://3druckwerkbank.com';
-const COOKIE = 'wb_session';
-const SESSION_DAYS = 60;
+const SESSION_DAYS = 30; // sliding: extended while the account is in use
+const BCRYPT_COST = 12;
+const MAX_PW_BYTES = 72; // bcrypt only looks at the first 72 bytes
 const MAX_STATE_BYTES = 12 * 1024 * 1024;
 const configured = !!(env.DB_NAME && env.DB_USER && env.DB_PASS);
 
@@ -67,10 +69,19 @@ async function migrate() {
 const userOut = (u) => ({ id: Number(u.id), email: u.email, name: u.name, avatar: u.avatar_url, provider: u.google_sub ? 'google' : 'email' });
 const userById = async (id) => (await one('SELECT id, email, name, avatar_url, google_sub FROM users WHERE id = ?', [id])) ?? fail(500, 'Nutzer nicht gefunden.');
 const isLocal = (req) => ['localhost', '127.0.0.1'].includes(req.hostname);
-const cookieOf = (req) => { const m = new RegExp(`(?:^|;\\s*)${COOKIE}=([a-f0-9]{64})`).exec(req.headers.cookie ?? ''); return m ? m[1] : ''; };
+// __Host- pins the cookie to this exact host over HTTPS (no Domain attribute, path /); plain name only for local development
+const cookieName = (req) => (isLocal(req) ? 'wb_session' : '__Host-wb_session');
+const cookieOpts = (req) => ({ path: '/', secure: !isLocal(req), httpOnly: true, sameSite: 'lax' });
+const cookieOf = (req) => { const m = new RegExp(`(?:^|;\\s*)${cookieName(req)}=([a-f0-9]{64})`).exec(req.headers.cookie ?? ''); return m ? m[1] : ''; };
 async function currentUser(req) {
   const t = cookieOf(req); if (!t) return null;
   return one('SELECT u.id, u.email, u.name, u.avatar_url, u.google_sub FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > NOW()', [sha256(t)]);
+}
+/** Sliding session: at most once a day the expiry moves forward and the cookie is sent again. Unused sessions end after SESSION_DAYS. */
+async function refreshSession(req, res) {
+  const t = cookieOf(req); if (!t) return;
+  const r = await q(`UPDATE sessions SET expires_at = DATE_ADD(NOW(), INTERVAL ${SESSION_DAYS} DAY) WHERE token_hash = ? AND expires_at > NOW() AND expires_at < DATE_ADD(NOW(), INTERVAL ${SESSION_DAYS - 1} DAY)`, [sha256(t)]);
+  if (r.affectedRows) res.cookie(cookieName(req), t, { ...cookieOpts(req), maxAge: SESSION_DAYS * 86400_000 });
 }
 const requireUser = async (req) => (await currentUser(req)) ?? fail(401, 'Nicht angemeldet.', 'auth');
 async function setSession(req, res, userId) {
@@ -78,11 +89,11 @@ async function setSession(req, res, userId) {
   await q(`INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ${SESSION_DAYS} DAY))`, [sha256(token), userId]);
   await q('DELETE FROM sessions WHERE expires_at < NOW()');
   await q('UPDATE users SET last_login_at = NOW() WHERE id = ?', [userId]);
-  res.cookie(COOKIE, token, { maxAge: SESSION_DAYS * 86400_000, path: '/', secure: !isLocal(req), httpOnly: true, sameSite: 'lax' });
+  res.cookie(cookieName(req), token, { ...cookieOpts(req), maxAge: SESSION_DAYS * 86400_000 });
 }
 async function clearSession(req, res) {
   const t = cookieOf(req); if (t) await q('DELETE FROM sessions WHERE token_hash = ?', [sha256(t)]);
-  res.clearCookie(COOKIE, { path: '/', secure: !isLocal(req), httpOnly: true, sameSite: 'lax' });
+  res.clearCookie(cookieName(req), cookieOpts(req));
 }
 /** Throttle key: IPv4 as is, IPv6 as /64 network. */
 function ipKey(req) {
@@ -92,23 +103,64 @@ function ipKey(req) {
   const full = [...h, ...Array(Math.max(0, 8 - h.length - t.length)).fill('0'), ...t].map((x) => x.padStart(4, '0'));
   return `v6:${full.slice(0, 4).join('')}`;
 }
-/** At most 20 attempts per connection and 10 per e-mail address in 15 minutes. */
-async function throttle(req, email) {
-  if (Math.random() < 0.05) await q('DELETE FROM attempts WHERE at < (NOW() - INTERVAL 1 DAY)');
-  const keys = [[ipKey(req), 20]]; if (email) keys.push([`e:${sha256(email.toLowerCase()).slice(0, 40)}`, 10]);
-  for (const [k, max] of keys) { const r = await one('SELECT COUNT(*) AS n FROM attempts WHERE ip = ? AND at > (NOW() - INTERVAL 15 MINUTE)', [k]); if (Number(r.n) >= max) fail(429, 'Zu viele Versuche. Bitte in einigen Minuten noch einmal.', 'rate'); }
-  for (const [k] of keys) await q('INSERT INTO attempts (ip, at) VALUES (?, NOW())', [k]);
+/**
+ * Limits in a 15 minute window, counted per action so one action cannot be used to block another:
+ * every call counts for the connection; `hit` counts for an extra key (e-mail address) and is called separately, e.g. only for failed logins.
+ * The attempt is written first and counted afterwards, so parallel requests cannot slip past the limit.
+ */
+const LIMIT_WINDOW = 'INTERVAL 15 MINUTE';
+const keyOf = (action, value) => `${action}:${sha256(String(value).toLowerCase()).slice(0, 38)}`;
+async function hit(key, max) {
+  await q('INSERT INTO attempts (ip, at) VALUES (?, NOW())', [key]);
+  const r = await one(`SELECT COUNT(*) AS n FROM attempts WHERE ip = ? AND at > (NOW() - ${LIMIT_WINDOW})`, [key]);
+  if (Number(r.n) > max) fail(429, 'Zu viele Versuche. Bitte in einigen Minuten noch einmal.', 'rate');
 }
-const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 10);
-const hashPw = (pw) => bcrypt.hash(pw, 10);
+const count = async (key, window = LIMIT_WINDOW) => Number((await one(`SELECT COUNT(*) AS n FROM attempts WHERE ip = ? AND at > (NOW() - ${window})`, [key])).n);
+async function throttle(req, action, max = 20) {
+  if (Math.random() < 0.05) await q('DELETE FROM attempts WHERE at < (NOW() - INTERVAL 1 DAY)');
+  await hit(keyOf(action, ipKey(req)), max);
+}
+const pwBytes = (pw) => Buffer.byteLength(pw, 'utf8');
+const checkNewPassword = (pw) => { if (pw.length < 8) fail(400, 'Das Passwort braucht mindestens 8 Zeichen.'); if (pwBytes(pw) > MAX_PW_BYTES) fail(400, 'Das Passwort darf höchstens 72 Zeichen lang sein.'); };
+const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), BCRYPT_COST);
+const hashPw = (pw) => bcrypt.hash(pw, BCRYPT_COST);
+const needsRehash = (hash) => { const m = /^\$2[aby]\$(\d\d)\$/.exec(hash ?? ''); return !m || Number(m[1]) < BCRYPT_COST; };
+/** Writes per account and minute, kept in memory (one process). */
+const writes = new Map();
+function writeLimit(userId, max = 30) {
+  const now = Date.now(); const list = (writes.get(userId) ?? []).filter((t) => now - t < 60_000);
+  if (list.length >= max) fail(429, 'Zu viele Speichervorgänge. Bitte kurz warten.', 'rate');
+  list.push(now); writes.set(userId, list);
+  if (writes.size > 5000) for (const [k, v] of writes) if (!v.some((t) => now - t < 60_000)) writes.delete(k);
+}
+/** Only inline images may be stored as pictures; anything else would make every viewer's browser call a foreign address. */
+const IMAGE_DATA = /^data:image\/(jpeg|png|webp|gif|avif);base64,[A-Za-z0-9+/=]+$/;
+const LISTS = ['projects', 'devices', 'spools', 'tasks', 'prints', 'reports', 'appointments', 'shopping', 'energy'];
+function checkState(state) {
+  const bad = (why) => fail(400, `Kein gültiger Werkstatt-Stand (${why}).`);
+  if (!state || typeof state !== 'object' || Array.isArray(state) || state.version !== 1 || !Array.isArray(state.projects)) bad('Aufbau');
+  for (const k of LISTS) { const v = state[k]; if (v === undefined || v === null) continue; if (!Array.isArray(v) || v.length > 5000) bad(k); for (const item of v) if (!item || typeof item !== 'object' || Array.isArray(item) || (item.id !== undefined && (typeof item.id !== 'string' || item.id.length > 80))) bad(k); }
+  if (state.settings !== undefined && (typeof state.settings !== 'object' || state.settings === null || Array.isArray(state.settings))) bad('settings');
+  for (const p of state.projects) {
+    const photo = p.island?.photoDataUrl; if (photo !== undefined && photo !== null && !(typeof photo === 'string' && IMAGE_DATA.test(photo))) bad('Bild');
+    if (p.files !== undefined && !Array.isArray(p.files)) bad('files');
+    for (const f of p.files ?? []) { if (!f || typeof f !== 'object') bad('files'); if (f.dataUrl !== undefined && f.dataUrl !== null && !(typeof f.dataUrl === 'string' && IMAGE_DATA.test(f.dataUrl))) bad('Bild'); }
+  }
+  for (const it of state.shopping ?? []) if (it.url !== undefined && it.url !== null && it.url !== '' && !(typeof it.url === 'string' && /^https?:\/\//i.test(it.url) && it.url.length <= 2000)) bad('Link');
+}
 const googleKeys = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
 const mailer = env.SMTP_HOST ? nodemailer.createTransport({ host: env.SMTP_HOST, port: Number(env.SMTP_PORT) || 465, secure: (Number(env.SMTP_PORT) || 465) === 465, auth: { user: env.SMTP_USER, pass: env.SMTP_PASS } }) : nodemailer.createTransport({ sendmail: true, newline: 'unix' });
 
 // ---- app ----
 const app = express();
-app.set('trust proxy', 1);
+app.set('trust proxy', Number(env.TRUST_PROXY ?? 1)); // number of proxies in front of the app (CDN, web server); see docs
+app.set('query parser', 'simple');
 app.disable('x-powered-by');
-app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Strict-Transport-Security': 'max-age=15552000' }); next(); });
+// Content-Security-Policy as a second line of defence: only our own scripts plus Google sign-in; styles need 'unsafe-inline' (React inline styles)
+const CSP = ["default-src 'self'", "script-src 'self' https://accounts.google.com", "style-src 'self' 'unsafe-inline' https://accounts.google.com", "img-src 'self' data: blob: https:", "font-src 'self' data:",
+  "connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://accounts.google.com", "frame-src https://accounts.google.com", "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'", "object-src 'none'"].join('; ');
+app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Strict-Transport-Security': 'max-age=15552000', 'Content-Security-Policy': CSP,
+  'Permissions-Policy': 'geolocation=(self), camera=(), microphone=(), payment=(), usb=()', 'Cross-Origin-Opener-Policy': 'same-origin-allow-popups' }); next(); });
 
 const api = express.Router();
 api.use((req, res, next) => { res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'same-origin' }); next(); });
@@ -116,26 +168,33 @@ api.use((req, res, next) => { res.set({ 'Cache-Control': 'no-store', 'Referrer-P
 api.use((req, res, next) => {
   const site = req.headers['sec-fetch-site'];
   if (site && site !== 'same-origin' && site !== 'none' && req.method !== 'GET') return next(new ApiError(403, 'Falsche Herkunft.'));
-  const origin = req.headers.origin; if (!origin) return next();
+  const origin = req.headers.origin;
+  // a browser always sends Origin or Sec-Fetch-Site with a writing request; without either the call is refused
+  if (!origin) return req.method === 'GET' || site ? next() : next(new ApiError(403, 'Falsche Herkunft.'));
   let host = ''; try { host = new URL(origin).hostname.toLowerCase(); } catch { /* invalid origin */ }
   return host && host === String(req.hostname).toLowerCase() ? next() : next(new ApiError(403, 'Falsche Herkunft.'));
 });
-api.use(express.json({ limit: '13mb' }));
+// small bodies everywhere; the large one only for /state and only after the session has been checked (see putState)
+const smallBody = express.json({ limit: '10kb' });
+const bigBody = express.json({ limit: '13mb' });
+api.use((req, res, next) => (req.path === '/state' ? next() : smallBody(req, res, next)));
 api.use((req, _res, next) => (configured || req.path === '/health' ? next() : next(new ApiError(503, 'Konto-Dienst nicht eingerichtet (Konfiguration fehlt).', 'not_configured'))));
 
 api.get('/health', wrap(async (req, res) => {
   if (!configured) return res.status(503).json({ ok: false, error: 'Konto-Dienst nicht eingerichtet (Konfiguration fehlt).', kind: 'not_configured' });
-  let u = null; try { u = await currentUser(req); } catch { u = null; }
-  res.json({ ok: true, configured: true, google: !!env.GOOGLE_CLIENT_ID, googleClientId: env.GOOGLE_CLIENT_ID || null, user: u ? userOut(u) : null, server: 'node', upSec: Math.round(process.uptime()) });
+  let u = null; try { u = await currentUser(req); if (u) await refreshSession(req, res); } catch { u = null; }
+  res.json({ ok: true, configured: true, google: !!env.GOOGLE_CLIENT_ID, googleClientId: env.GOOGLE_CLIENT_ID || null, user: u ? userOut(u) : null });
 }));
 api.get('/auth/me', wrap(async (req, res) => { const u = await currentUser(req); res.json({ ok: true, user: u ? userOut(u) : null }); }));
 api.post('/auth/logout', wrap(async (req, res) => { await clearSession(req, res); res.json({ ok: true }); }));
+// ends every session of the account on all devices
+api.post('/auth/logout-all', wrap(async (req, res) => { const u = await requireUser(req); await q('DELETE FROM sessions WHERE user_id = ?', [u.id]); res.clearCookie(cookieName(req), cookieOpts(req)); res.json({ ok: true }); }));
 
 api.post('/auth/register', wrap(async (req, res) => {
   const email = str(req.body?.email).trim().toLowerCase(); const pw = str(req.body?.password, 1000);
-  await throttle(req, email);
+  await throttle(req, 'reg', 10);
   if (!validEmail(email)) fail(400, 'Bitte eine gültige E-Mail-Adresse angeben.');
-  if (pw.length < 8) fail(400, 'Das Passwort braucht mindestens 8 Zeichen.');
+  checkNewPassword(pw);
   // an existing account (also one that only uses Google so far) never gets a password this way
   if (await one('SELECT id FROM users WHERE email = ?', [email])) fail(409, 'Für diese E-Mail gibt es schon ein Konto. Bitte anmelden oder „Passwort vergessen“ nutzen.', 'exists');
   const r = await q('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)', [email, await hashPw(pw), email.split('@')[0].slice(0, 120)]);
@@ -145,17 +204,21 @@ api.post('/auth/register', wrap(async (req, res) => {
 
 api.post('/auth/login', wrap(async (req, res) => {
   const email = str(req.body?.email).trim().toLowerCase(); const pw = str(req.body?.password, 1000);
-  await throttle(req, email);
+  await throttle(req, 'login', 20);
+  // per address only failed attempts count (30 in 15 minutes), separate from password mails, so a few wrong guesses by someone else do not lock the owner out
+  const mailKey = keyOf('loginfail', email);
+  if (await count(mailKey) >= 30) fail(429, 'Zu viele Versuche. Bitte in einigen Minuten noch einmal.', 'rate');
   const u = await one('SELECT id, password_hash FROM users WHERE email = ?', [email]);
   // always compare a hash, so the response time does not reveal whether the address exists
-  const valid = await bcrypt.compare(pw, u?.password_hash ?? DUMMY_HASH);
-  if (!u || !u.password_hash || !valid) fail(401, 'E-Mail oder Passwort stimmen nicht.', 'credentials');
+  const valid = pwBytes(pw) <= 1000 && await bcrypt.compare(pw, u?.password_hash ?? DUMMY_HASH);
+  if (!u || !u.password_hash || !valid) { await q('INSERT INTO attempts (ip, at) VALUES (?, NOW())', [mailKey]); fail(401, 'E-Mail oder Passwort stimmen nicht.', 'credentials'); }
+  if (needsRehash(u.password_hash) && pwBytes(pw) <= MAX_PW_BYTES) await q('UPDATE users SET password_hash = ? WHERE id = ?', [await hashPw(pw), u.id]);
   await setSession(req, res, u.id);
   res.json({ ok: true, user: userOut(await userById(u.id)) });
 }));
 
 api.post('/auth/google', wrap(async (req, res) => {
-  await throttle(req);
+  await throttle(req, 'google', 20);
   if (!env.GOOGLE_CLIENT_ID) fail(503, 'Google-Anmeldung ist nicht eingerichtet.', 'not_configured');
   let c;
   try { c = (await jwtVerify(str(req.body?.credential, 5000), googleKeys, { issuer: ['https://accounts.google.com', 'accounts.google.com'], audience: env.GOOGLE_CLIENT_ID, algorithms: ['RS256'], clockTolerance: 60 })).payload; }
@@ -183,23 +246,27 @@ api.post('/auth/google', wrap(async (req, res) => {
 
 api.post('/auth/reset-request', wrap(async (req, res) => {
   const email = str(req.body?.email).trim().toLowerCase();
-  await throttle(req, email);
+  await throttle(req, 'resetreq', 10);
   res.json({ ok: true }); // always the same answer, at once; the mail goes out afterwards
   if (!validEmail(email)) return;
   try {
+    // at most one mail per address in 5 minutes and three per hour, whoever asks (no mail flood, no effect on logging in)
+    const mailKey = keyOf('resetmail', email);
+    if (await count(mailKey, 'INTERVAL 5 MINUTE') >= 1 || await count(mailKey, 'INTERVAL 1 HOUR') >= 3) return;
+    await q('INSERT INTO attempts (ip, at) VALUES (?, NOW())', [mailKey]);
     const u = await one('SELECT id FROM users WHERE email = ?', [email]); if (!u) return;
     const token = crypto.randomBytes(32).toString('hex');
     await q('DELETE FROM resets WHERE user_id = ? OR expires_at < NOW()', [u.id]);
     await q('INSERT INTO resets (token_hash, user_id, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))', [sha256(token), u.id]);
     const from = validEmail(env.MAIL_FROM) ? env.MAIL_FROM : `no-reply@${new URL(BASE_URL).hostname}`;
     await mailer.sendMail({ from: `3Druckwerkbank <${from}>`, to: email, subject: '3Druckwerkbank: Passwort zurücksetzen', text: `Hallo,\n\nüber diesen Link kannst du in der nächsten Stunde ein neues Passwort setzen:\n${BASE_URL}/#/konto/reset/${token}\n\nWenn du das nicht warst, ignoriere diese E-Mail.\n` });
-  } catch (e) { console.error('reset mail failed:', e?.message ?? e); }
+  } catch (e) { console.error('reset mail failed:', e?.code ?? e?.name ?? 'error'); }
 }));
 
 api.post('/auth/reset', wrap(async (req, res) => {
-  await throttle(req);
+  await throttle(req, 'reset', 20);
   const token = str(req.body?.token, 200); const pw = str(req.body?.password, 1000);
-  if (pw.length < 8) fail(400, 'Das Passwort braucht mindestens 8 Zeichen.');
+  checkNewPassword(pw);
   const r = /^[a-f0-9]{64}$/.test(token) ? await one('SELECT user_id FROM resets WHERE token_hash = ? AND expires_at > NOW()', [sha256(token)]) : null;
   if (!r) fail(400, 'Der Link ist ungültig oder abgelaufen.');
   await q('UPDATE users SET password_hash = ?, email_verified = 1 WHERE id = ?', [await hashPw(pw), r.user_id]);
@@ -213,12 +280,23 @@ api.get('/state', wrap(async (req, res) => {
   const u = await requireUser(req);
   const r = await one(`SELECT state, ${TS} AS u FROM werkstatt WHERE user_id = ?`, [u.id]);
   if (!r) return res.json({ ok: true, state: null, updatedAt: null });
-  res.type('json').send(`{"ok":true,"state":${r.state},"updatedAt":"${iso(r.u)}"}`);
+  // the stored text is passed through unparsed (it can be 12 MB); a cheap shape check keeps a damaged row from producing a broken answer
+  const text = String(r.state).trim(); if (!(text.startsWith('{') && text.endsWith('}'))) fail(500, 'Der gespeicherte Stand ist beschädigt.');
+  res.type('json').send(`{"ok":true,"state":${text},"updatedAt":"${iso(r.u)}"}`);
 }));
+/** Session, size and write limit are checked before a single byte of the (large) body is read. */
+const gate = async (req, res, next) => {
+  try {
+    req.user = await requireUser(req);
+    if (Number(req.headers['content-length'] ?? 0) > 13 * 1024 * 1024) fail(413, 'Der Stand ist zu groß (über 12 MB). Bitte große Fotos verkleinern.');
+    writeLimit(req.user.id);
+  } catch (e) { return next(e); }
+  bigBody(req, res, next);
+};
 const putState = wrap(async (req, res) => {
-  const u = await requireUser(req);
+  const u = req.user;
   const state = req.body?.state;
-  if (!state || typeof state !== 'object' || state.version !== 1 || !Array.isArray(state.projects)) fail(400, 'Kein gültiger Werkstatt-Stand.');
+  checkState(state);
   const json = JSON.stringify(state);
   if (Buffer.byteLength(json) > MAX_STATE_BYTES) fail(413, 'Der Stand ist zu groß (über 12 MB). Bitte große Fotos verkleinern.');
   const force = req.body.force === true; const known = typeof req.body.ifUpdatedAt === 'string' ? req.body.ifUpdatedAt : '';
@@ -234,14 +312,14 @@ const putState = wrap(async (req, res) => {
     res.json({ ok: true, updatedAt: iso(now.u) });
   } catch (e) { try { await conn.rollback(); } catch { /* already closed */ } throw e; } finally { conn.release(); }
 });
-api.put('/state', putState); api.post('/state', putState);
+api.put('/state', gate, putState); api.post('/state', gate, putState);
 api.use((_req, _res, next) => next(new ApiError(404, 'Unbekannte Aktion.')));
 // errors always as a short JSON answer; details only in the server log
-api.use((err, _req, res, _next) => {
+api.use((err, req, res, _next) => {
   if (err instanceof ApiError) return res.status(err.status).json({ ok: false, error: err.message, kind: err.kind });
-  if (err?.type === 'entity.too.large') return res.status(413).json({ ok: false, error: 'Der Stand ist zu groß (über 12 MB). Bitte große Fotos verkleinern.', kind: 'error' });
+  if (err?.type === 'entity.too.large') return res.status(413).json({ ok: false, error: req.path === '/state' ? 'Der Stand ist zu groß (über 12 MB). Bitte große Fotos verkleinern.' : 'Die Anfrage ist zu groß.', kind: 'error' });
   if (err?.type === 'entity.parse.failed') return res.status(400).json({ ok: false, error: 'Ungültige Anfrage.', kind: 'error' });
-  console.error('api error:', err?.code ?? '', err?.message ?? err);
+  console.error('api error:', err?.code ?? err?.name ?? 'error'); // no message text: it can contain data
   const db = ['ECONNREFUSED', 'PROTOCOL_CONNECTION_LOST', 'ER_ACCESS_DENIED_ERROR', 'ETIMEDOUT'].includes(err?.code);
   res.status(db ? 503 : 500).json({ ok: false, error: db ? 'Datenbank nicht erreichbar.' : 'Interner Fehler. Bitte später noch einmal versuchen.', kind: db ? 'db' : 'server' });
 });
@@ -253,5 +331,5 @@ app.use(express.static(pub, { index: false, setHeaders: (res, file) => res.set('
 app.get('*', (_req, res) => { const index = path.join(pub, 'index.html'); if (!fs.existsSync(index)) return res.status(404).type('text/plain').send('3Druckwerkbank-Server läuft; die Oberfläche ist noch nicht ausgeliefert.'); res.set('Cache-Control', 'no-cache').sendFile(index); });
 
 const server = http.createServer(app);
-if (configured) migrate().catch((e) => console.error('migrate failed:', e?.code ?? '', e?.message ?? e));
+if (configured) migrate().catch((e) => console.error('migrate failed:', e?.code ?? e?.name ?? 'error'));
 server.listen(Number(env.PORT) || 3000, () => console.log(`3druckwerkbank server on ${Number(env.PORT) || 3000}, configured=${configured}`));

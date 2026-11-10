@@ -55,6 +55,10 @@ export async function resetPassword(token: string, password: string) { const r =
 /** Abmelden gilt erst, wenn der Server die Sitzung beendet hat (sonst wäre man nach dem Neuladen wieder angemeldet). */
 export async function signOut() { await flushSync(); await call('/auth.php?a=logout', { json: {} }); setAuth({ user: null }); stopSync(); }
 
+/** Überall abmelden: beendet die Sitzungen auf allen Geräten (nur mit dem Node.js-Server). */
+export const canSignOutEverywhere = NODE_API;
+export async function signOutEverywhere() { await flushSync(); await call('/auth.php?a=logout-all', { json: {} }); setAuth({ user: null }); stopSync(); }
+
 /** Google Identity Services laden und den offiziellen Knopf in ein Element rendern. */
 export function renderGoogleButton(el: HTMLElement, clientId: string, onCredential: (c: string) => void): () => void {
   let cancelled = false;

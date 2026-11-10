@@ -68,6 +68,9 @@ const ev = (type: HistoryType, title: string, detail?: string): HistoryEvent => 
 const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as T[]) : []);
 const str = (v: unknown, fallback = '') => (typeof v === 'string' ? v : fallback);
 const num = (v: unknown, fallback = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
+/** Bilder nur als eingebettete Bilddaten: eine fremde Adresse würde beim Anzeigen von jedem Browser abgerufen. */
+const IMAGE_DATA = /^data:image\/(jpeg|png|webp|gif|avif);base64,/;
+const imageData = (v: unknown) => (typeof v === 'string' && IMAGE_DATA.test(v) ? v : undefined);
 const DEFAULT_ISLAND: Project['island'] = { kind: 'bibliothek', libraryId: 'werkstatt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } };
 /** Fremde Daten (Import, Konto, alter Speicher) so ergänzen, dass die Oberfläche nie auf fehlende Felder trifft. */
 export function normalizeState(j: Partial<PersistedState> | null | undefined): Omit<PersistedState, 'weather'> {
@@ -75,8 +78,8 @@ export function normalizeState(j: Partial<PersistedState> | null | undefined): O
   const projects = arr<Project>(o.projects).filter((p) => typeof p.id === 'string').map((p) => ({
     ...p, name: str(p.name, 'Ohne Namen'), description: str(p.description), type: str(p.type, 'Sonstiges / Universal'), areas: arr<string>(undefined).concat(Array.isArray(p.areas) ? p.areas.filter((x) => typeof x === 'string') : []), tags: Array.isArray(p.tags) ? p.tags.filter((x) => typeof x === 'string') : [],
     stage: (STAGES.includes(p.stage) ? p.stage : 'Idee') as Project['stage'], progress: clamp(num(p.progress), 0, 100), favorite: !!p.favorite, createdAt: str(p.createdAt, nowIso()), updatedAt: str(p.updatedAt, nowIso()),
-    island: p.island && typeof p.island === 'object' && typeof p.island.libraryId === 'string' ? { ...DEFAULT_ISLAND, ...p.island, frame: { ...DEFAULT_ISLAND.frame, ...(p.island.frame ?? {}) } } : DEFAULT_ISLAND,
-    milestones: arr<Milestone>(p.milestones), versions: arr<Version>(p.versions).map((v) => ({ ...v, changes: Array.isArray(v.changes) ? v.changes : [] })), files: arr<Project['files'][number]>(p.files), notes: str(p.notes), experiences: Array.isArray(p.experiences) ? p.experiences.filter((x) => typeof x === 'string') : [],
+    island: p.island && typeof p.island === 'object' && typeof p.island.libraryId === 'string' ? { ...DEFAULT_ISLAND, ...p.island, photoDataUrl: imageData(p.island.photoDataUrl), kind: (p.island.kind === 'eigenes' && imageData(p.island.photoDataUrl) ? 'eigenes' : 'bibliothek') as Project['island']['kind'], frame: { ...DEFAULT_ISLAND.frame, ...(p.island.frame ?? {}) } } : DEFAULT_ISLAND,
+    milestones: arr<Milestone>(p.milestones), versions: arr<Version>(p.versions).map((v) => ({ ...v, changes: Array.isArray(v.changes) ? v.changes : [] })), files: arr<Project['files'][number]>(p.files).map((f) => ({ ...f, name: str(f.name, 'Datei'), dataUrl: imageData(f.dataUrl) })), notes: str(p.notes), experiences: Array.isArray(p.experiences) ? p.experiences.filter((x) => typeof x === 'string') : [],
     history: arr<HistoryEvent>(p.history), requiredSpools: arr<{ spoolId: string; grams: number }>(p.requiredSpools), toolIds: Array.isArray(p.toolIds) ? p.toolIds.filter((x) => typeof x === 'string') : undefined,
   }));
   const devices = arr<Device>(o.devices).filter((d) => typeof d.id === 'string').map((d) => ({ ...d, name: str(d.name, 'Gerät'), model: str(d.model), location: str(d.location), kind: (['drucker', 'ams', 'trockner', 'werkzeug'].includes(d.kind) ? d.kind : 'werkzeug') as DeviceKind, hoursTotal: Math.max(0, num(d.hoursTotal)), maintenance: arr<Device['maintenance'][number]>(d.maintenance), slots: Array.isArray(d.slots) ? arr<{ index: number; spoolId?: string }>(d.slots) : undefined }));
@@ -86,7 +89,7 @@ export function normalizeState(j: Partial<PersistedState> | null | undefined): O
     version: 1, seededAt: typeof o.seededAt === 'string' ? o.seededAt : undefined, projects, devices, spools, prints,
     tasks: arr<Task>(o.tasks).filter((t) => typeof t.id === 'string').map((t) => ({ ...t, title: str(t.title, 'Aufgabe'), order: num(t.order), kind: t.kind ?? 'allgemein' })),
     reports: arr<ArchiveReport>(o.reports).map((r) => ({ ...r, lessons: Array.isArray(r.lessons) ? r.lessons : [], versionsUsed: Array.isArray(r.versionsUsed) ? r.versionsUsed : [] })),
-    appointments: arr<PersistedState['appointments'][number]>(o.appointments).filter((a) => typeof a.at === 'string'), shopping: arr<ShoppingItem>(o.shopping),
+    appointments: arr<PersistedState['appointments'][number]>(o.appointments).filter((a) => typeof a.at === 'string'), shopping: arr<ShoppingItem>(o.shopping).map((x) => ({ ...x, title: str(x.title, 'Eintrag'), qty: str(x.qty, '1'), url: typeof x.url === 'string' && /^https?:\/\//i.test(x.url) ? x.url : undefined })),
     settings: { ...DEFAULT_SETTINGS, ...(o.settings && typeof o.settings === 'object' ? o.settings : {}), location: { ...DEFAULT_SETTINGS.location, ...(o.settings?.location ?? {}) } }, energy: arr<EnergyEntry>(o.energy),
   };
 }
