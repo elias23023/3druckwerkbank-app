@@ -65,6 +65,8 @@
   const q = new URLSearchParams(location.search); const look = q.get('look'); const scene = q.get('scene') || 'start';
   document.getElementById('scene').src = `app/public/img/szene-${scene}-1280.webp`;
   if (q.get('nah')) document.body.classList.add('nah');
+  // ?ton=<name> selects a colour variant of the look: it sets data-wa-ton on <html> (no parameter = the default variant)
+  if (q.get('ton')) document.documentElement.dataset.waTon = q.get('ton');
   // the tab bar behaves like the real app (React): the tapped tab gets class "on" + aria-current="page", the old one loses both,
   // and the scene <img> is REPLACED by a new element (the app renders <img key={scene}>), order of scenes as in the app
   const TAB_SCENE = ['start', 'heute', 'projekte', 'material', 'druck'];

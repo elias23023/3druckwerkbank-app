@@ -7,6 +7,9 @@ Arbeitsmaschine liegt. Er ist **nicht** in die App eingebaut: nichts hier wird v
   verbiegt das Landschaftsbild dahinter. Rückfall ohne WebGL: ruhiges Glas aus `look.css`.
 - `karten-leiste/` – Buttons plus Karten als „flaches Becken“ und Menüleiste mit fließender Markierung, fertig gebaut
   (noch blau, die Farbe wird noch gewählt). `knoepfe/bericht.md`: Bericht zum Aufbau der Buttons (englisch).
+- `farbe-zwei-toene/` – wie `karten-leiste/`, aber ohne Blau und in zwei Farbtönen: „dunkel“ (Standard, neutrales dunkles Wasser)
+  und „klar“ (umschaltbar über `data-wa-ton="klar"` am `<html>`-Element). Ein Ton ist nur ein Block von Werten.
+  `notizen-zwischenstand.md`: laufende Notizen der Bauschritte für die spätere Anleitung (englisch).
 - `werkzeug/` – Testseite und Skripte, mit denen die Bilder entstehen. Die Pfade darin zeigen noch auf die
   Arbeitsmaschine und müssen beim Einbau ins Projekt angepasst werden:
   `base.html` (Nachbau des mobilen Bildschirms mit den echten Stylesheets, lädt einen Look-Ordner per `?look=`),
