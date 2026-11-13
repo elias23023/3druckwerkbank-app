@@ -437,7 +437,86 @@ not for Chromium afterwards: it points Playwright at a folder without Chromium).
 
 ## 9. Verified
 
-VERIFIED_PLACEHOLDER
+All on the work machine (software rendering; Chromium and Playwright's WebKit for Linux, which paints no
+`backdrop-filter`). Reference: the approved look, `docs/wasser-look/entwurf/nachgebessert`. Nothing ran on a phone.
+
+**What the template changes against the approved files - and nothing else**
+
+1. Structure: rules under `[data-wasser]` instead of `.m-shell` (170 rules became 75 rules with 125 nested ones in
+   three files, one selector list per block); one script with options instead of four sections that started
+   themselves and had the mobile selectors wired in.
+2. Tokens: the buttons block reads every colour, radius, gradient and shadow from 33 new tokens with the same values;
+   `--w3-pad` is `--wa-drop-pad`, `--w3-halo` is `--wa-drop-halo`; `--wa-focus-gap-nah` (2 px) is new. The plain glass
+   and the film of a ghost button ease with the look's `--wa-t-fast` (0.14 s) instead of the app's `--t-fast` (0.18 s).
+3. With no motion wanted every trough says `transition: none` (before: rows only). Nothing to see: their time is 0 s.
+4. Script, behaviour: a scene image that cannot be drawn yet is not uploaded (pitfall 40: the black drops in WebKit);
+   a late "context lost" of a stopped instance is ignored; without a `shade` element the scene is not darkened
+   (before: a built-in copy of the mobile page's darkening).
+5. Reach of three rules, without effect in today's app: `.wa-tropfen` is a drop by class alone (`drops`, `ringFrom`);
+   pills are flat also on `.wa-becken`, `.wa-wasser`, `.wa-wasser--dicht`; a `.badge` is styled in any drop (before:
+   in `.m-ico` only).
+6. Not carried over: the toast's own small light, a rule that never applied (section 12).
+
+**Is it the same look?** `node scripts/wasser/vergleich.mjs` (machine otherwise idle), Chromium:
+
+| Comparison | What | Result |
+|---|---|---|
+| `bilder` | harness page, reduced motion: 8 scenes x phone view and close-up x 2 tones = 32 pairs, 56.8 million pixels | 0 pixels differ - outside AND inside the 288 drop canvases |
+| `app` | real app, reduced motion, clock standing still: 16 screens (start, heute, projekte, a project, material, mehr, wetter, archiv, five sheets, search, a ticked task, a toast) x 2 tones = 32 pairs, 42.1 million pixels | 0 pixels differ - outside and inside the 166 drop canvases |
+| `stile` | computed style of every element, `::before`, `::after`, `::placeholder` (all properties and the look's custom properties): harness page with motion, reduced motion and `data-motion="reduziert"`; 15 app screens with and without motion; both tones - 72 comparisons, 17,792 styles | 0 differ; 124 differ only as listed under 2 and 3 above |
+| `stile`, pressed and focused | 1,132 tappable or focusable elements on 38 screens, each forced `:active` (with its ancestors) and `:focus-visible`, the element, its subtree and its ancestors compared | 0 differ |
+| `film` | motion, real app: 12 filmstrips (ruhe, tab, druck, scroll, bogen, haken x 2 tones), every animation with an end set to the same times, loops at rest stopped at one place | the same animations ran in all 12; ruhe, tab, druck, bogen, haken: 0 pixels differ outside the drops in all 58 stills; scroll: first and last still identical, 12,000 to 150,000 pixels in the five stills while the light swings (it starts from the pull of real frame times; WEBKIT_SCROLL_NOTE) |
+| the approved harness page itself (`base.html?look=final` on the work machine) against `mobil.html` | 32 pairs as in `bilder` | 0 pixels differ, inside and outside |
+
+WebKit: WEBKIT_PLACEHOLDER
+
+Firefox (its build here has no WebGL: plain glass on both sides): start scene, phone and close-up, both tones:
+0 pixels differ.
+
+On the way the comparison found, and the template or the tools now handle: the black drops of pitfall 40 (in the
+approved look), the paint between two stylesheets of pitfall 39 (in the first version of `mobil.html`), late first
+pictures of drops (41), weather that comes and goes (38).
+
+**Does it work?** `node scripts/wasser/pruefen.mjs --app`: 55 checks pass in Chromium (PRUEFEN_WEBKIT): start;
+marker (tap, class moved by script, second tap during a flight, a bar that was replaced); ring (tap, re-rendered card,
+held finger, drag, disabled button); every block on foreign elements by its class alone (17 checks); sleep and waking;
+reduced motion and the app's switch; `stop()` leaves nothing behind, `start()` twice gives one instance, options are
+honoured, one global; without WebGL; real app (a light per card, the page rests behind a sheet, the sheet's light
+is pulled by scrolling, the toast is centred, `stop()` cleans up).
+
+**Can the text be read?** `node scripts/wasser/kontrast.mjs --app --szenen <all eight>`, Chromium; median (worst
+5 % of the glyph pixels), floor 4.5, placeholders 3:
+
+| Text | dunkel | klar |
+|---|---|---|
+| Card title, eight scenes | 15.6 to 17.2 (15.1) | 8.9 to 15.4 (7.8) |
+| Count in the title row | 10.7 to 11.8 (10.2) | 6.8 to 12.9 (6.1) |
+| Row title / muted line in a row | 17.7 to 18.2 / 9.9 to 10.0 | 11.7 to 15.8 (8.8) / 8.3 to 10.0 (6.7) |
+| Inactive tab / active tab | 10.2 / 16.9 (12.3) | 7.1 / 9.8 (6.9) |
+| Title of a sheet / text in a sheet | 17.3 / 17.3 | 11.1 (9.3) / 11.1 |
+| Field label / typed text / placeholder | 11.3 / 18.2 / 4.7 | 8.0 / 13.2 / 4.6 (4.3) |
+| Chosen option / other option | 10.0 (9.1) / 10.6 | 6.3 (5.8) / 8.3 |
+| Chosen tab in a sheet / other | 10.9 / 11.3 | 7.5 (6.8) / 9.8 |
+| Chosen filter pill on a card / other | 9.5 (8.5) / 10.5 | 7.7 (4.7) / 11.1 (7.6) |
+| Search hit, small text | 9.0 | 6.1 (5.6) |
+| Toast text / "Rückgängig" | 17.0 / 11.3 | 9.7 (6.5) / 7.0 |
+| Foot note directly on the page | 4.9 (4.2) - the app's own faint ink | 8.9 (5.0) |
+
+No median below the floor. These are the numbers of the approved look.
+
+**Alive but calm** (`node scripts/wasser/messen.mjs ruhe`, harness page, Chromium): of the pixels of the cards
+outside the drops 23 % (dunkel) / 18 % (klar) change within a second, 4 to 5 % by 4 of 255 or more, the mean change
+is 0.6 / 0.5; after four seconds 28 % have changed, 8 to 9 % by 4 or more; the tab bar 16 % / 25 %. The single large
+values (50 to 215) are the 2 px glint on a rim line where it passes. Glyph pixels of row title, card title, count,
+tile caption, inactive tab: 0 change. The small muted line in a row: 44 to 60 of 808 pixels change by 1 of 255 (its
+ink is see-through, the floor light passes under the row).
+
+**Not measured again in this step** (the numbers of the builders stand; their tools are on the work machine): the
+frame rate coupled to the compositor in the real app (`messen.mjs takt` is the tool for it; section 12 has the
+result), the governor of the drops stepping down and up, taps on hit areas in pixels, contrast in WebKit.
+
+**The app is untouched:** `npm run build` passes; `git status` shows only `docs/wasser-look/vorlage`,
+`docs/wasser-look/bilder/mobil` and `scripts/wasser`.
 
 ---
 
