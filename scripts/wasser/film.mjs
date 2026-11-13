@@ -26,7 +26,7 @@ export async function film(s, out, { look = 'vorlage', ton = '', reduced = false
   await p.evaluate(() => { const st = window.setTimeout; window.setTimeout = (f, t, ...a) => (t === 1700 ? 0 : st(f, t, ...a)); });   // the ring's own clean-up timer (RING_LIFE) would remove it while we look at it
   const T = ton === 'klar' ? ' (Ton klar)' : ''; let cur = '', n = 0;
   const begin = (name) => { cur = name; n = 0; frames[name] = []; boxes[name] = []; };
-  const shot = async (label, clip) => { const file = `${out}/${cur}-${n++}.png`; await p.screenshot(clip ? { path: file, clip } : { path: file }); frames[cur].push({ file, label }); boxes[cur].push(await app.drops({ pad: 20, all: true, clip })); return file; };   // (the boxes: generous - a drop behind a blurred scrim spreads a little)
+  const shot = async (label, clip) => { const file = `${out}/${cur}-${n++}.png`; await p.screenshot(clip ? { path: file, clip } : { path: file }); frames[cur].push({ file, label }); boxes[cur].push(await app.drops({ pad: 60, all: true, clip })); return file; };   // (the boxes: generous - a drop under a blurred toast or behind a blurred scrim is spread by that blur, 18 px and three times as far)
   if (fest) await p.addStyleTag({ content: '.wa-licht { --wa-phase: 0 !important; }' });   // every light at the same place of its loop (the script hands the places out in the order the sheets appear)
   // the loops at rest, stopped at one fixed place (--fest)
   const freeze = () => (fest ? p.evaluate(() => { for (const a of document.getAnimations()) if (a.effect && a.effect.getComputedTiming().iterations === Infinity) { try { a.pause(); a.currentTime = 4000; } catch (e) {} } }) : null);
@@ -50,7 +50,7 @@ export async function film(s, out, { look = 'vorlage', ton = '', reduced = false
     await make('ruhe', title('In Ruhe: das Licht wandert am Rand der Becken und der Leiste, die Tropfen fließen', 'in Ruhe'), 'Fünf Bilder im Abstand von einer Sekunde. Darunter, was sich gegenüber dem ersten Bild verändert hat.', { diffGain: 10 });
   }
   if (on('tab')) {
-    begin('tab'); await app.go('#/start', 1500); await freeze(); await shot('vorher');
+    begin('tab'); await app.go('#/start', 2000); await freeze(); await shot('vorher');   // (2 s: the light of the cards of a new screen has swung into place, --wa-t-swing)
     await tapNow(p.locator('.m-tabs button').nth(2)); await grab();
     for (const t of [80, 200, 350, 550, 1000]) { await seek(t); await shot(`${t} ms`); }
     await finish();
@@ -61,7 +61,7 @@ export async function film(s, out, { look = 'vorlage', ton = '', reduced = false
   if (on('druck')) {
     // the ring starts when the finger lets go: the button is held for 260 ms, then released in place; the click that would
     // follow is swallowed, so no sheet opens over the card
-    begin('druck'); await app.project(); await p.waitForTimeout(900); await freeze();
+    begin('druck'); await app.project(); await p.waitForTimeout(1500); await freeze();
     const btn = p.locator('.m-main .m-card .btn:not(.btn--ghost):not(.btn--primary)').first(); const r = await btn.boundingBox(); await shot('vorher');
     await p.mouse.move(r.x + r.width / 2, r.y + r.height / 2); await p.mouse.down(); await p.waitForTimeout(260); await shot('gedrückt');
     await p.evaluate(() => window.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); }, { capture: true, once: true })); await p.mouse.up(); await grab();
@@ -85,7 +85,7 @@ export async function film(s, out, { look = 'vorlage', ton = '', reduced = false
       { details: [detail(left, top - 4, 54, 'Oberer Rand der unteren Karte: sein Licht reicht tiefer und schwingt zurück'), detail(left + width - 312, bot - 50, 54, 'Unterer Rand der oberen Karte: sein Licht zieht sich zurück und kommt wieder')], diffGain: 8 });
   }
   if (on('bogen')) {
-    begin('bogen'); await app.go('#/projekte', 1500); await freeze(); await shot('vorher');
+    begin('bogen'); await app.go('#/projekte', 2000); await freeze(); await shot('vorher');
     await tapNow(p.locator('.m-main .btn', { hasText: 'Neues Projekt' })); await grab();
     for (const t of [80, 200, 400, 620, 1100]) { await seek(t); await shot(`${t} ms`); }
     await finish(); await app.closeSheet();

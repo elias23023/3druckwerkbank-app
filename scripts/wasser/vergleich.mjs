@@ -189,7 +189,8 @@ async function filme() {
     for (const name of STRIPS) {
       const same = r[0].found[name] === r[1].found[name]; const per = []; let worst = 0;
       for (let i = 0; i < r[0].frames[name].length; i++) {
-        const d = await diff(r[0].frames[name][i].file, r[1].frames[name][i].file, [...r[0].boxes[name][i], ...r[1].boxes[name][i]]);
+        const pic = `${out}/film-${ton}-${name}-${i}-diff.png`;
+        const d = await diff(r[0].frames[name][i].file, r[1].frames[name][i].file, [...r[0].boxes[name][i], ...r[1].boxes[name][i]], pic); if (!d.outside) fs.rmSync(pic, { force: true });
         per.push(d.outside); worst = Math.max(worst, d.outside);
       }
       const ok = same && worst === 0; if (!ok && !(same && name === 'scroll')) bad++;
