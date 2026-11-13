@@ -44,8 +44,9 @@ export async function session({ engine = 'chromium' } = {}) {
 }
 const listen = (page) => { const errors = []; page.on('pageerror', (e) => errors.push(String(e).slice(0, 300))); page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); }); return errors; };
 const lookQuery = (look) => (look === 'vorlage' ? '' : look ? `&alt=${encodeURIComponent(look)}` : '&ohne=1');
-// the boxes of the drop canvases that are shown, in device px of a screenshot: [left, top, right, bottom]
-const dropBoxes = (page, scale) => page.evaluate((s) => [...document.querySelectorAll('.w3-drop')].filter((e) => e.getClientRects().length && getComputedStyle(e).visibility === 'visible').map((e) => { const r = e.getBoundingClientRect(); return [Math.floor(r.left * s), Math.floor(r.top * s), Math.ceil(r.right * s), Math.ceil(r.bottom * s)]; }), scale);
+// the boxes of the drop canvases that are shown, in device px of a screenshot: [left, top, right, bottom].
+// pad (CSS px) widens them; all = also the canvases whose drop is not drawn yet; clip = the part of the page a screenshot shows
+const dropBoxes = (page, scale, { pad = 0, all = false, clip = null } = {}) => page.evaluate(([s, pad, all, ox, oy]) => [...document.querySelectorAll('.w3-drop')].filter((e) => e.getClientRects().length && (all || getComputedStyle(e).visibility === 'visible')).map((e) => { const r = e.getBoundingClientRect(); return [Math.floor((r.left - pad - ox) * s), Math.floor((r.top - pad - oy) * s), Math.ceil((r.right + pad - ox) * s), Math.ceil((r.bottom + pad - oy) * s)]; }), [scale, pad, all, clip ? clip.x : 0, clip ? clip.y : 0]);
 
 /* ------------------------------------------------------------------ the harness page (scripts/wasser/mobil.html) */
 // options: look ('vorlage'), ton ('' | 'klar'), scene, nah (close-up), reduced, scale, touch (phone emulation), query (more parameters), viewport, video (folder)
@@ -55,17 +56,17 @@ export async function openHarness(browser, base, engine, { look = 'vorlage', ton
   const page = await context.newPage(); const errors = listen(page);
   const url = `${base}/scripts/wasser/mobil.html?scene=${scene}${ton && ton !== 'dunkel' ? '&ton=' + ton : ''}${nah ? '&nah=1' : ''}${lookQuery(look)}${query ? '&' + query : ''}`;
   await page.goto(url, { waitUntil: 'load' }); await page.waitForFunction(() => window.__ready === true, null, { timeout: 20000 }); if (settle) await page.waitForTimeout(settle);
-  return { page, context, errors, url, scale, drops: () => dropBoxes(page, scale), close: async () => { const v = video ? page.video() : null; await context.close(); return v ? v.path() : null; } };
+  return { page, context, errors, url, scale, drops: (o) => dropBoxes(page, scale, o), close: async () => { const v = video ? page.video() : null; await context.close(); return v ? v.path() : null; } };
 }
 
 /* ------------------------------------------------------------------ the real app at phone size, the look injected once */
 // The app is a single-page app with hash routes, so what is injected stays alive across screens exactly like a built-in look
 // would (React mounts and unmounts everything underneath it). A fresh browser opens the "Beispiel" workshop with demo data.
-// options: look ('vorlage'), ton, reduced, scale, video (folder), zeit (an ISO time: the app's clock stands still there, so two runs show the same screens)
+// options: look ('vorlage'), ton, reduced, scale, video (folder), zeit (an ISO time: the app's clock stands still there and it gets no weather, so two runs show the same screens)
 export async function openApp(browser, engine, { look = 'vorlage', ton = '', reduced = false, scale = 2, video = null, zeit = null, start = {} } = {}) {
   const context = await browser.newContext({ viewport: PHONE, deviceScaleFactor: scale, isMobile: engine !== 'firefox', hasTouch: true, timezoneId: 'Europe/Vienna', locale: 'de-AT', reducedMotion: reduced ? 'reduce' : 'no-preference', ...(engine === 'webkit' ? { userAgent: IPHONE } : {}), ...(video ? { recordVideo: { dir: video, size: PHONE } } : {}) });
   const page = await context.newPage(); const errors = listen(page);
-  if (zeit) await page.clock.setFixedTime(new Date(zeit));         // only the clock stands still; timers and animations run
+  if (zeit) { await page.clock.setFixedTime(new Date(zeit)); await page.route(/open-meteo\.com/, (r) => r.abort()); }   // only the clock stands still, timers and animations run; and no weather from the network (it comes on one run and not on the next)
   await page.goto(`${APP}/#/start`, { waitUntil: 'networkidle' }).catch((e) => { throw new Error(`the app is not reachable at ${APP} (npm run build && npm run preview): ${String(e).split('\n')[0]}`); });
   await page.waitForSelector('.m-shell', { timeout: 15000 });
   const rd = (f) => fs.readFileSync(abs(f), 'utf8');
@@ -99,7 +100,7 @@ export async function openApp(browser, engine, { look = 'vorlage', ton = '', red
     throw new Error('unknown sheet ' + name);
   };
   const project = async () => { await go('#/projekte'); await page.locator('.m-main .m-row--click').first().click(); await page.waitForTimeout(800); };
-  return { page, context, errors, scale, go, shot, sheet, closeSheet, project, drops: () => dropBoxes(page, scale), close: async () => { const v = video ? page.video() : null; await context.close(); return v ? v.path() : null; } };
+  return { page, context, errors, scale, go, shot, sheet, closeSheet, project, drops: (o) => dropBoxes(page, scale, o), close: async () => { const v = video ? page.video() : null; await context.close(); return v ? v.path() : null; } };
 }
 
 /* ------------------------------------------------------------------ pictures */

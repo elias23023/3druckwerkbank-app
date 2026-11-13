@@ -11,8 +11,10 @@
 //   haken   a check is ticked (drop fills, ring), then an entry is removed and the toast lands
 // Animations with an end (transitions, entrances, the ring, the marker's flight) are paused and set to the time under
 // the still, so a slow test machine does not matter; the drops (WebGL) and the loops at rest keep running in real time.
-// --fest also stops the loops at rest at one fixed place: then two looks give the same pictures outside the drops
-// (vergleich.mjs film uses it). --reduced: the same strips with reduced motion (a proof of stillness).
+// --fest makes two runs comparable (vergleich.mjs film uses it): the loops at rest stand at one fixed place, every light
+// starts at the same place of its loop, and what runs in real time beside the animations (the app's own timers, the first
+// water picture of new drops) gets 400 ms to finish before the stills. --reduced: the strips with reduced motion (a
+// proof of stillness).
 // Writes <out>/<name>.png (the strip), <out>/<name>-<n>.png (its stills) and returns / prints which animations it found.
 // Needs the app's preview (npm run build && npm run preview).
 import fs from 'fs'; import { fileURLToPath } from 'url';
@@ -24,14 +26,15 @@ export async function film(s, out, { look = 'vorlage', ton = '', reduced = false
   await p.evaluate(() => { const st = window.setTimeout; window.setTimeout = (f, t, ...a) => (t === 1700 ? 0 : st(f, t, ...a)); });   // the ring's own clean-up timer (RING_LIFE) would remove it while we look at it
   const T = ton === 'klar' ? ' (Ton klar)' : ''; let cur = '', n = 0;
   const begin = (name) => { cur = name; n = 0; frames[name] = []; boxes[name] = []; };
-  const shot = async (label, clip) => { const file = `${out}/${cur}-${n++}.png`; await p.screenshot(clip ? { path: file, clip } : { path: file }); frames[cur].push({ file, label }); boxes[cur].push(await app.drops()); return file; };
+  const shot = async (label, clip) => { const file = `${out}/${cur}-${n++}.png`; await p.screenshot(clip ? { path: file, clip } : { path: file }); frames[cur].push({ file, label }); boxes[cur].push(await app.drops({ pad: 20, all: true, clip })); return file; };   // (the boxes: generous - a drop behind a blurred scrim spreads a little)
+  if (fest) await p.addStyleTag({ content: '.wa-licht { --wa-phase: 0 !important; }' });   // every light at the same place of its loop (the script hands the places out in the order the sheets appear)
   // the loops at rest, stopped at one fixed place (--fest)
   const freeze = () => (fest ? p.evaluate(() => { for (const a of document.getAnimations()) if (a.effect && a.effect.getComputedTiming().iterations === Infinity) { try { a.pause(); a.currentTime = 4000; } catch (e) {} } }) : null);
   // animations with an end that are running right now
   const grab = async (filter = '') => { const names = await p.evaluate((filter) => {
     window.__probe = document.getAnimations().filter((a) => (a.playState === 'running' || a.pending) && a.effect && a.effect.getComputedTiming().iterations !== Infinity && (!filter || new RegExp(filter).test(a.transitionProperty || a.animationName || 'waapi')));
     return [...new Set(window.__probe.map((a) => ((a.effect && a.effect.pseudoElement) || '') + ':' + (a.animationName || a.transitionProperty || 'waapi')))].sort().join('  ');
-  }, filter); found[cur] = (found[cur] ? found[cur] + ' | ' : '') + (names || '(no animation)'); await freeze(); return names; };
+  }, filter); found[cur] = (found[cur] ? found[cur] + ' | ' : '') + (names || '(no animation)'); await p.evaluate(() => (window.__probe || []).forEach((a) => { try { a.pause(); } catch (e) {} })); await freeze(); if (fest) await p.waitForTimeout(400); return names; };
   const seek = async (t) => { await p.evaluate((t) => { (window.__probe || []).forEach((a) => { try { a.pause(); a.currentTime = t; } catch (e) {} }); }, t); await p.waitForTimeout(90); };
   const finish = async () => { await p.evaluate(() => { (window.__probe || []).forEach((a) => { try { a.finish(); } catch (e) {} }); window.__probe = []; }); await p.waitForTimeout(200); };
   const detail = (x, y, h, label) => ({ x: Math.max(0, Math.min(780 - 624, Math.round(x * 2))), y: Math.max(0, Math.round(y * 2)), w: 624, h: Math.round(h * 2), factor: 0.75, label });   // 312 px of the screen, as wide as a still of the strip
