@@ -174,25 +174,35 @@ Other tools: `tools/var.mjs` (variants side by side, with CSS injection), `tools
 
 ## Step "Übrige Elemente": sheets, toast, fields, choices, checks, levels, beads - and the first look in the real app
 
-State before this step: `../final-vor-rest` (never edit). Everything of this step is in `look.css`, block
-`/* ---- Übrige Elemente ---- */` (appended at the end), and in `look.js`, section `/* ---- Übrige Elemente ---- */`
-(appended at the end). The few lines changed in earlier blocks are listed in 5 and stored as diffs in
-`mess/rest-look.css.frueherer-teil.diff` and `mess/rest-look.js.frueherer-teil.diff`.
+Two helpers worked on this step. The first built it and was cut off by a restart of the machine during its final
+renders; the second reviewed every screen again, fixed what the review found and finished it. Changes of the second
+pass are marked **(2nd)**. State before the step: `../final-vor-rest` (never edit). State between the two helpers:
+`t/z/vor-zweitem/`.
+
+Everything of this step is in `look.css`, block `/* ---- Übrige Elemente ---- */` (appended at the end), and in
+`look.js`, section `/* ---- Übrige Elemente ---- */` (appended at the end). The lines changed in earlier blocks are
+listed in 5 and stored as diffs in `mess/rest-look.css.frueherer-teil.diff` and `mess/rest-look.js.frueherer-teil.diff`.
 
 ### 1. What the real app showed (nobody had looked before) and what was done
 
 | Found in the running app | Done |
 |---|---|
 | Bottom sheets, search overlay and toast were the app's navy glass (97 %), forms had navy fields with a blue focus border, options were amber, the scrim was navy | all of it restyled (2, 3) |
-| **The toast was not centred**: the app's entrance animation `rise` ends with `transform: translateY(0)` and so overrides the toast's own `translateX(-50%)`; its left edge stood in the middle of the screen and long texts wrapped into three lines. This is also so in today's app. | the toast is centred by its margins (`left/right: 14px; width: fit-content; margin: 0 auto`), needs no transform, and sits `--wa-bar-lift + 78px` above the bottom so it clears the floating bar on an iPhone |
+| **The toast was not centred**: the app's entrance animation `rise` ends with `transform: translateY(0)` and so overrides the toast's own `translateX(-50%)`; its left edge stood in the middle of the screen and long texts wrapped into three lines. Also so in today's app. | the toast is centred by its margins (`left/right: 14px; width: fit-content; margin: 0 auto`), needs no transform, and sits `--wa-bar-lift + 78px` above the bottom so it clears the floating bar on an iPhone |
 | **Icon buttons were dots**: `.m-shell .btn { padding: 10px 14px }` (mobile.css) beats `.btn--icon { padding: 6px }`, so the close "X" of every sheet, "skip" in the task rows and "remove" in the shopping list were squeezed to 2-6 px. Also so in today's app. | `padding: 0` in the Perle block; they are visible glass beads now |
-| Drops in sheets read the sheet's computed navy background | the sheet states `--water-under: var(--wa-sheet)`; drops on a sheet are the same clear drops as on cards |
+| Drops in sheets read the sheet's computed navy background | the sheet states `--water-under: var(--wa-sheet)` |
+| **(2nd) Drops on a sheet were the loudest thing in a form**: with the lens formula of the colour step a clear drop on the nearly black sheet came out as a bright silver bead; "Einstellungen" has eight of them | a sheet can say how much light its drops gather: `--wa-drop-veil` (new, read by the drops like `--wa-light`). Bottom sheets set `.35` (`--wa-bogen-veil`); cards keep 1. Picture of 1 / .55 / .3 / .1: `t/z/veil-1.png` (`tools/schleier.mjs`) |
 | Pills outside cards (in sheets, in the search overlay) still had the glossy bead rim of the button block | the flat-pill rules now apply in `.sheet`, `.cmd`, `.toast` as well |
 | Number tiles `.glass.m-stat`, the four header buttons, counters `.cnt.pill.xs` and ghost icon buttons in card titles | already right (the cards' author had handled the tiles); the ghost icon buttons became beads |
-| Buttons that repeat per row ("Start" per printer, "+ Liste" per shortage) were live WebGL drops | kept out of the drops (`SEL` in look.js): plain glass beads. A screen now draws at most 7 drops (Projekt), a sheet at most 5 at a time. |
+| Buttons that repeat per row ("Start" per printer, "+ Liste" per shortage) were live WebGL drops | kept out of the drops (`SEL` in look.js): plain glass beads. A screen draws at most 7 drops (Projekt), a sheet 2 to 4 at a time. |
+| **(2nd) The water never came down from the pace of a touched drop while a sheet was open.** A drop that is pressed and then covered by the sheet it opened (every header button, "Neues Projekt", ...) is no longer drawn, so its press spring and its ring never ended; the loop took that for "a drop is being touched" and drew the drops ON the sheet 20 to 25 times a second instead of 15 (60 on a fast phone), and with a sheet without buttons it kept a 60-per-second timer alive doing nothing. A bug of the button code, present since the buttons. | one line in `scan()`: a drop that goes behind a sheet ends its press and ring. Measured before / after with `t/z/probe4.mjs`: 47, 49, 39 pictures per 2 s -> 25, 24, 24 |
+| **(2nd) The drops kept flowing behind the search overlay** (15 pictures a second behind a full-screen blurred scrim) | the list of what covers the page is now `MODAL = '.sheet, .cmd-back'` (button section): 30 pictures per 2 s -> 0 (`t/z/probe3.mjs`) |
+| **(2nd) Ticking a task on "Heute" gave no answer at all**: the app removes the ticked row in the same instant, so the check never shows its drop, and there is no toast (`real.mjs` photographs "app-toast" there - that picture never contains a toast; a real toast is in `rundgang*/s-toast.png`) | a check that is ticked on a card sends ONE ring over the floor of the card, in the green of its water (the cards' ring; lists `DROP`, `TICK` in look.js). It is the one thing that stays when the row is gone. Not in sheets, not when a tick is taken back. |
+| **(2nd) The cards of a new screen still faded in with the app's `rise`** while everything around them moved like water | building block "Setzen": they rise 16 px, run 2 px past, sink back, one 45 ms after the other |
+| **(2nd) An empty native checkbox was a white square on the dark sheet, the calendar sign of a date field black on black** | `color-scheme: dark` on inputs, selects and textareas inside the shell |
 | A `<select>` is a white system box with invisible white text in the Linux WebKit build (also in today's look) | selects draw their own trough and arrow (`appearance: none`), identical in every browser |
 | The sheet got a blue focus ring when opened by keyboard (the app focuses the `<aside>`) | `.sheet:focus { outline: none }` |
-| In the WebKit build entrance animations sometimes start up to a second late (software rendering), so a picture taken 700 ms after a tap can show a missing card or sheet | not a defect of the look; `tools/wk-eintritt.mjs` shows that every entrance runs to its end. Use `tools/rundgang.mjs` (waits longer) next to `real.mjs`. |
+| In the WebKit build of the test machine entrance animations start late, so a picture taken 700 ms after a tap can show a half-risen card or sheet | **(2nd)** measured with `tools/wk-stau.mjs` (`mess/rest-wk-stau.txt`): the first frame after a screen mounts takes a little more than 100 ms in that build, which paints everything on the CPU; taking away any ONE of the costly things (the backdrop filters, the depth steps, the cards' soft box-shadows, the drop canvases) brings the start of the entrance back under 120 ms, and after that the animation runs on time. Not a defect of the look, but the one place where a real iPhone could show a hitch (see 8). Use `tools/rundgang.mjs` (waits longer) next to `real.mjs`. |
 
 ### 2. Dosage as built
 
@@ -201,38 +211,43 @@ State before this step: `../final-vor-rest` (never edit). Everything of this ste
 | Bottom sheet `.sheet` | 2 | Bogen: dense water (`--wa-sheet`: .95 dunkel, .88 klar), soft uneven shoulders, meniscus on the top edge only, no depth steps. Rises like a wave (68 px, runs 5 px past, settles; a crest of light on its top edge spreads and fades). No backdrop blur of its own. |
 | Scrim `.sheet-back`, `.cmd-back` | 2 | neutral dark (.55) and `blur(5px)`: the page sinks out of focus, its words cannot be read, its shapes stay |
 | Sheet head / body / foot | 2 | head and body plain; the foot begins with one faint line (`--wa-shore`); `safe-area-inset-bottom` as padding of the sheet |
+| Drops on a sheet | 3, turned down | clear drops that gather about a third of the light they gather on a card (`--wa-bogen-veil: .35`): rim, highlight and a soft glow at the far end, a dark clear body. Amber and red are unchanged. |
 | Ring on a sheet | 2 | only from the non-ghost buttons in `.sheet__foot` (gold from the primary), as on cards |
 | Toast `.toast` | 2 | Tropfen-Hinweis: a small piece of dense water with the bar's rim. Lands like a drop, leaves like one. Error variant ready (`.toast--bad` / `.wa-hinweis--fehler`: rose rim line), the app has no error toast yet. |
-| Search overlay `.cmd` | 2 | the same dense water, card outline; chosen hit = lit trough |
+| Search overlay `.cmd` | 2 | the same dense water, card outline; chosen hit = lit trough; the drops behind it rest |
+| Cards of a new screen | 2 | Setzen: they come to rest like water instead of fading in |
 | Text field, textarea, select | 1 | Feld: a Mulde with a faint line on its far wall so an empty field is found. Focus: the Wasserlinie (2 px light) runs in from the left, light pools above it, a faint line all around. Replaces the blue border. |
 | Pill groups, option groups `.seg`, tabs in sheets `.tabs`, tiles `.tile`, picture tiles `.island-lib > button` | 1 | Wahl: flat tinted labels (tiles: troughs); the chosen one is a small bead of clear water that flows over from the one chosen before |
-| Check `.check` | 1 | Haken: an empty hollow; ticked, a drop of green water fills it and swings in; unticked, it drains. Hit area 44 px. |
+| Check `.check` | 1 | Haken: an empty hollow; ticked, a drop of green water fills it and swings in; unticked, it drains. Hit area 44 px. On a card a tick also sends one green ring over the floor. |
 | Progress `.progress`, form steps `.steps` | 1 | Pegel: light water in a thin dark tube, brighter towards its end; a new level runs there with a small swing |
 | Icon buttons (ghost): close, skip, remove, reorder, "more" in card titles | 1 | Perle: glass bead, no bending, no script; gives way under the finger and springs back |
 | Buttons inside list rows | 1 | plain glass (the no-WebGL look of the button block), lighter, no heavy shadow |
 | Rows in sheets `.item`, `.konto-side`, `.bereich-card`, `.sim-item` | 1 | Mulde, as in cards |
 | Status pills in sheets | 1 | flat tinted labels, as on cards |
-| Slider `.range`, native checkbox | 1 | tint only (`accent-color`: the app's amber) |
+| Slider `.range`, native checkbox, date field | 1 | tint only: `accent-color` (the app's amber) and `color-scheme: dark` |
 | Text, icons, photos, thumbs, swatches, colour stacks `.stack`, hours strip | 0 | untouched; only `.hour.now` lost its blue tint |
 | Desktop | 0 | every rule is under `.m-shell` |
 
-Less than the dosage table said, on purpose: sheets have no backdrop blur of their own (the scrim carries it); the
-toast and the search overlay use the bar's material unchanged; ghost text buttons ("Abbrechen", "Bearbeiten") stay
-chrome-free.
+Less than the dosage table said, on purpose: sheets have no backdrop blur of their own and are denser than "about .8"
+(a form with twenty labels needs calm ground; the scrim carries the blur); drops on sheets gather a third of the
+light; the toast and the search overlay use the bar's material unchanged; ghost text buttons ("Abbrechen",
+"Bearbeiten") stay chrome-free. More than the table said: the ring from a ticked check on a card.
 
 ### 3. Building blocks and recipes
 
 All defined in part "3. Bausteine" of the CSS block. Tokens in parts 1 and 2 (same in every tone). Tone tokens used:
 `--wa-sheet` (new, in both tone rules), `--wa-dense`, `--wa-trough*`, `--wa-core`, `--wa-light`, `--wa-dark`,
-`--wa-abyss`, `--wa-ink-*`. `tools/bausteine-rest.mjs` puts every block on foreign elements by class alone.
+`--wa-abyss`, `--wa-ink-*`. `tools/bausteine-rest.mjs` puts every block on foreign elements by class alone
+(Setzen and the check's ring: `t/z/probe7.mjs`).
 
 | Block | Class (app selector in the same list) | What the element needs | Script |
 |---|---|---|---|
-| Bogen | `.wa-wasser--dicht.wa-bogen` (`.sheet`) | its own position at the bottom edge, `overflow: hidden`, padding; a scrim behind it with `background: var(--wa-scrim); backdrop-filter: var(--wa-scrim-blur)` | ring: it is in `RING_ON` |
+| Bogen | `.wa-wasser--dicht.wa-bogen` (`.sheet`) | its own position at the bottom edge, `overflow: hidden`, padding; a scrim behind it with `background: var(--wa-scrim); backdrop-filter: var(--wa-scrim-blur)` | ring: it is in `RING_ON`; drops behind it rest: `MODAL` |
 | Tropfen-Hinweis | `.wa-wasser--dicht.wa-hinweis` (`.toast`); error: `.wa-hinweis--fehler` | position, padding | leaving: list `TOAST` |
+| Setzen | `.wa-setzt` (`.glass.m-card`) | nothing; several at once: `animation-delay` in steps of `--wa-t-step` | none |
 | Feld | `.wa-feld` (`.input`, `.textarea`); a select: `.wa-feld.wa-feld--auswahl` (`.select`) | padding, font size 16 px (iOS zooms below that) | none |
 | Wahl | group `.wa-wahl`, its children are the labels, the chosen one has class `on` (`.pills > .pill` / `pill--on`, `.seg > button`, `.tabs > button`, `.tiles > .tile`, `.island-lib > button`) | padding per label; the group may wrap | flow: lists `GROUP`, `ON` |
-| Haken | `.wa-haken`, ticked: class `on` (`.check`, `.check--on`) | width, height, `border-radius: 50%`; the tick is the app's own SVG | none |
+| Haken | `.wa-haken`, ticked: class `on` (`.check`, `.check--on`) | width, height, `border-radius: 50%`; the tick is the app's own SVG | ring on a Becken: lists `DROP`, `TICK` (section "Karten und Leiste") |
 | Pegel | `.wa-pegel > i` (`.progress > i`), amber: `.wa-pegel--amber` | tube: height, radius, `overflow: hidden`; `<i>`: `display: block; height: 100%; width: <n>%` as inline style | flow: list `LEVEL` |
 | Perle | `.wa-perle` (`.btn.btn--icon.btn--ghost`) | width and height (32-36 px) | none |
 
@@ -243,10 +258,14 @@ selector to the list named in the table, at the top of the script section.
 Recipes:
 - **A new bottom sheet or modal (also desktop):** `.wa-wasser--dicht.wa-bogen`; change `--wa-r-bogen` to four round
   corners and drop the `0 30px 0 0` layer of its box-shadow if it does not touch the bottom edge; rows inside are
-  `.wa-mulde`, fields `.wa-feld`. Put the blur on the scrim, never on the sheet.
+  `.wa-mulde`, fields `.wa-feld`. Put the blur on the scrim, never on the sheet. Add its selector (or its scrim's) to
+  `MODAL` in the button section of look.js, so the drops behind it rest.
+- **How bright the clear drops on a surface are:** set `--wa-drop-veil` on the surface (0 = only rim and highlight,
+  1 = the silver drops of the cards). The drops read it within a second, at once after a class change.
 - **A new field:** `.wa-feld`. Do not give it a border; its 1 px transparent border is today's space.
 - **A new group of options:** container `.wa-wahl`, active child `.on`. More than one may be `.on`.
 - **A new progress bar:** `.wa-pegel > i` and set the width in percent as inline style.
+- **Panels that appear together (a desktop column):** `.wa-setzt` on each, `animation-delay: calc(var(--wa-t-step) * n)`.
 - **A leaving sheet (not used yet):** when the app delays unmounting by 260 ms, add class `wa-geht` to the sheet; the
   keyframes `wa-sinkt` are in the block.
 
@@ -254,19 +273,28 @@ Recipes:
 
 Tokens, declared once at the top of the CSS block (part 1): `--wa-t-fast` .14 s (a touch is answered),
 `--wa-t-flow` .36 s (something flows to its next state), `--wa-t-settle` .62 s (something larger arrives and comes
-to rest), `--wa-t-leave` .26 s; `--wa-ease-flow` (runs off at once, arrives softly), `--wa-ease-settle` (swings a
-little past, comes to rest), `--wa-ease-drain` (lets go slowly, then gone). The script repeats four of these numbers
-(`FLOW`, `LEVEL_MS`, `LEVEL_EASE`, `LEAVE_MS`) because the Web Animations API cannot read custom properties; they are
-at the top of the section with a comment naming the token.
+to rest), `--wa-t-leave` .26 s, `--wa-t-step` 45 ms (things that arrive together, one after the other);
+`--wa-ease-flow` (runs off at once, arrives softly), `--wa-ease-settle` (swings a little past, comes to rest),
+`--wa-ease-drain` (lets go slowly, then gone). **(2nd)** The script no longer repeats these numbers: it reads the
+properties from `.m-shell` at the moment of a change (lists `T` and `E` at the top of the section; the numbers
+there are only used when a property is missing). Change a duration in look.css and CSS and script follow.
+
+Motion tokens of the EARLIER blocks, for the colleague who reviews all motion (not changed here): `--wa-press-in`
+60 ms / `--wa-press-out` .5 s (a trough under the finger), `--wa-ring-time` 1.2 s / `--wa-ring-ease` /
+`--wa-ring-hush` .18 s, `--wa-bead-time` .42 s / `--wa-bead-ease`, `--wa-tab-time` .26 s / `--wa-tab-ease` /
+`--wa-tab-in` 70 ms, and in look.js `FLIGHT` 460 ms, `FLIGHT_MORE` 70 ms (flight of the tab bar's bead),
+`RING_LIFE`, `HUSH`, `SLEEP_AFTER` 30 s.
 
 | What | How | Properties | Driven by |
 |---|---|---|---|
 | Sheet rises | keyframes `wa-steigt` on the sheet, `wa-kamm` on its `::before` | transform, opacity | CSS, on mount |
+| Cards of a new screen settle **(2nd)** | keyframes `wa-setzt` on each card, staggered by `--wa-t-step` (0 to 180 ms) | transform, opacity | CSS, on mount |
 | Toast lands | keyframes `wa-landet` (falls 14 px, flattens, rounds off) | transform, opacity | CSS, on mount |
 | Toast leaves | a copy with class `wa-geht` (keyframes `wa-geht`), removed after 260 ms | transform, opacity | look.js, removed node |
 | Chosen bead flows | Web Animations API on the new label's `::before`: starts at the old label's box, stretches along the way, settles | transform | look.js, class change (one lost, one won) |
 | Chosen bead wells up | the same, in place, when a label is chosen in addition | transform, opacity | look.js |
 | Check fills / drains | transition on `.check::before` (scale .2 -> 1 with `--wa-ease-settle`; back with `--wa-ease-drain`) | transform, opacity | CSS, class `check--on` |
+| Ring from a ticked check on a card **(2nd)** | the cards' ring (`wa-ring`), class `wa-ring--ok` | transform, opacity | look.js part "Karten und Leiste", pointerdown |
 | Level runs to its place | Web Animations API on the `<i>`: `scaleX(old/new)` -> none, `--wa-ease-settle`; only for changes of 1.5 % or more | transform | look.js, inline width changed |
 | Waterline runs in | transition of `background-size` on the field | **paint** (one small box, .36 s, only on focus) | CSS, `:focus` |
 | Bead pressed | `scale(.92)` at once, springs back; background lights up | transform, background-color | CSS, `:active` |
@@ -274,26 +302,50 @@ at the top of the section with a comment naming the token.
 
 Nothing of this step moves at rest. Off: `@media (prefers-reduced-motion: reduce)` and
 `:root[data-motion="reduziert"]` set `animation: none` / `transition: none` (part 5 of the block) and the script
-checks `still()` before every animation; the toast copy is not made. Checked with `tools/wandel.mjs ... 1` (system
-setting) and `tools/pruefen-rest.mjs` (the app's switch): no running animation of the look in any of the changes.
+checks `still()` before every animation; the toast copy is not made, no ring starts. Checked with
+`tools/wandel.mjs ... 1` and `tools/haken-ring.mjs ... 1` (system setting) and `tools/pruefen-rest.mjs` (the app's
+switch): no running animation of the look in any of the changes.
 
 Not animated, and why: a sheet that closes (the app unmounts it at once; a copy of a whole form with fields, scroll
-position and drop canvases would be fragile, and the app's own tests address `.sheet`); the entrance of cards after
-a tab change (still the app's `rise`); the tick itself (it appears, the drop grows under it).
+position and drop canvases would be fragile, and the app's own tests address `.sheet`); a row that the app removes
+(the ticked task on "Heute" is gone in the same frame - only the ring answers); the tick itself (it appears, the
+drop grows under it).
+
+**For the motion pass that follows** (life at rest, the answer to scrolling, sleeping and waking together):
+- Sleep and wake: the water loop of the button section knows it (`SLEEP_AFTER`, `wake()`, `speed` 1 -> 0). Nothing
+  of this step runs at rest, so nothing has to be put to sleep yet. A resting-life layer should stop when
+  `window.__w3` reports no frames, when `.m-shell` contains an element matching `MODAL`, and when the page is hidden.
+- Free pseudo-elements: `.sheet::after`, `.toast::before` / `::after`, `.m-tabs::after`, `.m-row::before/::after`,
+  `.m-stat::before/::after`, `.cmd::before/::after`. Taken: see the header comment of the CSS block.
+- A card already carries an entrance animation on itself (`wa-setzt`, transform + opacity, fill `both`). A second
+  animation on the card element would replace it; put resting life on a child layer or use the Web Animations API
+  with `composite: 'add'`.
+- Every picture of a drop makes the browser redo the backdrop blur of the sheet it lies on; the scrim of a bottom
+  sheet is blurred once because the page behind it rests. Keep it that way: nothing may move UNDER an open scrim.
 
 ### 5. Changes in earlier blocks
 
-`look.js`
-1. Buttons, `SEL`: `.btn:not(.btn--ghost):not(.m-row .btn, .item .btn), .m-ico` - buttons inside list rows get no drop.
-2. Karten und Leiste, `RING_ON`: `+ .sheet`; `DROP`: `.btn:not(.btn--ghost):not(.sheet__body .btn)` - on a sheet only
-   the foot's buttons start a ring.
+`look.js`, button section
+1. `SEL`: `.btn:not(.btn--ghost):not(.m-row .btn, .item .btn), .m-ico` - buttons inside list rows get no drop.
+2. **(2nd)** `PROP.veil = '--wa-drop-veil'`, uniform `uVeil` (declared, in `UNI`, set per drop, read in `measure()`,
+   default 1) and ONE factor in the shader: the veil of light of a drop on a sheet is multiplied by `uVeil`
+   (`... room*uWet*uVeil*(.056 + ...)`). With the property missing nothing changes: cards and free drops are
+   pixel-identical to before (harness stills differ only inside the moving drops, 0 to 0.3 % of the pixels).
+3. **(2nd)** `MODAL = '.sheet, .cmd-back'` replaces the literal `'.sheet'` in `scan()`.
+4. **(2nd)** `scan()`: `if (r.behind) { r.ptarget = r.pv = r.pvel = 0; r.ripT = -1; }` - see the finding in 1.
+
+`look.js`, section "Karten und Leiste"
+5. `RING_ON`: `+ .sheet`; `DROP`: `.btn:not(.btn--ghost):not(.sheet__body .btn)` - on a sheet only the foot's
+   buttons start a ring.
+6. **(2nd)** `DROP`: `+ .m-card .check, .wa-becken .wa-haken`; new list `TICK` / `TICKED`; `down()` skips a check
+   that is already ticked and gives the ring the class `wa-ring--ok`.
 
 `look.css`
-3. Both tone rules: one new token `--wa-sheet` after `--wa-dense` (43 tokens each, same order).
-4. Mulde lists: `+ .sheet .item, .sheet .konto-side, .sheet .bereich-card, .sheet .tabs, .sheet .sim-item`;
+7. Both tone rules: one new token `--wa-sheet` after `--wa-dense` (43 tokens each, same order).
+8. Mulde lists: `+ .sheet .item, .sheet .konto-side, .sheet .bereich-card, .sheet .tabs, .sheet .sim-item`;
    tappable: `+ .sheet .item--click, .sheet .sim-item`.
-5. Flat pills (six rules): `.m-card` became `:is(.m-card, .sheet, .cmd, .toast)`.
-6. Dichtes Wasser list: `+ .sheet, .toast, .cmd`.
+9. Flat pills (six rules): `.m-card` became `:is(.m-card, .sheet, .cmd, .toast)`.
+10. Dichtes Wasser list: `+ .sheet, .toast, .cmd`.
 
 Nothing else. `tools/robust.mjs`, `tools/bausteine.mjs` and `t/checks.mjs` still pass.
 
@@ -317,50 +369,104 @@ Nothing else. `tools/robust.mjs`, `tools/bausteine.mjs` and `t/checks.mjs` still
 7. **`.bereich-card--on` marks the workspace in use with an inset box-shadow**; a block that sets `box-shadow` on
    rows must give it back (`.m-shell .sheet .bereich-card--on`).
 8. **WebKit on the test machine** paints no backdrop-filter (so no blurred page behind a sheet), paints a white
-   system select unless `appearance: none`, and starts entrance animations late. Judge the blur in Chromium.
+   system select unless `appearance: none`, shows spin buttons in number fields, and takes more than 100 ms for the
+   first frame of a new screen. Judge the blur in Chromium.
 9. **The scrim's blur is the cheap place.** Its backdrop is the resting page. A blur on the sheet would be redone
    with every picture of every drop on the sheet (15 a second).
 10. **Playwright's `click()` on `.m-head .ws-chip` times out** (the chip is a span inside the brand button); use
     `evaluate(el => el.click())`.
+11. **(2nd) Anything that hides a drop without unmounting it must end its press.** A drop that is covered while its
+    spring or ring is still running keeps the loop at full pace for as long as it stays covered (fixed for `MODAL`;
+    remember it for any new way of covering the page, for example a desktop dialog outside `.m-shell`).
+12. **(2nd) React writes `name` and `type` on every input each time the app re-renders** (once a second while a print
+    runs). An observer that listens to all attributes fires 20 times a second. Filter by attribute name
+    (`attributeFilter`) and check `m.attributeName` before reading `oldValue`.
+13. **(2nd) Web Animations cannot read custom properties, `getComputedStyle` can.** The script resolves
+    `--wa-t-*` and `--wa-ease-*` from `.m-shell` when a change happens; do not copy the numbers into JS.
+14. **(2nd) A local helper named `ms` shadows the usual name of a MutationObserver's records** (`function (ms)`).
+    The duration helper is called `dur`.
+15. **(2nd) `real.mjs` writes `app-toast.png` after ticking a task on "Heute" - the app shows no toast there.** The
+    picture is a ticked task (with the ring passing), not a toast.
+16. **(2nd) The harness page and the real app differ in what makes a screen "new".** In the app React remounts the
+    cards on a tab change (so `wa-setzt` runs); a pill filter, a ticked check or a changed select do NOT remount
+    them (checked with `t/z/probe1.mjs`: no entrance animation restarts).
 
-### 7. What I verified, and how to repeat it
+### 7. What was verified, and how to repeat it
 
-Servers: `python3 -m http.server 4310 --directory <lg>` (harness) and the app's `vite preview` on 4173. All commands
-from `<lg>/final`; `<F>` is the absolute path of this folder. For WebKit run
-`source <scratchpad>/judge-phone/env.sh` first - and NOT for Chromium afterwards in the same shell (it points
-Playwright at a folder without Chromium).
+Servers: `python3 -m http.server 4310 --directory <lg>` (harness) and the app's `vite preview` on 4173 (both are
+gone after a restart of the machine). All commands from `<lg>/final`; `<F>` is the absolute path of this folder.
+For WebKit run `source <scratchpad>/judge-phone/env.sh` first - and NOT for Chromium afterwards in the same shell
+(it points Playwright at a folder without Chromium). Everything at once: `t/z/final-render.sh` (about 30 minutes).
 
 | Check | Command | Result |
 |---|---|---|
-| The eleven screens of `real.mjs`, both tones, both engines | `node ../real.mjs <F> <F>/app chromium [klar]`, `... webkit [klar]` | `app/`, `app-klar/`, `app-webkit/`, `app-webkit-klar/`; only Open-Meteo network errors. In WebKit three of its pictures catch a late entrance (see 1). |
+| The eleven screens of `real.mjs`, both tones, both engines | `node ../real.mjs <F> <F>/app chromium [klar]`, `... webkit [klar]` | `app/`, `app-klar/`, `app-webkit/`, `app-webkit-klar/`; only Open-Meteo network errors |
 | Every sheet and overlay the shell can open (29 pictures) | `node tools/rundgang.mjs <F> <out> [chromium\|webkit] [ton] [only]` | `rundgang/`, `rundgang-klar/`, `rundgang-webkit/`, `rundgang-webkit-klar/` |
-| The five steps of the project form | `node tools/formular.mjs <F> <out> [engine] [ton]` | `t/rest/form2/` |
 | Changes of state at exact times (80, 200, 400, 800 ms) | `node tools/wandel.mjs <F> <out> [engine] [ton] [reduced: 1] [only]` | `wandel/`, `wandel-klar/`, `wandel-webkit/`: every strip names the animation it found; `wandel-reduziert/`: "(no animation)" in every strip |
+| A check ticked with a real press: ring, drop, level | `node tools/haken-ring.mjs <F> <out> [engine] [ton] [reduced: 1]` | `wandel*/haken-ring-heute.png`, `haken-ring-projekt.png` |
 | The ring on a sheet | `node tools/bogenring.mjs <F> <out.png>` | one ring, gold from "Weiter" |
-| Contrast, real app, both tones, both engines | `node tools/kontrast-rest.mjs <F> <out> [engine] [ton]`, then `python3 tools/kontrast-rest.py <out> ...` | `mess/rest-kontrast.txt`: 31 probes. Lowest: placeholders 5.0 (floor 3), text 5.6 (worst 5 % of the chosen pill on a clear card; median 9.2). Everything else 6.5 or more. |
-| Drops per screen, the app's switch "Bewegung: Reduziert", taps, clean-up | `node tools/pruefen-rest.mjs <F> [engine] [ton]` | `mess/rest-pruefen-chromium.txt`, `mess/rest-pruefen-webkit.txt`: at most 7 drops drawn; nothing moves with the switch; taps on bead, check (6 px beside it), pill, option (3 px above it) arrive; after `destroy()` no canvas, no helper, no global; no page errors |
-| Blocks by class alone | `node tools/bausteine-rest.mjs <out.png> [ton=klar] [engine]` | all seven blocks animate on foreign elements, no errors |
-| Entrances in WebKit really finish | `node tools/wk-eintritt.mjs <F> <out>` | cards and sheet reach opacity 1; start is sometimes delayed by up to a second on this machine |
-| No WebGL in the real app | `node tools/ohne-webgl.mjs <F> <out> [ton]` | `t/rest/fb/`: plain glass buttons on the new sheets, calm and readable |
+| Drops on a sheet at several strengths of light | `node tools/schleier.mjs <F> <out.png> [ton] [values]` | `t/z/veil-1.png` |
+| Water pictures per 2 s at rest, with sheets, with the search overlay | `node t/z/probe3.mjs <F>`, `node t/z/probe4.mjs <F>` | 30 at rest; 0 behind a sheet without buttons and behind the search overlay; 24 to 30 with drops on a sheet |
+| Contrast, real app, both tones, both engines | `node tools/kontrast-rest.mjs <F> <out> [engine] [ton]`, then `python3 tools/kontrast-rest.py <out> ...` | `mess/rest-kontrast.txt`: 31 probes, see below |
+| Drops per screen, water pictures per second, the app's switch "Bewegung: Reduziert", taps, clean-up | `node tools/pruefen-rest.mjs <F> [engine] [ton]` | `mess/rest-pruefen-*.txt`: at most 7 drops drawn, 10 to 16 pictures a second (0 behind a sheet without buttons); nothing moves with the switch; taps on bead, check (6 px beside it), pill, option (3 px above it) arrive; after `destroy()` no canvas, no helper, no global; no page errors |
+| Blocks by class alone | `node tools/bausteine-rest.mjs <out.png> [ton=klar] [engine]`, `node t/z/probe7.mjs` | every block animates on foreign elements, no errors |
+| Why entrances start late in the WebKit build | `node tools/wk-stau.mjs <F> webkit` | `mess/rest-wk-stau.txt` |
+| No WebGL in the real app | `node tools/ohne-webgl.mjs <F> <out> [ton]` | `t/z/fb-final*/`: plain glass buttons on the new sheets, calm and readable |
 | Earlier checks still pass | `node tools/robust.mjs chromium`, `node tools/bausteine.mjs out.png`, `node t/checks.mjs chromium out` | all pass |
-| Harness stills did not change | `node ../shot.mjs final <F>/shots [ton=klar]` against `../final-vor-rest/shots*` | differences only inside the moving drops (0.2 to 0.9 % of the pixels) |
+| Harness stills did not change | `node ../shot.mjs final <F>/shots [ton=klar]` against `../final-vor-rest/shots*` | differences only inside the moving drops (0 to 0.3 % of the pixels) |
 
-Overview pictures for the owner: `rest-dunkel.png`, `rest-klar.png` (twelve screens each), `rest-vorher-nachher.png`,
-`rest-bewegung.png` (the strips of `wandel/`).
+**Contrast** (WCAG, the computed text colour against the pixels really behind the glyphs, text-shadow not counted;
+median, worst 5 % of the glyph pixels in brackets where it is lower; real app, Chromium; the WebKit build without any
+backdrop blur is within 0.4 of these except where noted). Floor 4.5, placeholders 3. Full table of 31 probes in both
+engines: `mess/rest-kontrast.txt`.
+
+| Text | dunkel | klar |
+|---|---|---|
+| Field label, 12 px | 11.5 | 12.8 |
+| Typed text in a field, 16 px | 18.2 | 16.8 (15.9) |
+| Placeholder in a field, 16 px | 5.0 | 7.4 |
+| Text of a select, 16 px | 18.2 | 16.8 |
+| Chosen option / other option, 12 px | 12.4 (11.5) / 10.3 | 11.2 (10.2) / 11.4 |
+| Chosen tab in a sheet / other tab | 13.6 (12.5) / 10.9 | 12.0 (10.8) / 12.0 |
+| Chosen filter pill on a card / other pill | 11.9 (10.6) / 10.1 | 9.5 (5.7) / 10.7 (7.5) |
+| Status label in a sheet (warn / bad) | 10.7 / 11.0 | 9.5 / 9.9 |
+| Title of a sheet, 18 px | 17.3 | 16.0 (14.7) |
+| Text in a sheet, 12 px | 17.3 | 16.0 |
+| Small muted text in a sheet, 11 px | 11.8 | 13.7 |
+| Row in a sheet: title / muted line | 18.2 / 10.0 | 16.8 / 10.8 |
+| Tile in the form: title / small line | 18.2 / 12.2 | 16.7 / 14.3 |
+| Hit in the search overlay, small text | 9.0 | 8.7 |
+| Check row on a card: title / small muted line | 17.3 / 9.7 | 9.6 / 6.6 |
+| Select on a card / placeholder on a card | 18.0 / 5.0 | 14.5 (10.1) / 6.9 (5.8) |
+| Toast text, 13 px / "Rückgängig" | 17.0 / 11.3 | 15.0 (11.8; WebKit without blur 9.2) / 10.1 |
+
+Lowest text value anywhere: 5.6 (worst 5 % of the chosen filter pill on a clear card over the bright scene; its median
+is 9.2 to 9.5). Lowest placeholder: 5.0. Nothing is under the floor in either tone or engine.
+
+Overview pictures for the owner (made by `tools/rest-bild.py`): `rest-dunkel.png`, `rest-klar.png` (twelve screens
+each), `rest-vorher-nachher.png`, `rest-bewegung.png` (strips of `wandel/`).
 
 ### 8. Open
 
 - **Never on a real phone.** Unverified there: the blurred scrim (`backdrop-filter: blur(5px)` on a full-screen fixed
-  element), the feel of the sheet's rise, the bead's flow, the select with `appearance: none` on iOS, the hit areas.
+  element), the feel of the sheet's rise and of the settling cards, the bead's flow, the select with
+  `appearance: none` on iOS, the hit areas, `color-scheme: dark` on the native date picker.
+- **First frame of a new screen.** Each card paints about a dozen soft box-shadows (rim, depth steps, troughs) once
+  when it mounts. The software WebKit build needs a little more than 100 ms for the first frame of a screen; box-shadows
+  are rasterised on the CPU on a phone as well. If the settle of a new screen stutters at its start on the iPhone,
+  the first thing to try is a smaller `--wa-deep-soft` / `--wa-shelf-soft`, the second `--wa-t-step: 0ms`.
 - **A closing sheet is not animated.** Needs the app: delay the unmount by 260 ms and add class `wa-geht`.
-- **Cards still enter with the app's `rise`** after a tab change. Life at rest for sheets and toast, the answer to
-  scrolling and sleeping with the drops belong to the motion pass that follows this step.
+- **A removed row is not animated** (ticked task, deleted shopping item). Needs the app as well.
+- **Life at rest for cards, bar, sheets and toast, the answer to scrolling, and sleeping with the drops** belong to
+  the motion pass that follows this step.
 - **The waterline is a paint animation** (`background-size`), the only one. A wrapper element around each field
   would allow a transform instead; the app has none.
-- **Clear drops on a dark sheet are bright silver beads** (the lens formula of the colour step). Eight of them in
-  "Einstellungen" are the loudest thing in a form. One shader line turns them down (see the colour step).
 - **`<input type="number">`** shows white spin buttons in the Linux WebKit build; not checked on iOS (there are none).
 - **The error toast** is styled (`.toast--bad`) but the app never sets that class.
 - **Desktop:** nothing tried. The same blocks apply; the tokens of parts 1 and 2 sit on `.m-shell`.
 - **`scripts/verify.mjs` was not run against a build with the look.** It clicks `.sheet .tile`, `.sheet .seg button`,
   `.toast__undo` - all still plain buttons; the toast copy (pitfall 6) is the one thing that could confuse it.
+
+
+## Decision of the owner, 13.11.: the red of "Löschen"
+He was shown two strengths (final/loeschen-vergleich.png) and took the main designer's recommendation: strength B (deeper, quieter: `--wa-drop-red: 150, 28, 38, .7`) on the tone "dunkel", strength A (clear red: `189, 31, 41, .72`) on the tone "klar". The token sits in the first rule of look.css; the tone "klar" overrides it in its own block. Renders made before this change still show A on "dunkel".
