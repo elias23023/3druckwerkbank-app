@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useNow, hourOf } from '../lib/time';
 import { fmtTime, fmtDuration } from '../lib/format';
 import { todayDaily } from '../lib/weather';
+import { Inselstimmung } from './Inselstimmung';
 
 /** Angle on the portal: 00:00 at the bottom, 06:00 left, 12:00 at the top, 18:00 right: the sun's path as seen through a window facing south (rises east = left, sets west = right). */
 const ang = (h: number) => (90 + (h / 24) * 360) * (Math.PI / 180);
@@ -25,6 +26,7 @@ const STAR_HOURS = [0.6, 1.8, 3.1, 4.4, 20.4, 21.7, 22.9];
 export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?: boolean; turn?: number; lean?: number }) {
   const now = useNow(1000);
   const weather = useStore(useShallow((s) => s.weather));
+  const printing = useStore((s) => s.prints.some((p) => p.status === 'läuft' && !p.resultDue));
   const today = todayDaily(weather?.data, now);
   const sr = today ? hourOf(today.sunrise) : 7; const ss = today ? hourOf(today.sunset) : 17;
   const h = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
@@ -34,9 +36,11 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
   const at = (iso: string | undefined, fallbackHour: number) => fmtTime(iso ? new Date(iso) : new Date(new Date(now).setHours(fallbackHour, 0, 0, 0)));
   const line = h < sr ? [`Sonnenaufgang ${at(today?.sunrise, 7)}`, `noch ${fmtDuration(Math.round((sr - h) * 60))}`]
     : h <= ss ? [`Sonnenuntergang ${at(today?.sunset, 17)}`, `noch ${fmtDuration(Math.round((ss - h) * 60))}`]
-    : [`Sonnenaufgang ${at(tomorrow?.sunrise ?? today?.sunrise, 7)}`, 'Nacht'];
+    : [`Sonnenaufgang ${at(tomorrow?.sunrise ?? today?.sunrise, 7)}`, h < ss + 50 / 60 ? 'Dämmerung' : 'Nacht'];
   const glow = isDay ? 'rgba(255,190,110,.5)' : 'rgba(150,175,230,.35)';
   return (
+    <>
+    {compact ? null : <Inselstimmung hour={h} sunrise={sr} sunset={ss} printing={printing} />}
     <div className={`portal${compact ? ' portal--compact' : ''}`} data-testid="portal" data-kind={isDay ? 'sonne' : 'mond'} data-day={isDay ? 'true' : 'false'}>
       <div className="portal__pool" />
       <div className="portal__tilt" style={{ transform: `rotate(${lean}deg) rotateY(${turn}deg)` }}>
@@ -90,5 +94,6 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
       </div>
       <div className="portal__centre"><b>{fmtTime(now)}</b>{compact ? null : <><span>{line[0]}</span><span className="portal__sub">{line[1]}</span></>}</div>
     </div>
+    </>
   );
 }

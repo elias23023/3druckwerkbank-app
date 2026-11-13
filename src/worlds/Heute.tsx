@@ -8,8 +8,10 @@ import { PanelColumn, Panel, Check, Progress } from '../ui/Glass';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import { ICal, ICheck, IEnergy, IPlay, IPrinter, ISun, IWind, IDrop, ISkip, ISpool, IWrench, IClock, ICube } from '../ui/Icons';
 import { navigate } from '../router';
+import { Tagesleiste } from '../ui/Tagesleiste';
 
-export function Heute({ phase }: { phase: DayPhase }) {
+/** `phase` stays in the signature for the app shell; the time of day is shown by the Tagesportal and the Tagesleiste. */
+export function Heute(_: { phase: DayPhase }) {
   const now = useNow(1000);
   const { tasks, prints, projects, devices, appointments, settings, weather, spools } = useStore(useShallow((s) => ({ tasks: s.tasks, prints: s.prints, projects: s.projects, devices: s.devices, appointments: s.appointments, settings: s.settings, weather: s.weather, spools: s.spools })));
   const toggleTask = useStore((s) => s.toggleTask); const skipTask = useStore((s) => s.skipTask); const startNextPrint = useStore((s) => s.startNextPrint); const openSheet = useStore((s) => s.openSheet); const toggleMaintenance = useStore((s) => s.toggleMaintenance);
@@ -39,7 +41,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
         <p className="small faint" style={{ marginTop: 8 }}>{settings.location.name}</p>
       </div>
 
-      <div className="heute-time"><span>{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length === 0 ? 'kein Druck läuft' : running.length === 1 ? '1 Druck läuft' : `${running.length} Drucke laufen`}</span></div>
+      <Tagesleiste now={now} />
 
       <PanelColumn side="left" top="38%" bottom="27%" width="23%">
       <Panel title="Aktive Drucke" icon={<IPrinter />} right={<span className="pill xs">{running.length}</span>} delay={60}

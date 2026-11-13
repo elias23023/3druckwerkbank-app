@@ -285,9 +285,6 @@ p { margin: 0; }
 .minicard .pv { display: flex; align-items: flex-end; gap: 2px; height: 22px; }
 .minicard .pv i { flex: 1; background: linear-gradient(180deg, #ffe29a, #ffb14d); border-radius: 2px 2px 0 0; min-height: 2px; }
 /* Heute: ring on the platform */
-.heute-time { position: absolute; left: 30%; width: 40%; top: 58%; text-align: center; color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,.7); animation: rise var(--t-mid) var(--ease) both; pointer-events: none; }
-.heute-time b { font-size: clamp(34px, 3.6cqw, 58px); font-weight: 600; letter-spacing: -.03em; line-height: 1; display: block; }
-.heute-time span { font-size: clamp(12px, 1cqw, 15px); color: rgba(255,255,255,.85); display: block; margin-top: 4px; }
 .bottom-row { position: absolute; left: 3.2%; right: 3.2%; bottom: 10.5%; max-height: 15%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .bottom-row .panel { position: relative; max-height: 100%; overflow: hidden; }
 .hours-mini { display: flex; gap: 4px; }
@@ -443,6 +440,87 @@ p { margin: 0; }
 @keyframes portal-rays { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes portal-twinkle { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
 :root[data-motion="reduziert"] .portal * { animation: none !important; }
+
+/* ---- Inselstimmung: Mondlicht, Lampenschein, Kaminrauch und Druckerglimmen auf der Heute-Insel (Positionen in Prozent des Inselbilds, siehe src/ui/Inselstimmung.tsx) ---- */
+.inselstimmung { position: absolute; inset: 0; pointer-events: none; }
+.inselstimmung > div { position: absolute; inset: 0; }
+.inselstimmung__nacht, .inselstimmung__abend, .inselstimmung__mond, .inselstimmung__schein { -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+/* moonlight wash: multiplies the painted daylight down to a blue night; the mask is the sprite itself minus soft holes around the lamps, whose painted warm light stays */
+.inselstimmung__nacht { background: linear-gradient(205deg, #5266b4 0%, #33448a 45%, #222e66 100%); mix-blend-mode: multiply; opacity: calc(var(--n) * .94);
+  -webkit-mask-image: var(--sprite), radial-gradient(12% 17% at 81.4% 50.5%, rgba(0,0,0,.12) 0%, rgba(0,0,0,.5) 45%, #000 100%), radial-gradient(11% 17% at 70.8% 37%, rgba(0,0,0,.1) 0%, rgba(0,0,0,.45) 50%, #000 100%), radial-gradient(5% 8% at 60.5% 36.5%, rgba(0,0,0,.2) 0%, #000 100%), radial-gradient(5.5% 9% at 84.3% 35%, rgba(0,0,0,.2) 0%, #000 100%);
+  mask-image: var(--sprite), radial-gradient(12% 17% at 81.4% 50.5%, rgba(0,0,0,.12) 0%, rgba(0,0,0,.5) 45%, #000 100%), radial-gradient(11% 17% at 70.8% 37%, rgba(0,0,0,.1) 0%, rgba(0,0,0,.45) 50%, #000 100%), radial-gradient(5% 8% at 60.5% 36.5%, rgba(0,0,0,.2) 0%, #000 100%), radial-gradient(5.5% 9% at 84.3% 35%, rgba(0,0,0,.2) 0%, #000 100%);
+  -webkit-mask-composite: source-in; mask-composite: intersect; }
+/* dusk and dawn: a warm rose wash while the landscape shows sunset or sunrise */
+.inselstimmung__abend { background: linear-gradient(200deg, #ffd9b0 0%, #e9a9a0 50%, #a886b4 100%); mix-blend-mode: multiply; opacity: calc(var(--d) * .62); -webkit-mask-image: var(--sprite); mask-image: var(--sprite); }
+/* a cool rim of moonlight from the upper right, where the moon stands in the night landscape */
+.inselstimmung__mond { background: linear-gradient(215deg, rgba(170,195,255,.55) 0%, rgba(150,180,255,.12) 38%, transparent 60%); mix-blend-mode: screen; opacity: calc(var(--n) * .4); -webkit-mask-image: var(--sprite); mask-image: var(--sprite); }
+/* warm light spilling from the lamps onto wood, stone and plants (stays on the island: masked with the sprite) */
+.inselstimmung__schein { mix-blend-mode: screen; opacity: calc(var(--l) * .85); -webkit-mask-image: var(--sprite); mask-image: var(--sprite);
+  background: radial-gradient(15% 21% at 81.4% 51%, rgba(255,176,84,.5) 0%, rgba(255,150,60,.2) 45%, transparent 100%), radial-gradient(13% 20% at 70.8% 38%, rgba(255,186,96,.4) 0%, rgba(255,160,70,.14) 50%, transparent 100%), radial-gradient(6% 9% at 60.5% 36.5%, rgba(255,180,90,.5) 0%, transparent 100%), radial-gradient(6% 9% at 84.3% 35%, rgba(255,180,90,.5) 0%, transparent 100%), radial-gradient(9% 10% at 56.5% 39%, rgba(255,190,110,.28) 0%, transparent 100%);
+  animation: insel-flacker 5.2s ease-in-out infinite; }
+/* the flames themselves: small halos that may shine past the sprite edge */
+.inselstimmung__flamme { mix-blend-mode: screen; opacity: var(--l);
+  background: radial-gradient(3% 4.6% at 81.45% 49.3%, rgba(255,226,160,.95) 0%, rgba(255,176,80,.5) 38%, transparent 100%), radial-gradient(2.6% 3.6% at 70.8% 33.6%, rgba(255,232,170,.8) 0%, rgba(255,180,90,.3) 45%, transparent 100%), radial-gradient(1.6% 2.4% at 60.5% 35.5%, rgba(255,226,160,.8) 0%, transparent 100%), radial-gradient(1.6% 2.4% at 84.3% 33.6%, rgba(255,226,160,.8) 0%, transparent 100%);
+  animation: insel-flamme 3.4s ease-in-out infinite; }
+/* a print is running: the little printer in the hut glows, smoke rises from the chimney */
+.inselstimmung > .inselstimmung__drucker { inset: auto; left: 70.45%; top: 37.1%; width: 4.5%; height: 6.4%; border-radius: 12%; background: radial-gradient(60% 70% at 50% 45%, rgba(130,210,255,.42) 0%, rgba(100,190,255,.14) 60%, transparent 100%); animation: insel-drucker 2.8s ease-in-out infinite; }
+.inselstimmung__drucker::before { content: ""; position: absolute; left: 6%; right: 6%; top: 3%; height: 7%; border-radius: 99px; background: #c9efff; box-shadow: 0 0 4px 1px rgba(120,205,255,.9); }
+.inselstimmung__drucker::after { content: ""; position: absolute; left: 18%; top: 30%; width: 9%; aspect-ratio: 1; border-radius: 50%; background: #fff; box-shadow: 0 0 5px 2px rgba(150,220,255,.95); animation: insel-duese 3.6s ease-in-out infinite alternate; }
+.inselstimmung > .inselstimmung__rauch { inset: auto; left: 89.9%; top: -17%; width: 4.6%; height: 25.4%; opacity: calc(.95 - var(--n) * .4); filter: blur(2px); }
+.inselstimmung__rauch i { position: absolute; left: 22%; bottom: 0; width: 56%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 45% 45%, rgba(246,246,252,.95) 0%, rgba(230,232,240,.75) 45%, rgba(214,218,232,0) 72%); opacity: 0; animation: insel-rauch 9s linear infinite; }
+.inselstimmung__rauch i:nth-child(even) { animation-name: insel-rauch-b; }
+@keyframes insel-flacker { 0%, 100% { opacity: calc(var(--l) * .85); } 23% { opacity: calc(var(--l) * .74); } 41% { opacity: calc(var(--l) * .88); } 67% { opacity: calc(var(--l) * .78); } 82% { opacity: calc(var(--l) * .86); } }
+@keyframes insel-flamme { 0%, 100% { opacity: var(--l); } 18% { opacity: calc(var(--l) * .78); } 37% { opacity: calc(var(--l) * .96); } 58% { opacity: calc(var(--l) * .7); } 79% { opacity: calc(var(--l) * .92); } }
+@keyframes insel-drucker { 0%, 100% { opacity: .7; } 50% { opacity: 1; } }
+@keyframes insel-duese { from { left: 16%; } to { left: 74%; } }
+@keyframes insel-rauch { 0% { transform: translate(0, 20%) scale(1.15); opacity: 0; } 5% { opacity: .95; } 55% { opacity: .5; } 100% { transform: translate(-190%, -560%) scale(3.4); opacity: 0; } }
+@keyframes insel-rauch-b { 0% { transform: translate(0, 20%) scale(1.05); opacity: 0; } 5% { opacity: .85; } 55% { opacity: .42; } 100% { transform: translate(-110%, -600%) scale(3); opacity: 0; } }
+:root[data-motion="reduziert"] .inselstimmung * { animation: none !important; }
+
+/* ---- Heute: Tagesleiste (die letzten 3 und die nächsten 21 Stunden unter der Insel, siehe src/ui/Tagesleiste.tsx) ---- */
+.heute-leiste { position: absolute; left: 27.6%; right: 27.6%; bottom: 26.6%; padding: 9px 14px 7px; display: flex; flex-direction: column; gap: 6px; zoom: var(--ui-scale, 1); animation: rise var(--t-mid) var(--ease) both; animation-delay: 140ms; }
+.heute-leiste__head { display: flex; align-items: center; gap: 10px; min-width: 0; height: 22px; }
+.heute-leiste__label { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--text-2); flex: none; }
+.heute-leiste__next { display: flex; align-items: center; gap: 7px; min-width: 0; flex: 0 1 auto; font-size: 13px; text-align: left; color: var(--text); }
+.heute-leiste__next b { font-weight: 700; font-variant-numeric: tabular-nums; flex: none; }
+.heute-leiste__next em { font-style: normal; color: var(--text-2); font-size: 12px; flex: none; }
+.heute-leiste__next .dot { flex: none; }
+.heute-leiste__next--click { padding: 2px 10px 2px 8px; border-radius: 999px; background: rgba(255,181,71,.22); border: 1px solid rgba(255,181,71,.5); cursor: pointer; }
+.heute-leiste__next--click:hover { background: rgba(255,181,71,.34); }
+.heute-leiste__calm { color: var(--text-2); }
+.heute-leiste__sum { margin-left: auto; display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--text-2); white-space: nowrap; flex: none; }
+.heute-leiste__track { position: relative; height: 56px; border-radius: 10px; background: linear-gradient(180deg, rgba(14,22,54,.78), rgba(24,34,80,.66)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); --bh: 16px; --b0: 9px; --step: 19px; --my: 38px; --rowstep: 0px; }
+.heute-leiste__track[data-lanes="0"] { --my: 23px; --rowstep: 13px; }
+.heute-leiste__track[data-lanes="2"] { --bh: 14px; --b0: 6px; --step: 17px; --my: 41px; }
+.heute-leiste__track[data-lanes="3"] { --bh: 11px; --b0: 5px; --step: 13px; --my: 43px; }
+.heute-leiste__sky { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; }
+.heute-leiste__day { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(255,132,84,.85) 0%, rgba(255,210,146,.88) 7%, rgba(176,220,255,.9) 24%, rgba(204,234,255,.92) 50%, rgba(176,220,255,.9) 76%, rgba(255,204,128,.88) 93%, rgba(255,116,66,.85) 100%); box-shadow: 0 0 14px 5px rgba(255,140,90,.25); }
+.heute-leiste__pv { position: absolute; top: 0; height: 4px; border-radius: 0 0 4px 4px; background: linear-gradient(90deg, rgba(255,211,110,.2), #ffd36e 14%, #fff0b8 50%, #ffd36e 86%, rgba(255,211,110,.2)); box-shadow: 0 0 9px rgba(255,211,110,.9); }
+.heute-leiste__tick { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.16); }
+.heute-leiste__tick--day { background: rgba(255,255,255,.6); }
+.heute-leiste__past { position: absolute; left: 0; top: 0; bottom: 0; background: repeating-linear-gradient(-45deg, rgba(10,16,40,.2) 0 5px, rgba(10,16,40,.1) 5px 10px); }
+.heute-leiste__bar { position: absolute; top: calc(var(--b0) + var(--step) * var(--lane, 0)); height: var(--bh); line-height: var(--bh); border-radius: 99px; padding: 0 8px; font-size: 10.5px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); text-align: left; overflow: hidden; white-space: nowrap; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.45); transition: filter var(--t-fast); }
+.heute-leiste__bar span { display: block; overflow: hidden; text-overflow: ellipsis; }
+.heute-leiste__bar--run { background: linear-gradient(90deg, var(--c) var(--p), color-mix(in srgb, var(--c) 48%, #101a44) var(--p)); }
+.heute-leiste__bar--plan { background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--c) 62%, #101a44) 0 6px, color-mix(in srgb, var(--c) 40%, #101a44) 6px 12px); box-shadow: 0 1px 4px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.3); }
+.heute-leiste__bar--due { background: var(--c); color: #2a1600; text-shadow: none; animation: pulse 2.4s ease-in-out infinite; }
+.heute-leiste__bar--open { border-top-right-radius: 0; border-bottom-right-radius: 0; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); }
+.heute-leiste__bar:hover, .heute-leiste__bar:focus-visible { filter: brightness(1.12); }
+.heute-leiste__mark { position: absolute; top: calc(var(--my) - var(--row, 0) * var(--rowstep)); width: 11px; height: 11px; margin-left: -5.5px; padding: 0; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px rgba(8,12,28,.75), 0 0 8px var(--c); }
+.heute-leiste__mark--termin { border-radius: 2px; transform: rotate(45deg) scale(.88); }
+.heute-leiste__mark--wartung { border-radius: 3px; }
+.heute-leiste__mark--done { background: rgba(8,12,28,.6); box-shadow: inset 0 0 0 2px var(--c); opacity: .75; }
+button.heute-leiste__mark { cursor: pointer; }
+.heute-leiste__mark:hover, .heute-leiste__mark:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.heute-leiste__now { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px rgba(8,12,28,.4), 0 0 10px rgba(255,255,255,.85); pointer-events: none; }
+.heute-leiste__now b { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 2px; font-size: 10px; font-weight: 700; color: var(--text); white-space: nowrap; }
+.heute-leiste__empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 4% 0 15%; text-align: center; font-size: 12px; line-height: 1.3; color: #f4f6fb; text-shadow: 0 1px 5px rgba(0,0,0,.75); pointer-events: none; }
+.heute-leiste__tip { position: absolute; bottom: calc(100% + 8px); transform: translateX(-50%); z-index: 5; display: flex; flex-direction: column; gap: 1px; padding: 6px 10px; border-radius: 10px; background: rgba(12,18,36,.95); color: #f4f6fb; border: 1px solid rgba(255,255,255,.18); box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 12px; white-space: nowrap; pointer-events: none; }
+.heute-leiste__tip span { font-size: 11px; color: rgba(244,246,251,.72); }
+.heute-leiste__axis { position: relative; height: 13px; font-size: 10px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.heute-leiste__axis span { position: absolute; top: 0; transform: translateX(-50%); }
+.heute-leiste__axis .heute-leiste__axis-day { color: var(--text); font-weight: 700; }
+:root[data-motion="reduziert"] .heute-leiste * { animation: none !important; }
 
 /* ---- Konto ---- */
 .topbar__konto img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
