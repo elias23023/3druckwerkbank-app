@@ -26,7 +26,8 @@ after every change that it still paints the same (section 9).
 Why the lists are in `kern.css` also for elements that exist only in the mobile shell (`.glass.m-card`, `.m-tabs`,
 `.m-ico` ...): CSS cannot add to a selector list from another file. The alternative would be a second copy of every
 block per shell. So: block definitions and ALL lists in `kern.css` (mobile entries are marked `mobil`), everything a
-shell needs beyond the blocks in its own file.
+shell needs beyond the blocks in its own file. (`.m-ico` also stands in the two lines of "Tropfen" that say which
+drops are round.)
 
 Dosage, as told to the owner: the more often something appears on a screen and the more text it carries, the less
 water. Drops and the marker are the only glossy things; sheets are still; troughs carry the text.
@@ -394,8 +395,20 @@ Testing
     `evaluate(el => el.click())`.
 37. **Ticking a task on "Heute" shows no toast** (the row goes, a ring runs). A real toast with "Rückgängig":
     remove a shopping entry on "Material" (`sheet('toast')` in `lib.mjs`).
-38. **In `vergleich.mjs` the app's clock stands still** (`page.clock.setFixedTime`); without that two runs differ by
-    the clock and a running print.
+38. **In `vergleich.mjs` the app's clock stands still** (`page.clock.setFixedTime`) **and Open-Meteo is blocked**;
+    without that two runs differ by the clock, a running print, and a weather card that comes on one run and not on
+    the next.
+39. **The three stylesheets must arrive together.** Loaded one after the other from a script, the page is painted once
+    with `kern.css` alone, the cards then change their padding (`mobil.css`), and Chromium draws the soft shadows of the
+    zoomed close-up a few grey levels differently for good (up to 17 of 255 on 4 % of the picture; same computed
+    styles). `mobil.html` writes the links into the head; the tools inject one style element; the app's build bundles.
+40. **WebKit can fire `load` of the scene image one frame before the image can be drawn.** The approved script
+    uploaded an empty picture then: the drops free over the scene (the header buttons) stayed BLACK until the next
+    scene - in Playwright's WebKit after 8 of 48 changes of screen. `wasser.js` does not upload an empty picture and
+    looks again with the next frame (`Wasser.info.blank` counts how often): 0 of 48. Whether an iPhone does the same
+    is unknown; the cure costs one pixel read per scene.
+41. **Under reduced motion the first picture of the drops can come late on a slow machine.** A screenshot taken too
+    early shows a drop with the scene of the screen before. `vergleich.mjs` looks a second time before it reports.
 
 ---
 
