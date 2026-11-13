@@ -13,18 +13,25 @@
      Wasser.MOBIL            the default options: the mobile shell of this app. The base for another shell:
                              Wasser.start(Object.assign({}, Wasser.MOBIL, { scene: '...', shade: '', bar: '...' }))
      Wasser.info             what the drops are doing, for tests: state ('init', 'gl', 'fallback (reason)', 'context lost',
-                             'stopped'), level (governor: 0 = full pace), drops, px, atlas, frames, ms, prof
+                             'stopped'), level (governor: 0 = full pace), drops, px, atlas, frames, ms, prof, blank (how
+                             often a scene image could not be drawn yet)
 
    Where the look applies is decided by CSS: inside the element that carries the attribute data-wasser
    (data-wasser="mobil" on .m-shell, data-wasser="desktop" on the desktop root). The script only looks inside it.
 
-   In the React app (later): a file src/wasser/wasser.ts
+   In the React app (later): the four files go to src/wasser/, this script under the name wasser-skript.js, and beside
+   them a file src/wasser/wasser.ts:
        import './kern.css'; import './mobil.css'; import './desktop.css';        // after the app's own stylesheets
-       import './wasser.js';                                                     // side effect: window.Wasser
+       import './wasser-skript.js';                                              // side effect: window.Wasser
+       import { useEffect } from 'react';
+       declare global { interface Window { Wasser: { start(o?: Record<string, unknown>): unknown; stop(): unknown } } }
        export function useWasser(options?: Record<string, unknown>) {
-         useEffect(() => { window.Wasser.start(options); return () => window.Wasser.stop(); }, []);
+         useEffect(() => { window.Wasser.start(options); return () => { window.Wasser.stop(); }; }, []);
        }
    and the root gets the attribute: <div className="m-shell" data-wasser="mobil"> with useWasser() in Mobile().
+   (Not wasser.js beside wasser.ts: an import of './wasser/wasser' without extension finds the .js first and the
+   build fails with "not exported". Tried with Vite 8: with the names above the build lowers the CSS nesting, keeps
+   both backdrop-filter properties, and start / stop work.)
 
    Four parts, each a function that starts its listeners and returns its own stop:
      Teil 1  Tropfen            the drops and the water's clock (sleep)
@@ -139,7 +146,7 @@
     var recs = new Map();               // button -> record
     var seedN = 0, frameNo = 0;
     var gl = null, glc = null, prog = null, U = {}, tex = null, texReady = false, lost = false, deriv = false;
-    var scene = { el: null, src: '', nw: 1280, nh: 720, pos: null, wait: null };
+    var scene = { el: null, src: '', nw: 1280, nh: 720, pos: null, wait: null, tried: null, tries: 0 };
     var NO_SHADE = [0, 0, 0.3, 0, 0.7, 0, 1, 0];
     var grad = { col: [0, 0, 0], stops: NO_SHADE, key: '' };   // the page's darkening of the scene (colour, four stops); read from the page (readGradient) before the first picture
     var raf = 0, timer = 0, lastFrame = 0, lastTick = 0, vt = 0, speed = 1, dirty = true, restyle = false, needOne = true;
@@ -481,7 +488,14 @@
       try {
         var max = gl.getParameter(gl.MAX_TEXTURE_SIZE), w = Math.min(TEX_W, max), h = Math.min(TEX_H, max);
         var c = texCv || (texCv = document.createElement('canvas')); c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        var cx = c.getContext('2d'); cx.drawImage(img, 0, 0, w, h);
+        // WebKit can fire "load" one frame before the image can be drawn: the canvas stays empty, and the drops free over the
+        // scene would be black until the next scene. An empty canvas (the scene is a photo: its middle is never see-through)
+        // is not uploaded; the old picture stays and the next frame looks again (at most 30 times per image).
+        if (scene.tried !== img) { scene.tried = img; scene.tries = 0; }
+        if (scene.tries < 30 && cx.getImageData(w >> 1, h >> 1, 1, 1).data[3] === 0) {
+          scene.tries++; W3.blank = (W3.blank || 0) + 1; requestAnimationFrame(function () { if (alive && scene.el === img) { loadScene(false); kick(); } }); return;
+        }
         gl.bindTexture(gl.TEXTURE_2D, tex);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, c);

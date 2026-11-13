@@ -162,10 +162,11 @@ Wasser.start({ sleep: 0, webgl: false });         // any option replaces its def
 Wasser.stop();                                    // leaves no helper, attribute, listener, timer or WebGL context behind
 ```
 
-In the React app later: `src/wasser/wasser.ts` imports the three stylesheets and `./wasser.js` (side effect: the
+In the React app later: `src/wasser/wasser.ts` imports the three stylesheets and the script (side effect: the
 global) and exports a hook that calls `window.Wasser.start(options)` in a `useEffect` and `window.Wasser.stop()` in
 its clean-up; `Mobile()` uses the hook and its root gets `data-wasser="mobil"`. Start it when the root is in the
-document (an effect is). The head of `wasser.js` shows the eight lines.
+document (an effect is). The head of `wasser.js` shows the lines. The script must NOT lie beside `wasser.ts` under
+the name `wasser.js` (an import without extension finds the `.js` first): copy it as `wasser-skript.js`.
 
 | Option | Default (mobile shell) | What it is |
 |---|---|---|
@@ -429,8 +430,10 @@ VERIFIED_PLACEHOLDER
 
 ## 10. Building it into the app (not done; the owner decides when)
 
-1. Copy the four files to `src/wasser/`, add `wasser.ts` (head of `wasser.js`). Import order: after `mobile.css` and
-   `global.css`.
+1. Copy the four files to `src/wasser/` (the script as `wasser-skript.js`), add `wasser.ts` (head of `wasser.js`).
+   Import order: after `mobile.css` and `global.css`. Tried in a scratch project with the app's Vite 8 and target
+   es2022: the build lowers the nesting (no `&` left), keeps both `backdrop-filter` properties, CSS 50 KB (10 KB
+   gzip), script 38 KB (15 KB gzip); tokens, blocks, `start()` and `stop()` work in the built page.
 2. `Mobile()`: root `<div className="m-shell" data-wasser="mobil">`, the hook once.
 3. Tone: `src/App.tsx` sets `document.documentElement.dataset.theme` today and forces "dunkel" on mobile. Keep the
    app's theme at "dunkel" wherever the look is on (the look has light text in both tones; the app's

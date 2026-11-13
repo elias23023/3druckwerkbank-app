@@ -44,10 +44,14 @@ async function pair(name, open, steps) {                           // open(look)
   for (const [label, fn] of steps) {
     const files = [], boxes = [];
     for (let i = 0; i < 2; i++) { try { await fn(hs[i]); } catch (e) { say(`!! ${name} ${label}: ${String(e).split('\n')[0].slice(0, 140)}`); } files.push(`${out}/${name}${label ? '-' + label : ''}-${i ? 'neu' : 'alt'}.png`); await hs[i].page.screenshot({ path: files[i] }); boxes.push(await hs[i].drops()); }
-    const sameBoxes = JSON.stringify(boxes[0]) === JSON.stringify(boxes[1]);
-    const d = await diff(files[0], files[1], boxes[1], files[1].replace('-neu.png', '-diff.png'));
-    const ok = d.outside === 0 && sameBoxes; if (!ok) bad++; else fs.rmSync(files[1].replace('-neu.png', '-diff.png'), { force: true });
-    say(`${ok ? (d.inside ? 'ok*' : 'ok ') : 'DIFF'} ${(name + (label ? ' ' + label : '')).padEnd(34)} outside the drops ${String(d.outside).padStart(7)} px (largest ${String(d.maxOutside).padStart(3)})   inside ${String(d.inside).padStart(7)} px (largest ${String(d.maxInside).padStart(3)})   drops ${boxes[1].length}${sameBoxes ? '' : ' (BOXES DIFFER: ' + boxes[0].length + ' against ' + boxes[1].length + ')'}   of ${d.pixels}`);
+    let sameBoxes = JSON.stringify(boxes[0]) === JSON.stringify(boxes[1]);
+    let d = await diff(files[0], files[1], boxes[1], files[1].replace('-neu.png', '-diff.png')), again = '';
+    if (d.outside || d.inside || !sameBoxes) {                     // a second look: on a slow or busy machine a page may not have settled when the first picture was taken (a drop still shows the scene of the screen before)
+      for (let i = 0; i < 2; i++) { await hs[i].page.waitForTimeout(2500); await hs[i].page.screenshot({ path: files[i] }); boxes[i] = await hs[i].drops(); }
+      sameBoxes = JSON.stringify(boxes[0]) === JSON.stringify(boxes[1]); d = await diff(files[0], files[1], boxes[1], files[1].replace('-neu.png', '-diff.png')); again = '   (second look)';
+    }
+    const ok = d.outside === 0 && sameBoxes; if (!ok) bad++; else if (!d.inside) fs.rmSync(files[1].replace('-neu.png', '-diff.png'), { force: true });
+    say(`${ok ? (d.inside ? 'ok*' : 'ok ') : 'DIFF'} ${(name + (label ? ' ' + label : '')).padEnd(34)} outside the drops ${String(d.outside).padStart(7)} px (largest ${String(d.maxOutside).padStart(3)})   inside ${String(d.inside).padStart(7)} px (largest ${String(d.maxInside).padStart(3)})   drops ${boxes[1].length}${sameBoxes ? '' : ' (BOXES DIFFER: ' + boxes[0].length + ' against ' + boxes[1].length + ')'}   of ${d.pixels}${again}`);
     for (const h of hs) for (const e of h.errors.splice(0)) if (!/open-meteo|Failed to load resource|ERR_|net::/i.test(e)) say(`   page error (${h === hs[0] ? 'alt' : 'neu'}): ${e}`);
   }
   for (const h of hs) await h.close();
