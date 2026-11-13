@@ -1,0 +1,179 @@
+// Is the template still the look the owner approved? Renders the reference (an earlier state of the look, injected under
+// .m-shell: docs/wasser-look/entwurf/nachgebessert) and the template (docs/wasser-look/vorlage) side by side and compares.
+// Run it after EVERY change to the template that is not meant to change the look.
+//
+//   node scripts/wasser/vergleich.mjs [bilder|app|stile|alles] [--engine chromium|webkit] [--toene dunkel,klar] [--alt <folder>] [--neu <folder|vorlage>] [--out <dir>] [--nur <name part>]
+//
+//   bilder   the harness page with reduced motion (frozen water): all eight scenes and their close-ups, both tones.
+//            Pixel by pixel; counted apart: inside the boxes of the drop canvases, and everywhere else.
+//   app      the same for the REAL app (preview on :4173, clock standing still): main screens, a project, sheets, search, toast.
+//   stile    the computed style of EVERY element, ::before, ::after and ::placeholder (all properties, and the look's
+//            custom properties) on the harness page and in the app; with motion, with reduced motion and with the app's
+//            switch data-motion="reduziert"; and - Chromium only - of everything that can be tapped or focused while it
+//            is pressed and while it has the keyboard focus. Finds what no picture shows (a rule that lost its weight).
+//   alles    all three (default).
+// Prints one line per comparison and a summary; exit code 1 when something differs that is not listed in KNOWN below.
+// Pictures of what differs: <out>/*-diff.png (red = outside the drops, yellow = inside). Default out: scratch folder in the OS temp dir.
+import fs from 'fs'; import os from 'os'; import path from 'path';
+import { session, diff, args, mkdir, abs, ALT, SZENEN, VORLAGE } from './lib.mjs';
+const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', out: path.join(os.tmpdir(), 'wasser-vergleich'), nur: '' });
+const mode = a._[0] || 'alles'; const out = mkdir(abs(a.out)); const TONES = a.toene.split(','); const ZEIT = '2026-11-12T17:42:00+01:00';
+const only = (name) => !a.nur || name.includes(a.nur);
+const s = await session({ engine: a.engine }); let bad = 0; const lines = []; const say = (t) => { console.log(t); lines.push(t); };
+
+// Deliberate differences between the reference and the template (everything else must be equal):
+// 1. two tokens were renamed (--w3-pad, --w3-halo);
+// 2. the transitions of the plain glass and of ghost buttons take the look's own --wa-t-fast (0.14 s) instead of the app's
+//    --t-fast (0.18 s);
+// 3. with no motion wanted every trough says "transition: none" (before: only rows) - where the time is 0 s on both sides
+//    there is no transition either way, only the keyword differs (all / none).
+// Not a style: the drawing size of a drop's canvas (it follows the governor of the drops, which differs from run to run).
+const RENAMED = { '--w3-pad': '--wa-drop-pad', '--w3-halo': '--wa-drop-halo' };
+const KNOWN = (prop, x, y, key) => (prop === 'transition-duration' && /^0\.18s(, 0\.18s)*$/.test(x[prop] || '') && y[prop] === x[prop].replace(/0\.18s/g, '0.14s'))
+  || (prop === 'transition-property' && x['transition-duration'] === '0s' && y['transition-duration'] === '0s')
+  || (prop === 'aspect-ratio' && /canvas:\d+\|/.test(key));
+
+/* ------------------------------------------------------------------ pictures */
+async function pair(name, open, steps) {                           // open(look) -> handle; steps = [[label, async (h) => {}], ...]: one screenshot after each step
+  const hs = []; for (const look of [a.alt, a.neu]) hs.push(await open(look));
+  for (const [label, fn] of steps) {
+    const files = [], boxes = [];
+    for (let i = 0; i < 2; i++) { try { await fn(hs[i]); } catch (e) { say(`!! ${name} ${label}: ${String(e).split('\n')[0].slice(0, 140)}`); } files.push(`${out}/${name}${label ? '-' + label : ''}-${i ? 'neu' : 'alt'}.png`); await hs[i].page.screenshot({ path: files[i] }); boxes.push(await hs[i].drops()); }
+    const sameBoxes = JSON.stringify(boxes[0]) === JSON.stringify(boxes[1]);
+    const d = await diff(files[0], files[1], boxes[1], files[1].replace('-neu.png', '-diff.png'));
+    const ok = d.outside === 0 && sameBoxes; if (!ok) bad++; else fs.rmSync(files[1].replace('-neu.png', '-diff.png'), { force: true });
+    say(`${ok ? (d.inside ? 'ok*' : 'ok ') : 'DIFF'} ${(name + (label ? ' ' + label : '')).padEnd(34)} outside the drops ${String(d.outside).padStart(7)} px (largest ${String(d.maxOutside).padStart(3)})   inside ${String(d.inside).padStart(7)} px (largest ${String(d.maxInside).padStart(3)})   drops ${boxes[1].length}${sameBoxes ? '' : ' (BOXES DIFFER: ' + boxes[0].length + ' against ' + boxes[1].length + ')'}   of ${d.pixels}`);
+    for (const h of hs) for (const e of h.errors.splice(0)) if (!/open-meteo|Failed to load resource|ERR_|net::/i.test(e)) say(`   page error (${h === hs[0] ? 'alt' : 'neu'}): ${e}`);
+  }
+  for (const h of hs) await h.close();
+}
+async function bilder() {
+  say(`\n== harness page, reduced motion, ${a.engine} ==`);
+  for (const ton of TONES) for (const nah of [false, true]) for (const scene of SZENEN) {
+    const name = `${ton}-${scene}${nah ? '-nah' : ''}`; if (!only(name)) continue;
+    await pair(name, (look) => s.harness({ look, ton, scene, nah, reduced: true }), [['', async () => {}]]);
+  }
+}
+async function app() {
+  say(`\n== real app, reduced motion, clock standing still, ${a.engine} ==`);
+  for (const ton of TONES) {
+    const name = `app-${ton}`; if (!only(name)) continue;
+    await pair(name, (look) => s.app({ look, ton, reduced: true, zeit: ZEIT }), [
+      ['start', (h) => h.go('#/start')], ['heute', (h) => h.go('#/heute')], ['projekte', (h) => h.go('#/projekte')], ['projekt', (h) => h.project()],
+      ['material', (h) => h.go('#/material')], ['mehr', (h) => h.go('#/druck')], ['wetter', (h) => h.go('#/wetter')], ['archiv', (h) => h.go('#/archiv')],
+      ['bogen-projekt', (h) => h.sheet('projekt')], ['bogen-rolle', async (h) => { await h.closeSheet(); await h.sheet('rolle'); }], ['bogen-einstellungen', async (h) => { await h.closeSheet(); await h.sheet('einstellungen'); }],
+      ['bogen-konto', async (h) => { await h.closeSheet(); await h.sheet('konto'); }], ['bogen-hinweise', async (h) => { await h.closeSheet(); await h.sheet('hinweise'); }],
+      ['suche', async (h) => { await h.closeSheet(); await h.sheet('suche'); await h.page.keyboard.type('sens'); await h.page.waitForTimeout(600); }],
+      ['haken', async (h) => { await h.page.keyboard.press('Escape'); await h.page.waitForTimeout(300); await h.sheet('haken'); }], ['hinweis', (h) => h.sheet('toast')],
+    ]);
+  }
+}
+
+/* ------------------------------------------------------------------ computed styles */
+// in the page: one line per element and pseudo-element, "path|pseudo" -> all computed properties as one string (kept in the page; only a hash travels)
+const PAGE_LIB = `(() => {
+  const PSEUDO = ['', '::before', '::after', '::placeholder'];
+  const key = (el) => { const p = []; for (let e = el; e && e !== document.documentElement; e = e.parentElement) p.unshift(e.localName + ':' + [...e.parentElement.children].indexOf(e)); return p.join('>'); };
+  const hash = (t) => { let h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (let i = 0; i < t.length; i++) { const c = t.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); } return (h2 >>> 0).toString(36) + (h1 >>> 0).toString(36); };
+  const tidy = (v) => v.replace(/\\/\\*[^]*?\\*\\//g, ' ').replace(/\\s+/g, ' ').trim();   // a custom property keeps its comments and line breaks: they are no difference
+  const one = (el, ps, custom) => { const cs = getComputedStyle(el, ps || null); const o = {}; for (const p of cs) if (p.charCodeAt(1) !== 45) o[p] = cs.getPropertyValue(p); for (const c of custom) { const v = tidy(cs.getPropertyValue(c[0])); if (v) o[c[1]] = v; } return o; };
+  const still = () => { window.dispatchEvent(new Event('scroll'));   /* (keeps the water awake: asleep, the root pauses its loops - at a different moment in each page) */
+    for (const an of document.getAnimations()) { try { an.finish(); } catch (e) { try { an.pause(); an.currentTime = 0; } catch (e2) {} } } };
+  window.__vgl = {
+    still,
+    all(custom, scope) { still(); const r = {}; const els = scope ? scope : [document.documentElement, ...document.documentElement.querySelectorAll('*')];
+      for (const el of els) { if (el.closest && el.closest('head')) continue; const k = key(el) || 'html';
+        for (const ps of PSEUDO) { if (ps === '::placeholder' && !/^(input|textarea)$/.test(el.localName)) continue; const o = one(el, ps, custom); if (ps && ps !== '::placeholder' && (o.content === 'none' || o.content === 'normal')) continue; r[k + '|' + ps + '|' + (el.className && el.className.baseVal === undefined ? String(el.className).trim().replace(/\\s+/g, '.') : '')] = hash(JSON.stringify(o)); } }
+      return r; },
+    get(custom, k) { const [p, ps] = k.split('|'); let el = document.documentElement; if (p !== 'html') for (const part of p.split('>')) { el = el.children[+part.split(':')[1]]; if (!el) return null; } return one(el, ps, custom); },
+    near(el) { const r = [el, ...el.querySelectorAll('*')]; for (let e = el.parentElement; e; e = e.parentElement) r.push(e); return r; },
+  };
+})()`;
+const customNames = () => {                                        // every custom property the reference declares: [name in this look, name it is reported under]
+  const names = (look) => { const dir = abs(look === 'vorlage' ? VORLAGE : look); const css = fs.readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => fs.readFileSync(`${dir}/${f}`, 'utf8')).join('\n'); return new Set(css.match(/--[a-z0-9-]+(?=\s*:)/g) || []); };
+  const old = [...names(a.alt)], now = names(a.neu), neu = a.neu === 'vorlage';
+  return [old.map((n) => [n, n]), old.map((n) => [neu && RENAMED[n] && now.has(RENAMED[n]) ? RENAMED[n] : n, n])];
+};
+async function compare(name, pages, custom, scopeSel = null, quietIfEqual = false) {
+  const maps = []; for (let i = 0; i < 2; i++) maps.push(await pages[i].evaluate(([c, sel]) => window.__vgl.all(c, sel ? window.__vgl.near(document.querySelector(sel)) : null), [custom[i], scopeSel || null]));
+  const keys = new Set([...Object.keys(maps[0]), ...Object.keys(maps[1])]); let n = 0, known = 0; const shown = [];
+  for (const k of keys) {
+    if (maps[0][k] === maps[1][k]) continue;
+    if (maps[0][k] === undefined || maps[1][k] === undefined) { n++; if (shown.length < 12) shown.push(`     only in the ${maps[0][k] === undefined ? 'template' : 'reference'}: ${k}`); continue; }
+    const [x, y] = [await pages[0].evaluate(([c, k]) => window.__vgl.get(c, k), [custom[0], k]), await pages[1].evaluate(([c, k]) => window.__vgl.get(c, k), [custom[1], k])];
+    const props = [...new Set([...Object.keys(x || {}), ...Object.keys(y || {})])].filter((p) => (x || {})[p] !== (y || {})[p]);
+    const real = props.filter((p) => !KNOWN(p, x || {}, y || {}, k));
+    if (!real.length) { known++; continue; }
+    n++; if (shown.length < 12) shown.push(`     ${k.split('|').slice(1).join(' ')}  <${k.split('|')[0].split('>').slice(-2).join('>')}>\n` + real.slice(0, 6).map((p) => `        ${p}: ${String(x[p]).slice(0, 110)}  ->  ${String(y[p]).slice(0, 110)}`).join('\n'));
+  }
+  if (n) bad++;
+  if (n || !quietIfEqual) say(`${n ? 'DIFF' : 'ok  '} ${name.padEnd(46)} ${String(keys.size).padStart(5)} styles compared, ${n} differ${known ? `, ${known} only in a known way (see KNOWN)` : ''}`);
+  for (const t of shown) say(t);
+  return n;
+}
+// everything that can be tapped or focused, tagged so that both pages agree on the order
+const TAPPABLE = 'button, a, input, select, textarea, [role="button"], .btn, .pill, .check, .m-row--click, .item--click, .sim-item, .tile, .m-ico, .m-back, .brand, .cmd__item, .link, .toast__undo, .wa-mulde--tipp, .wa-perle, .wa-haken';
+async function states(name, pages, custom) {
+  if (a.engine !== 'chromium') return;
+  const cdp = []; for (const p of pages) { const c = await p.context().newCDPSession(p); await c.send('DOM.enable'); await c.send('CSS.enable'); cdp.push(c); }
+  const counts = []; for (const p of pages) counts.push(await p.evaluate((sel) => { let i = 0; for (const el of document.querySelectorAll(sel)) if (el.getClientRects().length) el.setAttribute('data-vgl', i++); return i; }, TAPPABLE));
+  if (counts[0] !== counts[1]) { bad++; say(`DIFF ${name}: ${counts[0]} tappable elements in the reference, ${counts[1]} in the template`); return; }
+  let differ = 0;
+  for (const state of [['active'], ['focus', 'focus-visible']]) {
+    for (let i = 0; i < counts[0]; i++) {
+      const forced = [[], []];
+      for (let k = 0; k < 2; k++) {                                // pressed: the element and its ancestors, as under a real finger
+        const { root } = await cdp[k].send('DOM.getDocument', { depth: 0 }); const node = async (sel) => (await cdp[k].send('DOM.querySelector', { nodeId: root.nodeId, selector: sel })).nodeId;
+        forced[k].push(await node(`[data-vgl="${i}"]`));
+        if (state[0] === 'active') {
+          const anc = await pages[k].evaluate((i) => { let n = 0; for (let e = document.querySelector(`[data-vgl="${i}"]`).parentElement; e && e !== document.documentElement; e = e.parentElement) e.setAttribute('data-vgl-a', n++); return n; }, i);
+          for (let j = 0; j < anc; j++) forced[k].push(await node(`[data-vgl-a="${j}"]`));
+        }
+        for (const id of forced[k]) await cdp[k].send('CSS.forcePseudoState', { nodeId: id, forcedPseudoClasses: state });
+      }
+      if (await compare(`${name} [${i}] :${state[0]}`, pages, custom, `[data-vgl="${i}"]`, true)) differ++;
+      for (let k = 0; k < 2; k++) { for (const id of forced[k]) await cdp[k].send('CSS.forcePseudoState', { nodeId: id, forcedPseudoClasses: [] }); await pages[k].evaluate(() => document.querySelectorAll('[data-vgl-a]').forEach((e) => e.removeAttribute('data-vgl-a'))); }
+    }
+  }
+  say(`${differ ? 'DIFF' : 'ok  '} ${(name + ' pressed / focused').padEnd(46)} ${counts[0]} elements x 2 states, ${differ} differ`);
+  for (const p of pages) await p.evaluate(() => document.querySelectorAll('[data-vgl]').forEach((e) => e.removeAttribute('data-vgl')));
+}
+async function stile() {
+  say(`\n== computed styles, ${a.engine} ==`); const custom = customNames();
+  for (const ton of TONES) {
+    for (const [label, reduced, motionAttr] of [['motion', false, false], ['reduced motion', true, false], ['data-motion=reduziert', false, true]]) {
+      const name = `stile-${ton}`; if (!only(name)) continue;
+      for (const nah of [false, true]) {
+        const hs = []; for (const look of [a.alt, a.neu]) hs.push(await s.harness({ look, ton, nah, reduced }));
+        for (const h of hs) { await h.page.evaluate(PAGE_LIB); if (motionAttr) { await h.page.evaluate(() => { document.documentElement.dataset.motion = 'reduziert'; }); await h.page.waitForTimeout(200); } }
+        await compare(`harness ${nah ? 'close-up' : 'phone'} ${ton}, ${label}`, hs.map((h) => h.page), custom);
+        if (!motionAttr) await states(`harness ${nah ? 'close-up' : 'phone'} ${ton}, ${label}`, hs.map((h) => h.page), custom);
+        for (const h of hs) await h.close();
+      }
+    }
+    for (const [label, reduced] of [['motion', false], ['reduced motion', true]]) {
+      const name = `stile-app-${ton}`; if (!only(name)) continue;
+      const hs = []; for (const look of [a.alt, a.neu]) hs.push(await s.app({ look, ton, reduced, zeit: ZEIT }));
+      for (const h of hs) await h.page.evaluate(PAGE_LIB);
+      const screens = [['start', (h) => h.go('#/start')], ['heute', (h) => h.go('#/heute')], ['projekte', (h) => h.go('#/projekte')], ['projekt', (h) => h.project()], ['material', (h) => h.go('#/material')], ['mehr', (h) => h.go('#/druck')],
+        ['bogen-projekt', (h) => h.sheet('projekt')], ['bogen-projekt 2', async (h) => { await h.page.locator('.sheet .input').first().fill('Halter'); await h.page.locator('.sheet__foot .btn', { hasText: 'Weiter' }).click(); await h.page.waitForTimeout(700); }],
+        ['bogen-einstellungen', async (h) => { await h.closeSheet(); await h.sheet('einstellungen'); }], ['bogen-konto', async (h) => { await h.closeSheet(); await h.sheet('konto'); }], ['bogen-hinweise', async (h) => { await h.closeSheet(); await h.sheet('hinweise'); }],
+        ['bogen-neue-rolle', async (h) => { await h.closeSheet(); await h.sheet('neuerolle'); }], ['bogen-geraete', async (h) => { await h.closeSheet(); await h.go('#/druck'); await h.page.locator('.m-main [aria-label^="Drucker & Warteschlange"]').first().click(); await h.page.waitForTimeout(900); }],
+        ['suche', async (h) => { await h.closeSheet(); await h.sheet('suche'); await h.page.keyboard.type('sens'); await h.page.waitForTimeout(600); }], ['hinweis', async (h) => { await h.page.keyboard.press('Escape'); await h.page.waitForTimeout(300); await h.sheet('toast'); }]];
+      for (const [scr, fn] of screens) {
+        for (const h of hs) { try { await fn(h); } catch (e) { say(`!! ${scr}: ${String(e).split('\n')[0].slice(0, 140)}`); } }
+        await compare(`app ${scr} ${ton}, ${label}`, hs.map((h) => h.page), custom);
+        if (!reduced) await states(`app ${scr} ${ton}, ${label}`, hs.map((h) => h.page), custom);
+      }
+      for (const h of hs) await h.close();
+    }
+  }
+}
+
+if (mode === 'bilder' || mode === 'alles') await bilder();
+if (mode === 'app' || mode === 'alles') await app();
+if (mode === 'stile' || mode === 'alles') await stile();
+await s.close();
+say(`\n${bad ? bad + ' comparison(s) differ' : 'no difference outside the drops and in no computed style'}  (reference ${a.alt}, engine ${a.engine}; pictures in ${out})`);
+fs.writeFileSync(`${out}/vergleich-${mode}-${a.engine}.txt`, lines.join('\n') + '\n');
+process.exit(bad ? 1 : 0);
