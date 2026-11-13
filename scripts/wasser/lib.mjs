@@ -72,9 +72,10 @@ export async function openApp(browser, engine, { look = 'vorlage', ton = '', red
   const rd = (f) => fs.readFileSync(abs(f), 'utf8');
   if (ton && ton !== 'dunkel') await page.evaluate((t) => { document.documentElement.dataset.waTon = t; }, ton);
   if (look === 'vorlage') {
-    // what the app will do itself once the look is built in: the attribute on the root, the three stylesheets after its own, the script, start()
+    // what the app will do itself once the look is built in: the attribute on the root, the three stylesheets after its own
+    // (in one piece, as its build bundles them), the script, start()
     await page.evaluate(() => document.querySelector('.m-shell').setAttribute('data-wasser', 'mobil'));
-    for (const f of ['kern.css', 'mobil.css', 'desktop.css']) await page.addStyleTag({ content: rd(`${VORLAGE}/${f}`) });
+    await page.addStyleTag({ content: ['kern.css', 'mobil.css', 'desktop.css'].map((f) => rd(`${VORLAGE}/${f}`)).join('\n') });
     await page.addScriptTag({ content: rd(`${VORLAGE}/wasser.js`) });
     await page.evaluate((o) => window.Wasser.start(o), start);
   } else if (look) {

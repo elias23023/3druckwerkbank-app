@@ -37,6 +37,16 @@
   .nahbox .frei { justify-content: center; }
   .nahbox .m-card { width: 100%; }
 </style>
+<script>
+  // The look's stylesheets, written into the head so that the page is not painted before ALL of them are there - like the
+  // one bundled stylesheet of the built app. (Loaded one after the other from a script, the page is painted once with
+  // kern.css alone; Chromium then draws the soft shadows of the zoomed close-up a few grey levels differently.)
+  const q = new URLSearchParams(location.search);
+  const ROOT = '../../';                                           // the repository root, seen from this page
+  const VORLAGE = ROOT + 'docs/wasser-look/vorlage/';
+  const ALT = q.get('alt') ? (/^(https?:)?\//.test(q.get('alt')) ? q.get('alt') : ROOT + q.get('alt')) : '';   // an earlier state of the look (its rules start with .m-shell, its script starts itself)
+  for (const href of ALT ? [ALT + '/look.css'] : q.get('ohne') ? [] : [VORLAGE + 'kern.css', VORLAGE + 'mobil.css', VORLAGE + 'desktop.css']) document.write('<link rel="stylesheet" href="' + href + '">');
+</script>
 </head><body>
 <div class="m-shell" data-look="tag" data-wasser="mobil">
   <div class="m-bg" aria-hidden="true"><img id="scene" alt=""></div>
@@ -78,9 +88,7 @@
   </nav>
 </div>
 <script>
-  const q = new URLSearchParams(location.search); const scene = q.get('scene') || 'start';
-  const ROOT = '../../';                                           // the repository root, seen from this page
-  const VORLAGE = ROOT + 'docs/wasser-look/vorlage/';
+  const scene = q.get('scene') || 'start';
   // the scene image: public/img when the repository root is served as files, /img under the vite dev server
   const sceneSrc = (img, name) => { img.onerror = () => { img.onerror = null; img.src = `/img/szene-${name}-1280.webp`; }; img.src = `${ROOT}public/img/szene-${name}-1280.webp`; };
   sceneSrc(document.getElementById('scene'), scene);
@@ -125,14 +133,10 @@
     shell.querySelector('[data-zu]').addEventListener('click', () => shell.querySelectorAll('.sheet, .sheet-back').forEach((e) => e.remove()));
     shell.querySelector('.sheet__foot .btn--danger').addEventListener('click', () => hinweis(6000));   // "Löschen": a toast lands, and leaves after six seconds
   }
-  const css = (href) => new Promise((ok) => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; l.onload = ok; l.onerror = ok; document.head.appendChild(l); });
   const js = (src) => new Promise((ok) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ok; document.body.appendChild(s); });
   (async () => {
-    if (q.get('alt')) {                                            // an earlier state of the look (its rules start with .m-shell, its script starts itself)
-      const alt = /^(https?:)?\//.test(q.get('alt')) ? q.get('alt') : ROOT + q.get('alt');
-      await css(`${alt}/look.css`); await js(`${alt}/look.js`);
-    } else if (!q.get('ohne')) {                                   // the template: three stylesheets in this order, then the script
-      await css(VORLAGE + 'kern.css'); await css(VORLAGE + 'mobil.css'); await css(VORLAGE + 'desktop.css');
+    if (ALT) await js(ALT + '/look.js');
+    else if (!q.get('ohne')) {                                     // the template: its script, then start
       await js(VORLAGE + 'wasser.js');
       if (window.Wasser) window.Wasser.start({                     // the mobile defaults; the query only adds test aids
         webgl: !q.get('fallback'),
