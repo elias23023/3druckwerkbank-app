@@ -1,0 +1,144 @@
+/* ---- Wasser-Look: Mobil ----
+   What only the mobile shell needs (src/mobile/Mobile.tsx, root .m-shell with data-wasser="mobil"): its own tokens, the
+   page's darkening, sizes and places of its cards, its tab bar, its bottom sheet and toast. Load after kern.css.
+   Every rule starts with [data-wasser="mobil"], so nothing here reaches the desktop.
+
+   WHICH BLOCK EACH MOBILE ELEMENT IS MADE OF is written in kern.css, in the selector list of the block (CSS cannot add
+   to a list from another file). For orientation:
+     .glass.m-card              Becken        (+ ring and light: wasser.js, options ringOn, light)
+     .glass.m-stat              stilles Wasser, Lichtlauf
+     .m-card .m-row, .m-stat    Mulde;  .m-card .m-row--click  Mulde zum Tippen
+     .m-tabs                    dichtes Wasser, Markierung, Lichtlauf
+     .m-ico                     Tropfen (round)
+     .m-card (as a ground)      Etikett auf Wasser;  .m-row  Perle mit Schrift
+     .m-ico, .m-row--click, .m-back   Wasserlinie
+   Shared classes (.btn, .pill, .sheet, .toast, .cmd, .input, .check, .progress ...) are in the same lists.
+   Here follows only what these elements need ON TOP of their block.
+
+   Rules for this file: a rule that changes something a block has set needs at least the weight of that block's list
+   (see the head of kern.css) - .glass.m-card and .glass.m-stat are written with both classes for that reason. */
+
+/* == 1. Tokens of the mobile shell =============================================================================== */
+[data-wasser="mobil"] {
+  --wa-page-dark: 10, 10, 12;                   /* r, g, b of the page's darkening of the scene ("Seite") */
+  /* the tab bar */
+  --wa-bar-lift: max(8px, calc(env(safe-area-inset-bottom) - 12px));   /* how far the bar floats above the bottom edge (iPhone: just above the home indicator) */
+  --wa-bar-side: 8px;                           /* ... and how far from the side edges */
+  --wa-r-bar: 29px 33px 30px 27px / 30px 28px 32px 30px;
+  --wa-r-tab: 22px;
+  --wa-scrim-over: 76px;                        /* how far above the bar's foot the page begins to sink into the dark */
+  --wa-tab-time: var(--wa-t-leave);             /* icon and label of a tab spring back ... */
+  --wa-tab-ease: var(--wa-ease-settle);
+  --wa-tab-in: var(--wa-t-touch);               /* ... after giving way at once */
+  --wa-tab-lens: 1.1;                           /* the icon under the bead is slightly magnified */
+  /* (the bar's own padding and number of tabs are tokens of the block "Markierung", kern.css: --wa-bar-pad 5 px -
+     5 + 52 + 5 = 62 px high - and --wa-bar-tabs 5) */
+}
+
+/* == 2. Seite ==================================================================================================== */
+/* The page's own darkening of the painted scene (mobile.css, .m-bg::after) without its navy: a neutral colour, in four
+   strengths from the top of the screen to its foot. The strengths are tone tokens (--wa-page-1 .. -4, kern.css): the
+   tone "dunkel" keeps the app's own four, the tone "klar" darkens the lower half of the screen much less, so a card
+   further down is as clear as the one above it. wasser.js reads this gradient from the computed style (option
+   "shade"), so the drops follow it by themselves. Keep the form "linear-gradient(180deg, <colour> 0%, ... 30%, ...
+   70%, ... 100%)" - four stops. */
+[data-wasser="mobil"] .m-bg::after {
+  background: linear-gradient(180deg, rgba(var(--wa-page-dark), var(--wa-page-1)) 0%, rgba(var(--wa-page-dark), var(--wa-page-2)) 30%, rgba(var(--wa-page-dark), var(--wa-page-3)) 70%, rgba(var(--wa-page-dark), var(--wa-page-4)) 100%);
+}
+/* faint text that stands directly on the page (the foot note of "Mehr"): the tone says how faint it may be */
+[data-wasser="mobil"] .m-main { --text-3: var(--wa-page-ink-3); }
+
+/* == 3. Karten (Becken) ========================================================================================== */
+[data-wasser="mobil"] .glass.m-card {
+  padding: 15px;                                /* the app's 14 px plus the 1 px border that is gone: nothing shifts */
+  &:nth-of-type(4n+2) { border-radius: var(--wa-r-becken-2); }   /* four outlines in turn */
+  &:nth-of-type(4n+3) { border-radius: var(--wa-r-becken-3); }
+  &:nth-of-type(4n+4) { border-radius: var(--wa-r-becken-4); }
+  /* no motion wanted: the app's own entrance of the cards ("rise", mobile.css) is off too */
+  @media (prefers-reduced-motion: reduce) { & { animation: none !important; } }
+  :root[data-motion="reduziert"] & { animation: none !important; }
+}
+[data-wasser="mobil"] .m-card .btn.btn--ghost { text-shadow: var(--wa-shade); }   /* buttons do not inherit text-shadow */
+/* The cards of a new screen (tab changed, project opened) keep the app's own short entrance; here only their order: one
+   shortly after the other, from the top. What comes to rest like water is the light inside them (kern.css, "Schwappen"). */
+[data-wasser="mobil"] .m-main > .glass.m-card {
+  &:nth-child(2) { animation-delay: calc(var(--wa-t-step) * 1); }
+  &:nth-child(3) { animation-delay: calc(var(--wa-t-step) * 2); }
+  &:nth-child(4) { animation-delay: calc(var(--wa-t-step) * 3); }
+  &:nth-child(n+5) { animation-delay: calc(var(--wa-t-step) * 4); }   /* (what follows is below the fold) */
+  @media (prefers-reduced-motion: reduce) { & { animation-delay: 0s !important; } }
+  :root[data-motion="reduziert"] & { animation-delay: 0s !important; }
+}
+
+/* a free-standing number tile (Material: "Rollen", "verfügbar") is a small still sheet with one short light along its top
+   rim ("Lichtlauf"). Its number and caption lie above it (isolation), and each tile starts at another place of the loop. */
+[data-wasser="mobil"] .glass.m-stat {
+  position: relative; isolation: isolate;
+  &::after { left: 20px; width: 26%; height: 9px; }   /* (its way is 170 % of its width: 20 px + 2.7 x 26 % ends 30 px before the far corner of a tile half a screen wide) */
+  &:nth-child(2n)::after { animation-delay: calc(var(--wa-t-ruhe-3) * -.375); }
+  &:nth-child(3n)::after { animation-delay: calc(var(--wa-t-ruhe-3) * -.75); }
+}
+
+/* == 4. Leiste =================================================================================================== */
+/* The tab bar is a dense pool lying along the bottom (content scrolls under it, so it is nearly opaque). It floats a
+   little above the bottom edge; the page sinks into the dark before it reaches it. The active tab is marked by the
+   bead of "Markierung". */
+[data-wasser="mobil"] .m-tabs {
+  left: var(--wa-bar-side); right: var(--wa-bar-side);
+  bottom: var(--wa-bar-lift);
+  padding: var(--wa-bar-pad);
+  border-radius: var(--wa-r-bar);
+
+  & button {
+    position: relative;
+    border-radius: var(--wa-r-tab);
+    background: none;
+    color: var(--wa-tab-ink);
+    -webkit-tap-highlight-color: transparent;
+  }
+  & button.on { color: var(--wa-tab-ink-on); background: none; text-shadow: var(--wa-tab-halo); }
+  @supports not selector(:has(a)) { & button.on { background: var(--wa-tab-fallback); } }   /* no bead there (see "Markierung"): a tinted tab */
+  /* taps count from the top edge of the pool down to the edge of the screen, and out to the sides (62 px plus the gap
+     below). Not above the pool: a list row that lies just above the bar keeps its own taps. */
+  & button::after { content: ""; position: absolute; inset: calc(-1 * var(--wa-bar-pad)) 0 calc(-1 * var(--wa-bar-pad) - var(--wa-bar-lift)) 0; }
+  & button:first-child::after { left: calc(-1 * var(--wa-bar-pad) - var(--wa-bar-side)); }
+  & button:last-child::after { right: calc(-1 * var(--wa-bar-pad) - var(--wa-bar-side)); }
+  /* a pressed tab gives way under the finger (1.5 px down, 7 % smaller); the icon under the bead is slightly magnified (a lens) */
+  & button > * { transition: transform var(--wa-tab-time) var(--wa-tab-ease); }
+  & button.on > .ico { transform: scale(var(--wa-tab-lens)); }
+  & button:active > * { transform: translateY(1.5px) scale(.93); transition-duration: var(--wa-tab-in); }
+  @media (prefers-reduced-motion: reduce) { & button > * { transition: none !important; } }
+  :root[data-motion="reduziert"] & button > * { transition: none !important; }
+}
+/* what scrolls towards the bar sinks into the dark before it reaches the pool, so nothing readable shows in the gaps
+   around it. Ends exactly where the last card ends when the page is scrolled to its end (84 px + safe area). */
+[data-wasser="mobil"]::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: calc(var(--wa-bar-lift) + var(--wa-scrim-over));
+  z-index: 2;                                                      /* above the page (.m-main: 1), below the bar (3) */
+  pointer-events: none;
+  /* solid up to 4 px above the bar's foot, then .92 until 40 px below the top, .5 at 14 px below the top, clear at the top */
+  background: linear-gradient(to top, rgb(var(--wa-abyss)) 0, rgb(var(--wa-abyss)) calc(var(--wa-bar-lift) + 4px), rgba(var(--wa-abyss), .92) calc(100% - 40px), rgba(var(--wa-abyss), .5) calc(100% - 14px), rgba(var(--wa-abyss), 0) 100%);
+}
+
+/* == 5. Bogen und Hinweis ======================================================================================== */
+[data-wasser="mobil"] .sheet { padding-bottom: env(safe-area-inset-bottom); }   /* iPhone: head, body and foot keep clear of the home indicator */
+[data-wasser="mobil"] .toast { bottom: calc(var(--wa-bar-lift) + 78px); }       /* clear of the floating bar: it is 62 px high, 16 px of air above it */
+
+/* == 6. Antworten ================================================================================================ */
+/* What had no answer to a touch besides the browser's own flash (off in the whole look): the back link and the brand give
+   way a little under the finger and spring back, like a tab of the bar. */
+[data-wasser="mobil"] :is(.m-back, .brand) {
+  transition: transform var(--wa-tab-time) var(--wa-tab-ease);
+  &:active { transform: scale(.96); transition-duration: var(--wa-tab-in); }
+  @media (prefers-reduced-motion: reduce) { & { transition: none !important; } }
+  :root[data-motion="reduziert"] & { transition: none !important; }
+}
+
+/* == 7. Ruhe hinter einem Bogen ================================================================================== */
+/* The page behind an open bottom sheet or the search rests: its loops pause (the drops there are stopped by wasser.js,
+   option "modal" - keep both lists the same). The sheet's own light goes on. Nothing may move UNDER an open scrim: its
+   blur is computed once because the page behind it rests. */
+[data-wasser="mobil"]:has(.sheet, .cmd-back) > :is(.m-head, .m-main, .m-tabs) { --wa-lauf: paused; }
