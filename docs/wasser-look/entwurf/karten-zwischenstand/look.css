@@ -1,0 +1,391 @@
+/* ---- Mobil: Wasser-Knöpfe ----
+   Two layers, nothing in between:
+   1. This file alone = the plain fallback (no script, no WebGL, ?fallback=1): a still, water-shaped pane of
+      see-through glass. No filter, no backdrop-filter, no animation - it costs nothing and stays readable.
+   2. look.js draws a refracting water drop (WebGL) into a small canvas helper inside each button and marks the
+      button with data-w3="on"; only then the glass below steps aside for that button.
+   Scope: .btn (not ghost) and the round header buttons .m-ico get water; .pill is a small glass bead (CSS only).
+   Cards, rows, stats and the tab bar are NOT styled here, and nothing here depends on how a card looks. */
+
+.m-shell {
+  --w3-pad: 14px; /* how far the drop canvas reaches beyond the button (must match PAD in look.js) */
+  --w3-halo: 0 0 1px rgba(3,14,32,.9), 0 1px 2px rgba(3,14,32,.7), 0 0 7px rgba(3,14,32,.5);
+}
+
+/* ===== 1. plain glass ===== */
+.m-shell .btn:not(.btn--ghost),
+.m-shell .m-ico {
+  position: relative;
+  isolation: isolate;
+  color: #fff;
+  text-shadow: var(--w3-halo);
+  -webkit-tap-highlight-color: transparent;
+  border: 1px solid rgba(255,255,255,.36);
+  /* organic outline: four different elliptical corners (a pebble of water), never tight enough to touch the label */
+  border-radius: 22px 42px 20px 36px / 62% 40% 68% 32%;
+  background:
+    radial-gradient(52% 34% at 26% 0%, rgba(255,255,255,.4) 0%, rgba(255,255,255,0) 100%),
+    radial-gradient(110% 80% at 64% 130%, rgba(190,232,255,.4) 0%, rgba(190,232,255,.1) 45%, rgba(190,232,255,0) 68%),
+    linear-gradient(rgba(14,38,68,.48), rgba(8,26,52,.56));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.5),
+    inset 0 -1px 1px rgba(255,255,255,.2),
+    inset -4px -7px 11px -7px rgba(200,238,255,.55),
+    2px 6px 14px -6px rgba(2,10,28,.6),
+    0 1px 3px rgba(2,10,28,.25);
+  transition: transform var(--t-fast), filter var(--t-fast);
+}
+.m-shell .btn:not(.btn--ghost):nth-of-type(2n) { border-radius: 40px 22px 37px 20px / 38% 64% 34% 66%; }
+.m-shell .btn:not(.btn--ghost):nth-of-type(3n) { border-radius: 30px 36px 25px 44px / 52% 34% 74% 42%; }
+.m-shell .btn.btn--icon:not(.btn--ghost),
+.m-shell .m-ico { border-radius: 62% 38% 55% 45% / 44% 60% 40% 56%; }
+.m-shell .m-ico:nth-of-type(2n) { border-radius: 44% 56% 40% 60% / 58% 42% 60% 40%; }
+
+/* the visible drop may swell a few px beyond the button box: taps there count too (touch targets only grow) */
+.m-shell .btn:not(.btn--ghost)::before,
+.m-shell .m-ico::before { content: ""; position: absolute; inset: -5px; border-radius: inherit; } /* 4 px beyond the border box */
+
+/* icons inside a drop take the label colour (a card heading would paint them amber) */
+.m-shell .btn:not(.btn--ghost) .ico,
+.m-shell .m-ico .ico { color: inherit; filter: drop-shadow(0 1px 1.5px rgba(2,12,30,.65)); }
+
+/* primary keeps its warm amber identity */
+.m-shell .btn.btn--primary {
+  color: #2a1606;
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(255,240,210,.5);
+  border-color: rgba(255,244,214,.7);
+  background:
+    radial-gradient(52% 34% at 26% 0%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 100%),
+    radial-gradient(110% 80% at 64% 130%, rgba(255,244,196,.55) 0%, rgba(255,232,160,.14) 45%, rgba(255,232,160,0) 68%),
+    linear-gradient(170deg, rgba(255,204,124,.9) 0%, rgba(255,150,74,.88) 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.75),
+    inset 0 -1px 1px rgba(255,246,214,.45),
+    inset -4px -7px 11px -7px rgba(255,248,205,.8),
+    2px 6px 16px -6px rgba(255,140,48,.55),
+    0 1px 3px rgba(60,24,0,.3);
+}
+.m-shell .btn.btn--primary .ico { filter: none; }
+
+/* danger: deep red water, light label */
+.m-shell .btn.btn--danger:not(.btn--ghost) {
+  color: #ffeceb;
+  border-color: rgba(255,170,170,.5);
+  background:
+    radial-gradient(52% 34% at 26% 0%, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 100%),
+    radial-gradient(110% 80% at 64% 130%, rgba(255,150,150,.4) 0%, rgba(255,150,150,.1) 45%, rgba(255,150,150,0) 68%),
+    linear-gradient(rgba(156,26,36,.66), rgba(124,16,28,.74));
+}
+
+/* press: the pane is squeezed and lights up */
+.m-shell .btn:not(.btn--ghost):active,
+.m-shell .m-ico:active { transform: scale(1.04, .95); filter: brightness(1.15); }
+
+/* ghost stays chrome-free; a film of water only appears under the finger */
+.m-shell .btn.btn--ghost { -webkit-tap-highlight-color: transparent; transition: background var(--t-fast), box-shadow var(--t-fast); }
+.m-shell .btn.btn--ghost:active {
+  background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.08));
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.45), inset 0 -1px 1px rgba(255,255,255,.2);
+}
+
+/* focus ring stays, outside the flowing outline */
+.m-shell .btn:focus-visible,
+.m-shell .m-ico:focus-visible,
+.m-shell .pill:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 5px; }
+
+.m-shell .m-ico .badge { border-color: rgba(255,255,255,.75); box-shadow: 0 2px 6px rgba(120,10,10,.45); text-shadow: none; z-index: 1; }
+
+/* ===== 2. water drop active on this button: the glass steps aside ===== */
+.m-shell .w3-drop {
+  position: absolute;
+  left: calc(-1 * var(--w3-pad)); top: calc(-1 * var(--w3-pad));
+  width: calc(100% + 2 * var(--w3-pad)); height: calc(100% + 2 * var(--w3-pad));
+  max-width: none; max-height: none;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  display: block;
+  visibility: hidden;
+  /* own layer: a new picture of the water never makes the browser repaint the label or the card */
+  will-change: transform;
+  contain: layout paint style;
+}
+.m-shell [data-w3="on"] > .w3-drop { visibility: visible; }
+.m-shell .btn[data-w3="on"]:not(.btn--ghost),
+.m-shell .m-ico[data-w3="on"] {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+  border-radius: 999px;
+  transition: none;
+}
+.m-shell .btn[data-w3="on"]:not(.btn--ghost):active,
+.m-shell .m-ico[data-w3="on"]:active { transform: none; filter: none; }
+
+/* ===== pills: small glass beads (CSS only) ===== */
+.m-shell .pill {
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 12px 15px 11px 14px / 52% 46% 54% 48%;
+  box-shadow: inset 0 1px .5px rgba(255,255,255,.4), inset -2px -4px 6px -4px rgba(255,255,255,.35), 0 2px 6px -2px rgba(0,0,0,.45);
+}
+.m-shell .pill.pill--on { color: #e2f2ff; border-color: rgba(160,214,255,.7); box-shadow: inset 0 1px .5px rgba(255,255,255,.5), inset -2px -4px 6px -4px rgba(160,220,255,.7), 0 2px 8px -2px rgba(60,150,255,.5); }
+.m-shell .pill.pill--ok { border-color: rgba(120,230,160,.45); box-shadow: inset 0 1px .5px rgba(255,255,255,.4), inset -2px -4px 6px -4px rgba(120,240,170,.6), 0 2px 8px -2px rgba(30,160,80,.45); }
+.m-shell .pill.pill--warn { border-color: rgba(255,205,120,.5); }
+.m-shell .pill.pill--bad { border-color: rgba(255,150,150,.5); }
+.m-shell .pill.pill--acc { border-color: rgba(255,210,150,.5); }
+
+/* reduced motion (system setting or the app's own "Bewegung: Reduziert"): nothing eases, the still looks the same */
+@media (prefers-reduced-motion: reduce) {
+  .m-shell .btn, .m-shell .m-ico { transition: none !important; }
+}
+:root[data-motion="reduziert"] .m-shell .btn,
+:root[data-motion="reduziert"] .m-shell .m-ico { transition: none !important; }
+
+/* ---- Karten ----
+   "Flaches Becken mit Licht": a card is a shallow basin of clear water seen from above. No texture - depth and light
+   do the work.
+   - The card itself is the shallow water at the rim: a clear colour over the softly blurred landscape, one thin
+     bright line (meniscus) on the lit side, a soft glow where light gathers on the far side.
+   - ::before and ::after are the depth: two soft bodies of darker blue that follow the outline and fade out towards
+     the rim (a box plus a blurred box-shadow of the same colour; painted once, never animated).
+   - Rows and number tiles are smooth, slightly deeper troughs. They have no hard edge, so the only crisp shapes on
+     a card are the text and the drops.
+   - The drops (look.js) lie ON this water: they show the card, not the landscape, and stand out through light alone -
+     highlight, rim, shadow, and the glint of gathered light on the floor below their far side. The glint is drawn by
+     the drop itself (in the 14 px its canvas reaches beyond the button), so it follows the drop's outline and colour.
+   - Under the finger the glint flares and ONE thin ring of light runs across the floor of the card (look.js, section
+     "Karten und Leiste"). Nothing moves at rest.
+   Rules for everything made of this material (cards, tab bar, later sheets, fields, toast):
+   - NEVER put the blur on a child layer (pseudo-element, helper) of the sheet: an ancestor with opacity, filter, mask
+     or clip-path becomes the backdrop of that child and the blur shows nothing. The app's entrance animation "rise"
+     animates opacity on the card itself, so the backdrop-filter stays on the card element - that survives.
+   - Never animate the sheet element itself, and nothing on a blurred sheet animates at rest (the drops already redraw).
+   - Nothing closer than 14 px to a drop may clip (no overflow: hidden on the sheet): the drop's bulge and shadow live there.
+   Light comes from the upper left, as in the drops. */
+.m-shell {
+  /* -- the sheet material, defined once -- */
+  --wa-clear: rgba(16, 62, 80, .24);            /* shallow, clear water: the band at the rim */
+  --wa-shelf: rgba(6, 38, 56, .55);             /* first step down */
+  --wa-deep: rgba(3, 14, 32, .42);              /* the deep middle, on top of the shelf */
+  --wa-under: rgba(6, 34, 52, .73);             /* all three together where buttons lie: what a drop is told it lies on */
+  --wa-still: rgba(7, 36, 54, .62);             /* plain still water without depth steps: small free-standing surfaces (number tiles) */
+  --wa-dense: rgba(5, 17, 31, .9);              /* the deep end: surfaces that content scrolls under (tab bar) */
+  --wa-blur: blur(16px) saturate(150%);         /* the water's softness (always on the sheet element itself) */
+  --wa-meniscus: inset 0 1px 0 rgba(255, 255, 255, .5), inset 1px 0 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(210, 242, 255, .16);
+  --wa-shallow: inset 0 0 16px 0 rgba(96, 196, 214, .2);             /* the shallow band is lit: a pool, not a dark plate, also over dark ground */
+  --wa-far: inset -8px -12px 16px -12px rgba(150, 228, 245, .5);     /* light gathers on the side away from the light */
+  --wa-lift: 3px 14px 30px -14px rgba(0, 8, 20, .7), 1px 2px 5px rgba(0, 8, 20, .22);
+  --wa-trough: rgba(2, 14, 30, .28);            /* a deeper place in the floor: rows, number tiles, later input fields */
+  --wa-trough-walls: 0 0 4px 1px rgba(2, 14, 30, .28), inset 0 7px 8px -6px rgba(0, 5, 14, .5), inset 0 -7px 7px -6px rgba(150, 220, 245, .17);
+  --wa-light: 170, 226, 255;                    /* focused light under clear water: halo ... */
+  --wa-core: 240, 251, 255;                     /* ... and its hot core */
+}
+.m-shell .glass.m-card {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  padding: 15px;                                /* today's 14 px plus the 1 px border that is gone: nothing shifts */
+  /* a pool that has settled, not a box: four different corners, four variants */
+  border-radius: 26px 41px 30px 46px / 34px 26px 41px 30px;
+  background:
+    radial-gradient(64% 46% at 88% 104%, rgba(120, 222, 236, .13) 0%, rgba(120, 222, 236, 0) 70%),    /* a whisper of light on the floor, */
+    radial-gradient(52% 40% at 6% -4%, rgba(170, 232, 240, .09) 0%, rgba(170, 232, 240, 0) 70%)       /* near the rim only, never under text */
+    var(--wa-clear);
+  -webkit-backdrop-filter: var(--wa-blur);
+  backdrop-filter: var(--wa-blur);
+  box-shadow: var(--wa-meniscus), var(--wa-shallow), var(--wa-far), var(--wa-lift);
+  --water-under: var(--wa-under);               /* read by the drops (look.js, underOf) */
+  --text-2: rgba(244, 246, 251, .82);           /* muted text directly on the water (counts, loose lines) */
+}
+.m-shell .glass.m-card:nth-of-type(4n+2) { border-radius: 42px 27px 46px 30px / 27px 37px 30px 41px; }
+.m-shell .glass.m-card:nth-of-type(4n+3) { border-radius: 30px 36px 26px 44px / 30px 34px 28px 40px; }
+.m-shell .glass.m-card:nth-of-type(4n+4) { border-radius: 38px 30px 44px 27px / 30px 28px 38px 36px; }
+.m-shell .glass.m-card::before,
+.m-shell .glass.m-card::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  min-width: 2px; min-height: 2px;              /* small cards: the box must not collapse (Safari paints no shadow for an empty box) */
+}
+.m-shell .glass.m-card::before {
+  inset: 22px;
+  border-radius: 9px 14px 11px 16px / 12px 8px 15px 10px;
+  background: var(--wa-shelf);
+  box-shadow: 0 0 14px 14px var(--wa-shelf);    /* spread = blur: no visible seam where the box ends */
+}
+.m-shell .glass.m-card::after {
+  inset: 46px 44px 50px 40px;
+  border-radius: 22px 30px 26px 34px / 28px 22px 32px 24px;
+  background: var(--wa-deep);
+  box-shadow: 0 0 34px 34px var(--wa-deep);
+}
+
+/* rows and number tiles: smooth, slightly deeper troughs in the floor. The near wall lies in shadow, the far wall
+   catches a little light; a row that can be tapped gets one faint line of light on its far edge. */
+.m-shell .m-card .m-row,
+.m-shell .m-card .m-stat {
+  border: 0;
+  border-radius: 15px 19px 14px 18px / 18px 14px 19px 15px;
+  background: var(--wa-trough);
+  box-shadow: var(--wa-trough-walls);
+  --text-2: rgba(244, 246, 251, .74);
+}
+.m-shell .m-card .m-row--click { box-shadow: var(--wa-trough-walls), inset 0 -1px 0 rgba(200, 232, 255, .12); transition: background-color .5s; }
+.m-shell .m-card .m-row--click:active { background-color: rgba(96, 190, 228, .2); transition-duration: 60ms; }
+
+/* free-standing number tiles (<div class="glass m-stat"> directly on the landscape): plain still water with the
+   meniscus line - no depth steps, they are too small for a basin */
+.m-shell .glass.m-stat {
+  border: 0;
+  border-radius: 21px 27px 22px 25px / 25px 21px 27px 22px;
+  background: var(--wa-still);
+  -webkit-backdrop-filter: var(--wa-blur);
+  backdrop-filter: var(--wa-blur);
+  box-shadow: var(--wa-meniscus), var(--wa-shallow), var(--wa-far), var(--wa-lift);
+  --water-under: var(--wa-still);
+}
+
+/* pills on the water are labels, not drops: flat tinted water, so the drops stay the only raised, glossy things */
+.m-shell .m-card .pill { box-shadow: none; border-color: rgba(255, 255, 255, .14); text-shadow: none; }
+.m-shell .m-card .pill.pill--on { background: rgba(124, 198, 255, .16); border-color: rgba(150, 208, 255, .38); }
+.m-shell .m-card .pill.pill--ok { background: rgba(76, 207, 122, .14); border-color: rgba(120, 230, 160, .3); }
+.m-shell .m-card .pill.pill--warn { border-color: rgba(255, 205, 120, .32); }
+.m-shell .m-card .pill.pill--bad { border-color: rgba(255, 150, 150, .32); }
+.m-shell .m-card .pill.pill--acc { border-color: rgba(255, 210, 150, .32); }
+
+/* the answer to a touch: one thin ring of light runs across the floor of the card, from under the finger.
+   look.js (section "Karten und Leiste") adds <i class="wa-floor"><i class="wa-ring"></i></i> to the card for 1.2 s.
+   The floor helper lies under the deep middle (::after) and under rows, text and drops: light on the floor of the
+   basin, seen through the water. Transform and opacity only. */
+.m-shell .wa-floor {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;                             /* clips the ring to the pool; the drops are not inside this helper */
+  z-index: -1;
+  pointer-events: none;
+  transition: opacity .18s;
+}
+.m-shell .wa-floor--hush { opacity: 0; }       /* the touch became a scroll: the ring sinks away */
+.m-shell .wa-ring {
+  position: absolute;
+  left: 0; top: 0;
+  width: 260px; height: 260px;
+  margin: -130px 0 0 -130px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(var(--wa-light), 0) 70%, rgba(var(--wa-light), .45) 85%, rgba(var(--wa-core), .95) 92%, rgba(var(--wa-light), 0) 100%);
+  /* a little brighter on the side away from the light */
+  -webkit-mask-image: linear-gradient(160deg, rgba(0, 0, 0, .45) 20%, #000 75%);
+  mask-image: linear-gradient(160deg, rgba(0, 0, 0, .45) 20%, #000 75%);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: wa-ring 1.2s cubic-bezier(.3, .5, .6, 1) both;
+}
+.m-shell .wa-ring--primary { --wa-light: 255, 206, 134; --wa-core: 255, 240, 206; }
+.m-shell .wa-ring--danger { --wa-light: 255, 160, 160; --wa-core: 255, 214, 214; }
+@keyframes wa-ring {
+  0%   { transform: scale(.05); opacity: 0; }
+  5%   { opacity: 0; }                          /* a touch that turns into a scroll is cancelled before anything shows */
+  16%  { opacity: 1; }
+  60%  { opacity: .7; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* ---- Leiste ----
+   The tab bar is the deep end of the same water: a dense pool lying along the bottom (content scrolls under it, so
+   it is about .9 opaque), with the same meniscus line and the same far-side glow as a card. It floats a little above
+   the bottom edge; a dark halo around it swallows what passes in the gaps.
+   The active tab is marked by a bead of clear water (::before, CSS only: lens glow, rim, highlight, shadow, glint).
+   Which tab it lies on comes from the button that carries class "on" (:has + :nth-child), nothing else. When the tab
+   changes the bead glides (transition); look.js turns the glide into a flow (stretch, overshoot). Still at rest. */
+.m-shell .m-tabs {
+  --wa-tab: 0;
+  left: 8px; right: 8px;
+  bottom: var(--wa-bar-lift);                                      /* 8 px; iPhone: floats just above the home indicator */
+  padding: 5px;                                                    /* 5 + 52 + 5 = 62 px high (today 66) */
+  border: 0;
+  border-radius: 29px 33px 30px 27px / 30px 28px 32px 30px;
+  isolation: isolate;
+  background: var(--wa-dense);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    var(--wa-meniscus),
+    inset -10px -12px 16px -13px rgba(150, 228, 245, .42),
+    inset 0 0 12px 1px rgba(70, 165, 195, .24),                    /* shallower, clearer towards the rim */
+    0 5px 14px rgba(0, 4, 12, .5);
+}
+/* what scrolls towards the bar sinks into the dark before it reaches the pool, so nothing readable shows in the gaps
+   around it. Ends exactly where the last card ends when the page is scrolled to its end (84 px + safe area). */
+.m-shell { --wa-bar-lift: max(8px, calc(env(safe-area-inset-bottom) - 12px)); }
+.m-shell::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: calc(var(--wa-bar-lift) + 76px);
+  z-index: 2;                                                      /* above the page (.m-main: 1), below the bar (3) */
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(3, 8, 18, .94) 0, rgba(3, 8, 18, .9) calc(100% - 34px), rgba(3, 8, 18, .5) calc(100% - 14px), rgba(3, 8, 18, 0) 100%);
+}
+.m-shell .m-tabs button {
+  position: relative;
+  border-radius: 22px;
+  background: none;
+  color: rgba(244, 246, 251, .76);
+  -webkit-tap-highlight-color: transparent;
+  transition: color .3s;
+}
+.m-shell .m-tabs button.on { color: #f0f9ff; background: none; }
+/* a pressed tab gives way under the finger; the icon under the bead is slightly magnified (a lens) */
+.m-shell .m-tabs button > * { transition: transform .26s cubic-bezier(.3, 1.4, .5, 1); }
+.m-shell .m-tabs button.on > .ico { transform: scale(1.1); }
+.m-shell .m-tabs button:active > * { transform: translateY(1.5px) scale(.93); transition-duration: 70ms; }
+
+.m-shell .m-tabs:has(> button:nth-child(2).on) { --wa-tab: 1; }
+.m-shell .m-tabs:has(> button:nth-child(3).on) { --wa-tab: 2; }
+.m-shell .m-tabs:has(> button:nth-child(4).on) { --wa-tab: 3; }
+.m-shell .m-tabs:has(> button:nth-child(5).on) { --wa-tab: 4; }
+.m-shell .m-tabs::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 5px; top: 5px; bottom: 5px;
+  width: calc((100% - 10px) / 5);                                  /* five tabs */
+  pointer-events: none;
+  border-radius: 25px 29px 24px 28px / 27px 24px 29px 25px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 12'%3E%3Cpath d='M2 10C2.6 5.2 7.5 2 15.5 2.2 17 2.3 17 3.6 15.6 3.9 10 5 6.2 6.8 4.2 10.4 3.4 11.6 1.8 11.4 2 10Z' fill='%23fff'/%3E%3C/svg%3E") 14% 13% / 15px 9px no-repeat,   /* the highlight */
+    radial-gradient(92% 62% at 58% 108%, rgba(124, 206, 252, .8) 0%, rgba(84, 168, 232, .4) 40%, rgba(84, 168, 232, 0) 76%),      /* the far side glows: a lens */
+    linear-gradient(170deg, rgba(110, 180, 220, .02), rgba(110, 180, 220, .1));
+  box-shadow:
+    inset 0 1px .5px rgba(255, 255, 255, .5),
+    inset 0 0 0 1px rgba(214, 242, 255, .2),
+    inset -5px -7px 8px -6px rgba(176, 236, 255, .85),             /* crescent of gathered light inside the far side */
+    inset 5px 6px 9px -6px rgba(0, 8, 20, .7),                     /* the lit side stays dark */
+    3px 7px 10px -5px rgba(150, 224, 255, .5),                     /* glint on the floor below */
+    2px 5px 10px -2px rgba(0, 4, 12, .75);
+  transform: translateX(calc(var(--wa-tab) * 100%));
+  transition: transform .42s cubic-bezier(.3, 1.3, .5, 1);
+  will-change: transform;
+}
+/* a browser without :has() cannot place the bead: it keeps today's tinted tab instead */
+@supports not selector(:has(a)) {
+  .m-shell .m-tabs::before { content: none; }
+  .m-shell .m-tabs button.on { background: rgba(124, 198, 255, .16); }
+}
+
+/* no motion wanted (system setting or the app's own switch): the bead jumps, nothing eases, no ring */
+@media (prefers-reduced-motion: reduce) {
+  .m-shell .m-tabs::before, .m-shell .m-tabs button, .m-shell .m-tabs button > *, .m-shell .m-card .m-row { transition: none !important; }
+  .m-shell .wa-floor { display: none; }
+}
+:root[data-motion="reduziert"] .m-shell .m-tabs::before,
+:root[data-motion="reduziert"] .m-shell .m-tabs button,
+:root[data-motion="reduziert"] .m-shell .m-tabs button > *,
+:root[data-motion="reduziert"] .m-shell .m-card .m-row { transition: none !important; }
+:root[data-motion="reduziert"] .m-shell .wa-floor { display: none; }
