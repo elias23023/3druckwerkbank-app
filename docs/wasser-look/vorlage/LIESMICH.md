@@ -14,7 +14,15 @@ sind unverändert. Die Vorlage wird von außen dazugeladen (Vorschauseite) oder 
 | `wasser.js` | Das Skript: Wassertropfen (WebGL), Ring, fließende Markierung, Licht, Antwort aufs Scrollen, gemeinsames Ruhen. Zwei Befehle: `Wasser.start(optionen)` und `Wasser.stop()`. |
 | `NOTIZEN.md` | Das Notizbuch für alle, die die Vorlage anwenden (englisch): Bausteine, Rezepte, Fallstricke, Prüfbefehle, offene Punkte. |
 
-Bilder der mobilen Vorlage: `docs/wasser-look/bilder/mobil/`. Die Werkzeuge: `scripts/wasser/`.
+Die Werkzeuge: `scripts/wasser/`. Bilder der mobilen Vorlage: `docs/wasser-look/bilder/mobil/` –
+
+- `dunkel-start`, `klar-start`: die Vorschauseite in beiden Tönen; `dunkel-szenen`, `klar-szenen`: alle acht Landschaften
+- `dunkel-nah`, `klar-nah`: die Knöpfe aus der Nähe (frei über der Landschaft und auf einer Karte)
+- `dunkel-alles`, `klar-alles`: ein Bogen mit allen kleinen Bausteinen
+- `dunkel-app`, `klar-app`: zwölf Bildschirme der echten App mit eingespielter Vorlage; `…-app-heute`: einer davon groß
+- `bausteine`: jeder Baustein auf fremden Elementen, nur über seine neutrale Klasse (`.wa-…`)
+- `film-tab`, `film-druck`, `film-bogen`: Bewegung als Bildstreifen (Reiterwechsel, Knopfdruck mit Ring, Bogen steigt)
+- `mobil.mp4`: 25 Sekunden aus der echten App (auf der Arbeitsmaschine aufgenommen, daher etwas ruckelig)
 Die früheren Zwischenstände bleiben unter `docs/wasser-look/entwurf/` (Sicherung; `entwurf/nachgebessert` ist der
 freigegebene Stand, mit dem die Vorlage verglichen wird).
 
