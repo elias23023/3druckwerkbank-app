@@ -51,7 +51,7 @@ const dropBoxes = (page, scale) => page.evaluate((s) => [...document.querySelect
 // options: look ('vorlage'), ton ('' | 'klar'), scene, nah (close-up), reduced, scale, touch (phone emulation), query (more parameters), viewport, video (folder)
 export async function openHarness(browser, base, engine, { look = 'vorlage', ton = '', scene = 'start', nah = false, reduced = false, scale = 2, touch = false, query = '', viewport = null, video = null, settle = 1500 } = {}) {
   viewport = viewport || (nah ? { width: 900, height: 620 } : PHONE);
-  const context = await browser.newContext({ viewport, deviceScaleFactor: scale, reducedMotion: reduced ? 'reduce' : 'no-preference', ...(touch ? { hasTouch: true, isMobile: engine !== 'firefox' } : {}), ...(touch && engine === 'webkit' ? { userAgent: IPHONE } : {}), ...(video ? { recordVideo: { dir: video, size: { width: viewport.width * 2, height: viewport.height * 2 } } } : {}) });
+  const context = await browser.newContext({ viewport, deviceScaleFactor: scale, reducedMotion: reduced ? 'reduce' : 'no-preference', ...(touch ? { hasTouch: true, isMobile: engine !== 'firefox' } : {}), ...(touch && engine === 'webkit' ? { userAgent: IPHONE } : {}), ...(video ? { recordVideo: { dir: video, size: viewport } } : {}) });   // (a recording has the size of the page in CSS px, whatever the scale)
   const page = await context.newPage(); const errors = listen(page);
   const url = `${base}/scripts/wasser/mobil.html?scene=${scene}${ton && ton !== 'dunkel' ? '&ton=' + ton : ''}${nah ? '&nah=1' : ''}${lookQuery(look)}${query ? '&' + query : ''}`;
   await page.goto(url, { waitUntil: 'load' }); await page.waitForFunction(() => window.__ready === true, null, { timeout: 20000 }); if (settle) await page.waitForTimeout(settle);
@@ -63,7 +63,7 @@ export async function openHarness(browser, base, engine, { look = 'vorlage', ton
 // would (React mounts and unmounts everything underneath it). A fresh browser opens the "Beispiel" workshop with demo data.
 // options: look ('vorlage'), ton, reduced, scale, video (folder), zeit (an ISO time: the app's clock stands still there, so two runs show the same screens)
 export async function openApp(browser, engine, { look = 'vorlage', ton = '', reduced = false, scale = 2, video = null, zeit = null, start = {} } = {}) {
-  const context = await browser.newContext({ viewport: PHONE, deviceScaleFactor: scale, isMobile: engine !== 'firefox', hasTouch: true, timezoneId: 'Europe/Vienna', locale: 'de-AT', reducedMotion: reduced ? 'reduce' : 'no-preference', ...(engine === 'webkit' ? { userAgent: IPHONE } : {}), ...(video ? { recordVideo: { dir: video, size: { width: 780, height: 1688 } } } : {}) });
+  const context = await browser.newContext({ viewport: PHONE, deviceScaleFactor: scale, isMobile: engine !== 'firefox', hasTouch: true, timezoneId: 'Europe/Vienna', locale: 'de-AT', reducedMotion: reduced ? 'reduce' : 'no-preference', ...(engine === 'webkit' ? { userAgent: IPHONE } : {}), ...(video ? { recordVideo: { dir: video, size: PHONE } } : {}) });
   const page = await context.newPage(); const errors = listen(page);
   if (zeit) await page.clock.setFixedTime(new Date(zeit));         // only the clock stands still; timers and animations run
   await page.goto(`${APP}/#/start`, { waitUntil: 'networkidle' }).catch((e) => { throw new Error(`the app is not reachable at ${APP} (npm run build && npm run preview): ${String(e).split('\n')[0]}`); });

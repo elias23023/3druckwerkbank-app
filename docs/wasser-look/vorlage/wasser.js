@@ -104,7 +104,7 @@
     var SEL = cfg.drops;                // what becomes a drop: looked up inside the root only, never inside a marker bar (BAR)
     var BAR = cfg.bar;
     var MODAL = cfg.modal;              // what covers the page inside the root (bottom sheet, the scrim of the search overlay): drops outside it rest while it is open
-    var PAD = 14;                       // local css px the helper reaches beyond the button (== --w3-pad)
+    var PAD = 14;                       // local css px the helper reaches beyond the button (== --wa-drop-pad in kern.css)
     var MAX_PX_ONE = 340000;            // device px per drop
     var MAX_PX_ALL = 1500000;           // device px for all visible drops together
     var TEX_W = 2048, TEX_H = 1024;     // landscape texture (power of two, mip-mapped)
@@ -428,8 +428,8 @@
         var opt = { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' };
         gl = FORCED ? null : glc.getContext('webgl', opt) || glc.getContext('experimental-webgl', opt);
         if (!gl) throw new Error(FORCED ? 'forced' : 'no webgl');
-        glc.addEventListener('webglcontextlost', function (e) { e.preventDefault(); lost = true; texReady = false; allOff(); W3.state = 'context lost'; });
-        glc.addEventListener('webglcontextrestored', function () { lost = false; try { build(); loadScene(true); kick(); } catch (err) { fail(err); } });
+        glc.addEventListener('webglcontextlost', function (e) { if (!alive) return; e.preventDefault(); lost = true; texReady = false; allOff(); W3.state = 'context lost'; });   // (not alive: stop() has given the context back itself)
+        glc.addEventListener('webglcontextrestored', function () { if (!alive) return; lost = false; try { build(); loadScene(true); kick(); } catch (err) { fail(err); } });
         build();
         return true;
       } catch (err) { fail(err); return false; }
