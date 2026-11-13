@@ -75,6 +75,9 @@ Alle Werkzeuge erklären sich im Kopf ihrer Datei. Die App selbst prüft weiterh
 
 ## Stand der Prüfung
 
-Die Vorlage zeigt denselben Look wie der freigegebene Stand (Zahlen in `NOTIZEN.md`, Abschnitt „Verified“).
-**Noch nie auf einem echten Handy gelaufen** – alles wurde in Chromium und im WebKit-Testbrowser auf der Arbeitsmaschine
-geprüft; ob es am iPhone flüssig läuft, ist offen.
+Die Vorlage zeigt denselben Look wie der freigegebene Stand: in Chromium und im WebKit-Testbrowser kein einziger
+abweichender Bildpunkt außerhalb der Tropfen und kein abweichender Stil (Zahlen in `NOTIZEN.md`, Abschnitt 9).
+Dabei gefunden und in der Vorlage behoben: Im WebKit-Testbrowser wurden die Tropfen der Kopfzeile nach einem
+Seitenwechsel gelegentlich schwarz (im freigegebenen Stand bei 8 von 48 Wechseln, in der Vorlage bei keinem).
+**Noch nie auf einem echten Handy gelaufen** – alles wurde auf der Arbeitsmaschine geprüft; ob es am iPhone flüssig
+läuft, ist offen (`NOTIZEN.md`, Abschnitt 12).

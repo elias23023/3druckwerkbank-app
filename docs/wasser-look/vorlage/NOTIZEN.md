@@ -465,10 +465,16 @@ All on the work machine (software rendering; Chromium and Playwright's WebKit fo
 | `app` | real app, reduced motion, clock standing still: 16 screens (start, heute, projekte, a project, material, mehr, wetter, archiv, five sheets, search, a ticked task, a toast) x 2 tones = 32 pairs, 42.1 million pixels | 0 pixels differ - outside and inside the 166 drop canvases |
 | `stile` | computed style of every element, `::before`, `::after`, `::placeholder` (all properties and the look's custom properties): harness page with motion, reduced motion and `data-motion="reduziert"`; 15 app screens with and without motion; both tones - 72 comparisons, 17,792 styles | 0 differ; 124 differ only as listed under 2 and 3 above |
 | `stile`, pressed and focused | 1,132 tappable or focusable elements on 38 screens, each forced `:active` (with its ancestors) and `:focus-visible`, the element, its subtree and its ancestors compared | 0 differ |
-| `film` | motion, real app: 12 filmstrips (ruhe, tab, druck, scroll, bogen, haken x 2 tones), every animation with an end set to the same times, loops at rest stopped at one place | the same animations ran in all 12; ruhe, tab, druck, bogen, haken: 0 pixels differ outside the drops in all 58 stills; scroll: first and last still identical, 12,000 to 150,000 pixels in the five stills while the light swings (it starts from the pull of real frame times; WEBKIT_SCROLL_NOTE) |
+| `film` | motion, real app: 12 filmstrips (ruhe, tab, druck, scroll, bogen, haken x 2 tones), every animation with an end set to the same times, loops at rest stopped at one place | the same animations ran in all 12; ruhe, tab, druck, bogen, haken: 0 pixels differ outside the drops in all 58 stills; scroll: first and last still identical, 12,000 to 150,000 pixels in the five stills while the light swings (it starts from the pull of real frame times: the reference compared with ITSELF gives the same numbers - 0, 148,289, 81,178, 101,814, 59,982, 24,143, 0 against 0, 147,930, 84,182, 104,949, 60,630, 25,383, 0) |
 | the approved harness page itself (`base.html?look=final` on the work machine) against `mobil.html` | 32 pairs as in `bilder` | 0 pixels differ, inside and outside |
 
-WebKit: WEBKIT_PLACEHOLDER
+WebKit (`--engine webkit`): `bilder` 32 pairs, 0 pixels differ, outside and inside the drops. `app` 32 pairs, 0
+pixels differ outside the drops; inside the drops 31 pairs are identical and one differs (dunkel, "Mehr", 79,008
+pixels): there the REFERENCE shows black header drops (pitfall 40), the template the scene. `film`: the same
+animations in all 12 strips, 0 pixels outside the drops in the 58 stills of ruhe, tab, druck, bogen, haken; scroll as
+in Chromium. `stile` on the harness page (12 comparisons, 2,328 styles): 0 differ. The approved harness page against
+`mobil.html`: 32 pairs, 0 pixels differ. The black drops, counted in fresh sessions (reduced and not, in turn; six
+changes of screen each): reference 8 of 48, template 0 of 48 (its scene image was not drawable at "load" 9 times).
 
 Firefox (its build here has no WebGL: plain glass on both sides): start scene, phone and close-up, both tones:
 0 pixels differ.
@@ -477,7 +483,7 @@ On the way the comparison found, and the template or the tools now handle: the b
 approved look), the paint between two stylesheets of pitfall 39 (in the first version of `mobil.html`), late first
 pictures of drops (41), weather that comes and goes (38).
 
-**Does it work?** `node scripts/wasser/pruefen.mjs --app`: 55 checks pass in Chromium (PRUEFEN_WEBKIT): start;
+**Does it work?** `node scripts/wasser/pruefen.mjs --app`: 55 checks pass in Chromium and 55 in WebKit: start;
 marker (tap, class moved by script, second tap during a flight, a bar that was replaced); ring (tap, re-rendered card,
 held finger, drag, disabled button); every block on foreign elements by its class alone (17 checks); sleep and waking;
 reduced motion and the app's switch; `stop()` leaves nothing behind, `start()` twice gives one instance, options are
@@ -511,9 +517,19 @@ values (50 to 215) are the 2 px glint on a rim line where it passes. Glyph pixel
 tile caption, inactive tab: 0 change. The small muted line in a row: 44 to 60 of 808 pixels change by 1 of 255 (its
 ink is see-through, the floor light passes under the row).
 
-**Not measured again in this step** (the numbers of the builders stand; their tools are on the work machine): the
-frame rate coupled to the compositor in the real app (`messen.mjs takt` is the tool for it; section 12 has the
-result), the governor of the drops stepping down and up, taps on hit areas in pixels, contrast in WebKit.
+**The pace of the page** (`node scripts/wasser/messen.mjs takt --scale 3`, real app on "Start", frames a second
+coupled to the compositor; software rendering - only the relations count):
+
+| | as it is | loops at rest paused | no drops, lights only | the app without the look |
+|---|---|---|---|---|
+| Chromium, template | 50 | 59 | 60 | |
+| WebKit, template | 11 | 45 | 14 | 51 |
+| WebKit, reference | 12 | | | |
+
+The template is as fast and as slow as the approved look; section 12 says what the WebKit numbers mean.
+
+**Not measured again in this step** (the numbers of the builders stand): the governor of the drops stepping down and
+up, taps on hit areas in pixels, contrast in WebKit, the L* of the drops' bodies over their card.
 
 **The app is untouched:** `npm run build` passes; `git status` shows only `docs/wasser-look/vorlage`,
 `docs/wasser-look/bilder/mobil` and `scripts/wasser`.

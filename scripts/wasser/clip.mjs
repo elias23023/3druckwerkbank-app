@@ -8,7 +8,7 @@
 //   --seite mobil  the harness page (scripts/wasser/mobil.html), about 9 s: at rest, three tab taps, a card button held.
 // The picture is 390 x 844 (a recording has the size of the page in CSS px). The work machine renders WebGL in software,
 // so a recording made there is choppy; the filmstrips (film.mjs) show the fine points.
-import fs from 'fs'; import path from 'path'; import { execFileSync } from 'child_process';
+import fs from 'fs'; import { execFileSync } from 'child_process';
 import { session, args, abs, mkdir } from './lib.mjs';
 const a = args({ seite: 'app', look: 'vorlage', ton: '', engine: 'chromium', scene: 'start', crf: '26' }); if (!a._[0]) { console.log('usage: node scripts/wasser/clip.mjs <out.mp4> [--seite app|mobil] [--look vorlage|<folder>] [--ton klar] [--engine chromium|webkit]'); process.exit(1); }
 const out = abs(a._[0]); const dir = mkdir(out + '.d'); const s = await session({ engine: a.engine }); const t0 = Date.now(); const mark = (m) => console.log(((Date.now() - t0) / 1000).toFixed(1).padStart(5), m);
@@ -38,4 +38,3 @@ try {
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', webm, '-c:v', 'libx264', '-crf', String(a.crf), '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', out]);
   fs.rmSync(dir, { recursive: true, force: true }); console.log('ok', out, (fs.statSync(out).size / 1e6).toFixed(2), 'MB');
 } catch (e) { const keep = out.replace(/\.mp4$/, '') + '.webm'; fs.renameSync(webm, keep); fs.rmSync(dir, { recursive: true, force: true }); console.log('ffmpeg not available: kept', keep); }
-void path;
