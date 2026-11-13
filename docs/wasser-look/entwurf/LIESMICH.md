@@ -5,8 +5,8 @@ Arbeitsmaschine liegt. Er ist **nicht** in die App eingebaut: nichts hier wird v
 
 - `knoepfe/` – fertige Buttons als Wassertropfen (`look.css`, `look.js`): ein Tropfen je Button, gezeichnet mit WebGL,
   verbiegt das Landschaftsbild dahinter. Rückfall ohne WebGL: ruhiges Glas aus `look.css`.
-- `karten-zwischenstand/` – Buttons plus Karten als „flaches Becken“ und erste Menüleiste, Stand 06:24 Uhr
-  (blaue Farbe, wird noch auf dunkel umgestellt). `knoepfe-bericht.md`: Bericht zum Aufbau der Buttons (englisch).
+- `karten-leiste/` – Buttons plus Karten als „flaches Becken“ und Menüleiste mit fließender Markierung, fertig gebaut
+  (noch blau, die Farbe wird noch gewählt). `knoepfe/bericht.md`: Bericht zum Aufbau der Buttons (englisch).
 - `werkzeug/` – Testseite und Skripte, mit denen die Bilder entstehen. Die Pfade darin zeigen noch auf die
   Arbeitsmaschine und müssen beim Einbau ins Projekt angepasst werden:
   `base.html` (Nachbau des mobilen Bildschirms mit den echten Stylesheets, lädt einen Look-Ordner per `?look=`),

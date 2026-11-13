@@ -7,8 +7,10 @@
    highlight, a shadow, and a ring that runs from the finger.
 
    What lies between a button and the landscape (a card, a sheet) is never assumed: it is read from the computed
-   styles at run time (see underOf) and re-read once a second and after class changes. The tab bar (.m-tabs) is
-   neither styled nor observed.
+   styles at run time (see underOf) and re-read once a second and after class changes. A drop on such a sheet shows
+   the SHEET, not the landscape behind it: it is handed over as light and shade laid over the sheet (see the end of
+   the shader), with a glint of gathered light on the floor below its far side. The tab bar (.m-tabs) is neither
+   styled nor observed by this section.
 
    Without WebGL, with ?fallback=1, after a lost context or after an error the plain glass of look.css stays.
    Test aids: ?w3flat=1 (plain copy, to check the alignment), ?w3prof=1 (frame cost in window.__w3.prof).
@@ -77,7 +79,7 @@
     'uniform float uTime;',
     'uniform float uSeed;',
     'uniform vec4 uTint;',    // rgb + amount in the middle of the drop (amber for primary, red for danger)
-    'uniform vec4 uUnder;',   // the sheet between button and landscape: rgb + how much of it stays visible in the drop
+    'uniform vec4 uUnder;',   // the sheet between button and landscape: rgb + its opacity
     'uniform float uWet;',    // 0 = free over the landscape, 1 = the drop lies on a sheet
     'uniform vec4 uPress;',   // touch x, y (local px), press amount, age of the ring in s
     'uniform float uRipA;',   // ring amplitude
@@ -159,11 +161,11 @@
     '  vec3 c = texture2D(uTex, clamp(uv, 0., 1.), lod).rgb;',
     '  return mix(c, uGCol, darkA(sp.y)*(1. - .5*uWet));',
     '}',
-    // what a SHEET (card, panel) shows where the drop lies: the landscape as soft as the sheet's backdrop blur
-    // (about 32 local px wide), with the page's full darkening, under the sheet's own colour at opacity a
-    'vec3 sheet(vec2 sp, float a){',
+    // the landscape as a SHEET (card, panel) lets it through: as soft as the sheet's backdrop blur (about 32 local px
+    // wide), with the page's full darkening
+    'vec3 soft(vec2 sp){',
     '  vec3 c = texture2D(uTex, clamp((sp - uImg.xy)/uImg.zw, 0., 1.), 5. + log2(uPx)).rgb;',
-    '  return mix(mix(c, uGCol, darkA(sp.y)), uUnder.rgb, a);',
+    '  return mix(c, uGCol, darkA(sp.y));',
     '}',
     '',
     'void main(){',
@@ -199,7 +201,7 @@
     '    if (uWet > 0.){',
     '      float side = smoothstep(uHalf.x - 118., uHalf.x - 50., p.x)*(1. - .55*smoothstep(uHalf.x - 14., uHalf.x + 4., p.x));',
     '      float gl = (1. - smoothstep(-1.5, 3.6 + 2.*uPress.z, ds))*smoothstep(-1., 1.6, d)*side;',
-    '      cs = max(cs, gl*(.5 + .45*uPress.z)*uWet);',
+    '      cs = max(cs, gl*(.6 + .38*uPress.z)*uWet);',
     '    }',
     '    vec3 lightC = mix(vec3(.82, .93, 1.), uTint.rgb, uTint.a*.8);',
     '    outA = sh + cs*(1. - sh);',
@@ -220,17 +222,25 @@
     '    vec2 sp = uCtr + (p + off)*uZoom;',
     // the squeezed rim is sampled softer (no comb of streaks); softer too on a sheet and under a dark label
     '    float lod = uWet*1.6 + (1. - u)*2. + (1. - uInk)*(.8 + .9*zone);',
-    '    vec3 col = scene(sp, lod);',
+    '    vec3 col = vec3(0.), est = vec3(0.);',
+    '    if (uWet < 1.){',                                      // (a drop that lies fully on a sheet never looks at the sharp landscape)
+    '      col = scene(sp, lod);',
     // no colour fringe at rest (it is water, not a soap bubble); a breath of it while the drop is touched
-    '    float disp = .014*uPress.z + .003*uRipA;',
-    '    if (disp > .002){',
-    '      col.r = scene(uCtr + (p + off*(1. - disp))*uZoom, lod).r;',
-    '      col.b = scene(uCtr + (p + off*(1. + disp))*uZoom, lod).b;',
+    '      float disp = .014*uPress.z + .003*uRipA;',
+    '      if (disp > .002){',
+    '        col.r = scene(uCtr + (p + off*(1. - disp))*uZoom, lod).r;',
+    '        col.b = scene(uCtr + (p + off*(1. + disp))*uZoom, lod).b;',
+    '      }',
+    '      col = mix(col, uUnder.rgb, uUnder.a);',
     '    }',
-    // a drop on a sheet shows the SHEET, not the landscape behind it: the sheet's own water (soft landscape under
-    // the sheet colour), bent and magnified like everything else, and a touch clearer than the water around it
-    '    if (uWet > 0.) col = mix(mix(col, uUnder.rgb, uUnder.a), sheet(sp, uUnder.a*.92), uWet);',
-    // a breath of sky in the water, so that a drop over dark ground is still a drop (a drop gathers light: more on a sheet)
+    // a drop on a sheet shows the SHEET, not the landscape behind it. est = what the sheet shows at this very place
+    // (soft landscape under the sheet colour at its real opacity); the water of the drop is a touch clearer than that
+    '    if (uWet > 0.){',
+    '      vec3 sl = soft(uCtr + p*uZoom);',
+    '      est = mix(sl, uUnder.rgb, uUnder.a);',
+    '      col = mix(col, mix(sl, uUnder.rgb, uUnder.a*.92), uWet);',
+    '    }',
+    // a breath of sky in the water, so that a drop over dark ground is still a drop
     '    col += (1. - col)*vec3(.03, .045, .065);',
     // ... and on a sheet the drop is a lens: its lit side stays as dark as the water around it, its far side glows
     '    if (uWet > 0.){',
@@ -285,7 +295,7 @@
     // visible through the clear water, and no patch of a different picture can appear. Tinted water hides as much as its tint.
     '    float cov = 1.;',
     '    if (uWet > 0.){',
-    '      vec3 est = clamp(sheet(uCtr + p*uZoom, uUnder.a), .004, .98);',
+    '      est = clamp(est, .004, .98);',
     '      vec3 lo = 1. - col/est, hi = (col - est)/(1. - est);',
     '      cov = mix(1., clamp(max(max(max(lo.r, lo.g), max(lo.b, hi.r)), max(max(hi.g, hi.b), tintK)), 0., 1.), uWet);',
     '      col -= (1. - cov)*est;',                              // premultiplied from here on
@@ -417,7 +427,7 @@
   }
   // Colour and opacity of everything between this button and the landscape. A sheet that paints itself in a way
   // the script cannot read (canvas, pseudo-element, image) states it with the inherited property --water-under.
-  // Returns rgb, the share of that colour that stays visible inside the drop, and "lies on a sheet" (0..1).
+  // Returns rgb, the opacity of that colour, and "lies on a sheet" (0..1).
   function underOf(btn, cs) {
     var v = cs.getPropertyValue('--water-under'), c = v && v.trim() ? cssCol(v.trim()) : null, el, k, a;
     if (!c) {
@@ -790,10 +800,11 @@
     floor.className = 'wa-floor'; floor.setAttribute('aria-hidden', 'true');
     ring.className = 'wa-ring' + (btn.classList.contains('btn--primary') ? ' wa-ring--primary' : btn.classList.contains('btn--danger') ? ' wa-ring--danger' : '');
     ring.style.left = (e.clientX - r.left) / zoom + 'px'; ring.style.top = (e.clientY - r.top) / zoom + 'px';
-    floor.appendChild(ring); card.appendChild(floor); live = floor;
+    floor.appendChild(ring); card.appendChild(floor); live = floor; floor.x0 = e.clientX; floor.y0 = e.clientY;
     ring.addEventListener('animationend', function () { gone(floor); }); setTimeout(function () { gone(floor); }, 1700);
   }
   function up() { live = null; }                                   // a real tap: the ring runs to its end
+  function move(e) { if (live && (Math.abs(e.clientX - live.x0) > 9 || Math.abs(e.clientY - live.y0) > 9)) cancel(); }   // the finger drags: no need to wait for pointercancel
   function cancel() {                                              // the touch became a scroll: no ring
     var f = live; if (!f) return; live = null;
     f.classList.add('wa-floor--hush'); setTimeout(function () { gone(f); }, 220);
@@ -841,13 +852,13 @@
   function noop() {}
   var cap = { capture: true, passive: true };
   window.addEventListener('pointerdown', down, cap); window.addEventListener('pointerdown', tabDown, cap);
-  window.addEventListener('pointerup', up, cap); window.addEventListener('pointercancel', cancel, cap);
+  window.addEventListener('pointerup', up, cap); window.addEventListener('pointercancel', cancel, cap); window.addEventListener('pointermove', move, cap);
   document.addEventListener('touchstart', noop, { passive: true });   // iPhone: Safari shows :active (pressed row, pressed tab) only when a touch listener exists
   mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
   watch();
   window.__wa = { destroy: function () {
     window.removeEventListener('pointerdown', down, cap); window.removeEventListener('pointerdown', tabDown, cap);
-    window.removeEventListener('pointerup', up, cap); window.removeEventListener('pointercancel', cancel, cap);
+    window.removeEventListener('pointerup', up, cap); window.removeEventListener('pointercancel', cancel, cap); window.removeEventListener('pointermove', move, cap);
     document.removeEventListener('touchstart', noop); mo.disconnect(); if (fly) fly.cancel();
     var f = document.querySelectorAll('.wa-floor'); for (var i = 0; i < f.length; i++) f[i].parentNode.removeChild(f[i]);
     delete window.__wa;
