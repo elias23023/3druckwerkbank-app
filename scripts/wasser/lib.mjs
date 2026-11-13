@@ -121,16 +121,33 @@ export async function diff(fileA, fileB, boxes = [], out = null) {
   return { outside: nOut, maxOutside: mOut, inside: nIn, maxInside: mIn, pixels: a.w * a.h };
 }
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-// pictures side by side with a caption under each (a filmstrip, a comparison); height = px of each picture in the strip
-export async function strip(items, out, { height = 560, title = '', gap = 10, cols = 0 } = {}) {
-  const cells = [];
-  for (const it of items) { const m = await sharp(it.file).metadata(); const w = Math.round(m.width * height / m.height); cells.push({ ...it, w, buf: await sharp(it.file).resize({ height, width: w, fit: 'fill' }).png().toBuffer() }); }
-  cols = cols || cells.length; const rows = Math.ceil(cells.length / cols), cw = Math.max(...cells.map((c) => c.w)), cap = 30, top = title ? 40 : 0;
-  const W = cols * cw + (cols + 1) * gap, H = top + rows * (height + cap) + gap;
-  const text = cells.map((c, i) => `<text x="${gap + (i % cols) * (cw + gap) + 4}" y="${top + Math.floor(i / cols) * (height + cap) + height + 20}" font-size="15">${esc(c.label || '')}</text>`).join('');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" font-family="Inter, Helvetica, Arial, sans-serif" fill="#e9ebf0">${title ? `<text x="${gap + 4}" y="27" font-size="19" font-weight="600">${esc(title)}</text>` : ''}${text}</svg>`;
-  await sharp({ create: { width: W, height: H, channels: 3, background: '#121316' } })
-    .composite([...cells.map((c, i) => ({ input: c.buf, left: gap + (i % cols) * (cw + gap), top: top + Math.floor(i / cols) * (height + cap) })), { input: Buffer.from(svg), left: 0, top: 0 }]).png().toFile(out);
+// Pictures side by side with a caption under each: a filmstrip, a comparison, a contact sheet.
+//   frames  [{ file, label }]            scale   size of each picture in the strip (1 = as it is)      cols  pictures per row (0 = all in one)
+//   details [{ x, y, w, h, factor, label }]   one more row per entry: that part of every picture (px of the picture), enlarged
+//   diffGain  one more row: the difference of every picture to the first, amplified (black = unchanged)
+export async function strip(frames, out, { title = '', note = '', scale = 0.5, cols = 0, details = [], diffGain = 0, gap = 12 } = {}) {
+  const pad = 20, INK = '#eef0f4', DIM = '#969aa2', layers = []; let y = pad; const text = [];
+  const sized = async (input, box, s) => { let im = sharp(input); if (box) im = im.extract({ left: box.x, top: box.y, width: box.w, height: box.h }); const m = box ? { width: box.w, height: box.h } : await sharp(input).metadata(); const w = Math.max(1, Math.round(m.width * s)), h = Math.max(1, Math.round(m.height * s)); return { buf: await im.resize(w, h, { fit: 'fill' }).png().toBuffer(), w, h }; };
+  const rows = [{ label: '', cells: await Promise.all(frames.map((f) => sized(f.file, null, scale))), captions: frames.map((f) => f.label || '') }];
+  for (const d of details) rows.push({ label: d.label || 'Ausschnitt, vergrößert', cells: await Promise.all(frames.map((f) => sized(f.file, { x: Math.round(d.x), y: Math.round(d.y), w: Math.round(d.w), h: Math.round(d.h) }, d.factor || 1))) });
+  if (diffGain) {
+    const base = await rgb(frames[0].file), cells = [];
+    for (const f of frames) { const c = await rgb(f.file); const o = Buffer.alloc(c.data.length); for (let i = 0; i < o.length; i++) o[i] = Math.min(255, Math.abs(c.data[i] - base.data[i]) * diffGain); cells.push(await sized(await sharp(o, { raw: { width: c.w, height: c.h, channels: 3 } }).png().toBuffer(), null, scale)); }
+    rows.push({ label: `Unterschied zum ersten Bild, ${diffGain}-fach verstärkt (schwarz = unverändert)`, cells });
+  }
+  const n = frames.length; cols = cols || n; const cw = Math.max(...rows.flatMap((r) => r.cells.map((c) => c.w))), W = pad * 2 + cols * cw + (cols - 1) * gap;
+  if (title) { text.push(`<text x="${pad}" y="${y + 24}" font-size="24" font-weight="600" fill="${INK}">${esc(title)}</text>`); y += 40; }
+  if (note) { text.push(`<text x="${pad}" y="${y + 16}" font-size="16" fill="${DIM}">${esc(note)}</text>`); y += 28; }
+  for (const r of rows) {
+    if (r.label) { text.push(`<text x="${pad}" y="${y + 16}" font-size="16" fill="${DIM}">${esc(r.label)}</text>`); y += 26; }
+    for (let i = 0; i < n; i += cols) {
+      const line = r.cells.slice(i, i + cols), h = Math.max(...line.map((c) => c.h));
+      line.forEach((c, j) => { const x = pad + j * (cw + gap) + Math.floor((cw - c.w) / 2); layers.push({ input: c.buf, left: x, top: y }); if (r.captions) text.push(`<text x="${pad + j * (cw + gap) + cw / 2}" y="${y + h + 22}" font-size="18" font-weight="600" text-anchor="middle" fill="${INK}">${esc(r.captions[i + j])}</text>`); });
+      y += h + (r.captions ? 36 : 12);
+    }
+  }
+  const H = y + pad - 8, svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" font-family="Inter, DejaVu Sans, Helvetica, Arial, sans-serif">${text.join('')}</svg>`;
+  await sharp({ create: { width: W, height: H, channels: 3, background: '#16171a' } }).composite([...layers, { input: Buffer.from(svg), left: 0, top: 0 }]).png().toFile(out);
   return out;
 }
 // "--name value" and "--flag" from the command line; everything else stays in ._

@@ -2,7 +2,7 @@
 // .m-shell: docs/wasser-look/entwurf/nachgebessert) and the template (docs/wasser-look/vorlage) side by side and compares.
 // Run it after EVERY change to the template that is not meant to change the look.
 //
-//   node scripts/wasser/vergleich.mjs [bilder|app|stile|alles] [--engine chromium|webkit] [--toene dunkel,klar] [--alt <folder>] [--neu <folder|vorlage>] [--out <dir>] [--nur <name part>]
+//   node scripts/wasser/vergleich.mjs [bilder|app|stile|film|alles] [--engine chromium|webkit] [--toene dunkel,klar] [--alt <folder>] [--neu <folder|vorlage>] [--out <dir>] [--nur <name part>]
 //
 //   bilder   the harness page with reduced motion (frozen water): all eight scenes and their close-ups, both tones.
 //            Pixel by pixel; counted apart: inside the boxes of the drop canvases, and everywhere else.
@@ -11,11 +11,16 @@
 //            custom properties) on the harness page and in the app; with motion, with reduced motion and with the app's
 //            switch data-motion="reduziert"; and - Chromium only - of everything that can be tapped or focused while it
 //            is pressed and while it has the keyboard focus. Finds what no picture shows (a rule that lost its weight).
-//   alles    all three (default).
+//   film     with motion: the filmstrips of film.mjs (tab change, press and ring, scrolling, a sheet, a check and the toast,
+//            rest) for both, every animation with an end set to the same times and the loops at rest stopped at the same
+//            place. Compares which animations ran and the stills pixel by pixel outside the drops (the water in the drops
+//            runs in real time). The strip "scroll" depends on real frame times: small differences there are no defect.
+//   alles    all four (default).
 // Prints one line per comparison and a summary; exit code 1 when something differs that is not listed in KNOWN below.
 // Pictures of what differs: <out>/*-diff.png (red = outside the drops, yellow = inside). Default out: scratch folder in the OS temp dir.
 import fs from 'fs'; import os from 'os'; import path from 'path';
-import { session, diff, args, mkdir, abs, ALT, SZENEN, VORLAGE } from './lib.mjs';
+import { session, diff, strip, args, mkdir, abs, ALT, SZENEN, VORLAGE } from './lib.mjs';
+import { film, STRIPS } from './film.mjs';
 const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', out: path.join(os.tmpdir(), 'wasser-vergleich'), nur: '' });
 const mode = a._[0] || 'alles'; const out = mkdir(abs(a.out)); const TONES = a.toene.split(','); const ZEIT = '2026-11-12T17:42:00+01:00';
 const only = (name) => !a.nur || name.includes(a.nur);
@@ -122,6 +127,7 @@ async function states(name, pages, custom) {
   for (const state of [['active'], ['focus', 'focus-visible']]) {
     for (let i = 0; i < counts[0]; i++) {
       const forced = [[], []];
+      if (!(await pages[0].$(`[data-vgl="${i}"]`)) || !(await pages[1].$(`[data-vgl="${i}"]`))) continue;   // gone in the meantime (a toast lives ten seconds)
       for (let k = 0; k < 2; k++) {                                // pressed: the element and its ancestors, as under a real finger
         const { root } = await cdp[k].send('DOM.getDocument', { depth: 0 }); const node = async (sel) => (await cdp[k].send('DOM.querySelector', { nodeId: root.nodeId, selector: sel })).nodeId;
         forced[k].push(await node(`[data-vgl="${i}"]`));
@@ -170,9 +176,31 @@ async function stile() {
   }
 }
 
+/* ------------------------------------------------------------------ motion */
+async function filme() {
+  say(`\n== motion: filmstrips of the real app, animations set to fixed times, ${a.engine} ==`);
+  for (const ton of TONES) {
+    if (!only(`film-${ton}`)) continue;
+    const r = []; for (const [i, look] of [a.alt, a.neu].entries()) r.push(await film(s, `${out}/film-${ton}-${i ? 'neu' : 'alt'}`, { look, ton, fest: true, strips: false }));
+    for (const name of STRIPS) {
+      const same = r[0].found[name] === r[1].found[name]; const per = []; let worst = 0;
+      for (let i = 0; i < r[0].frames[name].length; i++) {
+        const d = await diff(r[0].frames[name][i].file, r[1].frames[name][i].file, [...r[0].boxes[name][i], ...r[1].boxes[name][i]]);
+        per.push(d.outside); worst = Math.max(worst, d.outside);
+      }
+      const ok = same && worst === 0; if (!ok && !(same && name === 'scroll')) bad++;
+      say(`${ok ? 'ok  ' : same && name === 'scroll' ? 'ok~ ' : 'DIFF'} film ${ton} ${name.padEnd(7)} animations ${same ? 'the same' : 'DIFFER'} (${r[1].found[name]})   px that differ outside the drops, per still: ${per.join(', ')}`);
+      if (!same) say(`     reference: ${r[0].found[name]}`);
+      await strip([...r[0].frames[name].map((f) => ({ file: f.file, label: 'Referenz · ' + f.label })), ...r[1].frames[name].map((f) => ({ file: f.file, label: 'Vorlage · ' + f.label }))], `${out}/film-${ton}-${name}.png`, { cols: r[0].frames[name].length, scale: 0.45, title: `${name} (${ton}): oben die Referenz, unten die Vorlage` });
+    }
+    for (const x of r) for (const e of x.errors) say(`   page error: ${e}`);
+  }
+}
+
 if (mode === 'bilder' || mode === 'alles') await bilder();
 if (mode === 'app' || mode === 'alles') await app();
 if (mode === 'stile' || mode === 'alles') await stile();
+if (mode === 'film' || mode === 'alles') await filme();
 await s.close();
 say(`\n${bad ? bad + ' comparison(s) differ' : 'no difference outside the drops and in no computed style'}  (reference ${a.alt}, engine ${a.engine}; pictures in ${out})`);
 fs.writeFileSync(`${out}/vergleich-${mode}-${a.engine}.txt`, lines.join('\n') + '\n');

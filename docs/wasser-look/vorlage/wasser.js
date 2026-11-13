@@ -43,7 +43,7 @@
     /* Teil 1: drops */
     scene: '.m-bg img',               // the painted image a drop that lies FREE over the scene bends (one image; if several match, the last one)
     shade: '.m-bg',                   // the element whose ::after darkens that image (a linear-gradient with four stops); the drops copy it. '' = the scene is not darkened
-    drops: '.btn:not(.btn--ghost):not(.m-row .btn, .item .btn), .m-ico',   // what becomes a drop (the same elements carry the block "Tropfen" in kern.css). Buttons that repeat per list row stay plain glass beads
+    drops: '.btn:not(.btn--ghost):not(.m-row .btn, .item .btn), .m-ico, .wa-tropfen',   // what becomes a drop (the same elements carry the block "Tropfen" in kern.css). Buttons that repeat per list row stay plain glass beads
     primary: 'btn--primary',          // CLASS of a drop of amber water (--wa-drop-amber); it also sends an amber ring
     danger: 'btn--danger',            // CLASS of a drop of red water (--wa-drop-red); red ring
     badge: 'badge',                   // CLASS of a child of a drop that is not part of its label (the water is kept calm and readable under the label only)
@@ -51,7 +51,7 @@
     sleep: 30000,                     // ms without touch, scroll or key until the water rests (attribute data-wa-ruht on the root). 0 = never
     /* Teil 2: ring and marker */
     ringOn: '.glass.m-card, .wa-becken, .sheet',   // sheets whose floor shows the ring (they need position: relative and isolation: isolate - the block "Becken" has both)
-    ringFrom: '.btn:not(.btn--ghost):not(.sheet__body .btn):not(.m-row .btn, .item .btn), .m-card .check, .wa-becken .wa-haken',   // a tap on one of these starts the ring: buttons (on a bottom sheet only those in its foot, never the ones that repeat per list row), and a check on a card
+    ringFrom: '.btn:not(.btn--ghost):not(.sheet__body .btn):not(.m-row .btn, .item .btn), .wa-tropfen, .m-card .check, .wa-becken .wa-haken',   // a tap on one of these starts the ring: buttons (on a bottom sheet only those in its foot, never the ones that repeat per list row), and a check on a card
     tick: '.check, .wa-haken',        // which of them are checks ...
     ticked: ['check--on', 'on'],      // ... and the CLASSES of a ticked one (a check sends its green ring only when it is being ticked)
     bar: '.m-tabs, .wa-markierung',   // bars whose marker (their ::before, block "Markierung") flows to the active child; drops are never made inside a bar
