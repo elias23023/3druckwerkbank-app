@@ -470,3 +470,284 @@ each), `rest-vorher-nachher.png`, `rest-bewegung.png` (strips of `wandel/`).
 
 ## Decision of the owner, 13.11.: the red of "Löschen"
 He was shown two strengths (final/loeschen-vergleich.png) and took the main designer's recommendation: strength B (deeper, quieter: `--wa-drop-red: 150, 28, 38, .7`) on the tone "dunkel", strength A (clear red: `189, 31, 41, .72`) on the tone "klar". The token sits in the first rule of look.css; the tone "klar" overrides it in its own block. Renders made before this change still show A on "dunkel".
+
+
+---
+
+## Step "Bewegung": everything is alive - one calm motion language, light at rest, the pull of scrolling, sleep
+
+State before this step: `../final-vor-bewegung` (never edit that copy; `tools/bw-takt.mjs` and the cadence runs compare
+against it). The owner's wish behind it (R8): "bitte vergiss nicht das alles dynamisch animiert sein soll" - everything
+is dynamically animated, as one coherent, calm language. It overrides the earlier plan of surfaces that stand perfectly
+still at rest; sentences in the sections above such as "nothing moves at rest" describe the state before this step.
+
+Files: `look.css`, new block `/* ---- Bewegung ---- */` at the end (the motion language, rest, the lights);
+`look.js`, new last section `/* ---- Bewegung ---- */` (94 lines: light helper, pull of scrolling), and a few lines in the
+button section (the water's clock announces rest). look.css is now 1301 lines (93 KB), look.js 1160 lines (80 KB, four
+self-contained sections). Diffs against the state before: `mess/bewegung-look.css.diff`, `mess/bewegung-look.js.diff`,
+and only the earlier parts of each file: `mess/bewegung-look.js.frueherer-teil.diff` (11 lines out, 30 in),
+`mess/bewegung-look.css.frueherer-teil.diff` (34 out, 40 in).
+
+### 1. What moves when (the inventory, as built)
+
+| Element | At rest | On touch | While scrolling | On a change of state |
+|---|---|---|---|---|
+| Drop buttons (`.btn` not ghost, `.m-ico`), level 3 | always alive: flowing outline, ripples, moving highlight (WebGL, 15 pictures a second). NEW: the glint under a drop on a sheet breathes with the swelling of its drop (27 s) | spreads, the glint flares, a ring runs from the finger | the picture inside follows the landscape frame by frame | follows a card that slides in; a press ends when a sheet covers the drop |
+| Cards (`.glass.m-card`), level 2 | NEW: a glint with a soft glow wanders along the lit (top) rim and back (24 s), a second one along the far (bottom) rim the other way (34 s); both swell and breathe; every card starts at another point of the loop | flare and ONE ring over the floor, from a drop or a check on the card (1.1 s) | NEW: the light leans - deeper on the lit rim, drawn back on the far rim, up to 60 % - and both glints slide up to 20 px along their rim; when the list stops they swing back, damped (1.1 s) | CHANGED: the card itself arrives with the app's own short "rise" (0.42 s), one 40 ms after the other; NEW: its light arrives 60 % too deep and swings into place (1.1 s) |
+| Tab bar (`.m-tabs`), level 2 | NEW: one glint wanders along its top rim (40 s) | icon and label of a tab give way and spring back | - (it does not travel with the list) | the marker flows to the new tab (0.46 s, 70 ms more per further tab) |
+| Bottom sheet (`.sheet`), level 2 | NEW: one soft glint on its top rim (40 s) | the ring, from its foot buttons only | NEW: its light leans and slides with the scrolling of its body, swings back | rises like a wave and settles (0.62 s), a crest of light spreads and fades (1.1 s). Closing: gone in one frame (the app unmounts it) |
+| Scrim behind a sheet / the search | - | - | - | the app's own fade |
+| Toast (`.toast`), level 2 | NEW: a small glint along its top rim (12 s loop - it only lives a few seconds) | - | - | lands like a drop (0.62 s), leaves like one (0.26 s) |
+| Search panel (`.cmd`), level 2 | NEW: one glint along its top rim (40 s) | the chosen hit is lit | - | the app's own entrance |
+| Rows and tiles in cards and sheets, level 1 | - | a tappable row lights up at once (60 ms) and settles (0.62 s) | - (carried by their card) | - (a row the app removes is gone in one frame) |
+| Fields, level 1 | - | - (typing never causes an effect) | - | the waterline runs in on focus (0.36 s) |
+| Pills, options, tabs in sheets, tiles, level 1 | - | tint under the finger | - | the bead of the chosen one flows over from the old choice (0.36 s and up); wells up where several may be chosen |
+| Check, level 1 | - | on a card: one green ring over the floor | - | a drop fills the circle from the middle and swings in (0.36 s); drains when unticked |
+| Progress bar, level 1 | - | - | - | a real change of level (1.5 % or more) runs to its place with a small swing (0.62 s) |
+| Icon beads, per-row buttons, level 1 | - | give way (scale .92) and spring back | - | - |
+| Ghost text buttons | - | a film of water under the finger | - | - |
+| Free number tiles (`.glass.m-stat`), slider, checkbox, date field | - | native | - | native |
+| Text, icons, photos, charts, header, the scene (level 0); desktop | - (the scene's 2 s crossfade on a tab change is the app's own) | - | - | - |
+
+Dead on purpose or for lack of a hook: a closing sheet, a removed row, the free number tiles, the header. The drops
+do not lean when the list is scrolled (they follow it; their code was left alone).
+
+### 2. The motion language (look.css, block "Bewegung", part "1. Die Sprache")
+
+ONE place declares every duration and easing of the look. The tokens of the previous step moved there unchanged
+(`--wa-t-fast`, `--wa-t-flow`, `--wa-t-settle`, `--wa-t-leave`, `--wa-ease-flow`, `--wa-ease-settle`, `--wa-ease-drain`);
+the earlier blocks keep their own names but point at the language:
+
+| Token | Value | Meaning | Earlier names that now point at it |
+|---|---|---|---|
+| `--wa-t-touch` | 60 ms | under the finger, at once | `--wa-press-in` (was 60 ms), `--wa-tab-in` (was 70 ms) |
+| `--wa-t-fast` | 0.14 s | a touch is answered; something sinks away | `--wa-ring-hush` (was 0.18 s) |
+| `--wa-t-leave` | 0.26 s | something leaves, or springs back | `--wa-tab-time` (was 0.26 s) |
+| `--wa-t-flow` | 0.36 s | something flows from one place or state to the next | `--wa-bead-time` = flow + 0.1 s (was 0.42 s in CSS and 460 ms in look.js - now one value, the script reads it) |
+| `--wa-t-settle` | 0.62 s | something larger arrives and comes to rest | `--wa-press-out` (was 0.5 s) |
+| `--wa-t-wave` | 1.1 s | light travels over a sheet or swings back | `--wa-ring-time` (was 1.2 s), `--wa-kamm-t` (was 1.05 s), the swing after scrolling, the arrival of a card's light |
+| `--wa-t-step` | 40 ms | things that arrive together come one after the other | (was 45 ms) |
+| `--wa-t-ruhe-1/-2/-3/-kurz` | 24 / 34 / 40 / 12 s | loops at rest (lit rim, far rim, bars and sheets, toast) | new |
+| `--wa-gang-1/-2/-3/-kurz` | `steps(24)` ... , in WebKit `linear` | the "gait" of those loops, see 4 | new |
+| `--wa-ease-flow` | cubic-bezier(.3,.7,.2,1) | runs off at once, arrives softly | |
+| `--wa-ease-settle` | cubic-bezier(.3,1.45,.5,1) | arrives, a little past, rests | `--wa-bead-ease` (was 1.3), `--wa-tab-ease` (was 1.4) |
+| `--wa-ease-drain` | cubic-bezier(.55,0,.85,.45) | lets go slowly, then gone | |
+| `--wa-ease-wave` | cubic-bezier(.3,.5,.6,1) | a ring that spreads | `--wa-ring-ease` (unchanged) |
+| `--wa-ease-swing` | a damped swing as `linear(...)`: 16 % past the rest after a third of the time, 3 % back, still; `--wa-ease-settle` where the browser has no `linear()` | water that was moved and is let go | new |
+
+Not on the scale, on purpose: the constants of the WebGL drops (`SLEEP_AFTER` 30 s, the press spring, the governor), the
+clean-up timers of helpers (`RING_LIFE`, `HUSH`), and the app's own `--t-fast` in the plain glass without WebGL.
+Light comes from the upper left everywhere: drops, cards, bead, and now the wandering lights (the bright "lit" light
+on the top rim, the warm gathered light on the far, bottom rim).
+
+### 3. Building blocks and recipes
+
+| Block | Where | What it is | To put it on another element |
+|---|---|---|---|
+| **Licht** (`.wa-licht`) | CSS "Bewegung" 3 + look.js "Bewegung" 1 | a helper `<i class="wa-licht" aria-hidden>` as last child of a sheet; its `::before` is the light on the lit rim, its `::after` the light on the far rim. Each is a half ellipse whose flat side lies ON the rim line: a 2 px glint on the line, a bloom close to it, a soft glow 18 / 24 px deep. They only ever slide along the rim or grow from it, so nothing has to clip them. | add the selector to `LIGHT_ON` in look.js (the sheet needs a position and `isolation: isolate`; Becken and "dichtes Wasser" have both). A Becken (`.wa-becken`) gets it by itself. |
+| **Lichtlauf** (`.wa-lichtlauf`) | CSS "Bewegung" 3 | the same light as the `::after` of a dense sheet that has that pseudo-element to spare and is never scrolled along: bar, toast, search | give the element the class, or add it to the `:is(...)` list; it needs a position and `isolation: isolate` |
+| **Zug** (`--wa-zug`, attribute `data-wa-zieht`) | CSS "Bewegung" 3 + look.js "Bewegung" 2 | the pull of scrolling on a light helper, -1 .. 1; CSS turns it into `scale` (lean) and `translate` (slide) | add the scrolling element to `SCROLLER` in look.js; the helpers inside it and the helper of the sheet around it are pulled |
+| **Schwappen** (`wa-schwappt-oben/-unten`) | CSS "Bewegung" 3 | a new helper's lights start displaced and swing into place, once | nothing: every new helper does it (a bottom sheet switches it off, it has its crest) |
+| **Ruhe** (`data-wa-ruht`, `--wa-lauf`) | CSS "Bewegung" 2 + look.js button section | see 4 | give every loop at rest `animation-play-state: var(--wa-lauf)` |
+
+Recipe, a new sheet with light (for example a desktop panel made of "stilles Wasser"):
+
+```css
+.my-panel { position: relative; isolation: isolate; }           /* plus the material, see the recipe of the step "Farbe" */
+```
+```js
+var LIGHT_ON = '.glass.m-card, .wa-becken, .sheet, .wa-bogen, .my-panel';      // look.js, section "Bewegung"
+var SCROLLER = '.m-main, .sheet__body, .my-scrolling-column';                    // if it lives in something that scrolls
+```
+
+Recipe, a new loop at rest for something else: transform and opacity only, on a layer of its own; eight equal keyframe
+intervals (`tools/bw-keyframes.mjs` prints them); `animation: <name> var(--wa-t-ruhe-N) var(--wa-gang-N) infinite;
+animation-play-state: var(--wa-lauf);` and the element in both "no motion" lists of part 5 of the block.
+
+Tuning, all tokens: how bright (`--wa-glanz`, `--wa-glanz-linie`, `--wa-glanz-fern`, `--wa-glanz-fern-linie` - tone
+tokens, in both tone blocks of "Karten"), how thick the glint (`--wa-licht-linie`), how long and deep the lights
+(`--wa-licht-*`), how far they lean and slide (`--wa-zug-oben`, `--wa-zug-unten`, `--wa-zug-weit`), where an arriving
+light starts (`--wa-schwappt-*`), how fast a list must run for the full pull (`FULL` in look.js, px per second).
+**To switch the life at rest off without touching anything else: `.m-shell { --wa-lauf: paused; }`** (the glints
+then stand still where they are).
+
+### 4. Sleep, rest behind a cover, reduced motion - how it is wired
+
+- **One clock.** It lives where the water loop lives: look.js, button section (`SLEEP_AFTER` 30 s, `wake()`, new
+  `doze()`). After 30 s without touch, scroll or key the drops come to rest and `.m-shell` gets the attribute
+  `data-wa-ruht`; the next touch removes it. One timer per time awake, re-armed only when it fires. The clock also
+  runs without WebGL (the forced fallback `?fallback=1` no longer leaves the script at its first line; it now behaves
+  like a browser that has no WebGL, as the harness convention asks).
+- **CSS follows.** `.m-shell { --wa-lauf: running }`, `.m-shell[data-wa-ruht] { --wa-lauf: paused }`; every loop at
+  rest has `animation-play-state: var(--wa-lauf)`. Paused loops stop where they are and go on from there.
+- **Behind a cover.** `.m-shell:has(.sheet, .cmd-back) > :is(.m-head, .m-main, .m-tabs) { --wa-lauf: paused }` - the
+  page behind an open bottom sheet or the search rests (the drops there are stopped by `MODAL` in look.js; keep both
+  lists the same). The sheet's own light goes on.
+- **Never paused:** answers to a change of state (a toast landing, a sheet rising, a ring). They are short, and the
+  app may show a toast while the water sleeps - a paused entrance with fill-mode "both" would leave it invisible.
+- **Off screen** nothing is drawn (measured: 0 pictures a second with all lights below the fold); the loops are not
+  paused there on purpose - a loop that is paused and resumed leaves the common beat of its screen (see 6, pitfall 3).
+- **Hidden page:** the browser stops drawing; the clock's timer may fire and mark the shell as resting, the next
+  `visibilitychange` wakes it (button section, unchanged).
+- **No motion wanted** (`prefers-reduced-motion: reduce`, or the app's `data-motion="reduziert"` on `<html>`): the
+  light helpers and the Lichtlauf pseudo-elements are `display: none` and `animation: none`, the stagger of the cards
+  is 0, the script hands over no pull. The still is the look of the previous step.
+
+### 5. Changes in earlier code
+
+`look.js`, button section (comments included: 11 lines out, 30 in; `mess/bewegung-look.js.frueherer-teil.diff`)
+1. `REST = 'data-wa-ruht'`, `nap`, `doze()`, a longer `wake()`; `start()` ends with `wake()` instead of `kick()`;
+   `destroy()` clears the timer and the attribute.
+2. `FORCED`: the test switch `?fallback=1` now fails inside `initGL()` like a missing WebGL does (state still
+   `fallback (forced)`), so listeners and the clock run in the fallback too. No console warning in that case.
+3. Shader, one term: the glint under a drop on a sheet is `.42 + .12*sin(uTime*.23 + uSeed*4.398)` instead of `.42` -
+   it breathes with the swelling that wanders along the lower edge of its drop. Frozen with reduced motion like the
+   rest of the water.
+
+`look.js`, section "Karten und Leiste": the bead's flight takes its time from the bead's own `transition-duration`
+(`--wa-bead-time`); `FLIGHT` is only the value used when that is missing.
+
+`look.css`, earlier blocks
+4. Both tone rules: four new tokens after `--wa-whisper` (`--wa-glanz`, `--wa-glanz-linie`, `--wa-glanz-fern`,
+   `--wa-glanz-fern-linie`), same order in both.
+5. Motion tokens of "Karten", "Leiste" and "Übrige Elemente" point at the language (table in 2); the eight tokens of
+   "Übrige Elemente, 1. Bewegung" moved to "Bewegung, 1. Die Sprache".
+6. **Setzen is no longer applied to the cards.** The previous step animated `.glass.m-card` itself (rise 16 px, 2 px
+   past, 0.62 s). Now the app's own entrance `rise` (mobile.css, 0.42 s) stays untouched and is only staggered; what
+   comes to rest like water is the light inside the card. The class `.wa-setzt` remains for sheets that have no
+   entrance of their own.
+7. Three comments that said "nothing moves at rest" were corrected.
+
+### 6. Pitfalls
+
+1. **A custom property set on `.m-shell` for every frame restyles the whole page.** Measured in the real app: 2.3 to
+   3.3 ms per frame on the shell against 0.2 to 0.5 ms on one card (118 to 292 elements; a phone is several times
+   slower). So the pull is handed to the light helpers only (one small element with two pseudo-elements each), not to
+   the shell as first planned.
+2. **A stepped loop is cheap in Chromium and expensive in WebKit.** Chromium runs `steps()` in its compositor and
+   draws only when a step comes (measured: 8 pictures a second per loop instead of 60, the page's own thread untouched).
+   WebKit does not hand a stepped loop to its compositor; it runs on the page's thread (measured in the software build
+   here, lights only, no drops: 17 frames a second for the page instead of 61; with the gait `linear` 61). Hence the
+   gait tokens and the `@supports (-webkit-nbsp-mode: space)` block (a property only WebKit knows). **Neither path was
+   measured on a phone.** If the lights stutter or warm an iPhone: delete that block (stepped loops there too) or
+   pause the life at rest (`--wa-lauf: paused`).
+3. **Lights that start together stay on one beat; a paused light does not.** All helpers of a screen are inserted in
+   one go and their delays are whole steps, so one screen of cards is redrawn 8 times a second, not 8 times per card.
+   The bar started earlier and has its own beat (together: 16). Pausing single lights (for example off screen) would
+   give each its own beat when it resumes. Moving a helper in the DOM restarts its animations - the script never moves it.
+4. **Rim lights without a clip.** A light that should be brightest AT the rim and move must either be clipped by a
+   wrapper (a mask or rounded clip per card, composited every frame) or be shaped so that it never leaves the pool:
+   flat side on the rim line, slide only along the straight part of the rim (`--wa-licht-links`, the travel in the
+   keyframes), grow only from the rim (`transform-origin` on it). The percentages are chosen for the four card
+   outlines (shoulders up to 46 px); a new outline with larger shoulders needs a larger `--wa-licht-links`.
+5. **`scale` and `translate` are the single parts of a transform** and add to an animated `transform`. That is how
+   the loop at rest (animation of `transform`), the pull (transition of `scale` / `translate`) and the arrival
+   (animation of `scale`, fill "backwards") live on one pseudo-element without overwriting each other.
+6. **The pulled state is an attribute, not a class.** The button section re-reads every drop when a class inside the
+   shell changes; a class toggled at every start and stop of a scroll would cost that each time.
+7. **The harness page does not scroll at 844 px height** and switches the cards' entrance off (`.m-card { animation:
+   none !important }`). Scroll tests need a shorter viewport or the real app; entrances are judged in the real app.
+8. **In the software WebKit build one frame can take 100 ms and more.** A test that scrolls "for 450 ms" may not get
+   a single frame; `tools/bw-pruefen.mjs` scrolls for at least twelve frames. The script itself tells a moving list
+   by its position, not by the time between scroll events, for the same reason.
+9. **WebKit keeps the loop of a pseudo-element that is `display: none`** in `document.getAnimations()`; the
+   "no motion" rules therefore also say `animation: none`.
+10. **No check in the app shows a toast.** The strip `haken.png` therefore shows a check ticked and then an entry
+    removed (that shows the toast). The toast with "Rückgängig" stays about ten seconds; in the video it comes last.
+11. **Playwright records the page at 1x into the top left quarter of the video frame.** `tools/bw-video.mjs` cuts
+    that quarter out and scales it.
+12. **A row or tile is never the place for a light.** Light at rest stays in the strip along the rim (at most 29 px
+    deep, limited to 14 / 18 % of the height of a small card), so no glyph pixel changes (measured, see 7).
+
+### 7. What was verified, and how to repeat it
+
+Servers as in the sections above (4310 harness, 4173 app). All commands from `<lg>/final`, `<F>` its absolute path.
+Everything at once: `nohup bash tools/bw-final.sh all > mess/bewegung-final.log 2>&1 &` (Chromium part first, then
+WebKit; about 40 minutes).
+
+| Check | Command | Result |
+|---|---|---|
+| The six filmstrips, real app, both tones | `node tools/bw-film.mjs <F> <F>/film [chromium\|webkit] [ton] [only] [reduced: 1]` | `film/`, `film-klar/`, `film-webkit/`, `film-webkit-klar/`, `film-reduziert/` |
+| The recording of the real app | `node tools/bw-video.mjs <F> <F>/film/app.mp4 [ton]` | `film/app.mp4`, `film-klar/app.mp4` (choppy: software WebGL) |
+| Alive but calm; glyph pixels | `node tools/bw-ruhe.mjs <out> ["scene=start&ton=klar"] [engine]` | `mess/bewegung-ruhe.txt`, `mess/bewegung-ruhe-webkit.txt` - see below |
+| Asleep together, awake together | `node tools/bw-schlaf.mjs <out> [engine] [extra query]` | `mess/bewegung-schlaf.txt`, `-webkit.txt` - see below |
+| Pictures drawn per second, before and after | `node tools/bw-takt.mjs -,final-vor-bewegung,final [extra query]` | `mess/bewegung-takt.txt` |
+| Frame cadence of the page (the judge's `cad.mjs`) | see `tools/bw-final.sh`, part "kadenz" | `mess/bewegung-kadenz.txt`, `-webkit.txt` |
+| Real app: a light per card, the pull (list and sheet), rest behind sheet and search, the app's switch, clean-up | `node tools/bw-pruefen.mjs <F> [engine] [ton]` | `mess/bewegung-pruefen-*.txt`: all pass in both engines and tones |
+| Blocks by class alone | `node tools/bw-bausteine.mjs <out.png> [ton=klar] [engine]` | a foreign `.wa-becken` gets its helper and two running lights, a `.wa-lichtlauf` one; all pause with `data-wa-ruht` |
+| With reduced motion the still is the look of the step before | `node tools/bw-still.mjs <out> [ton=klar]` | `mess/bewegung-still.txt`: 0 pixels differ outside the drops |
+| Earlier checks | `node tools/robust.mjs chromium`, `node t/checks.mjs chromium <out>`, `node tools/pruefen-rest.mjs <F>`, `node tools/bausteine.mjs <out.png>` | pass |
+| The strips of the previous step | `node tools/wandel.mjs ...`, `node tools/haken-ring.mjs ...` (both now leave the loops at rest alone: one filter in their `grab()`) | `wandel*/` re-rendered; `wandel-reduziert`: "(no animation)" in every strip |
+
+Own tools of this step, all in `tools/`: `bw-film.mjs` + `bw-strip.py` (filmstrips), `bw-video.mjs`, `bw-ruhe.mjs` +
+`bw-ruhe.py`, `bw-schlaf.mjs`, `bw-takt.mjs`, `bw-pruefen.mjs`, `bw-bausteine.mjs`, `bw-still.mjs`, `bw-keyframes.mjs`
+(prints the keyframes of the loops), `bw-diff.py` / `bw-crop.py` (looking at two stills), `bw-final.sh`.
+
+**Alive but calm** (harness phone view at 2x, two stills one second apart, largest difference of the three channels,
+0..255; `mess/bewegung-ruhe.txt`, `-webkit.txt`):
+
+| Surface outside the drops | pixels that change in 1 s | mean change, all pixels | mean change, changed pixels | largest | after 4 s: pixels / largest |
+|---|---|---|---|---|---|
+| Cards, dunkel (Chromium) | 5.4 % | 0.26 | 4.8 | 49 | 7.4 % / 154 |
+| Cards, klar (Chromium, start and wetter) | 5.4 to 5.5 % | 0.29 to 0.32 | 5.4 to 5.7 | 60 | 7.5 % / 163 to 168 |
+| Tab bar, dunkel / klar (Chromium) | 4.2 / 4.3 to 4.4 % | 0.24 / 0.23 to 0.27 | 5.6 / 5.3 to 6.0 | 33 / 32 to 37 | 6.6 / 6.8 % / 161 / 155 |
+| Cards, dunkel / klar (WebKit, 1.2 / 1.1 s) | 6.0 / 6.0 % | 0.35 / 0.33 | 5.8 / 5.6 | 74 / 62 | 7.9 / 8.0 % / 171 / 186 |
+| Tab bar, dunkel / klar (WebKit) | 5.0 / 5.0 % | 0.56 / 0.48 | 11.2 / 9.7 | 74 / 65 | 6.7 / 6.8 % / 159 / 150 |
+
+The large single values are the 2 px glint on the rim line where it passes; 94 to 95 % of the pixels of a card do not
+change at all. **Glyph pixels** (the text painted magenta in a fourth still gives the mask): row title (2509 to 2675
+pixels), small muted line in a row (808 to 885), card title, count in the title row, caption of a number tile, label
+of an inactive tab - **0 pixels changed after 1 s and after 4 s, in both tones and both engines**.
+
+**Asleep together, awake together** (`mess/bewegung-schlaf.txt`, harness; Chromium both tones and without WebGL, WebKit):
+
+| | `data-wa-ruht` | loops running / paused | water pictures a second | drawn a second (Chromium) | stills 1 s apart |
+|---|---|---|---|---|---|
+| awake | no | 5 / 0 | 8 (software WebGL; 12.5 in WebKit) | 20 to 24 (16 without WebGL) | differ |
+| 34 s without input | yes | 0 / 5 | 0 | 0, and 0 ticks of the compositor | byte-identical |
+| after one touch | no | 5 / 0 | 8 (13 in WebKit) | 20 to 21 (16 without WebGL) | differ |
+
+**Reduced motion:** the two idle stills of the reduced phone clip are byte-identical in both tones; in the real app
+the strips of `film-reduziert/` find no animation of the look and the only pixels that change in 4 s are the app's
+clock; `tools/bw-still.mjs` compares the harness with `prefers-reduced-motion` before and after this step: 0 pixels
+differ outside the drops in both tones (inside the drop canvases 1.3 %, by at most 27: the frozen breath of the glint).
+
+**Cost** (software rendering on the test machine - only the relations count; `mess/bewegung-takt.txt`, `-kadenz*.txt`):
+
+| | without the look | before this step | with it |
+|---|---|---|---|
+| Chromium, pictures drawn a second at rest (harness, 12 drops) | 0 | 8.8 | 20 to 24 |
+| ... without the drops (`fallback=1`) | 0 | 0 | 16 (two beats of 8: cards, bar) |
+| Chromium, frames a second of the page's own thread (rAF, 2x) | 60.3 | 39.8 to 40.3 | 37.8 to 39.0 |
+| ... without the drops | 60.3 | 60.3 | 60.0 |
+| WebKit, frames a second of the page (rAF, 3x) | 61.8 | 13.5 to 13.8 | 9.8 to 10.0 |
+| ... at 2x | | 45.3 | 22.8 |
+| ... without the drops, 3x | 61.8 | 61.8 | 61.0 (gliding gait); 17.5 with stepped loops |
+| ... 3x, stepped loops in WebKit as well | | | 10.5 |
+
+Animated layers on a screen of the real app (`mess/bewegung-pruefen-*.txt`): 2 rim lights per card in view (4 to 6;
+about 166 x 18 and 188 x 24 px each), 1 light on the bar (112 x 11 px), the bead of the bar and 4 to 5 drop canvases
+as before; an open sheet adds 1 (156 x 14 px), a toast 1. Off screen: 0 pictures drawn. Asleep, behind a sheet,
+with reduced motion: nothing runs.
+The page's own thread does nothing at rest for the lights in either engine (Chromium: 0 main-thread frames without
+the drops). While a list is scrolled the script writes one custom property on each light helper per frame (0.1 ms
+in the app here; on `.m-shell` it would be 2.3 to 3.3 ms).
+
+### 8. Open
+
+- **Never on a real phone.** Whether the glints read as light on water or as lines, whether 9 px a second is the
+  right pace, what the loops cost on a phone GPU, and which gait is right for the iPhone: all inferred.
+- **The answer to scrolling is small and shows mostly when a list is stopped by the finger.** A flick that runs out
+  by itself slows down smoothly, so the light returns smoothly and does not swing. A response to acceleration instead
+  of speed would swing at the start of a flick too; not tried.
+- **A lean thickens the glint** (the whole light is scaled from the rim: 2 px become up to 3.2 px). A separate layer
+  for the glint would avoid it and cost a third layer per card.
+- **Bar and cards are redrawn on two beats** (16 pictures a second in Chromium instead of 8). One beat would need the
+  script to align the start times of all loops.
+- **A closing sheet and a removed row** are still not animated (need the app, see the step above).
+- **Free number tiles and the header are still.** The tiles could take a Lichtlauf (their `::after` is free); left out
+  because they carry large numbers and sit two in a row.
+- **The drops do not lean when scrolled.** A uniform for the pull in the shader would do it.
+- **Desktop:** nothing tried. `LIGHT_ON`, `SCROLLER` and the `:is(...)` lists carry this app's mobile selectors.
+- **`scripts/verify.mjs` was not run against a build with the look.** A test that counts the children of a card now
+  finds one more (`<i class="wa-licht">`).

@@ -13,6 +13,8 @@ Arbeitsmaschine liegt. Er ist **nicht** in die App eingebaut: nichts hier wird v
 - `alle-elemente/` – der vollständigste Stand: beide Töne, dazu Bögen, Formulare, Eingabefelder, Auswahl, Häkchen,
   Fortschrittsbalken, Hinweis und Suche, in der echten App geprüft. Die Bewegung in Ruhe fehlt noch.
   `entscheidungen.md`: was der Auftraggeber entschieden hat (beide Töne bleiben als heller und dunkler Modus).
+- `mit-bewegung/` – der aktuelle Stand vor der unabhängigen Kontrolle: alles aus `alle-elemente/`, dazu Leben in Ruhe
+  (Licht an den Rändern von Karten, Leiste, Bögen), die Antwort aufs Scrollen und gemeinsames Ruhen nach 30 Sekunden.
 - `werkzeug/` – Testseite und Skripte, mit denen die Bilder entstehen. Die Pfade darin zeigen noch auf die
   Arbeitsmaschine und müssen beim Einbau ins Projekt angepasst werden:
   `base.html` (Nachbau des mobilen Bildschirms mit den echten Stylesheets, lädt einen Look-Ordner per `?look=`),
