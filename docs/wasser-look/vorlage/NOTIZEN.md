@@ -1,12 +1,13 @@
 # Wasser-Look, the template: notebook for whoever applies it
 
-State 13.11. Written for a helper who has not seen the look being built. German names of the building blocks are
+State 14.11. (packed 13.11.; the corrections after the two checkers of the package are in: section 9, "What changed on
+14.11."). Written for a helper who has not seen the look being built. German names of the building blocks are
 kept (they are the names the owner knows). Read `LIESMICH.md` first for what is where and how to look at it; the
 owner's decisions are in `docs/wasser-look/entwurf/entscheidungen.md` and override everything here.
 
 The template is not built into the app. It was made from the approved look (`docs/wasser-look/entwurf/nachgebessert`,
-a stylesheet and a script injected under `.m-shell`) by restructuring only; `scripts/wasser/vergleich.mjs` proves
-after every change that it still paints the same (section 9).
+a stylesheet and a script injected under `.m-shell`) by restructuring, plus the few corrections of 14.11.;
+`scripts/wasser/vergleich.mjs` proves after every change that it still paints the same (section 9).
 
 ---
 
@@ -16,8 +17,8 @@ after every change that it still paints the same (section 9).
 |---|---|
 | Files | `kern.css` (the look), `mobil.css` (what only the mobile shell needs), `desktop.css` (empty, for the next step), `wasser.js` (the script). Load order: the app's own stylesheets, then these three, then the script. |
 | Switch | The attribute `data-wasser` on a root element. Every rule of `kern.css` starts with `[data-wasser]`, every rule of `mobil.css` with `[data-wasser="mobil"]`. The script looks only inside the root (option `root`, default `[data-wasser]`). No attribute: the app as it is. |
-| Tones | `dunkel` (default) = dark mode, `klar` (`<html data-wa-ton="klar">`) = light mode. One block of 54 tokens each in `kern.css`, part 1, same tokens in the same order. No other rule mentions `data-wa-ton`; the script has no tone logic. Text is light in BOTH tones. |
-| Tokens | Every colour, radius, gradient, shadow, duration and easing is a `--wa-*` custom property on `[data-wasser]` (`kern.css` parts 1 to 3; the mobile shell's own in `mobil.css` part 1). Two more names are read by the drops: `--water-under`, `--wa-drop-veil` (set by sheets). |
+| Tones | `dunkel` (default) = dark mode, `klar` (`<html data-wa-ton="klar">`) = light mode. One block of 55 tokens each in `kern.css`, part 1, same tokens in the same order. No other rule mentions `data-wa-ton`; the script has no tone logic. Text is light in BOTH tones. |
+| Tokens | Every colour, radius, gradient, shadow, duration and easing is a `--wa-*` custom property on `[data-wasser]` (`kern.css` parts 1 to 3; the mobile shell's own in `mobil.css` part 1). One more name is read by the drops: `--water-under` (set by sheets). |
 | Blocks | Each building block is ONE nested rule with ONE selector list (`kern.css` part 4). Apply a block by adding a selector to its list, or by giving an element the block's neutral class `.wa-...`. |
 | Script | `Wasser.start(options)` / `Wasser.stop()`; `Wasser.MOBIL` = the default options (the mobile shell); `Wasser.info` = state of the drops. One global, one instance. |
 | No motion | `prefers-reduced-motion: reduce`, or the app's switch `data-motion="reduziert"` on `<html>`: every block carries both rules itself, nested at its end; the script checks `still()` before every animation. |
@@ -112,7 +113,9 @@ Wasser.start(Object.assign({}, Wasser.MOBIL, {
 }));
 ```
 
-No floor light on it: `.my-panel > .wa-licht > .wa-boden { display: none; animation: none; }`.
+No floor light on it: `.my-panel > .wa-licht > .wa-boden { display: none; animation: none; }`. No arrival of its light
+(it has an entrance light of its own, like the bottom sheet): `.my-panel > .wa-licht { --wa-schwappt-oben: 1 1;
+--wa-schwappt-unten: 1 1; --wa-schwappt-boden: 0 0; }`.
 A small or dense sheet: class `wa-lichtlauf` (or its list) instead of the helper; check that `left + 2.7 x width` of
 the light ends 30 px before the far corner (see `.glass.m-stat` in `mobil.css`).
 
@@ -126,8 +129,11 @@ option `modal` and to the rule "Ruhe hinter einem Bogen" of the shell, so the pa
 should send a ring from a sheet: option `ringFrom`. If it must NOT be a live drop (many per screen, repeats per
 row): leave it out of `drops`; it keeps the plain glass ("Perle mit Schrift" makes that glass lighter in rows).
 
-**How bright the clear drops on a surface are:** set `--wa-drop-veil` on the surface (0 = only rim and highlight,
-1 = the silver drops of the cards; a bottom sheet uses `--wa-bogen-veil`, .35). Read within a second.
+**How bright the clear drops on a surface are:** `--wa-drop-veil`, 0 .. 1 (0 = only rim and highlight, 1 = silver
+drops). It is a tone token - `dunkel` 1, `klar` .3 (a lighter page under the cards: with 1 the white labels lost up to
+1.5 of contrast) - and a surface may set its own (a bottom sheet does: `--wa-bogen-veil`, .35). Read within a second.
+A label on a clear drop that is hard to read is cured HERE, not by a darker sheet: the drop is light laid over the
+real pixels of the sheet, and what the sheet is "told" (`--water-under`) hardly moves the label's ground (tried).
 
 **A new field / options group / progress bar / check:** class or list of Feld / Wahl (+ option `groups`) / Pegel
 (+ option `levels`) / Haken. More than one label of a Wahl may be `.on`.
@@ -142,12 +148,18 @@ to the sheet; the keyframes `wa-sinkt` are in "Bogen".
 (`node scripts/wasser/keyframes.mjs` prints them); `animation: <name> var(--wa-t-ruhe-N) var(--wa-gang-N) infinite;
 animation-play-state: var(--wa-lauf);` and both "no motion" rules nested in its block.
 
-**Tuning life at rest:** `--wa-leben` first (0 = still sheets, 1 = as built, about 1.5 = the most that reads as
-calm; strength only, never speed; set it on the root). Then per tone `--wa-glanz*`, `--wa-boden`. Freeze everything
-where it stands: `[data-wasser] { --wa-lauf: paused; }`.
+**Tuning life at rest:** `--wa-leben` first, a number from 0 to 2 set on the root (0 = nothing is seen, 1 = as
+built, about 1.5 = the most that reads as calm). It is strength only, never speed, and it is a control of TASTE: at 0
+every loop still runs, unseen, at the full cost (measured). Then per tone `--wa-glanz*`, `--wa-boden`. Where the token
+moves something it is bounded (`--wa-zug-min`, `--wa-zug-max`, the `min()` in `--wa-zug-weit` and `--wa-zug-boden`):
+above 1 the lights get brighter and lean further, they do not slide or lag further - a basin has no more room.
+To SEE two values side by side: `node scripts/wasser/leben.mjs <out> --werte 1,1.5` (a film and a filmstrip of the
+real app; the one made on 14.11. is `docs/wasser-look/bilder/mobil/leben-vergleich`).
+**Saving work** is another switch: `[data-wasser] { --wa-lauf: paused; }` freezes every loop where it stands (the
+only thing that bought frames in the WebKit test build), see section 13.
 
 **A third tone, or dropping one:** a tone is the block `:root[data-wa-ton="<name>"] [data-wasser] { ... }` with all
-54 tokens. Nothing else to do; the drops re-read within a second (at once when `data-wa-ton` changes).
+55 tokens (`pruefen.mjs`, check 10, compares the two lists). Nothing else to do; the drops re-read within a second (at once when `data-wa-ton` changes).
 
 ---
 
@@ -187,13 +199,14 @@ the name `wasser.js` (an import without extension finds the `.js` first): copy i
 | `toasts` | `.toast, .wa-hinweis` | what leaves like a drop |
 | `light` | `.glass.m-card, .wa-becken, .sheet, .wa-bogen` | sheets that get the light helper |
 | `scrollers` | `.m-main, .sheet__body` | lists whose scrolling pulls the light |
-| `webgl`, `debug` | `true`; `{ flat, prof, noDeriv }` all false | test aids (the harness page maps `?fallback=1`, `?w3flat=1`, `?w3prof=1`, `?w3noderiv=1` to them) |
+| `webgl`, `debug` | `true`; `{ flat, prof, noDeriv }` all false, `cost: null` | test aids (the harness page maps `?fallback=1`, `?w3flat=1`, `?w3prof=1`, `?w3noderiv=1` to them). `debug.cost`: a function (ms) -> ms through which the governor of the drops sees what each water picture cost - to pretend a slow phone (`pruefen.mjs --regler`) |
 
 An empty selector switches its feature off. Helper elements the script makes (all `aria-hidden`, no clicks, React
 may throw them away at any time): `canvas.w3-drop` in every drop (attribute `data-w3="on"` on the button while its
-drop is drawn), `i.wa-floor > i.wa-ring` for 1.1 s, `i.wa-licht > i.wa-boden` as last child of a lit sheet, a copy
-of a removed toast with class `wa-geht` for 0.26 s. Attributes: `data-wa-ruht` on the root, `data-wa-zieht` and
-`--wa-zug` on a light helper while its list is scrolled.
+drop is drawn), `i.wa-floor > i.wa-ring` for the 1.1 s of the ring (removed after 1.7 s at the latest),
+`i.wa-licht > i.wa-boden` as last child of a lit sheet, a copy of a removed toast with class `wa-geht` for 0.26 s.
+Attributes: `data-wa-ruht` on the root, `data-wa-zieht` and `--wa-zug` on a light helper while its list is scrolled,
+`data-wa-kommt` on a NEW light helper for its first two frames (its lights stand where they arrive from, then swing in).
 
 **How a drop learns about the sheet it lies on** (`PROP` in Teil 1; read from the button's own computed style, so a
 sheet sets them for all its buttons by inheritance; re-read once a second, on class changes inside the root, on
@@ -220,7 +233,11 @@ The clock also runs without WebGL. A hidden page: the browser stops drawing; `vi
 
 **The governor of the drops** (Teil 1, `LEVELS`): pictures that keep eating more than 80 % of their time slot for
 3 s step the drops down (60 -> 30 -> 15 pictures a second while touched, then fewer pixels, at last a still drop);
-20 s of easy pictures step up again; a try that fails within 30 s doubles the wait (5 min at most).
+20 s of easy pictures step up again; a try that fails within 30 s doubles the wait (5 min at most); a level reached
+by a climb that has held for the wait sets it back to 20 s (before 14.11. one failed try slowed every later climb
+until reload). `Wasser.info.level` and `.wait` show it; `node scripts/wasser/pruefen.mjs --regler` walks through all
+of it in three minutes with pretended picture costs (start option `debug.cost`). The waits count the time of drawn
+pictures, at most 0.1 s each: at 12 pictures a second 20 s take about 25 s by the clock.
 
 ---
 
@@ -230,13 +247,15 @@ The clock also runs without WebGL. A hidden page: the browser stops drawing; `vi
   `--wa-still`, `--wa-dense`, `--wa-sheet`), the light (`--wa-light`, `--wa-core`, `--wa-warm`, `--wa-dark`), the
   rims (`--wa-meniscus`, `--wa-shallow`, `--wa-far`, `--wa-lift`, `--wa-dense-*`), troughs (`--wa-trough*`), ink
   (`--wa-ink-*`, `--wa-shade*`), pills, the bar's labels and bead, softness (`--wa-sat`, `--wa-blur*`), the page
-  (`--wa-page-1..4`, `--wa-page-ink-3`, `--wa-abyss`), life (`--wa-glanz*`, `--wa-boden`), the red (`--wa-drop-red`).
+  (`--wa-page-1..4`, `--wa-page-ink-3`, `--wa-abyss`), life (`--wa-glanz*`, `--wa-boden`), the drops (`--wa-drop-red`,
+  `--wa-drop-veil`).
 - **Form** (part 2): one group per block, named after it (`--wa-r-becken-*`, `--wa-bogen-*`, `--wa-feld-*`,
   `--wa-wahl-*`, `--wa-haken-*`, `--wa-pegel-*`, `--wa-perle-*`, `--wa-ring-*`, `--wa-glass*`, `--wa-amber-*`,
   `--wa-red-*`, `--wa-pill-*`, `--wa-r-tropfen-*`, `--wa-drop-*`, `--wa-focus*`).
 - **Motion** (part 3): the language (`--wa-t-*`, `--wa-ease-*`), loops at rest (`--wa-t-ruhe-*`, `--wa-gang-*`,
-  `--wa-t-atem`), `--wa-lauf`, `--wa-leben`, the lights (`--wa-licht-*`, `--wa-boden-*`, `--wa-zug-*`,
-  `--wa-schwappt-*`, `--wa-lauf-*`, `--wa-atmet*`).
+  `--wa-t-atem`), `--wa-lauf` (running / paused: the switch for SPEED), `--wa-leben` (0 .. 2: the control of TASTE),
+  the lights (`--wa-licht-*`, `--wa-boden-*`, `--wa-zug-*` with the bounds `--wa-zug-min` / `-max`, `--wa-schwappt-*`,
+  `--wa-lauf-*`, `--wa-atmet*`).
 - **Mobile shell** (`mobil.css` part 1): `--wa-page-dark`, the bar (`--wa-bar-lift`, `--wa-bar-side`, `--wa-r-bar`,
   `--wa-r-tab`, `--wa-scrim-over`, `--wa-tab-*`).
 
@@ -280,6 +299,12 @@ timers of helpers.
 - `--wa-sky: .3`: without any sky blue a free drop goes grey over a pale sky; 1 is 3 to 7 b* bluer than the scene.
 - Focus (`--wa-feld-on`) and the chosen bead (`--wa-wahl-on-rim`) are found by a full LINE of light, not by a
   brighter fill: a brighter fill lowers the label's contrast faster than it helps finding it.
+- klar, `--wa-drop-veil: .3`: the value at which no label on a clear drop on a card is more than 0.3 below what it
+  was before the page of "klar" was lightened (eight scenes); .35 misses that by a hair, .6 by up to 0.9. The small
+  drops gain more than they had lost (up to +1.9): one number cannot restore each drop exactly.
+- `--wa-zug-weit` 24 px and `--wa-zug-boden` 28 px are the room a phone-wide basin has: at rest the glints end 12 px
+  before the corners of the widest outline, and the floor light touches the foot of its basin at the low points of
+  its loop. A basin narrower than about 300 px needs smaller values (not needed in the mobile shell).
 
 ---
 
@@ -409,6 +434,25 @@ Testing
     is unknown; the cure costs one pixel read per scene.
 41. **Under reduced motion the first picture of the drops can come late on a slow machine.** A screenshot taken too
     early shows a drop with the scene of the screen before. `vergleich.mjs` looks a second time before it reports.
+42. **Playwright's video recorder swallows soft light.** It is a low-bitrate VP8 stream: two pictures of a page at rest
+    differ by 4 of 255 or more on 47 % of their pixels, a light of +10 to +17 is lost in that. To judge life at rest,
+    the floor light or the lean, record through the browser's screencast: `clip.mjs --cast`, `leben.mjs` (`lib.mjs`,
+    `cast` / `encodeCast`; Chromium only). A palette PNG (`strip(..., { palette: true })`) is for small stills only.
+
+Motion, found on 14.11.
+43. **While a keyframe animation runs on `scale` or `translate`, a transition on the same property does not start.**
+    The arrival of a sheet's light was such an animation (1.6 s): a list scrolled within that time was followed in
+    steps and did not swing out. Anything that must stay interruptible by the pull is built as a pull: an attribute
+    holds the start value for two frames, its removal lets the transition run (`data-wa-kommt`, "Schwappen").
+44. **A master number that multiplies geometry needs a bound at every product.** `1 - pull x strength x --wa-leben`
+    went below 0 above 1.11: a negative scale flips a light over its rim line, out of the sheet. Lean: `clamp()`;
+    lengths: `min()`. `pruefen.mjs` (check 10) reads the computed values from 0 to 2 at full pull.
+45. **`--wa-leben: 0` saves nothing.** Every loop keeps running on its layer, unseen (WebKit test build at 3x:
+    10.1 / 8.6 frames a second at 0, 10.7 / 8.8 complete, 37.9 / 22.4 with `--wa-lauf: paused`).
+46. **A drop on a sheet is light laid over the sheet's real pixels.** What lies under it shows through: the floor
+    light passing under a clear drop lifts the ground of its label a little (a living label measured 11.2 without
+    and 10.1 with the floor light, in "dunkel"), and a lighter page under a card lifts it for good (cure:
+    `--wa-drop-veil`).
 
 ---
 
@@ -416,18 +460,20 @@ Testing
 
 | Tool | What it does |
 |---|---|
-| `mobil.html` | the harness page: a mock of the mobile screen with the real app stylesheets, the template on top. `?ton=klar`, `?scene=...`, `?nah=1`, `?alles=1`, `?fallback=1`, `?ohne=1`, `?alt=<folder>`, `?schlaf=<ms>` |
-| `lib.mjs` | shared: `session({ engine })` -> `harness(options)`, `app(options)` (the REAL app, look injected once; `go`, `sheet`, `closeSheet`, `project`, `shot`), a file server for the repository, `diff`, `strip` |
-| `vergleich.mjs [bilder\|app\|stile\|film\|alles]` | template against the approved look: pixels (inside / outside the drops), computed styles incl. pressed and focused, motion at fixed times. Exit code 1 on a difference |
-| `pruefen.mjs [--app]` | checks: start, marker, ring, every block by class alone, sleep, reduced motion, stop / start / options, no WebGL, the real app |
+| `mobil.html` | the harness page: a mock of the mobile screen with the real app stylesheets, the template on top. `?ton=klar`, `?scene=...`, `?nah=1`, `?alles=1`, `?fallback=1`, `?ohne=1`, `?alt=<folder>`, `?vorlage=<folder>`, `?schlaf=<ms>` |
+| `lib.mjs` | shared: `session({ engine })` -> `harness(options)`, `app(options)` (the REAL app, look injected once; `go`, `sheet`, `closeSheet`, `project`, `shot`), a file server for the repository, `diff`, `strip`, `stack`, and the screencast recorder `cast` / `encodeCast` |
+| `vergleich.mjs [bilder\|app\|stile\|film\|alles]` | template against the approved look: pixels (inside / outside the drops), computed styles incl. pressed and focused, motion at fixed times. Exit code 1 on a difference that is not on its list of deliberate ones (`KNOWN`). `--alt git:HEAD` or `--alt <a copy of the template folder>`: against the template as it was before YOUR change |
+| `pruefen.mjs [--app] [--regler]` | checks: start, marker, ring, every block by class alone, sleep, reduced motion, stop / start / options, no WebGL, the real app, pull and arrival of the light, the bounds of `--wa-leben`, the token lists of the two tones; `--regler`: the governor of the drops (three minutes) |
 | `bild.mjs <out> [szenen\|nah\|alles\|app]` | stills, both tones, contact sheets |
 | `film.mjs <out>` | filmstrips from the real app: ruhe, tab, druck, scroll, bogen, haken (`--reduced`, `--fest`) |
-| `clip.mjs <out.mp4>` | a recording of the real app (or `--seite mobil`) |
-| `kontrast.mjs [--app]` | WCAG contrast of the texts against the pixels really behind the glyphs |
-| `messen.mjs ruhe\|takt` | alive but calm (pixels that change at rest, glyph pixels); frames a second coupled to the compositor |
+| `clip.mjs <out.mp4> [--cast]` | a recording of the real app (or `--seite mobil`). `--cast`: through the browser's screencast - use it whenever soft light is to be judged (pitfall 42) |
+| `leben.mjs <out> [--werte 1,1.5]` | how much life? The same walk through the real app once per value of `--wa-leben`, side by side as labelled phones: `<out>.mp4` and a filmstrip `<out>.png` |
+| `kontrast.mjs [--app]` | WCAG contrast of the texts - and of the labels on drops - against the pixels really behind the glyphs |
+| `messen.mjs ruhe\|takt` | alive but calm (pixels that change at rest, glyph pixels); frames a second coupled to the compositor (`--css '<rules>' --mal 3`: what does a change buy?) |
 | `keyframes.mjs` | prints the keyframes of the loops at rest |
 
-All take `--engine chromium|webkit`, most `--ton klar` or `--toene dunkel,klar`, `--look vorlage|<folder>|ohne`.
+All take `--engine chromium|webkit` (the screencast tools: Chromium only), most `--ton klar` or `--toene dunkel,klar`,
+`--look vorlage|<folder>|ohne` (a folder is another copy of the template, or an earlier `look.css` + `look.js`).
 The real app needs `npm run build && npm run preview` (port 4173; `WASSER_APP=<url>` for another address). WebKit
 needs Playwright's WebKit; on the work machine: `source <scratchpad>/judge-phone/env.sh` in the same shell first (and
 not for Chromium afterwards: it points Playwright at a folder without Chromium). Playwright is taken from
@@ -601,27 +647,68 @@ up, taps on hit areas in pixels, contrast in WebKit, the L* of the drops' bodies
 - **Never on a real phone.** Everything was judged in Chromium and in Playwright's WebKit on a machine that renders
   in software. Unverified there: smoothness; whether the glints read as light on water; the floor light on an OLED;
   the blurred scrim; the select with `appearance: none` on iOS; hit areas; `color-scheme: dark` on the native date
-  picker; the ring on release; "klar" in daylight.
+  picker; the ring on release; "klar" in daylight. Section 13 is the order in which to look.
 - **The frame rate in WebKit.** In the software WebKit build the wandering lights alone hold the compositor at about
   14 frames a second (every composite in which a layer moved inside a blurred sheet redoes that sheet), the complete
   look at 9 to 12 (the app without the look: 49 to 62). Chromium is unmoved (49 of 60). Nothing was found that helps
-  in that build except pausing the loops. Unknown for an iPhone. First things to try there if it stutters or gets
-  warm: `[data-wasser] { --wa-lauf: paused; }`, then `--wa-leben: 0`, then the stepped gait for WebKit too (delete
-  the `@supports (-webkit-nbsp-mode: space)` block).
+  in that build except pausing the loops (`--wa-lauf: paused`; NOT `--wa-leben: 0`, pitfall 45). Unknown for an
+  iPhone: section 13, point 1.
 - **Entering a screen** blocks the software WebKit build 2 to 3 times longer than without the look (a dozen soft
-  box-shadows per card are rasterised on the CPU). If the iPhone hitches on a tab change: smaller `--wa-deep-soft` /
-  `--wa-shelf-soft` first, then `--wa-t-step: 0ms`.
+  box-shadows per card are rasterised on the CPU). Section 13, point 2. In that build the first two frames of a new
+  screen can take half a second: the light of the new cards then stands at its arrival place that long before it
+  swings (before 14.11. the swing ran during those frames, unseen).
+- **Life at rest is there by numbers and hard to find by eye** - at `--wa-leben` 1 and at 1.5 alike
+  (`docs/wasser-look/bilder/mobil/leben-vergleich.mp4` / `.png`, numbers in section 9). What the eye finds is the
+  glint on the rim lines and the lean when a list stops; the light on the floor (at most +17 of 255, a loop of 46 s)
+  is not seen. 1.5 makes the lights brighter, not livelier: they move at the same pace (the glint about 8 px a
+  second). The owner decides; if more is wanted, the lever is the pace (`--wa-t-ruhe-*` with their `--wa-gang-*`),
+  not the strength - nothing was built for that.
+- **The blur under the tab bar of "dunkel" stays** (tried on 14.11.: water of .93 opacity, does it need its blur?).
+  Without it the picture inside the bar changes by 0.02 to 0.5 of 255 on average (largest 8), but rows that pass
+  under the bar leave a faint sharp ghost of their words in it; and it buys nothing that can be told from the
+  scatter: Chromium, coupled, 3x: Start 58.4 -> 57.7, Heute 53.6 -> 55.7, Material 52.9 -> 54.5 frames a second (three
+  runs each, in turn); the WebKit test build, which paints no backdrop blur anyway: 12.2 -> 13.3 and 10.1 -> 10.5.
 - **Android hand-over of the drops**: every water picture is copied into 4 to 7 small 2D canvases; unmeasured on a
   phone.
 - **The toast's own light.** The motion step gave the toast a smaller, quicker light (8 px high, 28 % wide, a 12 s
   loop). Since the step after it that rule lost by weight (pitfall 1), so the approved state - and this template -
   shows the common Lichtlauf on the toast (13 px, 30 %, 40 s). The rule is kept as a comment in "Tropfen-Hinweis";
   the tokens `--wa-t-ruhe-kurz`, `--wa-gang-kurz` are ready. The owner has only seen the toast as it is now.
-- **A sheet of "klar" without backdrop blur** shows the page behind it sharp at about a fifth of its strength. If a
-  phone shows ghost words: `--wa-sheet` of "klar" to `.9`.
+- **A sheet of "klar" without backdrop blur** shows the page behind it sharp at about a fifth of its strength, the
+  search panel at about a third (its water is `--wa-dense`, .66): in the WebKit test build the clock, the greeting
+  and row titles of the start screen stand between the search hits. With blur (Chromium) nothing of it. Section 13,
+  point 4.
+- **Labels on clear drops in "klar"** are back at the contrast they had before the page of "klar" was lightened, by
+  one number (`--wa-drop-veil: .3`): none is more than 0.3 below, the small drops are up to 1.9 above (section 9).
+  The drops on cards of "klar" therefore look a little different from the pictures the owner approved on 13.11.:
+  less silver in the body, the same rim, highlight and glow (`bilder/mobil/klar-nah`, `klar-start`).
 - **Loose white text over the painted scene** (the quote on the start screen) has single stretches at 2.6 : 1 over
   bright foliage in both tones and in today's app.
 - **Still dead:** a closing sheet, a removed row, a toast that replaces another one, the header.
 - **The marker's observer** forces style in the middle of a tab change (about 8 ms on the work machine).
 - **The marker knows five children**; more need one `:has()` line each.
 - **Desktop:** nothing applied (section 11). **`scripts/verify.mjs`:** never run against a build with the look.
+
+---
+
+## 13. The first test on a real phone
+
+Nothing has run on a phone. Look in this order; each point says what a good and a bad result looks like and the ONE
+line to change. A line is tried fastest from the browser's remote inspector (Safari: Develop menu; Chrome:
+`chrome://inspect`) in the console of the running page, e.g.
+`document.querySelector('[data-wasser]').style.setProperty('--wa-lauf', 'paused')` - tokens set this way on the
+root win over the stylesheet; a tone token is set the same way (the drops follow within a second). What proves
+itself goes into `kern.css` (the line is named).
+
+| # | Look at | Good | Bad | The one line |
+|---|---|---|---|---|
+| 1 | **Frame rate**, complete look against lights paused: scroll the long list of "Material" slowly and fast, then the same with `--wa-lauf: paused` on the root | no difference in smoothness between the two; the phone stays cool after two minutes | the list is choppier, or the phone gets warm, with the lights running | `[data-wasser] { --wa-lauf: paused; }` (kern.css, part 3: the token is `running`) - the lights stand, everything else lives. If only an iPhone is choppy, try FIRST the stepped gait there: delete the block `@supports (-webkit-nbsp-mode: space) { ... }` in part 3 (the lights are then drawn 8 times a second instead of gliding). `--wa-leben` is no switch for this |
+| 2 | **Entering a screen**: tap through the five tabs | the bead flows without a stall, the cards arrive in one movement | a freeze of a fifth of a second or more before the new screen moves | `--wa-deep-soft: 20px; --wa-shelf-soft: 8px;` (part 2, "Becken": smaller soft shadows of the depth steps); if still bad `--wa-t-step: 0ms` (part 3) |
+| 3 | **The first picture after a tap**: open a bottom sheet ("Neues Projekt"), tick a task, tap a button on a card | the sheet starts to rise, the ring starts, at once | a pause before anything moves (in the test builds 0.4 to 1 s in single cases) | the same line as in 1: if pausing the lights cures it, the lights hold the compositor |
+| 4 | **"klar", weak blur**: open the search and a form sheet over "Start" and over "Heute" (`data-wa-ton="klar"` on `<html>`) | behind the hits and the form only soft shapes | words of the page can be read between the hits or behind the fields | search, bar, toast: `--wa-dense: rgba(62, 66, 70, .9);` - sheets: `--wa-sheet: rgba(56, 60, 64, .9);` (part 1, tone "klar"; today .66 and .82) |
+| 5 | **Banding of the floor light**: an OLED phone in a dark room, "dunkel", a card with open floor (the lower third of "Als Nächstes"), half a minute | an even, soft brightening that comes and goes, or nothing at all | slow concentric rings or steps on the floor of a card | `--wa-boden: .15;` (part 1, tone "dunkel"; today .26). Rings still there: `--wa-boden: 0;` - the floor light is the part of the life at rest that is least seen anyway |
+| 6 | **The ring on release**: tap buttons on cards quickly and slowly, tick a task | the ring reads as the answer to the tap, also after a slow finger | it reads as a late echo, or is not noticed | quicker: `--wa-ring-time: .8s;` (part 2, "Ring"; today 1.1 s). Not wanted at all: `Wasser.start({ ringOn: '' })`. (It starts when the finger lifts on purpose: on touch-down it flashed whenever a scroll began on a button) |
+| 7 | **The drops on Android** (every water picture is copied into 4 to 7 small canvases): scroll "Heute" and "Material", hold a button; in the console `Wasser.info.level` and `Wasser.info.ms` | level 0, a picture costs a few ms, the drops flow while the list scrolls | the level climbs to 2 and more, or the list stutters only where drops are in view | fewer live drops: `Wasser.start({ drops: '.btn--primary, .m-ico' })` (the others stay plain glass); or sharper limit `DPR_CAP = 2` in `wasser.js`, Teil 1 (a 3x phone draws like a 2x phone) |
+
+Then, in any order: whether the glints read as light on water at arm's length; "klar" in daylight; the select and
+the date picker on iOS; hit areas of the header drops and of the tabs with a thumb.

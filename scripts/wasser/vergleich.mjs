@@ -32,11 +32,26 @@ const s = await session({ engine: a.engine }); let bad = 0; const lines = []; co
 //    --t-fast (0.18 s);
 // 3. with no motion wanted every trough says "transition: none" (before: only rows) - where the time is 0 s on both sides
 //    there is no transition either way, only the keyword differs (all / none).
+// 4. since 14.11. (the corrections after the two checkers; NOTIZEN.md, section 9):
+//    - the pull of scrolling is bounded: --wa-zug-weit and --wa-zug-boden are min() expressions (the same lengths at
+//      --wa-leben 1), the lean is a clamp() (the same value);
+//    - the light of a new sheet swings into place by the transition of the pull instead of a second keyframe animation:
+//      the three lights of a helper have one animation less (and the strip "tab" shows transitions where the reference
+//      shows the animations wa-schwappt-*; the pictures at the same moments are the same);
+//    - the tone token --wa-drop-veil: 1 in "dunkel" (as before), .3 in "klar" - there the drops on cards gather less light,
+//      so the pictures of "klar" differ INSIDE those drops (counted apart, never a DIFF) and nowhere else.
 // Not a style: the drawing size of a drop's canvas (it follows the governor of the drops, which differs from run to run).
+// To check a change of YOUR OWN against the template as it was: --alt git:HEAD (the committed template), or --alt <a copy of
+// the folder made before the change>.
 const RENAMED = { '--w3-pad': '--wa-drop-pad', '--w3-halo': '--wa-drop-halo' };
+const SINCE_1411 = new Set(['--wa-zug-weit', '--wa-zug-boden', '--wa-drop-veil']);
 const KNOWN = (prop, x, y, key) => (prop === 'transition-duration' && /^0\.18s(, 0\.18s)*$/.test(x[prop] || '') && y[prop] === x[prop].replace(/0\.18s/g, '0.14s'))
   || (prop === 'transition-property' && x['transition-duration'] === '0s' && y['transition-duration'] === '0s')
-  || (prop === 'aspect-ratio' && /canvas:\d+\|/.test(key));
+  || (prop === 'aspect-ratio' && /canvas:\d+\|/.test(key))
+  || SINCE_1411.has(prop) || (/^animation/.test(prop) && /\|wa-(licht|boden)$/.test(key))
+  || (prop === 'translate' && /\|wa-boden$/.test(key) && /%$/.test(x.width || ''));   // (a floor light that is NOT RENDERED - a card inside display: none, its width is still a percentage: the reference's arrival animation never starts there and stands at its first keyframe)
+// the strip "tab": the arrival of the light is named differently on the two sides (see 4.)
+const sameMotion = (ref, neu) => { const set = (t) => [...new Set(t.replace(/::before:wa-schwappt-oben/g, '::before:scale').replace(/::after:wa-schwappt-unten/g, '::after:scale').replace(/:wa-schwappt-boden/g, ':translate').split(/\s+\|\s+|\s\s+/).map((v) => v.trim()).filter(Boolean))].sort().join('  '); return set(ref) === set(neu); };
 
 /* ------------------------------------------------------------------ pictures */
 async function pair(name, open, steps) {                           // open(look) -> handle; steps = [[label, async (h) => {}], ...]: one screenshot after each step
@@ -94,7 +109,8 @@ const PAGE_LIB = `(() => {
       for (const el of els) { if (el.closest && el.closest('head')) continue; const k = key(el) || 'html';
         for (const ps of PSEUDO) { if (ps === '::placeholder' && !/^(input|textarea)$/.test(el.localName)) continue; const o = one(el, ps, custom); if (ps && ps !== '::placeholder' && (o.content === 'none' || o.content === 'normal')) continue; r[k + '|' + ps + '|' + (el.className && el.className.baseVal === undefined ? String(el.className).trim().replace(/\\s+/g, '.') : '')] = hash(JSON.stringify(o)); } }
       return r; },
-    get(custom, k) { const [p, ps] = k.split('|'); let el = document.documentElement; if (p !== 'html') for (const part of p.split('>')) { el = el.children[+part.split(':')[1]]; if (!el) return null; } return one(el, ps, custom); },
+    get(custom, k) { window.dispatchEvent(new Event('scroll'));   /* (awake, as in all(): the two pages are asked one after the other, one of them may have fallen asleep meanwhile) */
+      const [p, ps] = k.split('|'); let el = document.documentElement; if (p !== 'html') for (const part of p.split('>')) { el = el.children[+part.split(':')[1]]; if (!el) return null; } return one(el, ps, custom); },
     near(el) { const r = [el, ...el.querySelectorAll('*')]; for (let e = el.parentElement; e; e = e.parentElement) r.push(e); return r; },
   };
 })()`;
@@ -187,7 +203,7 @@ async function filme() {
     if (!only(`film-${ton}`)) continue;
     const r = []; for (const [i, look] of [a.alt, a.neu].entries()) r.push(await film(s, `${out}/film-${ton}-${i ? 'neu' : 'alt'}`, { look, ton, fest: true, strips: false }));
     for (const name of STRIPS) {
-      const same = r[0].found[name] === r[1].found[name]; const per = []; let worst = 0;
+      const same = r[0].found[name] === r[1].found[name] || sameMotion(r[0].found[name], r[1].found[name]); const per = []; let worst = 0;
       for (let i = 0; i < r[0].frames[name].length; i++) {
         const pic = `${out}/film-${ton}-${name}-${i}-diff.png`;
         const d = await diff(r[0].frames[name][i].file, r[1].frames[name][i].file, [...r[0].boxes[name][i], ...r[1].boxes[name][i]], pic); if (!d.outside) fs.rmSync(pic, { force: true });

@@ -3,8 +3,9 @@
 //   node scripts/wasser/messen.mjs ruhe [--ton klar] [--scene start] [--engine chromium|webkit] [--look vorlage|<folder>]
 //       ALIVE BUT CALM (harness page, phone view @2x): three stills at rest - now, one second later, four seconds later.
 //       Per surface (the cards, the tab bar; the drop canvases are left out): how many pixels changed, how many by 4 of 255
-//       or more, the mean change and the largest. And the glyph pixels of five kinds of text (painted magenta once to find
-//       them): text must not change at all.
+//       or more, the mean change and the largest. And the glyph pixels of six kinds of text (painted magenta once to find
+//       them): text must never change by 4 or more. (It does change by 1 to 3 of 255 where its ink is see-through or a
+//       light passes under it - with a mask of ALL text about 3 % of the glyph pixels within a second; nothing the eye sees.)
 //
 //   node scripts/wasser/messen.mjs takt [--seite app|mobil] [--hash '#/start'] [--scale 3] [--engine chromium|webkit] [--ton klar] [--look vorlage|ohne] [--css '<rules>'] [--mal 1]
 //       THE PACE OF THE PAGE: frames a second the page gets, COUPLED to the compositor (a 2 px layer outside every sheet is

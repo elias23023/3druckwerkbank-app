@@ -4,7 +4,8 @@
 //
 //   node scripts/wasser/kontrast.mjs [--look vorlage|<folder>] [--toene dunkel,klar] [--engine chromium|webkit] [--szenen start,wetter,innen] [--app] [--out <dir>]
 //
-//   without --app   the harness page: titles, counts, rows, number tiles, pills, the ghost button and the tabs, per scene
+//   without --app   the harness page: titles, counts, rows, number tiles, pills, the ghost button, the tabs and the labels
+//                   on drops (on a card: short, small, long, round, red, amber; and free over the scene), per scene
 //                   (all eight: --szenen start,heute,projekte,material,druck,wetter,archiv,innen)
 //   --app           the real app as well: sheets, fields, placeholders, options, tabs, search, toast (needs npm run preview)
 // Exit code 1 when a median falls below the floor. --out keeps the small pictures that were measured.
@@ -45,6 +46,9 @@ for (const ton of a.toene.split(',')) {
     await probe(p, col, 'Zeile: Titel', card(0).locator('.m-row b')); await probe(p, col, 'Zeile: gedämpft', card(0).locator('.m-row .muted')); await probe(p, col, 'Zahl-Kachel', card(1).locator('.m-stat b')); await probe(p, col, 'Kachel: Beschriftung', card(1).locator('.m-stat span'));
     await probe(p, col, 'Etikett gewählt', card(0).locator('.pill').nth(0)); await probe(p, col, 'Etikett grün', card(0).locator('.pill').nth(1)); await probe(p, col, 'Geist-Knopf', card(0).locator('.btn--ghost'));
     await probe(p, col, 'Reiter', p.locator('.m-tabs button span').nth(1)); await probe(p, col, 'Reiter aktiv', p.locator('.m-tabs button.on span'));
+    // labels on drops (the water under them is the frozen drop; a living drop moves these values by about 0.2)
+    await probe(p, col, 'Tropfen auf Karte', card(0).locator('.row .btn:not(.btn--primary):not(.btn--sm)')); await probe(p, col, 'Tropfen klein', card(0).locator('.btn--sm:not(.btn--ghost)')); await probe(p, col, 'Tropfen lang', card(1).locator('.row .btn:not(.btn--danger)'));
+    await probe(p, col, 'Tropfen rund (Titel)', card(0).locator('h3 .btn--icon')); await probe(p, col, 'Tropfen rot', card(1).locator('.btn--danger')); await probe(p, col, 'Tropfen bernstein', card(0).locator('.btn--primary')); await probe(p, col, 'Tropfen frei', p.locator('.m-main > .frei .btn:not(.btn--primary):not(.btn--icon)'));
     await h.close();
   }
   if (a.app) {

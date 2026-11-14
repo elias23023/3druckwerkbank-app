@@ -51,7 +51,7 @@ export async function film(s, out, { look = 'vorlage', ton = '', reduced = false
   }
   if (on('tab')) {
     begin('tab'); await app.go('#/start', 2000); await freeze(); await shot('vorher');   // (2 s: the light of the cards of a new screen has swung into place, --wa-t-swing)
-    await tapNow(p.locator('.m-tabs button').nth(2)); await grab();
+    await tapNow(p.locator('.m-tabs button').nth(2)); await p.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r))))); await grab();   // (three frames: the light of the new cards is let go two frames after they appear, and its swing is a transition - "Schwappen")
     for (const t of [80, 200, 350, 550, 1000]) { await seek(t); await shot(`${t} ms`); }
     await finish();
     const tb = await p.locator('.m-tabs').boundingBox(); const c0 = await p.locator('.m-main > .glass.m-card').first().boundingBox();

@@ -1,6 +1,6 @@
 # Wasser-Look: die Vorlage
 
-Stand 13.11. Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann.
+Stand 14.11. Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann.
 **Nichts hier ist in die App eingebaut**: Build und Website laden diese Dateien nicht, `src/`, `public/`, `server/`
 sind unverändert. Die Vorlage wird von außen dazugeladen (Vorschauseite) oder in die laufende App eingespielt (Werkzeuge).
 
@@ -23,6 +23,9 @@ Die Werkzeuge: `scripts/wasser/`. Bilder der mobilen Vorlage: `docs/wasser-look/
 - `bausteine`: jeder Baustein auf fremden Elementen, nur über seine neutrale Klasse (`.wa-…`)
 - `film-tab`, `film-druck`, `film-bogen`: Bewegung als Bildstreifen (Reiterwechsel, Knopfdruck mit Ring, Bogen steigt)
 - `mobil.mp4`: 25 Sekunden aus der echten App (auf der Arbeitsmaschine aufgenommen, daher etwas ruckelig)
+- `leben-vergleich.mp4` und `leben-vergleich.png`: **Wie viel Leben?** Zwei Handys nebeneinander, links „Leben 1 (jetzt)“,
+  rechts „Leben 1,5“ – 6 s Ruhe auf Start, Reiter „Heute“, Liste gerollt und angehalten, 4 s Ruhe. Zum Entscheiden,
+  ob das Wasser in Ruhe so bleiben soll (ein einziger Wert: `--wa-leben` in `kern.css`)
 Die früheren Zwischenstände bleiben unter `docs/wasser-look/entwurf/` (Sicherung; `entwurf/nachgebessert` ist der
 freigegebene Stand, mit dem die Vorlage verglichen wird).
 
@@ -59,14 +62,15 @@ App** zeigen die Werkzeuge (sie spielen ihn in die gebaute App ein, ohne sie zu 
 npm run build && npm run preview                 # die App unter http://localhost:4173 (in einem zweiten Fenster laufen lassen)
 node scripts/wasser/bild.mjs /tmp/wasser-bilder  # Standbilder: acht Szenen, Nahaufnahmen, echte App, beide Töne
 node scripts/wasser/film.mjs /tmp/wasser-film    # Bewegung als Bildstreifen (Reiterwechsel, Druck, Scrollen, Bogen, Haken)
-node scripts/wasser/clip.mjs /tmp/wasser.mp4     # kurzer Film aus der echten App
+node scripts/wasser/clip.mjs /tmp/wasser.mp4     # kurzer Film aus der echten App (mit --cast: scharf genug, um weiches Licht zu beurteilen)
+node scripts/wasser/leben.mjs /tmp/leben --werte 1,1.5   # zwei Werte von „Leben“ nebeneinander: Film und Bildstreifen
 ```
 
 ## Prüfen (nach jeder Änderung an der Vorlage)
 
 ```
 node scripts/wasser/vergleich.mjs     # Ist es noch der freigegebene Look? Bildpunkt für Bildpunkt und Stil für Stil
-node scripts/wasser/pruefen.mjs --app # Funktioniert alles? Tropfen, Ring, Markierung, Bausteine, Ruhe, Start/Stopp
+node scripts/wasser/pruefen.mjs --app # Funktioniert alles? Tropfen, Ring, Markierung, Bausteine, Ruhe, Start/Stopp, Zug, Töne
 node scripts/wasser/kontrast.mjs --app  # Ist die Schrift lesbar? (Kontrast in beiden Tönen)
 node scripts/wasser/messen.mjs ruhe   # Lebt es in Ruhe, und bleibt es ruhig?
 ```
