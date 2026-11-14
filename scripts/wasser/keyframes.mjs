@@ -1,6 +1,7 @@
 // Prints the keyframes of the loops at rest (docs/wasser-look/vorlage/kern.css, "Leben in Ruhe" and "Markierung").
 // Eight equal intervals per loop: with the gait steps(n) a loop of n seconds is drawn eight times a second. The values
 // are samples of slow sine waves. Change the numbers here, paste the output into kern.css.     node scripts/wasser/keyframes.mjs
+if (process.argv.length > 2) { console.error(`!! keyframes.mjs takes no options and no words: ${process.argv.slice(2).join(' ')}`); process.exit(2); }
 const S = (t, ph = 0) => Math.sin(2 * Math.PI * (t + ph));
 const f = (v, d = 3) => +v.toFixed(d);
 const there = (t) => (1 - Math.cos(2 * Math.PI * t)) / 2;                    // there and back, slow at both ends
