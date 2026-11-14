@@ -12,8 +12,8 @@
 //   --look   which look (head of lib.mjs). Default auto: the app shows the look it has BUILT IN; the harness page shows the
 //            template. A folder: that copy of the template, on the harness page and in the app (there in place of the built-in
 //            one). ohne: no look at all.
-//   --zeit   the app's clock stands still there (morgen | tag | abend | nacht, or an ISO time) and it gets no weather: two runs
-//            show the same screens. Without it the pictures show the real hour.
+//   --zeit   the app's clock stands still there (morgen | tag | abend | nacht, or an ISO time) and its weather is a made-up clear
+//            day: two runs show the same screens. Without it the pictures show the real hour and the real weather service.
 // Look at the pictures themselves; a contact sheet only finds them.
 import { session, strip, args, abs, mkdir, SZENEN, lookArg, sayLook, fail, TOENE, ENGINES, ZEITEN } from './lib.mjs';
 const WAS = ['szenen', 'nah', 'alles', 'app'];
@@ -32,7 +32,7 @@ for (const ton of a.toene.split(',')) {
   if (!was || was === 'nah') for (const scene of ['start', 'wetter', 'innen']) { const h = await s.harness({ look, ton, scene, nah: true, reduced, query: a.query }); await h.page.screenshot({ path: `${out}/${ton}-nah-${scene}.png` }); say(h, 'nah ' + scene); await h.close(); }
   if (!was || was === 'alles') { const h = await s.harness({ look, ton, reduced, query: 'alles=1' + (a.query ? '&' + a.query : ''), settle: 2200 }); await h.page.screenshot({ path: `${out}/${ton}-alles.png` }); say(h, 'alles'); await h.close(); }
   if (!was || was === 'app') {
-    const h = await s.app({ look: appLook, ton, reduced, zeit: a.zeit || null }); const frames = []; sayLook(h);
+    const h = await s.app({ look: appLook, ton, reduced, zeit: a.zeit || null, wetter: a.zeit ? 'klar' : null }); const frames = []; sayLook(h);
     const step = async (name, fn) => { try { await fn(); const file = `${out}/${ton}-app-${name}.png`; await h.shot(file); frames.push({ file, label: name }); } catch (e) { console.log('!!', name, String(e).split('\n')[0].slice(0, 140)); } };
     await step('start', () => h.go('#/start')); await step('heute', () => h.go('#/heute')); await step('projekte', () => h.go('#/projekte')); await step('projekt', () => h.project());
     await step('material', () => h.go('#/material')); await step('mehr', () => h.go('#/druck'));

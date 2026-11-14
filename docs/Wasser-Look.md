@@ -128,7 +128,7 @@ node scripts/wasser/desktop.mjs film screenshots/wasser/desktop-film     # Deskt
 node scripts/wasser/desktop.mjs clip screenshots/wasser/desktop.mp4      # Desktop: Rundgang als Film
 ```
 
-Schalter der Desktop-Bilder: `--format 1920` (sonst 2000 × 993), `--ton klar`, `--zeit tag` (sonst Nacht), `--nur heute,wetter`, `--look ohne` (die App ohne Look). Die Bilder der App am Handy zeigen ohne `--zeit` die wirkliche Uhrzeit; mit `--zeit tag` oder `--zeit nacht` steht die Uhr, und zwei Läufe zeigen dasselbe.
+Schalter der Desktop-Bilder: `--format 1920` (sonst 2000 × 993), `--ton klar`, `--zeit tag` (sonst Nacht), `--nur heute,wetter`, `--look ohne` (die App ohne Look). Die Bilder der App am Handy zeigen ohne `--zeit` die wirkliche Uhrzeit und das wirkliche Wetter; mit `--zeit tag` oder `--zeit nacht` steht die Uhr, das Wetter ist ein erfundener klarer Tag, und zwei Läufe zeigen dasselbe.
 Jedes Werkzeug sagt in seiner ersten Zeile, welchen Look es zeigt („Look: built in …“). Bewegung nie aus einem Standbild beurteilen: dafür sind die Bildstreifen da.
 
 Wer kein Browserfenster hat, sieht den Look über diese Bilder an. Ein einzelnes Bild, in Sekunden: `node scripts/wasser/stelle.mjs screenshots/wasser/heute.png --welt heute` (Desktop; mit `--mobil` das Handy, mit `--ton klar` der helle Modus; mehr in 4.7). Eine beliebige Adresse – auch eine von `zeigen` oder `mobil.html` – fotografiert `node scripts/shot.mjs '<Adresse>' <bild.png> 390 844`; bei schmalen Seiten wartet es 15 s und meldet „scene not ready“, das Bild stimmt trotzdem.
