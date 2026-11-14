@@ -105,6 +105,8 @@ Die Werkzeuge spielen die Vorlage in die gebaute App ein. Dafür muss die Vorsch
 npm run build && npm run preview
 ```
 
+Läuft sie schon (Port 4173 ist belegt) und ist `dist/` aktuell, ist nichts zu tun.
+
 ```
 node scripts/wasser/bild.mjs screenshots/wasser/mobil                    # Handy: acht Szenen, Nahaufnahmen, echte App, beide Töne
 node scripts/wasser/film.mjs screenshots/wasser/mobil-film               # Handy: Bewegung als Bildstreifen
@@ -145,7 +147,7 @@ Fünf Regeln für Weg B:
 3. **Eine Klasse, die beide Hüllen haben, gilt sonst für beide.** Nur für eine: mit einer Klasse dieser Hülle in `:where()` eingrenzen, z. B. `:where(.topbar) .brand`.
 4. **Optionen:** `MOBIL` gilt auch am Desktop – außer bei den acht Optionen, die `DESKTOP` (gleich darunter) ersetzt: `scene`, `shade`, `drops`, `ringOn`, `ringFrom`, `bar`, `light`, `scrollers`. Kommt das Element in beiden Hüllen vor, dort in beide eintragen.
 5. **Maße und Platz bleiben Sache der App** (Innenabstand, Breite, Höhe, `position`). Was eine Hülle an einem Baustein ändert, steht in `mobil.css` oder `desktop.css` – mit mindestens dem Gewicht der Liste (siehe 4.4).
-   Fehlt einem Element der App, was sein Baustein „braucht“ (meist der Innenabstand): Die Hülle darf es dort geben. Dann rückt sein Inhalt – das ist eine sichtbare Änderung am Platz und gehört dem Besitzer als Bild vorher/nachher gezeigt. Nie an Panels, Titeln, Kopfzeile oder Inseln: Deren Platz bleibt wie in der App (`desktop.mjs pruefen`, „nichts ist verrückt“). Die Vorlage selbst gleicht bisher nur aus (1 px mehr Innenabstand für den Rand, der wegfällt).
+   Fehlt einem Element der App, was sein Baustein „braucht“ (meist der Innenabstand): Die Hülle darf es dort geben. Dann rückt sein Inhalt – das ist eine sichtbare Änderung am Platz und gehört dem Besitzer als Bild vorher/nachher gezeigt. Nie an Panels, Titeln, Kopfzeile oder Inseln: Deren Platz bleibt wie in der App (`desktop.mjs pruefen`, „nichts ist verrückt“). Die Vorlage selbst gleicht bisher nur aus (etwa 1 px mehr Innenabstand, wo ein Rand von 1 px wegfällt).
 
 Nach jedem Rezept:
 
@@ -439,7 +441,9 @@ grep -n 'm-ico' docs/wasser-look/vorlage/*.css docs/wasser-look/vorlage/wasser.j
 5. **Regeln der Hülle für dieses Element** (`mobil.css`, `desktop.css`): Passt ihr Gewicht zur neuen Liste (4.4)? Werden sie noch gebraucht?
 6. **Das Register** im Kopf von `mobil.css` und `desktop.css` („For orientation“) nachziehen. Es ist nur Text, aber der nächste Leser glaubt ihm.
 7. **Ablesen und ansehen** (4.7, mit `--css` und `--nah`). Was der alte Baustein von der App abgestellt hat, stellt der neue vielleicht nicht ab – dann stellt es die Hülle ab. Trägt das Element in der App die Klasse `glass`: Fallstrick 16.
-8. Die drei Befehle aus 4.1. `vergleich.mjs bilder` meldet jetzt gewollt Abweichungen – aber nur dort, wo das Element steht. `pruefen.mjs` zählt lebende Tropfen an festen Stellen: Wer einen wegnimmt, sieht dort gewollt eine andere Zahl oder einen Ausfall.
+8. Die drei Befehle aus 4.1. Sie melden jetzt, was gewollt ist – und sonst nichts:
+   - `vergleich.mjs bilder` meldet `DIFF`. Außerhalb der Tropfen (rot in den Bildern `…-diff.png`) darf nur die Stelle des Elements abweichen. Ändert sich die Zahl der lebenden Tropfen, weicht auch das Innere aller anderen Tropfen ab (gelb): Jeder Tropfen bekommt sein Wasser nach seiner Nummer.
+   - `pruefen.mjs` zählt lebende Tropfen an festen Stellen. Wer einen wegnimmt, sieht dort gewollt eine andere Zahl oder einen Ausfall.
 
 Ausprobiert mit den runden Knöpfen der Kopfzeile am Handy (`.m-ico`), von Tropfen (Stufe 3) zu Perle (Stufe 1): sechs Zeilen in `kern.css`, eine Option in `wasser.js`, eine Zeile im Register. Punkt 7 zeigte den Rand der App wieder (`border: 1px solid …`): Die Knöpfe tragen auch `.glass`, und dessen Rand und Weichzeichner hatte nur der Tropfen abgestellt. Abhilfe am Ende von `mobil.css`:
 
@@ -739,7 +743,7 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand `c7e8299` (Handy) un
 
 - **Dateien:** `src/App.tsx` (drei Zeilen im Effekt fürs Thema, siehe 8.2).
 - **Heute:** `src/App.tsx` setzt `data-theme` und erzwingt am Handy „dunkel“. Das bleibt. Dazu wählt die Einstellung „Erscheinungsbild“ am Handy den Ton.
-- **Prüfen:** Im schmalen Fenster die Einstellungen öffnen und „Erscheinungsbild“ umschalten: Hell → `<html data-wa-ton="klar">`, Dunkel → kein Attribut, Automatisch → nach der Tageszeit. `data-theme` bleibt „dunkel“ (das prüft auch `verify.mjs`: „Mobile: dark theme forced“). So nachgeprüft an `c7e8299` und `e6eb9ef`.
+- **Prüfen:** Im schmalen Fenster die Einstellungen öffnen und „Erscheinungsbild“ umschalten: Hell → `<html data-wa-ton="klar">`, Dunkel → kein Attribut, Automatisch → nach der Tageszeit. `data-theme` bleibt „dunkel“ (das prüft auch `verify.mjs`: „Mobile: dark theme forced“). So nachgeprüft an `c7e8299` und `e6eb9ef`. Ohne Browserfenster: `node scripts/wasser/stelle.mjs screenshots/wasser/ton.png --mobil --look ohne --bogen einstellungen --klick Hell --css html` druckt die Attribute des `<html>`; dasselbe mit `--klick Dunkel`.
 - **Darf nicht passieren:** `data-theme="hell"` zusammen mit dem Look (dunkle Schrift auf Wasser).
 
 ### Schritt 4 – Baustelle, echtes Handy, live (erledigt fürs Handy)
@@ -939,7 +943,7 @@ Ist alles eingebaut und abgenommen, kann `src/wasser/` die einzige Quelle werden
 | `node scripts/wasser/pruefen.mjs --regler` | der Regler der Tropfen (Herunterschalten bei Überlast) | 4 min |
 | `node scripts/wasser/stelle.mjs <bild.png> …` | eine Stelle: ein Bild und ihre berechneten Werte (4.7) | 6 bis 11 s |
 
-`vergleich.mjs` endet mit Fehler, wenn etwas abweicht, das nicht auf seiner Liste gewollter Abweichungen steht. Die Maschine dabei sonst ruhig halten: Unter Last meldete der Teil `film` einmal eine Abweichung („klar“, Reiterwechsel), die im Wiederholungslauf (`node scripts/wasser/vergleich.mjs film --nur film-klar`) verschwand.
+`vergleich.mjs` endet mit Fehler, wenn etwas abweicht, das nicht auf seiner Liste gewollter Abweichungen steht. Die Maschine bei allen Prüfungen sonst ruhig halten, nie zwei zugleich: Unter Last meldete der Teil `film` einmal eine Abweichung („klar“, Reiterwechsel), die im Wiederholungslauf (`node scripts/wasser/vergleich.mjs film --nur film-klar`) verschwand, und `desktop.mjs pruefen` einmal „Dock: die Perle steht auf der aktiven Welt“ mit 3,3 px (allein wiederholt: 0,1 px).
 
 Bilder und Filme dauern auf der Arbeitsmaschine: `bild.mjs` 2 min, `film.mjs` 1 min, `clip.mjs` 0,5 min, `leben.mjs` 1 min, `desktop.mjs bild … --alles` 2 min, eine einzelne Welt 7 s, `desktop.mjs film` 1 min, `desktop.mjs clip` 3 min.
 
