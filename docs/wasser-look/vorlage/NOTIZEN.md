@@ -780,6 +780,17 @@ with pretended costs or forced levels, never by a machine that really got slow a
 **The app is untouched:** `npm run build` passes; `git status` shows only `docs/wasser-look/vorlage`,
 `docs/wasser-look/bilder/mobil` and `scripts/wasser`.
 
+**After a newcomer's test of the guide (14.11., midday).** A developer who knew nothing of the project followed
+`docs/Wasser-Look.md` and got stuck in 19 places; the guide's section 11 lists what was changed for each. In the
+template itself only the head comment of `wasser.js` changed (the React recipe there was out of date and now points
+to the guide). In the tools: `pruefen.mjs`, `vergleich.mjs` and `desktop.mjs zeigen` take `--look <folder>`
+(`pruefen.mjs --app --look` had silently checked the template instead of the copy); `desktop.mjs pruefen` stops the
+app's own bobbing hint before it presses (the guide's step 5 c); `stelle.mjs` is new; `uebernehmen.mjs` is on this
+branch too, byte for byte the one on `main`. Checked afterwards, Chromium: `vergleich.mjs bilder --alt git:a81ee77`
+(the commit before) - 32 picture pairs, no pixel differs, inside or outside the drops; `pruefen.mjs --app` 60 of 60;
+`desktop.mjs pruefen` 24 of 24; the worlds "Heute" (dunkel, night, 2000 x 993) and "Wetter" (klar, day, 1920 x 1080)
+looked at.
+
 ---
 
 ## 10. Building it into the app (not done; the owner decides when)

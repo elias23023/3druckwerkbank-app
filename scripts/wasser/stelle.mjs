@@ -11,8 +11,9 @@
 //   --welt    start heute projekte druck material wetter archiv, innen (the inner world of a project), or a hash ('#/material')
 //   --bogen   a sheet the tools can open by name. Desktop: einstellungen konto hinweise bereich projekt projektBearbeiten
 //             geraet geraetForm geraete rolle druck. Phone: konto einstellungen hinweise suche projekt rolle neuerolle geraet
-//   --klick   then click: the text of a button or link (the last one in the page that carries it), or a CSS selector that
-//             starts with . # or [ (the first match). Several, one after the other: 'Einstellungen >> Über diesen Entwurf'
+//   --klick   then click: the text of a button or link, or the label of an icon button (its aria-label) - a part of it is
+//             enough, the last one in the page that carries it is taken; or a CSS selector that starts with . # or [ (the
+//             first match). Several, one after the other: 'Einstellungen >> Über diesen Entwurf'
 //   --css     what to read. Per element: tag, classes and data attributes, the shell it lies in (data-wasser), box, background, border (its
 //             top edge), shadow, backdrop-filter, radius, padding, position, colour, and whether a live drop is drawn on it.
 //             (Chromium does not know -webkit-backdrop-filter: the blur the app's own .glass asks for in the BUILT app shows
@@ -34,7 +35,7 @@ try {
   if (a.welt === 'innen') await d.project(); else if (a.welt) await d.go(a.welt.startsWith('#') ? a.welt : '#/' + a.welt);
   if (a.bogen) await d.sheet(a.bogen);
   for (const k of String(a.klick || '').split('>>').map((x) => x.trim()).filter(Boolean)) {
-    await (/^[.#[]/.test(k) ? p.locator(k).first() : p.locator('button, a, [role="button"]', { hasText: k }).last()).click({ timeout: 5000 }); await p.waitForTimeout(900);
+    await (/^[.#[]/.test(k) ? p.locator(k).first() : p.getByRole('button', { name: k }).or(p.getByRole('link', { name: k })).last()).click({ timeout: 5000 }); await p.waitForTimeout(900);
   }
   let clip;
   if (a.css) {
@@ -46,6 +47,6 @@ try {
   }
   if (!a.mobil) await d.park(); await p.waitForTimeout(750); await p.screenshot({ path: out, ...(clip && clip.width > 0 && clip.height > 0 ? { clip } : {}) });
   const errors = d.errors.filter((x) => !/open-meteo|Failed to load resource|ERR_|net::/i.test(x));
-  console.log(`${out}   (${a.mobil ? 'Handy' : 'Desktop ' + a.format}, Ton ${a.ton || 'dunkel'}, Look ${a.look})${errors.length ? '\npage errors: ' + errors.slice(0, 3).join(' | ') : ''}`);
+  console.log(`${out}   (${a.mobil ? 'Handy' : 'Desktop ' + a.format}, ${look ? `Look ${a.look}, Ton ${a.ton || 'dunkel'}` : 'ohne Einspielen: die App, wie sie gebaut ist'})${errors.length ? '\npage errors: ' + errors.slice(0, 3).join(' | ') : ''}`);
 } catch (e) { bad = 1; console.log('!!', String(e).split('\n').slice(0, 3).join(' ')); }
 await d.close(); if (s) await s.close(); process.exit(bad);

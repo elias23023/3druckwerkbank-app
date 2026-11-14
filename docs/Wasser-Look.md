@@ -1,6 +1,6 @@
 # Wasser-Look: Anleitung
 
-Stand 14.11., 11:10 Uhr. Für alle, die den Wasser-Look ansehen, anwenden oder weiter in die App einbauen.
+Stand 14.11., 12:30 Uhr. Für alle, die den Wasser-Look ansehen, anwenden oder weiter in die App einbauen.
 **Am Handy ist der Look eingebaut und live** (seit 14.11.; Commit `c7e8299`, seither auf `main`). **Der Desktop ist in Arbeit** (Branch `welt/wasser-desktop`) und bleibt unverändert, bis der Besitzer ihn an seinem Bildschirm gesehen hat. Was getan ist und was als Nächstes kommt: Abschnitt 8. Der Stand bewegt sich – 8.1 sagt, wie man ihn nachsieht.
 
 | Was | Wo |
@@ -119,7 +119,7 @@ node scripts/wasser/desktop.mjs clip screenshots/wasser/desktop.mp4      # Deskt
 Schalter der Desktop-Bilder: `--format 1920` (sonst 2000 × 993), `--ton klar`, `--zeit tag` (sonst Nacht), `--nur heute,wetter`, `--look ohne` (die App wie heute).
 Bewegung nie aus einem Standbild beurteilen: dafür sind die Bildstreifen da.
 
-Wer kein Browserfenster hat, sieht die Vorlagen über diese Bilder an. Ein einzelnes Bild, in Sekunden: `node scripts/wasser/stelle.mjs screenshots/wasser/heute.png --welt heute` (Desktop; mit `--mobil` das Handy, mit `--ton klar` der helle Modus; mehr in 4.7).
+Wer kein Browserfenster hat, sieht die Vorlagen über diese Bilder an. Ein einzelnes Bild, in Sekunden: `node scripts/wasser/stelle.mjs screenshots/wasser/heute.png --welt heute` (Desktop; mit `--mobil` das Handy, mit `--ton klar` der helle Modus; mehr in 4.7). Eine beliebige Adresse – auch eine von `zeigen` oder `mobil.html` – fotografiert `node scripts/shot.mjs '<Adresse>' <bild.png> 390 844`; bei schmalen Seiten wartet es 15 s und meldet „scene not ready“, das Bild stimmt trotzdem.
 
 ---
 
@@ -442,7 +442,7 @@ grep -n 'm-ico' docs/wasser-look/vorlage/*.css docs/wasser-look/vorlage/wasser.j
 6. **Das Register** im Kopf von `mobil.css` und `desktop.css` („For orientation“) nachziehen. Es ist nur Text, aber der nächste Leser glaubt ihm.
 7. **Ablesen und ansehen** (4.7, mit `--css` und `--nah`). Was der alte Baustein von der App abgestellt hat, stellt der neue vielleicht nicht ab – dann stellt es die Hülle ab. Trägt das Element in der App die Klasse `glass`: Fallstrick 16.
 8. Die drei Befehle aus 4.1. Sie melden jetzt, was gewollt ist – und sonst nichts:
-   - `vergleich.mjs bilder` meldet `DIFF`. Außerhalb der Tropfen (rot in den Bildern `…-diff.png`) darf nur die Stelle des Elements abweichen. Ändert sich die Zahl der lebenden Tropfen, weicht auch das Innere aller anderen Tropfen ab (gelb): Jeder Tropfen bekommt sein Wasser nach seiner Nummer.
+   - `vergleich.mjs bilder` meldet `DIFF`. Außerhalb der Tropfen (rot in den Bildern `…-diff.png`) darf nur die Stelle des Elements abweichen. Ändert sich die Zahl der lebenden Tropfen, weicht auch das Innere aller anderen Tropfen ab (gelb), dazu einige Hundert Bildpunkte an ihrem Rand um 1 bis 2 von 255: Jeder Tropfen bekommt sein Wasser nach seiner Nummer.
    - `pruefen.mjs` zählt lebende Tropfen an festen Stellen. Wer einen wegnimmt, sieht dort gewollt eine andere Zahl oder einen Ausfall.
 
 Ausprobiert mit den runden Knöpfen der Kopfzeile am Handy (`.m-ico`), von Tropfen (Stufe 3) zu Perle (Stufe 1): sechs Zeilen in `kern.css`, eine Option in `wasser.js`, eine Zeile im Register. Punkt 7 zeigte den Rand der App wieder (`border: 1px solid …`): Die Knöpfe tragen auch `.glass`, und dessen Rand und Weichzeichner hatte nur der Tropfen abgestellt. Abhilfe am Ende von `mobil.css`:
@@ -450,6 +450,8 @@ Ausprobiert mit den runden Knöpfen der Kopfzeile am Handy (`.m-ico`), von Tropf
 ```css
 [data-wasser="mobil"] .glass.m-ico { border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
 ```
+
+Punkt 8 danach: `vergleich.mjs bilder` 32-mal `DIFF`, rot nur an den Knöpfen der Kopfzeile; `pruefen.mjs --app` 59 von 60 (Prüfung 9: Der Startbildschirm hat ohne diese Knöpfe keinen lebenden Tropfen mehr); `desktop.mjs pruefen` 24 von 24.
 
 ---
 
@@ -724,6 +726,7 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand `c7e8299` (Handy) un
   npm run build && npx vite preview --port 4175 --strictPort
   ```
 
+  Meldet vite „Port 4175 is already in use“: einen anderen Port nehmen. Sonst prüfen die Werkzeuge, was immer dort antwortet.
   Jeder Befehl dieser Anleitung läuft in der Kopie wie im Projekt. Nur die Adresse der App ist eine andere: `WASSER_APP=http://localhost:4175` vor jedes Werkzeug aus `scripts/wasser/`, und `node scripts/verify.mjs http://localhost:4175`. Die Kopie hat kein Git: statt `git status` ein `diff -r`, statt `--alt git:HEAD` der Ordner der Vorlage im Projekt (`--alt <Projekt>/docs/wasser-look/vorlage`).
 
 ### Schritt 1 – Die Dateien nach `src/wasser/` bringen (erledigt)
@@ -1129,5 +1132,22 @@ Aus dieser Probeseite stammen die Bilder in `docs/wasser-look/bilder/anleitung/`
 - Abschnitt 7 und 8: `leben.mjs … --werte 1,1.5`; `keyframes.mjs`; `uebernehmen.mjs` mit `git status --short src/wasser`; der Befehl für die Reihenfolge im CSS; `verify.mjs`; `bild.mjs … app --look ohne` (auch mit `--toene dunkel`); `desktop.mjs pruefen --format 1920 --ton klar`; `desktop.mjs bild … --nur heute` mit `--zeit tag`, `--ton klar`, `--format 1920`, und `--nur innen`; `film.mjs … --nur tab`; `clip.mjs … --cast`; `kontrast.mjs --toene klar --szenen …`; `desktop.mjs kontrast --toene klar`; `bild.mjs … --toene klar`; `messen.mjs ruhe`; `messen.mjs takt`; `desktop.mjs takt`; `pruefen.mjs --regler`.
 - `node scripts/wasser/vergleich.mjs` (alles, 32 Minuten): keine Abweichung in Bildern, App und Stilen. Im Teil `film` eine Abweichung („klar“, Reiterwechsel), während andere Läufe die Maschine belasteten; allein wiederholt: keine.
 - `pruefen.mjs --app --engine webkit`: zehn Läufe, sechsmal 60 von 60, viermal fiel Prüfung 9 aus (Fallstrick 66).
+
+**Zweiter Probelauf: ein Neuling, nur mit dieser Anleitung (14.11., mittags).** Seine Aufgabe: beide Vorlagen öffnen; in Kopien einen Baustein auf ein Desktop-Element legen und ein Handy-Element auf eine andere Stufe setzen, in beiden Tönen; eine Farbe von „klar“ ändern und die Lesbarkeit messen; die Schritte 1 bis 3 trocken nachbauen. Etwa 25 Minuten, davon 10 Warten auf Werkzeuge. Abschnitt 3, die Regeln und Listen aus 4.1 bis 4.3 und „Eine Farbe sicher ändern“ gingen ohne Raten. An 19 Stellen musste er raten oder ein eigenes Skript schreiben. Jede ist behoben, und die neue Fassung ist wörtlich nachgegangen worden – in zwei Kopien des Projekts nach 8.3:
+
+| Wo er hing | Behoben | Nachgegangen |
+|---|---|---|
+| `uebernehmen.mjs` fehlte in diesem Branch; `wasser.ts` war nur zur Hälfte gedruckt; die Stellen in `Mobile.tsx` und `App.tsx` waren ungenau | Das Skript liegt jetzt auch hier (Zeichen für Zeichen das von `main`). 8.2 druckt die ganze Datei und die echten Zeilen. Der Kopf von `wasser.js` verweist dorthin statt auf eine veraltete Fassung | Die gedruckten Zeilen ergeben genau `Mobile.tsx` und `App.tsx` von `c7e8299`. Build; „Reihenfolge gut“, 16 und 16; `pruefen.mjs --app` 60 von 60; `verify.mjs` 65 von 69 (die vier: Open-Meteo „429“; die App ohne Look zur selben Zeit 64 von 69); „Hell“ setzt `data-wa-ton="klar"`, `data-theme` bleibt „dunkel“; der Desktop liegt außerhalb des Looks |
+| Kein Weg, eine Kopie zu bauen und zu zeigen | 8.3, „Probelauf in einer Kopie des Projekts“ | zweimal, wörtlich. Beim zweiten Mal war der gewählte Port belegt, und die Werkzeuge prüften einen fremden Stand – daher der Satz dazu |
+| `--look` galt nicht überall: `pruefen.mjs --app --look` prüfte still die Vorlage; `vergleich.mjs` und `zeigen` kannten es nicht; `?vorlage=` nur im Projekt; kein Weg über ein zusätzliches Stylesheet | Die drei Werkzeuge nehmen `--look`. 4.1 neu, Fallstrick 70 | Eine Kopie mit zwei Änderungen: alle drei Befehle, `zeigen --look` und `mobil.html?vorlage=` zeigen die Kopie |
+| Kein Rezept für eine andere Stufe; das Register im Kopf von `mobil.css` | 4.8 | `.m-ico` von Tropfen zu Perle, beide Töne; Ergebnis steht dort |
+| Ein Bogen, den die Werkzeuge nicht kennen; berechnete Werte und einzelne Bilder ohne Browserfenster | neues Werkzeug `stelle.mjs`, 4.7 | Desktop und Handy, beide Töne, Vorlage, Kopie und eingebauter Look |
+| Ein Element ohne eigene Klasse; ob ein Bogen in beiden Hüllen liegt; ob die Hülle einen Innenabstand geben darf | 4.6, Regel 5 in 4.1 | Die drei Abschnitte von „Über diesen Entwurf“ als Mulden: 3 Treffer am Desktop, 3 am Handy, 0 in den 11 und 7 Bögen, die die Werkzeuge beim Namen kennen |
+| Der Kontrast eines neuen Elements wurde nicht gemessen | Abschnitt 6, Punkt 5 | Zwei Proben-Zeilen in einer Kopie der Werkzeuge: Text der neuen Mulden 11,3 bis 18,2, ihr Titel 7,8 bis 10,0 |
+| `--wa-bead-*` gegen `--wa-perle-*`; die Stufe des schlichten Glases; „6 px“ und 23 von 24; `zeigen` und `dist/` | Abschnitte 6, 5 und 3; `desktop.mjs pruefen` hält den wippenden Hinweis selbst an (Schritt 5 c) | `desktop.mjs pruefen` 24 von 24, an der Vorlage und an der Kopie |
+
+Dabei neu gefunden: der zweite Absatz von Fallstrick 16, die Fallstricke 60 (der erste Vergleich gegen `git:HEAD` lief nach einem Zwischen-Commit gegen den eigenen Stand) und 70, und dass Prüfungen unter Last ausfallen (Tabelle „Alle Prüfungen“).
+An der Vorlage selbst geändert: nur der Kommentar im Kopf von `wasser.js`. Danach `vergleich.mjs bilder --alt git:a81ee77` (der Commit davor): 32 Bildpaare, kein abweichender Bildpunkt; `pruefen.mjs --app` 60 von 60; die Welten „Heute“ (dunkel, Nacht, 2000 × 993) und „Wetter“ (klar, Tag, 1920 × 1080) angesehen.
+Nicht wiederholt: der Lauf durch einen zweiten Neuling.
 
 **Nicht ausgeführt:** `npm run preview` selbst (der Port war von der laufenden Vorschau des Projekts belegt, gestartet mit demselben Befehl; die Kopien liefen unter anderen Ports mit `WASSER_APP`). `vergleich.mjs --alt git:HEAD` in voller Länge (nur der Teil `bilder`). Von Schritt 6 das, was „noch zu tun“ ist. Von Schritt 7 nur die Bildbefehle. Die Abhilfe aus Schritt 8. Die Schritte 11 bis 13 (von Schritt 11 nur die Klasse `wa-geht`). Nichts davon auf einem echten Gerät: Was dort gesehen wurde, hat der Besitzer gesehen (Entscheidung 11).

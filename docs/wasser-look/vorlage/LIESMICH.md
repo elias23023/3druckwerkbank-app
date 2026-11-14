@@ -207,6 +207,11 @@ vier mittlere Mängel gefunden (Tabelle in `NOTIZEN.md`, Abschnitt 11.4):
   Chromium): 64 Bildpaare mit 99 Millionen Bildpunkten – kein einziger weicht ab, auch nicht in den Tropfen; kein
   abweichender Stil; dieselbe Bewegung in 12 Bildstreifen.
 
+**Nach dem Probelauf eines Neulings (14.11., mittags):** An der Vorlage selbst hat sich nur ein Kommentar im Kopf von
+`wasser.js` geändert (32 Bildpaare der Handy-Vorlage ohne einen abweichenden Bildpunkt; zwei Desktop-Welten angesehen).
+Geändert sind die Anleitung und die Werkzeuge: `--look <Ordner>` gilt jetzt überall, `stelle.mjs` zeigt und liest eine
+einzelne Stelle, `uebernehmen.mjs` liegt auch in diesem Branch (`docs/Wasser-Look.md`, Abschnitt 11).
+
 **Auf echten Geräten:** Der Handy-Einbau lief am 14.11. auf der Baustelle am Handy des Besitzers – flüssig, bis auf
 eine kurze Wartezeit beim Reiterwechsel (`docs/Wasser-Look.md`, Abschnitt 8, Schritt 8). Einzeln durchgemessen ist dort
 nichts. **Auf einer echten Grafikkarte lief der Desktop noch nie** (die Arbeitsmaschine zeichnet den Desktop von heute
