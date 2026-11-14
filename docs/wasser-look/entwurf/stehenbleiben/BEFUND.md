@@ -39,7 +39,19 @@ Die Absicht dahinter ist richtig und bleibt: Hinter einem offenen Bogen ruht die
 ### Bewiesen
 Werkzeug `node scripts/wasser/bogen.mjs alles --app vorher=<feinschliff-basis>,nachher=<dieser Stand> --bild` (Nachfolger von `probe.mjs` hier). Handy 390 × 844 und Desktop 2000 × 993, je @2x, beide Töne, mit Bewegung und reduziert; vier Fälle: ein lebender Tropfen, der einen Bogen öffnet (Handy das Zahnrad, Desktop „Ergebnis buchen“ neben der Schublade), schlichtes Glas („verwalten“, nur Desktop – am Handy öffnet kein Knopf aus schlichtem Glas einen Bogen), eine Zeile, die Suche. Echter Zeiger: ein Finger 90 ms, die Maus 0,3 s darüber und 90 ms gedrückt. Die Leinwand des Tropfens wird in der Seite bei jedem Bild gelesen; die Bühne selbst (Inseln, Wolken) steht für die Bilder still, die Uhr der App auch.
 
-ERGEBNIS_BOGEN
+Ergebnis (14.11. abends, letzter Lauf nach allen Änderungen; 28 Fälle je Stand):
+
+| | vorher (`feinschliff-basis`) | nachher |
+|---|---|---|
+| Tropfen mit Bewegung: letzte Änderung nach dem ersten Bild mit dem Bogen | 0 ms – er steht sofort, mitten in der Antwort (die Bildstreifen zeigen die Ringe im Tropfen bis zum Schließen) | Handy 288–446 ms, Desktop 450–470 ms: Er klingt aus, dann steht er |
+| … ändert sich nach dem Erscheinen des Bogens überhaupt noch | nein (6 von 6 Fällen) | ja (6 von 6) |
+| `Wasser.info.settling` 600 ms nach dem Tippen | (gibt es nicht) | 0 |
+| Sprung beim Aufwachen (Änderung vom letzten Bild hinter dem Bogen zum ersten danach, in Schritten der Ruhe) | Tropfen 5,2–6,8 (Suche am Handy 0,6–0,7) | 0,1–1,3 |
+| reduzierte Bewegung: der Tropfen hinter dem Bogen gegen denselben Tropfen, Bogen ohne Tippen geöffnet | Handy gleich (der Finger ist weg, bevor der Bogen aufgeht); **Desktop anders** – bis 167/255, die Maus ruht auf ihm | überall Bildpunkt für Bildpunkt gleich |
+| schlichtes Glas, Zeile, Suche: eigene Übergänge nach 600 ms zu Ende, Bild steht (1,5 s = 2,5 s) | ja | ja |
+| nach dem Schließen lebt er wieder | ja | ja |
+
+Ohne Ausnahme bestanden: alle 28 Fälle „nachher“. Unterwegs gefunden und behoben: Punkt 3 oben (in zwei von fünf Läufen ruhte der Tropfen am Desktop in der Haltung „Maus darüber“). Was die Bildvergleiche hinnehmen: bis 6/255 (ein weichgezeichneter Bereich wurde einmal neu gerastert, über den ganzen Ausschnitt 4/255 heller).
 
 Bildstreifen (Ruhe, REF = derselbe Bogen ohne Tippen geöffnet, dann die Bilder nach dem Tippen mit ihrer echten Zeit, zuletzt nach dem Schließen): `vorher-nachher-handy.webp`, `vorher-nachher-desktop.webp`.
 

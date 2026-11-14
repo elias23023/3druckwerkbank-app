@@ -20,7 +20,7 @@ der Vorlage an seine Stelle. Stand und Fahrplan: `docs/Wasser-Look.md`, Abschnit
 | `kern.css` | Der Look selbst, für Handy und Desktop gleich: Schalter, die zwei Töne, alle Werte (`--wa-…`), die Bewegungssprache und die **Bausteine** (Tropfen, Becken, stilles Wasser, dichtes Wasser, Bogen, Mulde, Etikett, Feld, Wahl, Haken, Pegel, Perle, Ring, Markierung, Wasserlinie, Licht …). |
 | `mobil.css` | Was nur die mobile Ansicht braucht: Seitenabdunklung, Maße der Karten, Menüleiste, Bogen am unteren Rand. |
 | `desktop.css` | Was nur die Desktop-Ansicht braucht: flache Becken für die Panels, das Dock mit der fließenden Perle, die Schublade von rechts, Antwort auf den Mauszeiger. |
-| `wasser.js` | Das Skript: Wassertropfen (WebGL), Ring, fließende Markierung, Licht, Antwort aufs Scrollen, gemeinsames Ruhen. Zwei Befehle: `Wasser.start(optionen)` und `Wasser.stop()`; `Wasser.DESKTOP` sind die Angaben für den Desktop. |
+| `wasser.js` | Das Skript: Wassertropfen (WebGL), Ring, fließende Markierung, Licht, Antwort aufs Scrollen, gemeinsames Ruhen. Zwei Befehle: `Wasser.start(optionen)` und `Wasser.stop()`; `Wasser.DESKTOP` sind die Angaben für den Desktop. Dazu `Wasser.warm(bilder)`: Szenen, die die Seite später zeigt (die anderen Reiter), werden vorab für die Tropfen bereitgemacht. |
 | `NOTIZEN.md` | Das Notizbuch der Erbauer (englisch): alle Zahlen, Gründe und Messungen. Zum Anwenden zuerst die Anleitung `docs/Wasser-Look.md` lesen. |
 
 Die Werkzeuge: `scripts/wasser/`. Bilder der Desktop-Vorlage: `docs/wasser-look/bilder/desktop/` (siehe unten).
@@ -98,7 +98,7 @@ Ohne `--look vorlage` zeigt `zeigen` die App, wie sie gebaut ist – dasselbe wi
 ```
 node scripts/wasser/desktop.mjs bild /tmp/desktop --alles          # Standbilder: Welten, Bögen, Suche, Hinweis (--ton klar --zeit tag --format 1920)
 node scripts/wasser/desktop.mjs film /tmp/desktop-film             # Bewegung als Bildstreifen
-node scripts/wasser/desktop.mjs pruefen                            # 24 Prüfungen (Tropfen, Dock, Schublade, Maus, Ruhe, „nichts ist verrückt“, „nichts springt beim Drücken“)
+node scripts/wasser/desktop.mjs pruefen                            # 27 Prüfungen (Tropfen, Dock, Schublade, Maus, Ruhe, „nichts ist verrückt“, „nichts springt beim Drücken“)
 node scripts/wasser/desktop.mjs kontrast                           # Lesbarkeit: beide Töne, Nacht und Tag
 node scripts/wasser/desktop.mjs takt                               # Was der Look kostet (Bilder je Sekunde)
 node scripts/wasser/desktop.mjs clip /tmp/desktop.mp4              # der Rundgang als Film

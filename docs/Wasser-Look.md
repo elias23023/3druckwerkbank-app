@@ -167,8 +167,8 @@ Nach jedem Rezept – zuerst in die App holen und bauen, denn die Werkzeuge prü
 node scripts/wasser/uebernehmen.mjs && npm run build
 node scripts/wasser/vergleich.mjs bilder --alt git:HEAD   # die Vorschauseite: nichts anderes darf sich geändert haben. Nur vor dem Commit richtig: Fallstrick 60
 node scripts/wasser/sollist.mjs handy --soll git:HEAD     # die App am Handy: nichts anderes darf sich geändert haben (5 Minuten; ohne „handy“ auch der Desktop: 25 Minuten)
-node scripts/wasser/pruefen.mjs --app                     # 60 Prüfungen, etwa eine Minute
-node scripts/wasser/desktop.mjs pruefen                   # 24 Prüfungen, wenn der Desktop betroffen ist
+node scripts/wasser/pruefen.mjs --app                     # 64 Prüfungen, etwa eine Minute
+node scripts/wasser/desktop.mjs pruefen                   # 27 Prüfungen, wenn der Desktop betroffen ist
 ```
 
 `git:HEAD` gilt nur, solange seit dem Stand davor nichts committet wurde – sonst den Commit davor nennen (`git:feinschliff-basis`, `git:9c4afa7`).
@@ -598,7 +598,7 @@ Der Unterschied zwischen 1 und 1,5 ist auf Handygröße kaum zu sehen ([leben-ve
 
 **Der Schalter zum Sparen ist ein anderer: `--wa-lauf`.** `[data-wasser] { --wa-lauf: paused; }` hält jede Schleife in Ruhe an, alles andere lebt weiter. `--wa-leben: 0` spart nichts: Die Schleifen laufen unsichtbar weiter.
 
-**Schlafen und Aufwachen.** Eine Uhr im Skript (Option `sleep`, 30000 ms; `0` = nie). Nach 30 s ohne Berührung, Scrollen, Taste oder bewegte Maus kommen die Tropfen zur Ruhe, und das Wurzelelement bekommt `data-wa-ruht`. Damit wird `--wa-lauf` zu `paused`. Die nächste Berührung weckt alles. Hinter einem offenen Bogen oder der Suche ruht die Seite ebenfalls (`mobil.css` Teil 7, `desktop.css` Teil 7; die Liste dort und die Option `modal` müssen gleich bleiben). Nie angehalten werden kurze Antworten auf eine Änderung: Ein Hinweis muss landen können, während das Wasser schläft.
+**Schlafen und Aufwachen.** Eine Uhr im Skript (Option `sleep`, 30000 ms; `0` = nie). Nach 30 s ohne Berührung, Scrollen, Taste oder bewegte Maus kommen die Tropfen zur Ruhe, und das Wurzelelement bekommt `data-wa-ruht`. Damit wird `--wa-lauf` zu `paused`. Die nächste Berührung weckt alles. Hinter einem offenen Bogen oder der Suche ruht die Seite ebenfalls (`mobil.css` Teil 7, `desktop.css` Teil 7; die Liste dort und die Option `modal` müssen gleich bleiben). Ein Tropfen, der gerade antwortet, klingt dabei erst aus (der Ring blendet in 0,3 s aus, nach spätestens 0,38 s steht er in Ruhelage), dann ruht er; schließt der Bogen, geht sein Wasser dort weiter, wo es stand (seit 14.11. abends; vorher blieb er mitten in der Antwort stehen – der Befund in `entwurf/stehenbleiben/`). Nie angehalten werden kurze Antworten auf eine Änderung: Ein Hinweis muss landen können, während das Wasser schläft, und der Ring einer Karte läuft hinter einem Bogen zu Ende.
 
 **Keine Bewegung.** Zwei Auslöser: die Systemeinstellung (`prefers-reduced-motion: reduce`) oder der Schalter der App (`data-motion="reduziert"` am `<html>`). Dann gibt es die Lichter gar nicht, nichts schwingt oder atmet, Zustände wechseln sofort, die Tropfen stehen. Jeder Baustein trägt die zwei Regeln selbst, am Ende seines Blocks. Ein neuer Block braucht beide.
 
@@ -769,8 +769,8 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand: dieser Branch nach 
   node scripts/wasser/uebernehmen.mjs && git status --short src/wasser
   npm run build
   node scripts/verify.mjs http://localhost:4173        # 69 Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code
-  node scripts/wasser/pruefen.mjs --app                # 60 Prüfungen
-  node scripts/wasser/desktop.mjs pruefen              # 24 Prüfungen
+  node scripts/wasser/pruefen.mjs --app                # 64 Prüfungen (bis 14.11. abends 60)
+  node scripts/wasser/desktop.mjs pruefen              # 27 Prüfungen (bis 14.11. abends 24)
   ```
 
   die Reihenfolge im gebauten CSS:
@@ -996,8 +996,8 @@ Die Vorschau der App muss laufen (`npm run build && npm run preview`), außer f�
 |---|---|---|
 | `npm run build` | TypeScript und Build sind fehlerfrei | 6 s |
 | `node scripts/verify.mjs http://localhost:4173` | 69 Prüfungen der App | 1,5 bis 2 min |
-| `node scripts/wasser/pruefen.mjs --app` | 63 Prüfungen: Tropfen, Ring, Markierung, jeder Baustein, Ruhe, Start/Stopp, Töne – auf der Vorschauseite (die Vorlage) und in der App (der eingebaute Look); und dass die Kopien in `src/wasser/` die Vorlage sind | 1 min |
-| `node scripts/wasser/desktop.mjs pruefen` | 24 Prüfungen am Desktop, darunter „nichts ist verrückt“ (gegen dieselbe App ohne Look) und „nichts springt beim Drücken“ | 2,5 min |
+| `node scripts/wasser/pruefen.mjs --app` | 64 Prüfungen: Tropfen, Ring, Markierung, jeder Baustein, Ruhe, Ruhe hinter einem Bogen, Start/Stopp, Töne – auf der Vorschauseite (die Vorlage) und in der App (der eingebaute Look); und dass die Kopien in `src/wasser/` die Vorlage sind | 1 min |
+| `node scripts/wasser/desktop.mjs pruefen` | 27 Prüfungen am Desktop, darunter der Tropfen hinter der Schublade, „nichts ist verrückt“ (gegen dieselbe App ohne Look) und „nichts springt beim Drücken“ | 2,5 min |
 | `node scripts/wasser/sollist.mjs --soll git:feinschliff-basis` | **Soll gegen Ist:** zwei Stände der App, dieselben 164 Bildschirme Bildpunkt für Bildpunkt – Handy und Desktop (beide Formate), beide Töne, beide Bereiche. Liste der Bildschirme, die abweichen, mit Bild | 25 min (`sollist.mjs handy …`: 5 min) |
 | `node scripts/wasser/vergleich.mjs bilder --alt git:feinschliff-basis` | zwei Stände der **Vorlage** auf der Vorschauseite, Bildpunkt für Bildpunkt (statt des Tags jeder Commit vor der eigenen Änderung) | 5 min |
 | `node scripts/wasser/vergleich.mjs` | Ist es noch der freigegebene Look? Vorschauseite, App, jeder berechnete Stil, Bewegung – die Vorlage gegen den am 13.11. freigegebenen Stand | 35 min (nur `bilder`: 5 min) |

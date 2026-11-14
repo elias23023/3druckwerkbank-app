@@ -40,6 +40,12 @@ const flights = (p, sel = '.m-tabs') => p.evaluate((sel) => document.querySelect
 const rings = (p) => p.evaluate(() => document.querySelectorAll('.wa-floor .wa-ring').length);
 const CARD_BTN = '.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon):not(.btn--ghost)';
 const GEAR = '.m-head [aria-label="Einstellungen"]';
+// a drop's canvas sampled at every frame (sampler), and what it did after the sheet appeared (settled): how often it changed - a
+// drop frozen in the middle of its answer (the finding of 14.11.) does not change at all - and ms to its last change
+const sampler = (p, sel, open) => p.evaluate(([sel, open]) => { const log = window.__probe = []; const t0 = performance.now();
+  const hash = () => { const c = document.querySelector(sel + ' > .w3-drop'); if (!c || c.width < 3) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0; return h; };
+  const f = () => { const t = performance.now() - t0; log.push([t, hash(), !!document.querySelector(open)]); if (t < 2500) requestAnimationFrame(f); }; requestAnimationFrame(f); }, [sel, open]);
+const settled = (p) => p.evaluate(() => { const log = window.__probe || [], i0 = log.findIndex((x) => x[2]); let n = 0, last = i0 >= 0 ? log[i0][0] : 0; for (let i = i0 + 1; i0 >= 0 && i < log.length; i++) if (log[i][1] !== log[i - 1][1]) { n++; last = log[i][0]; } return { changes: n, after: i0 >= 0 ? Math.round(last - log[i0][0]) : -1 }; });
 // what a drop's canvas shows, in short: its size and a hash of its pixels (null: no canvas, or not drawn)
 const sig = (p, sel) => p.evaluate((sel) => { const c = document.querySelector(sel + ' > .w3-drop'); if (!c || c.width < 3) return null; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0; return c.width + 'x' + c.height + ':' + h; }, sel);
 
@@ -167,13 +173,13 @@ if (a.app) {
   const h = await s.app({ ton: a.ton }); const p = h.page;
   await h.go('#/heute', 1500); const c = await p.evaluate(() => ({ cards: document.querySelectorAll('.m-main > .glass.m-card').length, lights: document.querySelectorAll('.m-main > .glass.m-card > .wa-licht').length, drops: document.querySelectorAll('[data-w3="on"]').length, state: window.Wasser.info.state }));
   check(c.cards > 0 && c.lights === c.cards && c.drops > 0, '9 app: a light helper in every card, drops drawn', c);
-  await h.sheet('einstellungen'); await p.waitForTimeout(900);
+  await sampler(p, GEAR, '.sheet'); await h.sheet('einstellungen'); await p.waitForTimeout(900);
   const b = await p.evaluate(() => ({ page: getComputedStyle(document.querySelector('.m-main')).getPropertyValue('--wa-lauf').trim(), sheet: getComputedStyle(document.querySelector('.sheet')).getPropertyValue('--wa-lauf').trim(), sheetLight: document.querySelectorAll('.sheet > .wa-licht').length, dropsOnSheet: document.querySelectorAll('.sheet [data-w3="on"]').length }));
   check(b.page === 'paused' && b.sheet === 'running' && b.sheetLight === 1 && b.dropsOnSheet > 0, '9 app: behind a sheet the page rests, the sheet lives', b);
   // the drop that opened the sheet (the gear, tapped by sheet() above) finishes its answer and rests: no drop behind the sheet is
   // still answering, its picture no longer changes (until 14.11. it stood still in the middle of its answer, rings and all)
-  { const i1 = await p.evaluate(() => ({ settling: window.Wasser.info.settling, resting: window.Wasser.info.resting })); const g1 = await sig(p, GEAR); await p.waitForTimeout(400); const g2 = await sig(p, GEAR);
-    check(i1.settling === 0 && i1.resting >= 1 && g1 && g1 === g2, '9 app: the tapped drop comes to rest behind the sheet it opened', { ...i1, still: g1 === g2 }); }
+  { const i1 = await p.evaluate(() => ({ settling: window.Wasser.info.settling, resting: window.Wasser.info.resting })); const g1 = await sig(p, GEAR); await p.waitForTimeout(400); const g2 = await sig(p, GEAR); const k = await settled(p);
+    check(k.changes > 0 && k.after <= 600 && i1.settling === 0 && i1.resting >= 1 && g1 && g1 === g2, '9 app: the tapped drop rings out behind the sheet it opened, then rests', { ...k, ...i1, still: g1 === g2 }); }
   await p.locator('.sheet__body').evaluate((e) => new Promise((ok) => { const t0 = performance.now(); const f = (now) => { e.scrollTop += 22; if (now - t0 < 420) requestAnimationFrame(f); else ok(); }; requestAnimationFrame(f); })); const pull = await p.evaluate(() => document.querySelectorAll('[data-wa-zieht]').length); await p.waitForTimeout(700);
   check(pull >= 1 && await p.evaluate(() => document.querySelectorAll('[data-wa-zieht]').length) === 0, '9 app: scrolling the sheet pulls its light, and lets go', pull);
   await h.closeSheet(); await h.sheet('toast'); await p.waitForTimeout(300);

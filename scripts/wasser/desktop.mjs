@@ -235,6 +235,11 @@ async function kontrast() {
 // Wasser.DESKTOP. Exit code 1 when a check fails. (Whether the PHONE still looks the same: vergleich.mjs, as before.)
 // a live drop of the desktop that opens a drawer and stays in view beside it, and what its canvas shows (size and a hash of its pixels)
 const EB = '.panel--haupt .btn--primary';
+// its canvas sampled at every frame (sampler), and what it did after the drawer appeared (settled): changes and ms to the last one
+const sampler = (p, sel, open) => p.evaluate(([sel, open]) => { const log = window.__probe = []; const t0 = performance.now();
+  const hash = () => { const c = document.querySelector(sel + ' > .w3-drop'); if (!c || c.width < 3) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0; return h; };
+  const f = () => { const t = performance.now() - t0; log.push([t, hash(), !!document.querySelector(open)]); if (t < 2500) requestAnimationFrame(f); }; requestAnimationFrame(f); }, [sel, open]);
+const settled = (p) => p.evaluate(() => { const log = window.__probe || [], i0 = log.findIndex((x) => x[2]); let n = 0, last = i0 >= 0 ? log[i0][0] : 0; for (let i = i0 + 1; i0 >= 0 && i < log.length; i++) if (log[i][1] !== log[i - 1][1]) { n++; last = log[i][0]; } return { changes: n, after: i0 >= 0 ? Math.round(last - log[i0][0]) : -1 }; });
 const sig = (p, sel) => p.evaluate((sel) => { const c = document.querySelector(sel + ' > .w3-drop'); if (!c || c.width < 3) return null; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0; return c.width + 'x' + c.height + ':' + h; }, sel);
 async function pruefen() {
   let bad = 0; const say = (ok, name, info = '') => { if (!ok) bad++; console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${info ? '   ' + info : ''}`); };
@@ -302,9 +307,9 @@ async function pruefen() {
   //     view beside the drawer). Until 14.11. it stood still in the middle of its answer to the click for as long as the drawer was open
   { await d.go('druck', 1200); const eb = p.locator(EB).first();
     if (!(await eb.count())) say(false, 'Schublade: der Tropfen, der sie geöffnet hat, kommt zur Ruhe', `nichts trifft ${EB}`);
-    else { const bb = await eb.boundingBox(); await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2, { steps: 3 }); await p.waitForTimeout(300); await p.mouse.down(); await p.waitForTimeout(70); await p.mouse.up(); await p.waitForTimeout(700);
-      const i1 = await p.evaluate(() => ({ sheet: !!document.querySelector('.sheet'), settling: window.Wasser.info.settling, resting: window.Wasser.info.resting })); const g1 = await sig(p, EB); await p.waitForTimeout(400); const g2 = await sig(p, EB);
-      say(i1.sheet && i1.settling === 0 && i1.resting >= 1 && g1 && g1 === g2, 'Schublade: der Tropfen, der sie geöffnet hat, kommt zur Ruhe', JSON.stringify({ ...i1, steht: g1 === g2 }));
+    else { const bb = await eb.boundingBox(); await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2, { steps: 3 }); await p.waitForTimeout(300); await sampler(p, EB, '.sheet'); await p.mouse.down(); await p.waitForTimeout(70); await p.mouse.up(); await p.waitForTimeout(1400);
+      const i1 = await p.evaluate(() => ({ sheet: !!document.querySelector('.sheet'), settling: window.Wasser.info.settling, resting: window.Wasser.info.resting })); const g1 = await sig(p, EB); await p.waitForTimeout(400); const g2 = await sig(p, EB); const k = await settled(p);
+      say(i1.sheet && k.changes > 0 && k.after <= 600 && i1.settling === 0 && i1.resting >= 1 && g1 && g1 === g2, 'Schublade: der Tropfen, der sie geöffnet hat, klingt aus und ruht dann', JSON.stringify({ ...k, ...i1, steht: g1 === g2 }));
       await d.closeSheet(); await p.waitForTimeout(900); const g3 = await sig(p, EB); say(g3 && g3 !== g2, 'Schublade zu: der Tropfen lebt wieder'); await d.park(); } }
   // 6. a toast stands in the middle
   await d.toast(); const tc = await p.evaluate(() => { const r = document.querySelector('.toast').getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - innerWidth / 2); }); say(tc < 1.5, 'Hinweis: mittig über dem Dock', `${tc.toFixed(1)} px neben der Mitte`);
