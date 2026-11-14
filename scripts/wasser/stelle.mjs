@@ -17,7 +17,7 @@
 //   --css     what to read. Per element: tag, classes and data attributes, the shell it lies in (data-wasser), box, background, border (its
 //             top edge), shadow, backdrop-filter, radius, padding, position, colour, and whether a live drop is drawn on it.
 //             (Chromium does not know -webkit-backdrop-filter: the blur the app's own .glass asks for in the BUILT app shows
-//             here as "none" and is painted by Safari all the same - docs/Wasser-Look.md, pitfall 16.)
+//             here as "none"; --engine webkit shows it - docs/Wasser-Look.md, pitfall 16.)
 //   --wert    further properties to read, separated by commas; a custom property WITHOUT its two dashes (water-under = --water-under)
 //   --nah     the picture shows only the first match of --css, with 24 px around it
 //   --zeit, --format: desktop only (nacht | tag | morgen | abend; 2000 | 1920). --look ohne = the app as it is.

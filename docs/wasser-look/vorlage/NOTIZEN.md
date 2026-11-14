@@ -415,9 +415,10 @@ Structure and cascade
 8. **`-webkit-backdrop-filter` before `backdrop-filter`**: the app's build keeps only the last of two equal values.
    (The app's own `global.css` has them the other way round, so the built app paints no blur on `.glass` in Chromium
    and Firefox today; the look does.) The other side of it: an element that carries `.glass` in the app and is put
-   into a block that sets no backdrop-filter of its own (Mulde, Perle, Etikett) keeps the app's 18 px blur in Safari,
-   and Chromium shows nothing of it, not even in the computed style. The shell takes it away (`desktop.css` does for
-   `.panel .glass:where(.col)`); "Perle" also leaves the border of `.glass` standing. Found on 14.11. when the round
+   into a block that sets no backdrop-filter of its own (Mulde, Perle, Etikett) keeps the app's 18 px blur in WebKit,
+   and Chromium shows nothing of it, not even in the computed style (Playwright's WebKit does: `stelle.mjs --engine
+   webkit` reads `blur(18px) saturate(1.4)` on such an element, `none` once the shell has taken it away; it paints
+   none). The shell takes it away (`desktop.css` does for `.panel .glass:where(.col)`); "Perle" also leaves the border of `.glass` standing. Found on 14.11. when the round
    header buttons were moved from "Tropfen" to "Perle" in a copy (guide, 4.8).
 
 Material and paint
