@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import './mobile.css';
+import { useWasser } from '../wasser/wasser'; // nach mobile.css: die Stylesheets des Looks kommen zuletzt
 import { useStore, availableGrams, activeProjects, archivedProjects, printProgress, printRemainingMin, liveProjects } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { navigate, useRoute } from '../router';
@@ -40,6 +41,7 @@ export function Mobile() {
   const s = useStore(useShallow((st) => ({ settings: st.settings, weather: st.weather, sheet: st.ui.sheet, commandOpen: st.ui.commandOpen, projects: st.projects })));
   const openSheet = useStore((st) => st.openSheet); const setCommand = useStore((st) => st.setCommand);
   const hints = useHints();
+  useWasser();
   const today = todayDaily(s.weather?.data, now);
   const look: Look = sceneLook(now, today?.sunrise, today?.sunset, s.weather?.data.hourly.length ? s.weather.data.current.code : undefined);
   const tab: Tab = route.world === 'heute' ? 'heute' : route.world === 'projekte' ? 'projekte' : route.world === 'material' ? 'material' : route.world === 'start' ? 'start' : 'mehr';
@@ -50,7 +52,7 @@ export function Mobile() {
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
-    <div className="m-shell" data-look={look}>
+    <div className="m-shell" data-wasser="mobil" data-look={look}>
       <div className="m-bg" aria-hidden><img key={scene} src={`/img/szene-${scene}-1280.webp`} srcSet={`/img/szene-${scene}-640.webp 640w, /img/szene-${scene}-1280.webp 1280w`} sizes="100vw" alt="" /></div>
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>

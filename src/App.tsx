@@ -92,6 +92,9 @@ export function App() {
   useEffect(() => {
     const theme = mobile ? 'dunkel' : settings.theme === 'auto' ? (DARK_LOOKS.has(look) ? 'dunkel' : 'hell') : settings.theme;
     document.documentElement.dataset.theme = theme;
+    // Wasser-Look (nur mobil): Das Thema bleibt dort „dunkel“, die Einstellung wählt den Ton des Looks. Dunkel = kein Attribut, Hell = „klar“
+    const klar = mobile && (settings.theme === 'auto' ? !DARK_LOOKS.has(look) : settings.theme === 'hell');
+    if (klar) document.documentElement.dataset.waTon = 'klar'; else delete document.documentElement.dataset.waTon;
   }, [settings.theme, look, mobile]);
 
   // weather fetch with 30 min cache

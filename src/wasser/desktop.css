@@ -1,0 +1,30 @@
+/* Kopie – nicht von Hand ändern. Quelle: docs/wasser-look/vorlage. Neu holen: node scripts/wasser/uebernehmen.mjs */
+/* ---- Wasser-Look: Desktop ----
+   THE PLACE FOR THE DESKTOP. No rule yet: the next step fills this file. Load after kern.css (and after mobil.css; the
+   two never meet - every rule here starts with [data-wasser="desktop"], every rule there with [data-wasser="mobil"]).
+
+   The desktop root carries data-wasser="desktop" (the stage: the scene image a free drop bends must lie inside the
+   root), and the script is started with the desktop's own lists:
+     Wasser.start(Object.assign({}, Wasser.MOBIL, { scene: '...', shade: '', drops: '...', bar: '...', ringOn: '...',
+       ringFrom: '...', light: '...', scrollers: '...' }))
+
+   What belongs here (and what does not):
+   1. Tokens of the desktop shell on [data-wasser="desktop"]: the text colours the mobile shell declares on .m-shell
+      (color, --text, --text-2, --text-3 - the look has light text in BOTH tones; the app's light theme with dark text
+      must be off), and re-declared form tokens where the desktop differs: the sheet as a drawer (--wa-r-bogen with four
+      round corners, --wa-bogen-rim, --wa-bogen-lift), no blur on the scrim (--wa-scrim-blur: none), a dock with seven
+      children (--wa-bar-tabs: 7).
+   2. Which block each desktop element is made of: NOT here. Add its selector to the list of the block in kern.css
+      ("apply this block to further elements here"), marked "desktop" - as the mobile elements are marked "mobil".
+   3. What these elements need ON TOP of their block: places, sizes, outlines, a hover state, the sheet's entrance from
+      the side (another animation-name), a dock that keeps its own centring. Written with at least the weight of the
+      block's list.
+   4. A rule like "Ruhe hinter einem Bogen" (mobil.css, 7) for the desktop's own children.
+
+   Known before the first line is written (docs/wasser-look/vorlage/NOTIZEN.md, "Desktop"):
+   - Becken sets position: relative; panels that are placed absolutely must not be in its list.
+   - Becken's depth steps (22 and 46 px in) fill a 150 px panel black in the tone "dunkel": side panels are "stilles
+     Wasser", one large main panel per world may be a Becken.
+   - A drop free over the stage shows only the ONE scene image, bent: not the islands, clouds or leaves. Anything that
+     may have an island behind it must not be a live drop.
+   - The stage never rests: every blurred sheet is blurred again for every picture. Few blurred sheets. */
