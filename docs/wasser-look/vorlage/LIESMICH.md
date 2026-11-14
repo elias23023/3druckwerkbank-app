@@ -99,6 +99,7 @@ node scripts/wasser/desktop.mjs pruefen                            # 24 Prüfung
 node scripts/wasser/desktop.mjs kontrast                           # Lesbarkeit: beide Töne, Nacht und Tag
 node scripts/wasser/desktop.mjs takt                               # Was der Look kostet (Bilder je Sekunde)
 node scripts/wasser/desktop.mjs clip /tmp/desktop.mp4              # der Rundgang als Film
+node scripts/wasser/stelle.mjs /tmp/stelle.png --welt heute --css '.glass.panel'   # eine einzelne Stelle: ein Bild und ihre berechneten Werte (--mobil: am Handy)
 ```
 
 ## Die Handy-Vorlage ansehen

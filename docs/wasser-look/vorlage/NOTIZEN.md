@@ -203,7 +203,8 @@ Wasser.stop();                                    // leaves no helper, attribute
 In the React app later: `src/wasser/wasser.ts` imports the three stylesheets and the script (side effect: the
 global) and exports a hook that calls `window.Wasser.start(options)` in a `useEffect` and `window.Wasser.stop()` in
 its clean-up; `Mobile()` uses the hook and its root gets `data-wasser="mobil"`. Start it when the root is in the
-document (an effect is). The head of `wasser.js` shows the lines. The script must NOT lie beside `wasser.ts` under
+document (an effect is). The whole file and the lines that use it are printed in `docs/Wasser-Look.md`, section 8.2
+(in that one place only). The script must NOT lie beside `wasser.ts` under
 the name `wasser.js` (an import without extension finds the `.js` first): copy it as `wasser-skript.js`.
 
 | Option | Default (mobile shell) | What it is |
@@ -413,7 +414,11 @@ Structure and cascade
    up. `:has()` is also needed for the bead of a bar and for "Ruhe hinter einem Bogen".
 8. **`-webkit-backdrop-filter` before `backdrop-filter`**: the app's build keeps only the last of two equal values.
    (The app's own `global.css` has them the other way round, so the built app paints no blur on `.glass` in Chromium
-   and Firefox today; the look does.)
+   and Firefox today; the look does.) The other side of it: an element that carries `.glass` in the app and is put
+   into a block that sets no backdrop-filter of its own (Mulde, Perle, Etikett) keeps the app's 18 px blur in Safari,
+   and Chromium shows nothing of it, not even in the computed style. The shell takes it away (`desktop.css` does for
+   `.panel .glass:where(.col)`); "Perle" also leaves the border of `.glass` standing. Found on 14.11. when the round
+   header buttons were moved from "Tropfen" to "Perle" in a copy (guide, 4.8).
 
 Material and paint
 9. **Never a blur on a child layer of a sheet**, never animate the sheet element at rest, nothing closer than 14 px
@@ -586,9 +591,14 @@ Desktop, found by its checker on 14.11.
 | `desktop.mjs clip <out.mp4>` | a tour through the real app as a film (screencast, a drawn pointer) |
 | `desktop-lib.mjs` | `openDesktop({ look, format, ton, zeit, wetter, engine, reduced, start })`: the real app at 2000 x 993 or 1920 x 1080 with a fixed hour and made-up weather, the template injected once; `go`, `welt`, `project`, `sheet`, `search`, `toast`, `bereich`, `shot`, `park`, `still` |
 | `einspielen.js` | the browser script the desktop tools inject: root attribute for whichever shell is mounted, `Wasser.start()` with its options, the app's theme held at "dunkel", the tone from what the app wanted |
+| `stelle.mjs <out.png>` | ONE spot of the real app, looked at and read (desktop, or `--mobil`): `--welt`, `--bogen`, `--klick '<text>'`, then one picture and, for `--css '<selector>'`, how many elements it matches, in which shell, and the computed values a block sets (background, border, shadow, backdrop-filter, radius, padding, position, colour, live drop). For a sheet the other tools do not know and for whoever has no browser window |
+| `uebernehmen.mjs` | fetches the template into the app: copies the four files to `src/wasser/` (the script as `wasser-skript.js`), each with one head line. It CREATES `src/wasser/` where there is none - on a branch without the integration run it in a copy of the project only (guide, 8.3) |
 
 All take `--engine chromium|webkit` (the screencast tools: Chromium only), most `--ton klar` or `--toene dunkel,klar`,
-`--look vorlage|<folder>|ohne` (a folder is another copy of the template, or an earlier `look.css` + `look.js`).
+and all but `keyframes.mjs` and `uebernehmen.mjs` take `--look <folder>` (another copy of the template, inside the
+repository or anywhere else; `vergleich.mjs` calls the same thing `--neu` and compares it with `--alt`; `desktop.mjs
+zeigen --look <folder>` serves it to your own browser). `--look ohne` = the app as it is, where a tool can show that.
+An option a tool does not know is ignored WITHOUT a word - a misspelt `--look` checks the template itself.
 The real app needs `npm run build && npm run preview` (port 4173; `WASSER_APP=<url>` for another address). WebKit
 needs Playwright's WebKit; on the work machine: `source <scratchpad>/judge-phone/env.sh` in the same shell first (and
 not for Chromium afterwards: it points Playwright at a folder without Chromium). Playwright is taken from
@@ -781,10 +791,10 @@ with pretended costs or forced levels, never by a machine that really got slow a
 > `Mobile()` and - with a flag - in `App()` AFTER the effect that sets `--ui-scale` (started before it, the drops are
 > measured at the wrong scale); the cleaned-up inline styles are bridged by `src/wasser/einbau.css` for now;
 > (6) `scripts/verify.mjs` has been run against builds with the look: 69 of 69. Three small safeguards found while
-> the guide was tested are still open (its step 5): `wasser.ts` should import the app's own stylesheets before the
+> the guide was tested are listed in its step 5: `wasser.ts` should import the app's own stylesheets before the
 > look's (a module imported before `Mobile.tsx` that imports `wasser.ts` puts the look BEFORE `mobile.css` in the built
-> CSS), `openApp` in `scripts/wasser/lib.mjs` must set the tone both ways now that the app sets it itself, and
-> `desktop.mjs pruefen` must not measure the app's own bobbing hint.
+> CSS) and `openApp` in `scripts/wasser/lib.mjs` must set the tone both ways now that the app sets it itself - both
+> still open; `desktop.mjs pruefen` no longer measures the app's own bobbing hint (done on the branch `wasser-look`).
 
 1. Copy the four files to `src/wasser/` (the script as `wasser-skript.js`), add `wasser.ts` (head of `wasser.js`).
    Import order: after `mobile.css` and `global.css`. Tried in a scratch project with the app's Vite 8 and target
