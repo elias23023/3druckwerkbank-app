@@ -514,6 +514,11 @@ Erst wenn der Besitzer es sagt. Reihenfolge einhalten; nach jedem Schritt prüfe
 
 - Wer: der Hauptchat, oder ein Unterchat auf dem Branch, den der Hauptchat nennt. Nie auf `main` pushen, nie deployen (`CLAUDE.md`).
 - **Die Vorlage bleibt die Quelle.** Die vier Dateien in `src/wasser/` sind Kopien von `docs/wasser-look/vorlage/`. Geändert wird in der Vorlage, dann kopiert. Grund: Alle Werkzeuge lesen die Vorlage dort, und sie laufen nur dann richtig gegen die gebaute App, wenn beide gleich sind.
+- **Die Werkzeuge nach dem Einbau.** Sie spielen die Vorlage weiter ein – jetzt in eine App, die den Look schon hat. Das geht, solange beide gleich sind: dieselben Regeln stehen doppelt da, das Skript läuft einmal. Ausprobiert: `pruefen.mjs --app` 60 von 60, `kontrast.mjs --app` dieselben Werte wie vorher, `desktop.mjs pruefen` 24 von 24 (nach der einen Zeile aus Schritt 6). Was sich ändert:
+  - `--look ohne` zeigt nicht mehr „die App wie heute“, sondern den eingebauten Look ohne Einspielen. Gut, um genau den zu sehen.
+  - „Nichts ist verrückt“ in `desktop.mjs pruefen` vergleicht dann den Look mit sich selbst und sagt nichts mehr.
+  - `vergleich.mjs app`, `film` und der App-Teil von `stile` brauchen eine App **ohne** Look. Gegen die eingebaute App sind sie nicht zu gebrauchen. `vergleich.mjs bilder` (die Vorschauseite; braucht die App nicht) bleibt gültig.
+  - `desktop.mjs zeigen` ist überflüssig und wählt den Ton nicht mehr richtig. `npm run preview` zeigt den eingebauten Look.
 - Der Prüfblock nach jedem Schritt (Vorschau im zweiten Terminal: `npm run preview`):
 
   ```
@@ -659,7 +664,7 @@ Noch nie lief der Look auf einem echten Handy. Darum kommt dieser Test **vor** d
 
 ### Schritt 6 – Den Desktop einschalten
 
-- **Dateien:** `src/scene/Stage.tsx` (drei Zeilen), `src/App.tsx` (zwei Zeilen im Effekt aus Schritt 3).
+- **Dateien:** `src/scene/Stage.tsx` (drei Zeilen), `src/App.tsx` (zwei Zeilen im Effekt aus Schritt 3), `scripts/wasser/desktop.mjs` (eine Zeile).
 - **Tun:**
   1. `Stage.tsx`: `import { useWasser } from '../wasser/wasser';`, in `Stage()` als erste Zeile `useWasser('desktop');`, am Wurzelelement `<div className="stage" data-wasser="desktop" ref={ref} …>`.
   2. `App.tsx`: Das alte helle Thema bleibt jetzt überall aus. Der Effekt aus Schritt 3 wird zu:
@@ -672,6 +677,13 @@ Noch nie lief der Look auf einem echten Handy. Darum kommt dieser Test **vor** d
      }, [settings.theme, look]);
      ```
 
+  3. `scripts/wasser/desktop.mjs`, in `pruefen`, direkt über der Zeile `let pressed = 0; const hopped = [];` einfügen:
+
+     ```js
+     await p.addStyleTag({ content: '.scroll-hint { animation: none !important; }' });   // (the app's own hint "Scrollen zum Erkunden" bobs 6 px by itself: not a hop under the pointer)
+     ```
+
+     Ohne diese Zeile meldet die Prüfung „Gedrückt: nichts verlässt seinen Platz“ je nach Augenblick `start: „Scrollen zum Erkunden“ 6 px`. Das ist das eigene Wippen dieses Hinweises (die Animation `bob` der App), kein Sprung: Mit angehaltener Animation bewegt er sich beim Drücken um 0 px. Gegen die App ohne Look fiel es dreimal nicht auf, gegen die App mit eingebautem Look beim ersten Lauf.
 - **Prüfen:** der Prüfblock, dazu die Reihenfolge im CSS wie in Schritt 2 (jetzt lädt der Desktop das Modul zuerst – hier würde ein fehlender Schutz aus Schritt 1 auffallen) und
 
   ```
@@ -747,18 +759,22 @@ Ist alles eingebaut und abgenommen, kann `src/wasser/` die einzige Quelle werden
 
 | Befehl | Was er sagt | Dauer auf der Arbeitsmaschine |
 |---|---|---|
-| `npm run build` | TypeScript und Build sind fehlerfrei | DAUER_BUILD |
-| `node scripts/verify.mjs http://localhost:4173` | 69 Prüfungen der App | DAUER_VERIFY |
-| `node scripts/wasser/pruefen.mjs --app` | 60 Prüfungen: Tropfen, Ring, Markierung, jeder Baustein, Ruhe, Start/Stopp, Töne | DAUER_PRUEFEN |
-| `node scripts/wasser/vergleich.mjs` | Ist es noch der freigegebene Look? Bildpunkt für Bildpunkt, Stil für Stil | DAUER_VERGLEICH |
-| `node scripts/wasser/vergleich.mjs --alt git:HEAD` | dasselbe gegen die Vorlage vor der eigenen Änderung | |
-| `node scripts/wasser/kontrast.mjs --app` | Lesbarkeit am Handy, beide Töne | DAUER_KONTRAST |
-| `node scripts/wasser/messen.mjs ruhe` | lebt es in Ruhe, und bleibt es ruhig? | DAUER_RUHE |
-| `node scripts/wasser/messen.mjs takt` | Bilder je Sekunde: wie es ist, Lichter angehalten, ohne Tropfen | DAUER_TAKT |
-| `node scripts/wasser/desktop.mjs pruefen` | 24 Prüfungen am Desktop, darunter „nichts ist verrückt“ und „nichts springt beim Drücken“ | DAUER_DPRUEFEN |
-| `node scripts/wasser/desktop.mjs kontrast` | Lesbarkeit am Desktop, beide Töne, Nacht und Tag | DAUER_DKONTRAST |
-| `node scripts/wasser/desktop.mjs takt` | was der Look am Desktop kostet | DAUER_DTAKT |
-| `node scripts/wasser/pruefen.mjs --regler` | der Regler der Tropfen (Herunterschalten bei Überlast) | DAUER_REGLER |
+| `npm run build` | TypeScript und Build sind fehlerfrei | 6 s |
+| `node scripts/verify.mjs http://localhost:4173` | 69 Prüfungen der App | 1,5 bis 2 min |
+| `node scripts/wasser/pruefen.mjs --app` | 60 Prüfungen: Tropfen, Ring, Markierung, jeder Baustein, Ruhe, Start/Stopp, Töne | 1 min |
+| `node scripts/wasser/vergleich.mjs` | Ist es noch der freigegebene Look? Bildpunkt für Bildpunkt, Stil für Stil | 32 min (nur `bilder`: 2 min je Ton) |
+| `node scripts/wasser/vergleich.mjs --alt git:HEAD` | dasselbe gegen die Vorlage vor der eigenen Änderung (vor dem Commit) | wie oben |
+| `node scripts/wasser/kontrast.mjs --app` | Lesbarkeit am Handy, beide Töne | 3 min (alle acht Szenen: 5,5 min) |
+| `node scripts/wasser/messen.mjs ruhe` | lebt es in Ruhe, und bleibt es ruhig? | 10 s |
+| `node scripts/wasser/messen.mjs takt` | Bilder je Sekunde: wie es ist, Lichter angehalten, ohne Tropfen | 20 s |
+| `node scripts/wasser/desktop.mjs pruefen` | 24 Prüfungen am Desktop, darunter „nichts ist verrückt“ und „nichts springt beim Drücken“ | 2,5 min |
+| `node scripts/wasser/desktop.mjs kontrast` | Lesbarkeit am Desktop, beide Töne, Nacht und Tag | 5 min |
+| `node scripts/wasser/desktop.mjs takt` | was der Look am Desktop kostet | 2 min |
+| `node scripts/wasser/pruefen.mjs --regler` | der Regler der Tropfen (Herunterschalten bei Überlast) | 4 min |
+
+`vergleich.mjs` endet mit Fehler, wenn etwas abweicht, das nicht auf seiner Liste gewollter Abweichungen steht. Die Maschine dabei sonst ruhig halten: Unter Last meldete der Teil `film` einmal eine Abweichung („klar“, Reiterwechsel), die im Wiederholungslauf (`node scripts/wasser/vergleich.mjs film --nur film-klar`) verschwand.
+
+Bilder und Filme dauern auf der Arbeitsmaschine: `bild.mjs` 2 min, `film.mjs` 1 min, `clip.mjs` 0,5 min, `leben.mjs` 1 min, `desktop.mjs bild … --alles` 2 min, eine einzelne Welt 7 s, `desktop.mjs film` 1 min, `desktop.mjs clip` 3 min.
 
 Alle Werkzeuge nehmen `--engine webkit` (braucht Playwrights WebKit; auf der Arbeitsmaschine vorher die Umgebung laden, siehe `NOTIZEN.md`, Abschnitt 8). Die App unter einer anderen Adresse: `WASSER_APP=http://localhost:4174` davor.
 
@@ -844,6 +860,10 @@ Jede Zeile ist eine Falle, in die die Erbauer getreten sind. Nummern in Klammern
 60. Wenn `vergleich.mjs --alt git:HEAD` nach Zwischen-Commits benutzt wird, dann ist `HEAD` nicht mehr „vor dem Schritt“. `--alt git:<Commit davor>` oder eine Kopie des Ordners nehmen.
 61. Wenn für WebKit die Umgebung geladen wurde (`env.sh`), dann findet dieselbe Shell danach kein Chromium mehr. Für Chromium eine neue Shell. 
 62. Wenn die App bei Tag ihr helles Thema einschaltet, während der Look an ist, dann bleiben helle Etiketten, Zeilen und Knöpfe stehen. `data-theme` bleibt „dunkel“ (Schritte 3 und 6). (53)
+63. Wenn der Look eingebaut ist und die App den Ton selbst wählt, dann zeigen die Handy-Werkzeuge bei Tag unter dem Namen „dunkel“ den Ton „klar“ – bis `openApp` den Ton in beide Richtungen sagt (Schritt 3).
+64. Wenn `desktop.mjs pruefen` meldet, „Scrollen zum Erkunden“ habe sich 6 px bewegt, dann ist das das Wippen der App, kein Sprung beim Drücken (Schritt 6).
+65. Wenn `vergleich.mjs film` eine einzelne Abweichung meldet, während die Maschine anderes rechnet, dann zuerst allein wiederholen.
+66. Wenn mit `npm run dev` am Skript gearbeitet wird, dann die Seite neu laden: Das Skript legt `window.Wasser` nur einmal an und ersetzt sich nicht selbst. (Stylesheets wechseln sofort. `npm run dev` mit eingebautem Look läuft; React startet den Look im Entwicklungsmodus zweimal, das ist vorgesehen.)
 
 ---
 
