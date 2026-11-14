@@ -1,6 +1,6 @@
 # Wasser-Look: Anleitung
 
-Stand 14.11., nachmittags. Für alle, die den Wasser-Look ansehen, anwenden oder weiter an ihm bauen.
+Stand 14.11., spät abends (nach dem Tempo der Lichter und dem durchsichtigeren „klar“, Schritte 9 und 10 – beides noch nicht live). Für alle, die den Wasser-Look ansehen, anwenden oder weiter an ihm bauen.
 **Der Look ist in die App eingebaut, am Handy und am Desktop** (`src/wasser/`), und live: das Handy seit 14.11. vormittags, der Desktop seit 14.11. gegen 13 Uhr (Entscheidung 13; Stand `9c4afa7`). Dieser Branch (`wasser-look`) trägt den Feinschliff danach. Was getan ist und was als Nächstes kommt: Abschnitt 8. Der Stand bewegt sich – 8.1 sagt, wie man ihn nachsieht.
 **Die Werkzeuge messen seit dem Einbau den eingebauten Look** – nicht mehr die Vorlage, die sie obendrauf legen. Was `--look` jetzt heißt: 8.3.
 
