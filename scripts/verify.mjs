@@ -40,7 +40,7 @@ await page.getByPlaceholder('Aufgabe hinzufügen … (Enter)').fill('Playwright-
 await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(600);
 check('Task persists after reload', (await page.getByText('Playwright-Testaufgabe').count()) > 0);
 await page.locator('.ms').nth(4).locator('button').first().click(); await page.waitForTimeout(300);
-check('Milestone toggle updates progress text', /\d+ %/.test(await page.locator('.ui .panel').first().textContent()));
+check('Milestone toggle updates progress text', /\d+ %/.test(await page.locator('.ui .panel:not(.feld-kopf)').first().textContent()));
 // detail sheet with checklist
 await page.locator('.bottom-row .panel').first().locator('button[title="Alles anzeigen"]').click(); await page.waitForTimeout(400);
 await page.getByText('+ Druckvorbereitung').click(); await page.waitForTimeout(300);

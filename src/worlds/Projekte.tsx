@@ -63,12 +63,15 @@ export function Projekte({ index, setIndex, projects }: { index: number; setInde
       {p ? (
         <>
           <div className="project-hero">
+            {/* name, description and stage on one label (they stood loose on the lake); chips and buttons stay as they are */}
+            <div className="project-hero__schild feld-etikett">
             <h2>{p.name}</h2>
             <p className="desc">{p.description}</p>
             <div className="status-row">
               <span className={`pill ${job?.status === 'läuft' ? 'pill--ok' : isBlocked(p) ? 'pill--bad' : 'pill--acc'}`} style={{ textShadow: 'none' }}><i className="dot" style={{ background: job?.status === 'läuft' ? '#4ccf7a' : STAGE_COLOR[p.stage] }} />{stageLabel(p)}</span>
               <div className="progress"><i style={{ width: `${p.progress}%` }} /></div>
               <b>{p.progress} %</b>
+            </div>
             </div>
             <div className="chips">
               {job ? <span className="glass chip"><IPrinter width={14} height={14} />{devices.find((d) => d.id === job.printerId)?.name}</span> : null}

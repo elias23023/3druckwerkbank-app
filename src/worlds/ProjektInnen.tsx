@@ -29,7 +29,7 @@ export function ProjektInnen({ project: p }: { project: Project }) {
 
   return (
     <>
-      <Weltkopf width="21%" className="feld-kopf--projekt" before={<button className="back" onClick={() => navigate({ world: 'projekte' })}><IArrowL width={14} height={14} /> Projekte</button>}
+      <Weltkopf width="18%" className="feld-kopf--projekt" before={<button className="back" onClick={() => navigate({ world: 'projekte' })}><IArrowL width={14} height={14} /> Projekte</button>}
         title={<>{p.name}{p.favorite ? <span style={{ color: '#ffd77a', marginLeft: 8 }}>★</span> : null}</>} sub={p.description || undefined}>
         <div className="pills">
           <select className="glass select" style={{ width: 'auto', padding: '3px 8px', fontSize: 12 }} value={p.stage} onChange={(e) => s.setStage(p.id, e.target.value as Project['stage'])} aria-label="Entwicklungsstation">{STAGES.map((st) => <option key={st}>{st}</option>)}</select>

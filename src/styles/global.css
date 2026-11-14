@@ -541,6 +541,7 @@ p { margin: 0; }
   background: var(--wa-frei, linear-gradient(rgba(36,38,43,.6), rgba(21,22,26,.68)));
   text-shadow: 0 1px 3px rgba(0,0,0,.5);
 }
+.island__name { display: contents; }   /* without the label: the wrapper adds nothing, name and subtitle stand as before */
 .island__label--feld { gap: 0; }
 .island__label--feld > .island__name { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 16px 6px; }
 .island__label--feld.island__label--small > .island__name { padding: 2px 10px 3px; }
@@ -557,6 +558,9 @@ p { margin: 0; }
 .feld-sonne { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 500; }
 .feld-sonne .ico { color: #ffd77a; flex: none; }
 .archiv-filter { gap: 6px; flex: none; }
+/* Projekte: name, description and stage of the project in the middle on one label (a block of three lines: the corners of a panel, not of a pill) */
+.project-hero__schild { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 84%; padding: 7px 22px 9px; border-radius: 22px; }
+.project-hero__schild .desc { max-width: 100%; text-wrap: balance; }
 
 /* ---- Wasser-Look: Einbau ---- */
 /* Drei Stellen, die bisher inline gefärbt waren, tragen jetzt eine Klasse (so erreicht sie der Look ohne !important). Hier steht ihr Aussehen ohne Look. */

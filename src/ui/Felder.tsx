@@ -14,7 +14,7 @@ import { PanelColumn } from './Glass';
  * Same place in every world: top left, under the top bar, where the card of the day stands on Start.
  * `width` is the column's width (percent of the stage); keep it clear of the small islands top left (measured: docs/NACHSEHEN-FABLE-felder.md).
  */
-export function Weltkopf({ title, sub, children, width = '20.5%', className, titleStyle, before }: { title: ReactNode; sub?: ReactNode; children?: ReactNode; width?: string; className?: string; titleStyle?: CSSProperties; before?: ReactNode }) {
+export function Weltkopf({ title, sub, children, width = '17.5%', className, titleStyle, before }: { title: ReactNode; sub?: ReactNode; children?: ReactNode; width?: string; className?: string; titleStyle?: CSSProperties; before?: ReactNode }) {
   return (
     <PanelColumn side="left" top="7.7%" bottom="auto" width={width}>
       <header className={`glass panel feld-kopf${className ? ' ' + className : ''}`}>
