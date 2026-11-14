@@ -558,6 +558,9 @@ p { margin: 0; }
 .feld-sonne { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 500; }
 .feld-sonne .ico { color: #ffd77a; flex: none; }
 .archiv-filter { gap: 6px; flex: none; }
+/* a column with panels of the same height (PanelColumn even): each panel takes an equal share, a fuller one scrolls in its body */
+.panel-col--gleich > .panel { flex: 1 1 0; min-height: 0; }
+.panel-col--gleich > .panel:last-child:not(:first-child) { flex-shrink: 1; }
 /* Projekte: name, description and stage of the project in the middle on one label (a block of three lines: the corners of a panel, not of a pill) */
 .project-hero__schild { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 84%; padding: 7px 22px 9px; border-radius: 22px; }
 .project-hero__schild .desc { max-width: 100%; text-wrap: balance; }

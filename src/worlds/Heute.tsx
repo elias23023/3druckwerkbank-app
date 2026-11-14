@@ -41,7 +41,9 @@ export function Heute({ phase }: { phase: DayPhase }) {
 
       <div className="heute-time"><span className="feld-etikett">{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length === 0 ? 'kein Druck läuft' : running.length === 1 ? '1 Druck läuft' : `${running.length} Drucke laufen`}</span></div>
 
-      <PanelColumn side="left" top="38%" bottom="27%" width="23%">
+      {/* both panels the same height (even); the column reaches from under the label of the small Projekte island to just above the bottom row,
+          and as wide as the Heute island allows (measured 14.11.: smallest gaps 2000x993 / 1920x1080 in docs/NACHSEHEN-FABLE-felder.md) */}
+      <PanelColumn side="left" top="36.5%" bottom="26%" width="24.5%" even>
       <Panel title="Aktive Drucke" icon={<IPrinter />} right={<span className="pill xs">{running.length}</span>} delay={60}
         foot={<>{printers.length === 0 ? <button className="btn btn--sm btn--primary" onClick={() => openSheet({ kind: 'geraetForm', deviceKind: 'drucker' })}>Drucker anlegen</button> : null}{printers.filter((d) => d.status === 'bereit' && queued.some((p) => p.printerId === d.id) && !prints.some((p) => p.printerId === d.id && p.status === 'läuft')).slice(0, 2).map((d) => <button key={d.id} className="btn btn--sm" title={`Nächsten Druck auf ${d.name} starten`} onClick={() => startNextPrint(d.id)}><IPlay width={12} height={12} /> {d.name}</button>)}<button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={() => navigate({ world: 'druck' })}>Alle</button></>}>
         {running.length === 0 ? <p className="muted small">{printers.length === 0 ? 'Noch kein Drucker angelegt.' : `Kein Druck läuft gerade.${queued[0] ? ` Nächster: ${queued[0].name}.` : ''}`}</p> : running.map((p) => (
