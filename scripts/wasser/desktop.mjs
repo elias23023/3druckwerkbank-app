@@ -20,7 +20,8 @@
 //        One element of your own, without editing this file:  node scripts/wasser/kontrast.mjs --css '<selector>' --desktop ...
 //   node scripts/wasser/desktop.mjs pruefen [--ton klar] [--format 1920]
 //        Checks: few live drops in every world and none free over an island, nothing leaves its place while it is pressed,
-//        the arrows beside the island, the dock's marker, the drawer, the search, a toast, the keyboard focus, sleep and
+//        the arrows beside the island, the dock's marker, the drawer (and the drop that opened it comes to rest behind it and
+//        lives again after it), the search, a toast, the keyboard focus, sleep and
 //        waking by the mouse, reduced motion, stop / start - and that no panel, title or island has moved against the app
 //        without the look (the same app with its look taken out).
 //   node scripts/wasser/desktop.mjs takt [--nur heute,wetter] [--sekunden 5]
@@ -232,6 +233,9 @@ async function kontrast() {
 /* ------------------------------------------------------------------ pruefen */
 // Does the desktop template do what it says? Run after every change to desktop.css, to the desktop entries of kern.css or to
 // Wasser.DESKTOP. Exit code 1 when a check fails. (Whether the PHONE still looks the same: vergleich.mjs, as before.)
+// a live drop of the desktop that opens a drawer and stays in view beside it, and what its canvas shows (size and a hash of its pixels)
+const EB = '.panel--haupt .btn--primary';
+const sig = (p, sel) => p.evaluate((sel) => { const c = document.querySelector(sel + ' > .w3-drop'); if (!c || c.width < 3) return null; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0; return c.width + 'x' + c.height + ':' + h; }, sel);
 async function pruefen() {
   let bad = 0; const say = (ok, name, info = '') => { if (!ok) bad++; console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${info ? '   ' + info : ''}`); };
   const d = await open({ start: { sleep: 0 } }); const p = d.page;
@@ -294,6 +298,14 @@ async function pruefen() {
   const sh = await p.evaluate(() => { const s = document.querySelector('.sheet'), st = document.querySelector('.stage'), cs = getComputedStyle(s), r = s.getBoundingClientRect(); return { lauf: getComputedStyle(document.querySelector('.dock')).getPropertyValue('--wa-lauf').trim(), own: getComputedStyle(s).getPropertyValue('--wa-lauf').trim(), scroll: st.scrollLeft, right: innerWidth - r.right, radius: cs.borderBottomRightRadius, behind: [...document.querySelectorAll('.topbar [data-w3="on"]')].length }; });
   sh.name = name0; say(sh.name === 'wa-fliesst' && sh.lauf === 'paused' && sh.own === 'running' && sh.scroll === 0 && Math.abs(sh.right - 14) < 1 && parseFloat(sh.radius) > 20, 'Schublade: fließt von rechts, vier runde Ecken, die Bühne dahinter ruht', JSON.stringify(sh)); await d.closeSheet();
   await d.search('sens'); const cm = await p.evaluate(() => { const c = document.querySelector('.cmd'), cs = getComputedStyle(c), b = getComputedStyle(c.parentElement); return { blur: cs.backdropFilter || cs.webkitBackdropFilter, scrim: b.backdropFilter || b.webkitBackdropFilter || 'none', anim: b.animationName }; }); say(/blur/.test(cm.blur) && !/blur/.test(cm.scrim) && cm.anim === 'none', 'Suche: das Feld ist weichgezeichnet, der Schleier dahinter nicht', JSON.stringify(cm)); await d.closeSearch();
+  // 5b. the drop that opened a drawer comes to rest behind it ("Ergebnis buchen" on the main panel of Druck: a live drop that stays in
+  //     view beside the drawer). Until 14.11. it stood still in the middle of its answer to the click for as long as the drawer was open
+  { await d.go('druck', 1200); const eb = p.locator(EB).first();
+    if (!(await eb.count())) say(false, 'Schublade: der Tropfen, der sie geöffnet hat, kommt zur Ruhe', `nichts trifft ${EB}`);
+    else { const bb = await eb.boundingBox(); await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2, { steps: 3 }); await p.waitForTimeout(300); await p.mouse.down(); await p.waitForTimeout(70); await p.mouse.up(); await p.waitForTimeout(700);
+      const i1 = await p.evaluate(() => ({ sheet: !!document.querySelector('.sheet'), settling: window.Wasser.info.settling, resting: window.Wasser.info.resting })); const g1 = await sig(p, EB); await p.waitForTimeout(400); const g2 = await sig(p, EB);
+      say(i1.sheet && i1.settling === 0 && i1.resting >= 1 && g1 && g1 === g2, 'Schublade: der Tropfen, der sie geöffnet hat, kommt zur Ruhe', JSON.stringify({ ...i1, steht: g1 === g2 }));
+      await d.closeSheet(); await p.waitForTimeout(900); const g3 = await sig(p, EB); say(g3 && g3 !== g2, 'Schublade zu: der Tropfen lebt wieder'); await d.park(); } }
   // 6. a toast stands in the middle
   await d.toast(); const tc = await p.evaluate(() => { const r = document.querySelector('.toast').getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - innerWidth / 2); }); say(tc < 1.5, 'Hinweis: mittig über dem Dock', `${tc.toFixed(1)} px neben der Mitte`);
   // 7. stop() leaves nothing behind, start() brings it back
@@ -308,7 +320,15 @@ async function pruefen() {
   // 9. reduced motion: no lights, nothing eases
   { const s = await open({ reduced: true }); const q = s.page; await s.go('heute', 1200); await q.locator('.topbar [aria-label="Einstellungen"]').dispatchEvent('click'); await q.waitForTimeout(500);
     const r = await q.evaluate(() => ({ lights: [...document.querySelectorAll('.wa-licht')].filter((e) => getComputedStyle(e).display !== 'none').length, sheet: getComputedStyle(document.querySelector('.sheet')).animationName, bead: getComputedStyle(document.querySelector('.dock'), '::before').animationName, panel: getComputedStyle(document.querySelector('.glass.panel')).animationName, running: document.getAnimations().filter((x) => x.effect && x.effect.target && x.effect.target.closest && x.effect.target.closest('.ui') && x.playState === 'running' && !(x.effect.getComputedTiming().duration <= 50)).map((x) => (x.animationName || x.transitionProperty || 'waapi') + '@' + String(x.effect.target.className).slice(0, 30)) }));
-    say(r.lights === 0 && r.sheet === 'none' && r.bead === 'none' && r.panel === 'none' && r.running.length === 0, 'Bewegung reduziert: keine Lichter, nichts läuft', JSON.stringify(r)); await s.close(); }
+    say(r.lights === 0 && r.sheet === 'none' && r.bead === 'none' && r.panel === 'none' && r.running.length === 0, 'Bewegung reduziert: keine Lichter, nichts läuft', JSON.stringify(r));
+    // the water is one still picture here: the clicked drop behind the drawer must be the very picture of the same drop when the
+    // drawer is opened without touching anything (a click event: no pointer, no press)
+    await s.closeSheet(); await s.go('druck', 1200); const eb = q.locator(EB).first();
+    if (await eb.count()) { await eb.dispatchEvent('click'); await q.waitForTimeout(700); const ref = await sig(q, EB); await s.closeSheet(); await q.waitForTimeout(400);
+      const bb = await eb.boundingBox(); await q.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await q.waitForTimeout(200); await q.mouse.down(); await q.waitForTimeout(70); await q.mouse.up(); await q.waitForTimeout(700); const got = await sig(q, EB);
+      say(ref && got === ref, 'Bewegung reduziert: der geklickte Tropfen hinter der Schublade ist sein Bild in Ruhe', ref && got === ref ? 'dieselben Bildpunkte' : 'ANDERE Bildpunkte als in Ruhe'); }
+    else say(false, 'Bewegung reduziert: der geklickte Tropfen hinter der Schublade ist sein Bild in Ruhe', `nichts trifft ${EB}`);
+    await s.close(); }
   // 10. nothing has moved: the places of panels, dock, top bar, titles and islands with and without the look (the layout is the app's).
   //     "Without" is the same app with its look taken out (look: ''), so this check keeps its meaning where the look is built in.
   { const boxes = async (h) => { const o = {}; for (const w of WELTEN) { await h.welt(w); await h.page.waitForTimeout(1600); await h.park(); await h.page.waitForTimeout(300); o[w] = await h.page.evaluate(() => { const r = {}; let i = 0; for (const el of document.querySelectorAll('.panel, .dock, .topbar > *, .world-title, .heute-greet, .project-hero, .project-hero .btn, .island__img, .wchip, .carousel-nav, .hand, .tk__clock, .island__cta')) { const b = el.getBoundingClientRect(); r[(i++) + ' ' + String(el.className).split(' ').slice(0, 3).join('.')] = [b.left, b.top, b.width, b.height]; } return r; }); } return o; };

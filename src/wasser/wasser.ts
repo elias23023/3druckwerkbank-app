@@ -15,7 +15,7 @@ import './desktop.css';
 import './wasser-skript.js'; // Nebenwirkung: window.Wasser
 import { useEffect } from 'react';
 
-declare global { interface Window { Wasser: { start(o?: Record<string, unknown>): unknown; stop(): unknown; DESKTOP: Record<string, unknown> } } }
+declare global { interface Window { Wasser: { start(o?: Record<string, unknown>): unknown; stop(): unknown; warm?(img: HTMLImageElement | HTMLImageElement[]): unknown; DESKTOP: Record<string, unknown> } } }
 
 /** Startet das Skript des Looks, solange die Komponente steht. Genau einmal je Wurzel verwenden.
  *  `on = false`: Die Wurzel dieses Aufrufs steht gerade nicht (App() ruft den Hook für die Bühne immer auf, auch wenn die

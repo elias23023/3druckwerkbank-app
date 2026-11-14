@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './mobile.css';
 import { useWasser } from '../wasser/wasser'; // nach mobile.css: die Stylesheets des Looks kommen zuletzt
 import { useStore, availableGrams, activeProjects, archivedProjects, printProgress, printRemainingMin, liveProjects } from '../store';
@@ -35,6 +35,32 @@ function Card({ title, icon, count, children, onMore }: { title?: string; icon?:
   return <section className="glass m-card">{title ? <h3>{icon}{title}{count !== undefined ? <span className="cnt pill xs">{count}</span> : null}{onMore ? <button className="btn btn--icon btn--ghost" style={{ marginLeft: count === undefined ? 'auto' : 0 }} onClick={onMore} aria-label={`${title}: alles anzeigen`}><IChevR /></button> : null}</h3> : null}{children}</section>;
 }
 
+/** The painted scene of a view: the same address in the page and in the preloading below (the browser picks one candidate of the srcset for both). */
+const sceneSrcSet = (k: string) => `/img/szene-${k}-640.webp 640w, /img/szene-${k}-1280.webp 1280w`;
+const TAB_SCENES = ['start', 'heute', 'projekte', 'material', 'druck'];   // the scenes of the five tabs ("Mehr" opens on "druck")
+/** Loads the scenes of the other tabs in a quiet moment after the start - once per start of the phone view, not when the connection asks to
+ *  save data - and hands them to the water look, which makes them ready for its drops (Wasser.warm). So the first visit of a tab waits
+ *  neither for the network nor for the picture inside the drops. */
+function usePreloadScenes(current: string) {
+  useEffect(() => {
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+    if (nav.connection?.saveData) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    let idle = 0; const imgs: HTMLImageElement[] = [];
+    const load = () => {
+      for (const k of TAB_SCENES) {
+        if (k === current) continue;
+        const img = new Image(); img.decoding = 'async'; img.setAttribute('fetchpriority', 'low');
+        img.sizes = '100vw'; img.srcset = sceneSrcSet(k); img.src = `/img/szene-${k}-1280.webp`;   // (sizes before srcset, as the page has them)
+        imgs.push(img);
+      }
+      window.Wasser?.warm?.(imgs);
+    };
+    const t = window.setTimeout(() => { idle = w.requestIdleCallback ? w.requestIdleCallback(load, { timeout: 3000 }) : window.setTimeout(load, 0); }, 1200);   // after the first pictures of the start
+    return () => { window.clearTimeout(t); if (idle) { if (w.cancelIdleCallback) w.cancelIdleCallback(idle); else window.clearTimeout(idle); } };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
 export function Mobile() {
   const route = useRoute();
   const now = useNow(1000);
@@ -49,11 +75,12 @@ export function Mobile() {
   const go = (t: Tab) => navigate({ world: t === 'mehr' ? 'druck' : t });
   // background: one of the eight painted scenes (island over the lake), chosen by tab / view
   const scene = project ? 'innen' : tab === 'mehr' ? (route.world === 'wetter' ? 'wetter' : route.world === 'archiv' ? 'archiv' : 'druck') : tab;
+  usePreloadScenes(scene);
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
     <div className="m-shell" data-wasser="mobil" data-look={look}>
-      <div className="m-bg" aria-hidden><img key={scene} src={`/img/szene-${scene}-1280.webp`} srcSet={`/img/szene-${scene}-640.webp 640w, /img/szene-${scene}-1280.webp 1280w`} sizes="100vw" alt="" /></div>
+      <div className="m-bg" aria-hidden><img key={scene} src={`/img/szene-${scene}-1280.webp`} srcSet={sceneSrcSet(scene)} sizes="100vw" alt="" /></div>
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
         <span className="spacer" />

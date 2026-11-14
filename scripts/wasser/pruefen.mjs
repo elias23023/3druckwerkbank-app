@@ -17,7 +17,9 @@
 //   6 reduziert    with reduced motion nothing runs and no light is shown
 //   7 stop/start   Wasser.stop() leaves no helper, attribute or listener behind; the bead still moves by CSS; start() brings all back; options are honoured
 //   8 ohne WebGL   the plain glass stays, the clock still runs
-//   9 App (--app)  a light per card, the page rests behind a sheet, a toast leaves like a drop, stop() cleans up (needs npm run preview)
+//   9 App (--app)  a light per card, the page rests behind a sheet, the drop that opened it comes to rest there (with reduced
+//                  motion: the very picture of that drop at rest) and lives again when the sheet goes, a toast leaves like a drop,
+//                  stop() cleans up (needs npm run preview)
 //  10 Zug, Töne    a new sheet's light arrives and swings into place, also when it is pulled at once; --wa-leben from 0 to 2 at
 //                  full pull: no light flips over its rim, slides or lags further than at 1; both tones list the same tokens
 //  11 Regler (--regler, about three minutes)  the governor of the drops, fed pretended slow pictures (start option debug.cost):
@@ -37,6 +39,9 @@ const tap = async (p, sel, i = 0) => { const [x, y] = await centre(p, sel, i); a
 const flights = (p, sel = '.m-tabs') => p.evaluate((sel) => document.querySelector(sel).getAnimations({ subtree: true }).filter((an) => an.effect && an.effect.pseudoElement === '::before' && !(an instanceof CSSTransition) && !(an instanceof CSSAnimation)).length, sel);
 const rings = (p) => p.evaluate(() => document.querySelectorAll('.wa-floor .wa-ring').length);
 const CARD_BTN = '.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon):not(.btn--ghost)';
+const GEAR = '.m-head [aria-label="Einstellungen"]';
+// what a drop's canvas shows, in short: its size and a hash of its pixels (null: no canvas, or not drawn)
+const sig = (p, sel) => p.evaluate((sel) => { const c = document.querySelector(sel + ' > .w3-drop'); if (!c || c.width < 3) return null; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0; return c.width + 'x' + c.height + ':' + h; }, sel);
 
 /* 1 - 3: start, marker, ring */
 {
@@ -165,13 +170,25 @@ if (a.app) {
   await h.sheet('einstellungen'); await p.waitForTimeout(900);
   const b = await p.evaluate(() => ({ page: getComputedStyle(document.querySelector('.m-main')).getPropertyValue('--wa-lauf').trim(), sheet: getComputedStyle(document.querySelector('.sheet')).getPropertyValue('--wa-lauf').trim(), sheetLight: document.querySelectorAll('.sheet > .wa-licht').length, dropsOnSheet: document.querySelectorAll('.sheet [data-w3="on"]').length }));
   check(b.page === 'paused' && b.sheet === 'running' && b.sheetLight === 1 && b.dropsOnSheet > 0, '9 app: behind a sheet the page rests, the sheet lives', b);
+  // the drop that opened the sheet (the gear, tapped by sheet() above) finishes its answer and rests: no drop behind the sheet is
+  // still answering, its picture no longer changes (until 14.11. it stood still in the middle of its answer, rings and all)
+  { const i1 = await p.evaluate(() => ({ settling: window.Wasser.info.settling, resting: window.Wasser.info.resting })); const g1 = await sig(p, GEAR); await p.waitForTimeout(400); const g2 = await sig(p, GEAR);
+    check(i1.settling === 0 && i1.resting >= 1 && g1 && g1 === g2, '9 app: the tapped drop comes to rest behind the sheet it opened', { ...i1, still: g1 === g2 }); }
   await p.locator('.sheet__body').evaluate((e) => new Promise((ok) => { const t0 = performance.now(); const f = (now) => { e.scrollTop += 22; if (now - t0 < 420) requestAnimationFrame(f); else ok(); }; requestAnimationFrame(f); })); const pull = await p.evaluate(() => document.querySelectorAll('[data-wa-zieht]').length); await p.waitForTimeout(700);
   check(pull >= 1 && await p.evaluate(() => document.querySelectorAll('[data-wa-zieht]').length) === 0, '9 app: scrolling the sheet pulls its light, and lets go', pull);
   await h.closeSheet(); await h.sheet('toast'); await p.waitForTimeout(300);
   check(await p.evaluate(() => { const t = document.querySelector('.toast'); return !!t && Math.abs(t.getBoundingClientRect().left + t.getBoundingClientRect().right - innerWidth) < 2; }), '9 app: a toast, centred', '');
   await p.locator('.toast__undo').click(); await p.waitForTimeout(700);
+  { await p.evaluate((sel) => document.querySelector(sel).click(), GEAR); await p.waitForTimeout(900); const g1 = await sig(p, GEAR); await h.closeSheet(); await p.waitForTimeout(900); const g2 = await sig(p, GEAR);
+    check(g1 && g2 && g1 !== g2, '9 app: when the sheet goes, the drop lives again', ''); }
   await p.evaluate(() => window.Wasser.stop()); const l = await p.evaluate(() => document.querySelectorAll('.w3-drop, .wa-licht, .wa-floor, [data-w3], [data-wa-ruht], .wa-geht').length);
   check(l === 0, '9 app: stop() leaves nothing behind', l); noErr(h, '9'); await h.close();
+  // with reduced motion the water is one still picture: the tapped drop behind the sheet must be the very picture of the same
+  // drop when the sheet is opened without touching anything (element.click(): no pointer, no press)
+  { const r = await s.app({ ton: a.ton, reduced: true }); const q = r.page;
+    await q.evaluate((sel) => document.querySelector(sel).click(), GEAR); await q.waitForTimeout(700); const ref = await sig(q, GEAR); await r.closeSheet(); await q.waitForTimeout(500);
+    await r.sheet('einstellungen'); await q.waitForTimeout(700); const tapped = await sig(q, GEAR);
+    check(ref && tapped === ref, '9 app: reduced motion: the tapped drop behind the sheet is its picture at rest', ref && tapped === ref ? 'the same pixels' : 'OTHER PIXELS than at rest'); noErr(r, '9'); await r.close(); }
 }
 /* 10: pull and arrival of the light, the bounds of the master token, the two tones */
 {

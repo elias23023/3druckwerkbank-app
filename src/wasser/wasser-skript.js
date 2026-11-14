@@ -11,6 +11,11 @@
                              first. Call it when the root is in the document; returns Wasser.
      Wasser.stop()           removes every helper, listener, observer and timer and gives the WebGL context back. Call it
                              when the root goes away.
+     Wasser.warm(img)        images the page will show LATER as its scene (an <img> or new Image(), loaded or not; one or a
+                             list), e.g. the scenes of the other tabs: their pictures are made ready for the drops in quiet
+                             moments, one at a time, so that the first visit of a tab is as quick as the second. Same address
+                             as the page's <img> will have: give the same srcset and sizes. Up to five are kept (Teil 1, KEEP).
+                             Does nothing before start() or after stop(); returns Wasser.
      Wasser.MOBIL            the default options: the mobile shell of this app. The base for another shell:
                              Wasser.start(Object.assign({}, Wasser.MOBIL, { scene: '...', shade: '', bar: '...' }))
      Wasser.DESKTOP          the options of the desktop shell (the stage with its panels, top bar and dock):
@@ -18,7 +23,10 @@
      Wasser.info             what the drops are doing, for tests: state ('init', 'gl', 'fallback (reason)', 'context lost',
                              'stopped'), level (governor: 0 = full pace), wait (governor: ms of easy pictures before its
                              next step up), drops, px, atlas, frames, ms, prof, blank (how often a scene image could not be
-                             drawn yet)
+                             drawn yet), scene (the address of the scene the drops show), scenes (scene textures kept),
+                             uploads (scenes made into a texture), reused (changes of scene served from the kept ones),
+                             resting (drops at rest behind an open sheet), settling (drops behind a sheet still finishing
+                             their answer to a touch)
 
    Where the look applies is decided by CSS: inside the element that carries the attribute data-wasser
    (data-wasser="mobil" on .m-shell, data-wasser="desktop" on the desktop root). The script only looks inside it.
@@ -90,7 +98,7 @@
   var SELECTORS = ['scene', 'shade', 'drops', 'modal', 'ringOn', 'ringFrom', 'tick', 'bar', 'groups', 'levels', 'toasts', 'light', 'scrollers'];
   var NOTHING = ':not(*)';            // what an empty selector option becomes: matches no element
 
-  var cur = null, stops = [], info = {};   // the running instance: its options, the stop function of each part, what Wasser.info shows
+  var cur = null, stops = [], info = {}, warmer = null;   // the running instance: its options, the stop function of each part, what Wasser.info shows, its Wasser.warm
   var mqReduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   // no motion wanted: the system setting, or the app's own switch "Bewegung: Reduziert" (data-motion on <html>; kern.css reads the same two)
   function still() { return mqReduce.matches || document.documentElement.getAttribute('data-motion') === 'reduziert'; }
@@ -126,7 +134,10 @@
     var PAD = 14;                       // local css px the helper reaches beyond the button (== --wa-drop-pad in kern.css)
     var MAX_PX_ONE = 340000;            // device px per drop
     var MAX_PX_ALL = 1500000;           // device px for all visible drops together
-    var TEX_W = 2048, TEX_H = 1024;     // landscape texture (power of two, mip-mapped)
+    var TEX_W = 2048, TEX_H = 1024;     // landscape texture (power of two, mip-mapped). Kept at this size on purpose (14.11.): at 1024 x 512 a drop over fine detail (the gear on "Projekte", leaves behind it) is a little softer, seen enlarged
+    var KEEP = 6;                       // scene textures kept, by image address; the one used longest ago goes first. Six of the eight scenes of the phone (five tabs and one more). One costs 8.4 MB as RGB with mipmaps, 11.2 MB where the GPU keeps RGB as RGBA (likely on an iPhone): at most about 67 MB
+    var STRIPS = 4;                     // a new scene is scaled and uploaded in this many pieces, one after each frame (no long task at a change; the old scene stays in the drops until the last piece)
+    var SETTLE = 380, RING_OUT = 300;   // a drop that goes behind a sheet: ms until it stands in its rest pose at the latest, and ms in which a running ring fades out (then the drop rests and costs nothing)
     var SLEEP_AFTER = cfg.sleep;        // ms without touch or scroll until the water comes to rest (0 frames a second)
     var REST = 'data-wa-ruht';          // attribute on the root while the water rests: every other loop of the look pauses with it (kern.css, "Ruhe")
     var DPR_CAP = 3;                    // sharp on 3x phones
@@ -159,8 +170,10 @@
     var shell = null, home = null, modal = null;
     var recs = new Map();               // button -> record
     var seedN = 0, frameNo = 0;
-    var gl = null, glc = null, prog = null, U = {}, tex = null, texReady = false, lost = false, deriv = false;
-    var scene = { el: null, src: '', nw: 1280, nh: 720, pos: null, wait: null, tried: null, tries: 0 };
+    var gl = null, glc = null, prog = null, U = {}, tex = null, texReady = false, lost = false, deriv = false, maxTex = 2048;
+    var scene = { el: null, src: '', nw: 1280, nh: 720, pos: null, wait: null };
+    var store = new Map(), job = null, gen = 0, want = '', bad = new Set();   // the scene textures (address -> { tex, nw, nh }, the one used longest ago first), the scene being made, a count that makes older work stale (lost context, stop), the address the page shows now, addresses that could not be decoded
+    W3.scenes = 0; W3.uploads = 0; W3.reused = 0; W3.warmed = 0; W3.resting = 0; W3.settling = 0;
     var NO_SHADE = [0, 0, 0.3, 0, 0.7, 0, 1, 0];
     var grad = { col: [0, 0, 0], stops: NO_SHADE, key: '' };   // the page's darkening of the scene (colour, four stops); read from the page (readGradient) before the first picture
     var raf = 0, timer = 0, lastFrame = 0, lastTick = 0, vt = 0, speed = 1, dirty = true, restyle = false, needOne = true;
@@ -168,7 +181,7 @@
     var calm = 0, patience = UP_AFTER, upAt = -1e9, downAt = 0, held = 0;   // governor, the way up (held: ms of pictures drawn since the last climb)
     W3.wait = patience;
     var io = null, ro = null, mo = null, offs = [];
-    var bgCache = new Map(), rng = document.createRange(), probe = null, texCv = null;
+    var bgCache = new Map(), rng = document.createRange(), probe = null, dot = null;
 
     /* ------------------------------------------------------------------ shader */
     var VS = 'attribute vec2 aP; void main(){ gl_Position = vec4(aP, 0., 1.); }';
@@ -450,7 +463,7 @@
         var opt = { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' };
         gl = FORCED ? null : glc.getContext('webgl', opt) || glc.getContext('experimental-webgl', opt);
         if (!gl) throw new Error(FORCED ? 'forced' : 'no webgl');
-        glc.addEventListener('webglcontextlost', function (e) { if (!alive) return; e.preventDefault(); lost = true; texReady = false; allOff(); W3.state = 'context lost'; });   // (not alive: stop() has given the context back itself)
+        glc.addEventListener('webglcontextlost', function (e) { if (!alive) return; e.preventDefault(); lost = true; forget(); allOff(); W3.state = 'context lost'; });   // (not alive: stop() has given the context back itself. The textures went with the context: the store is emptied, the scene is made again on restore)
         glc.addEventListener('webglcontextrestored', function () { if (!alive) return; lost = false; try { build(); loadScene(true); kick(); } catch (err) { fail(err); } });
         build();
         return true;
@@ -473,55 +486,140 @@
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
       gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
       gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND); gl.clearColor(0, 0, 0, 0);
-      tex = gl.createTexture(); texReady = false;
+      maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE) || 2048;
+      tex = null; texReady = false;
       W3.state = 'gl';
     }
     function fail(err) {
       W3.state = 'fallback (' + (err && err.message ? err.message : err) + ')';
-      lost = true; recs.forEach(function (r) { detach(r); }); gl = null;      // the plain glass of kern.css takes over
+      lost = true; forget(); recs.forEach(function (r) { detach(r); }); gl = null;      // the plain glass of kern.css takes over
       if (window.console && !FORCED) console.warn('[wasser] fallback:', err);
     }
     function allOff() { recs.forEach(function (r) { r.btn.removeAttribute('data-w3'); r.painted = false; }); }
 
     /* ------------------------------------------------------------------ landscape texture */
-    // The app replaces the scene <img> by a NEW element when the tab changes: always look the current one up,
-    // keep the old picture until the new one has loaded, then upload it.
+    // The app replaces the scene <img> by a NEW element when the tab changes: always look the current one up.
+    // Every scene becomes a texture ONCE and is kept (store, KEEP, by image address): a second visit costs no decode and
+    // no upload, only a bind. A scene that is not in the store yet is made AWAY from the beat of the change (make()): the
+    // drops keep the old scene until the new one is ready - several frames, never a stale end: whatever was asked for in
+    // between, the store ends with the scene of the page as it is now (want).
     function sceneImg() { var all = shell && cfg.scene ? shell.querySelectorAll(cfg.scene) : []; return all.length ? all[all.length - 1] : null; }   // (several images, for example during a crossfade: the newest)
     function shadeEl() { return shell && cfg.shade ? shell.querySelector(cfg.shade) : null; }
+    function onLoad(e) { if (alive && e.target === scene.el) { loadScene(false); kick(); } }   // an image (or another of its srcset candidates) has loaded
     function loadScene(force) {
       var img = sceneImg();
-      scene.el = img;
+      if (img !== scene.el) { scene.el = img; scene.pos = null; }
+      if (scene.wait !== img) { if (scene.wait) scene.wait.removeEventListener('load', onLoad); scene.wait = img; if (img) img.addEventListener('load', onLoad); }
       if (!img) return;
-      if (scene.wait !== img) {             // every image tells us when it (or another srcset candidate) has loaded
-        scene.wait = img;
-        img.addEventListener('load', function () { if (scene.el === img) { loadScene(false); kick(); } });
-      }
-      if (!img.complete || !img.naturalWidth) return;
-      var src = img.currentSrc || img.src;
-      if (!force && src === scene.src && texReady) return;
+      var src = img.currentSrc || img.src, e = store.get(src);
+      want = src;                                                  // (also while it still loads: a scene being made for another page is given up)
       if (!gl || lost) return;
+      if (!force && src === scene.src && texReady) return;
+      if (e && img.currentSrc) { show(src, e); W3.reused++; return; }   // kept: shown at once, even before the new <img> has finished loading
+      if (!img.complete || !img.naturalWidth) return;             // (an image that failed to load: the old scene stays)
+      if (!job && !bad.has(src)) make(img, src);                  // (one scene is made at a time: when it is done, make() looks at "want" again)
+    }
+    function show(src, e) {                                       // the drops show this scene from the next picture on
+      tex = e.tex; texReady = true; scene.src = src; scene.nw = e.nw; scene.nh = e.nh; scene.pos = null;
+      store.delete(src); store.set(src, e);                       // (a Map keeps its order: the one used longest ago comes first)
+      W3.scene = src; W3.scenes = store.size;
+      readGradient();
+    }
+    // Make the texture of one scene in three steps, none of them in the beat of the change:
+    //  1. decode: the image's bytes from the browser's cache (fetch, cache "force-cache": no second download) and
+    //     createImageBitmap(blob) - the browser decodes them on another thread (createImageBitmap(img) decodes on the page's
+    //     own thread in Chromium, img.decode() does not help a canvas there: both measured 14.11.). Where that fails or is
+    //     missing: img.decode() and the image itself.
+    //  2. scale: drawn onto a canvas of TEX_W x TEX_H, exactly as before - in STRIPS pieces, one after each frame (a canvas of
+    //     one strip's height that holds the whole picture moved up; the same pixels as one big canvas, checked texel for texel)
+    //  3. upload: each piece with texSubImage2D into a new texture; after the last one the mipmaps. Then it goes into the store
+    //     and, if the page still shows this scene, into the drops.
+    // WebKit can fire "load" one frame before an image can be drawn (the picture stays empty, the drops free over the scene
+    // were black until the next scene). A decoded bitmap cannot be empty; only the image itself (step 1, second way) is
+    // checked: its middle sampled into one pixel - the scene is a photo, never see-through there - and looked at again after
+    // the next frame while it is empty (at most 30 times; Wasser.info.blank counts it).
+    function make(img, src, ahead) {
+      var my = job = { src: src, ahead: !!ahead, gen: gen, img: img, nw: img.naturalWidth, nh: img.naturalHeight, pic: null, y: 0, tries: 0, tex: null, cv: null, cx: null, raf: 0, timer: 0 };
+      var away = window.createImageBitmap && window.fetch && !/^data:/.test(src)
+        ? fetch(src, { cache: 'force-cache', credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error('fetch ' + r.status); return r.blob(); }).then(function (b) { return createImageBitmap(b); })
+        : Promise.reject(new Error('no createImageBitmap'));
+      away.then(function (bmp) { if (my !== job || my.gen !== gen || !alive) { if (bmp.close) bmp.close(); return; } my.pic = bmp; later(my); },
+        function () {
+          if (my !== job || my.gen !== gen || !alive) return;
+          (img.decode ? img.decode() : Promise.resolve()).then(function () { if (my === job) { my.pic = img; later(my); } },
+            function () { if (my === job) { bad.add(src); drop(my); onward(); } });   // a broken image: the old scene stays, this address is not tried again
+        });
+    }
+    function later(my) { my.raf = requestAnimationFrame(function () { my.raf = 0; my.timer = setTimeout(function () { my.timer = 0; strip(my); }, 0); }); }   // right after the next frame
+    function strip(my) {
+      if (my !== job || my.gen !== gen || !alive || !gl || lost) return;
+      if (my.ahead ? my.src !== want && want && !store.has(want) : my.src !== want) {   // the page has moved on: never finish a stale scene (one asked for ahead waits while the page needs its own)
+        if (my.ahead) ahead.unshift(my.img); drop(my); onward(); return;
+      }
       try {
-        var max = gl.getParameter(gl.MAX_TEXTURE_SIZE), w = Math.min(TEX_W, max), h = Math.min(TEX_H, max);
-        var c = texCv || (texCv = document.createElement('canvas')); c.width = w; c.height = h;
-        var cx = c.getContext('2d'); cx.drawImage(img, 0, 0, w, h);
-        // WebKit can fire "load" one frame before the image can be drawn: the canvas stays empty, and the drops free over the
-        // scene would be black until the next scene. An empty canvas (the scene is a photo: its middle is never see-through)
-        // is not uploaded; the old picture stays and the next frame looks again (at most 30 times per image).
-        if (scene.tried !== img) { scene.tried = img; scene.tries = 0; }
-        if (scene.tries < 30 && cx.getImageData(w >> 1, h >> 1, 1, 1).data[3] === 0) {
-          scene.tries++; W3.blank = (W3.blank || 0) + 1; requestAnimationFrame(function () { if (alive && scene.el === img) { loadScene(false); kick(); } }); return;
+        var w = Math.min(TEX_W, maxTex), h = Math.min(TEX_H, maxTex), sh = Math.ceil(h / STRIPS);
+        if (!my.cv) {
+          if (my.pic === my.img && empty(my.img)) { W3.blank = (W3.blank || 0) + 1; if (++my.tries > 30) { bad.add(my.src); drop(my); onward(); } else later(my); return; }
+          my.tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, my.tex);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, w, h, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
+          my.cv = document.createElement('canvas'); my.cv.width = w; my.cv.height = sh; my.cx = my.cv.getContext('2d');
         }
-        gl.bindTexture(gl.TEXTURE_2D, tex);
+        if (my.y + sh > h) my.cv.height = sh = h - my.y;           // (a last piece that is shorter)
+        my.cx.drawImage(my.pic, 0, -my.y, w, h);
+        gl.bindTexture(gl.TEXTURE_2D, my.tex);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, c);
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, my.y, gl.RGB, gl.UNSIGNED_BYTE, my.cv);
+        my.y += sh;
+        if (my.y < h) { later(my); return; }
         gl.generateMipmap(gl.TEXTURE_2D);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        scene.src = src; scene.nw = img.naturalWidth; scene.nh = img.naturalHeight; scene.pos = null; texReady = true;
-        readGradient();
+        var e = { tex: my.tex, nw: my.nw, nh: my.nh }; my.tex = null; drop(my);
+        W3.uploads++; if (my.src === want) show(my.src, e); else { store.set(my.src, e); W3.warmed++; }
+        for (var k of store.keys()) { if (store.size <= KEEP) break; var old = store.get(k); if (old.tex !== tex) { gl.deleteTexture(old.tex); store.delete(k); } }   // the one used longest ago goes - never the one the drops show
+        W3.scenes = store.size;
+        onward();
       } catch (err) { fail(err); }
+    }
+    function empty(img) {                                         // is the image still empty (WebKit, see above)? Its middle sampled into one pixel
+      var c = dot || (dot = document.createElement('canvas')); c.width = c.height = 1;
+      var x = c.getContext('2d'); x.clearRect(0, 0, 1, 1); x.drawImage(img, 0, 0, 1, 1);
+      return x.getImageData(0, 0, 1, 1).data[3] === 0;
+    }
+    function drop(my) {                                           // end a scene that is being made, and give back what it holds
+      if (my.raf) cancelAnimationFrame(my.raf); if (my.timer) clearTimeout(my.timer); my.raf = my.timer = 0;
+      if (my.pic && my.pic !== my.img && my.pic.close) my.pic.close();
+      if (my.tex && gl && !lost) gl.deleteTexture(my.tex);
+      if (my.cv) my.cv.width = my.cv.height = 0;                  // (WebKit keeps a canvas's memory until it is collected otherwise)
+      my.pic = my.tex = my.cv = my.cx = null;
+      if (job === my) job = null;
+    }
+    function onward() { if (alive && !lost) { loadScene(false); kick(); warmNext(); } }   // the page may show another scene by now; then the scenes asked for ahead (warm)
+    // Scenes the page will show later (Wasser.warm, e.g. the other tabs): made in the same way, one at a time, only while the
+    // page's own scene is ready and nothing else is being made, and only while the store has room for one more scene of the
+    // page (KEEP - 1). An image that has not loaded yet is waited for.
+    var ahead = [];
+    function warm(img) {
+      if (!img || ahead.indexOf(img) >= 0 || !img.addEventListener) return;
+      ahead.push(img); if (!img.complete) img.addEventListener('load', warmNext);
+      warmNext();
+    }
+    function warmNext() {
+      if (!alive || job || !gl || lost || !texReady || scene.src !== want) return;
+      while (ahead.length && store.size < KEEP - 1) {
+        var img = ahead[0]; if (!img.complete) return;            // (its load event comes back here)
+        ahead.shift(); img.removeEventListener('load', warmNext);
+        var src = img.currentSrc || img.src;
+        if (!img.naturalWidth || store.has(src) || bad.has(src)) continue;
+        make(img, src, true); return;
+      }
+    }
+    function forget() {                                           // the context is gone (lost, failed, stopped): every texture with it
+      gen++; if (job) drop(job);
+      if (gl && !lost) store.forEach(function (e) { gl.deleteTexture(e.tex); });
+      store.clear(); tex = null; texReady = false; scene.src = ''; W3.scenes = 0;
     }
     // the darkening the page lays over the scene (::after of option "shade"), read from the real style so the copy never drifts from the page
     function readGradient() {
@@ -604,7 +702,7 @@
     function attach(btn) {
       var cv = document.createElement('canvas');
       cv.className = 'w3-drop'; cv.setAttribute('aria-hidden', 'true'); cv.width = 2; cv.height = 2;
-      var r = { btn: btn, cv: cv, ctx: cv.getContext('2d'), seed: (seedN++ * 0.6180339887) % 1, vis: true, painted: false, behind: false, stale: false,
+      var r = { btn: btn, cv: cv, ctx: cv.getContext('2d'), seed: (seedN++ * 0.6180339887) % 1, vis: true, painted: false, behind: false, quiet: false, since: 0, lag: 0, tLast: -1, stale: false,
         w: 0, h: 0, cw: 0, ch: 0, rad: 0, tint: TINT[0], under: [0, 0, 0, 0, 0], light: [1, 1, 1, 0], sat: 1, veil: 1, ink: 1, lab: [0, 0, 6, 6], parent: null, rect: null, seen: -1, last: '',
         px: 0, py: 0, pv: 0, pvel: 0, ptarget: 0, hov: 0, ripT: -1, ripA: 0 };
       recs.set(btn, r);
@@ -664,13 +762,20 @@
           if (r.cv.parentNode !== btn) btn.insertBefore(r.cv, btn.firstChild);
           if (restyle || r.stale || r.parent !== btn.parentNode || r._cls !== btn.className) measure(r);
         }
-        r.behind = !!modal && !modal.contains(btn);
-        if (r.behind) { r.ptarget = r.pv = r.pvel = r.hov = 0; r.ripT = -1; }   // a drop that disappears behind a sheet is not drawn any more, so its press and its ring would never end: they end here (else the water behind kept the whole loop at the pace of a touched drop for as long as the sheet was open)
+        var was = r.behind; r.behind = !!modal && !modal.contains(btn);
+        // Behind a sheet the page rests. A drop that goes behind one first finishes its answer: the press springs back and a
+        // running ring fades (render: at most SETTLE ms), then one last picture in the rest pose - only then it is "quiet", is
+        // not drawn any more and costs nothing. (Until 14.11. it stopped at once: its canvas kept the picture of the moment,
+        // for the drop that opened the sheet always one in the middle of its answer to the finger.) When the sheet goes it
+        // wakes and goes on from its last picture: its water time stood still with it (lag), so it does not jump.
+        if (r.behind && !was) { r.ptarget = r.hov = 0; r.since = performance.now(); r.quiet = false; }
+        else if (!r.behind && was) rouse(r);
       }
       restyle = false;
       recs.forEach(function (rr, b) { if (!seen.has(b) || !b.isConnected) detach(rr); });
       if (fresh) followUntil = performance.now() + 700;         // new buttons may still slide in (card animation)
       loadScene(false);
+      return fresh;
     }
 
     /* ------------------------------------------------------------------ frame */
@@ -692,8 +797,13 @@
     }
     function frame(now) {
       raf = 0;
-      if (dirty) scan();
+      var fresh = dirty && scan();
       if (lost || !gl || !recs.size) return;
+      // A NEW screen (tab, world, sheet): its first frame goes out without the work of the drops, their first water picture
+      // follows in the next frame - the tap is answered with the new screen at once. For that one frame the new buttons show
+      // their plain glass; they arrive with the entrance of their cards (opacity from 0), so it is not seen. With reduced
+      // motion there is no entrance: drawn at once, as before.
+      if (fresh && !reduced()) { needOne = true; raf = requestAnimationFrame(frame); return; }
       if (now > nextStyle) measureAll();                          // cards may have changed their paint
       if (!LEVELS[W3.level].fps && now - downAt > patience) { W3.level--; upAt = now; calm = slow = held = 0; }   // governor: the still level is left after the wait (the loop only comes here on a touch or scroll)
       var lv = LEVELS[W3.level], still = reduced() || !lv.fps;
@@ -716,6 +826,7 @@
         var t1 = performance.now(), res;
         try { res = render(now, dt, still, timeDue); } catch (err) { fail(err); return; }
         any = res !== 0;
+        W3.resting = W3.settling = 0; recs.forEach(function (r) { if (r.quiet) W3.resting++; else if (r.behind && r.vis) W3.settling++; });   // drops behind a sheet: at rest, and still finishing their answer
         if (res === 2) {                                          // a picture was drawn
           var cost = performance.now() - t1;
           if (COST) cost = COST(cost);
@@ -765,7 +876,7 @@
       var list = [], total = 0, moved = false, key;
       frameNo++;
       recs.forEach(function (r) {
-        if (!r.vis || r.behind || r.w < 6 || r.h < 6) return;
+        if (!r.vis || r.quiet || r.w < 6 || r.h < 6) return;      // (quiet: resting behind a sheet - its last picture stays)
         var b = r.cv.getBoundingClientRect();
         if (b.width < 2 || b.height < 2 || b.bottom < 0 || b.top > vh || b.right < 0 || b.left > vw) return;
         r.rect = b; r.seen = frameNo;
@@ -808,7 +919,7 @@
       var fx = scene.pos ? scene.pos[0] : 0.5, fy = scene.pos ? scene.pos[1] : 0.5;
       var sc = Math.max(ir.width / nw, ir.height / nh), dw = nw * sc, dh = nh * sc;
       var br = bgEl ? bgEl.getBoundingClientRect() : ir;
-      var time = reduced() ? STILL_T : vt;
+      var frozen = reduced(), time = frozen ? STILL_T : vt;
 
       var pB = PROF ? performance.now() : 0;
       gl.useProgram(prog);
@@ -819,7 +930,6 @@
       var g = grad.stops;
       gl.uniform4f(U.uG0, g[0], g[1], g[2], g[3]); gl.uniform4f(U.uG1, g[4], g[5], g[6], g[7]);
       gl.uniform3f(U.uGCol, grad.col[0], grad.col[1], grad.col[2]);
-      gl.uniform1f(U.uTime, time);
       gl.uniform1f(U.uFlat, FLAT ? 1 : 0);
 
       for (i = 0; i < list.length; i++) {
@@ -830,7 +940,16 @@
           for (var k = 0; k < steps; k++) { r.pvel += (-(r.pv - r.ptarget) * 210 - r.pvel * 13) * hdt; r.pv += r.pvel * hdt; }
           if (r.ripT >= 0) { r.ripT += dt; if (r.ripT > 2) r.ripT = -1; }
         }
-        var ripAge = r.ripT >= 0 ? r.ripT : 0, ripA = r.ripT >= 0 ? r.ripA * Math.exp(-r.ripT * 1.6) * Math.min(1, (2 - r.ripT) * 4) : 0;
+        // behind a sheet: the ring fades within RING_OUT ms, the press has SETTLE ms to spring back - then this picture is the
+        // rest pose, and the last one until the sheet goes (see scan)
+        var fade = 1;
+        if (r.behind) {
+          var age = now - r.since; fade = Math.max(0, 1 - age / RING_OUT); if (!fade) r.ripT = -1;
+          if (r.ptarget < 1 && (still || age >= SETTLE || (r.ripT < 0 && Math.abs(r.pv - r.ptarget) < 0.002 && Math.abs(r.pvel) < 0.01))) { r.pv = r.ptarget; r.pvel = 0; r.ripT = -1; r.quiet = true; }
+        }
+        var ripAge = r.ripT >= 0 ? r.ripT : 0, ripA = r.ripT >= 0 ? r.ripA * Math.exp(-r.ripT * 1.6) * Math.min(1, (2 - r.ripT) * 4) * fade : 0;
+        var tr = frozen ? time : time - r.lag; if (!frozen) r.tLast = tr;   // the drop's own water time: the shared one, less what it stood still behind a sheet
+        gl.uniform1f(U.uTime, tr);
         var zoom = r.rect.width / r.cw, yTop = GH - r.ay, nL = neighbour(r, r.btn.previousElementSibling), nR = neighbour(r, r.btn.nextElementSibling);
         gl.viewport(r.ax, yTop - r.bh, r.bw, r.bh); gl.scissor(r.ax, yTop - r.bh, r.bw, r.bh);
         gl.uniform4f(U.uVp, r.ax, yTop, r.bw, r.bh);
@@ -870,8 +989,12 @@
 
     /* ------------------------------------------------------------------ wiring */
     function mine(el) { var b = el && el.closest ? el.closest(SEL) : null; return b && recs.has(b) ? b : null; }
+    // a drop that rests behind a sheet wakes (the sheet went, or a pointer reaches it beside a drawer): it goes on from its
+    // last picture - its water time goes on from where it stood
+    function rouse(r) { if (r.quiet && r.tLast >= 0) r.lag = vt - r.tLast; r.quiet = false; if (r.behind) r.since = performance.now(); }
     function press(btn, cx, cy) {
       var r = recs.get(btn); if (!r || btn.disabled) return;
+      if (r.behind) rouse(r);
       var b = r.cv.getBoundingClientRect(), zoom = b.width / (r.cw || 1) || 1;
       r.px = cx == null ? 0 : (cx - (b.left + b.width / 2)) / zoom;
       r.py = cy == null ? 0 : (cy - (b.top + b.height / 2)) / zoom;
@@ -879,12 +1002,13 @@
     }
     function release() {
       var any = false;
-      recs.forEach(function (r) { if (r.ptarget >= 1) { r.ptarget = r.hov || 0; any = true; if (r.ripT < 0 || r.ripT > 0.7) { r.ripT = 0; r.ripA = 2.4; } } });   // long press: a second, smaller ring on release. (A drop the mouse still rests on goes back to its hover)
+      recs.forEach(function (r) { if (r.ptarget >= 1) { r.ptarget = r.hov || 0; any = true; if (r.behind) rouse(r); if (r.ripT < 0 || r.ripT > 0.7) { r.ripT = 0; r.ripA = 2.4; } } });   // long press: a second, smaller ring on release. (A drop the mouse still rests on goes back to its hover; one behind a sheet then rings out again)
       if (any) kick();
     }
     // a mouse comes to rest on a drop, or leaves it: the drop gives way a little under the pointer and comes back (no ring)
     function hover(btn, cx, cy, on) {
       var r = recs.get(btn); if (!r || btn.disabled) return;
+      if (r.behind) rouse(r);
       r.hov = on ? HOVER : 0;
       if (r.ptarget >= 1) return;                                  // pressed: the press decides
       if (on) { var b = r.cv.getBoundingClientRect(), zoom = b.width / (r.cw || 1) || 1; r.px = (cx - (b.left + b.width / 2)) / zoom; r.py = (cy - (b.top + b.height / 2)) / zoom; }
@@ -961,10 +1085,14 @@
       if (mo) mo.disconnect(); if (io) io.disconnect(); if (ro) ro.disconnect(); mo = io = ro = null;
       offs.forEach(function (f) { f(); }); offs = [];
       recs.forEach(function (r) { detach(r); });
+      if (scene.wait) scene.wait.removeEventListener('load', onLoad); scene.wait = scene.el = null;
+      forget();                                                   // every scene texture, the scene being made (its bitmap, canvas and timers)
+      ahead.forEach(function (img) { img.removeEventListener('load', warmNext); }); ahead = []; warmer = null;
       var ext = gl && gl.getExtension('WEBGL_lose_context'); lost = true; if (ext) ext.loseContext();
       gl = null; W3.state = 'stopped';
     }
     listen();
+    warmer = warm;
     return destroy;
   }
 
@@ -1307,5 +1435,7 @@
     cur = null;
     return api;
   }
-  var api = window.Wasser = { start: start, stop: stop, MOBIL: MOBIL, DESKTOP: DESKTOP, info: info };
+  // the scenes of images the page will show later are made ready for the drops in quiet moments (Teil 1, "warm")
+  function warmUp(imgs) { if (warmer) { imgs = imgs && imgs.length !== undefined ? imgs : [imgs]; for (var i = 0; i < imgs.length; i++) warmer(imgs[i]); } return api; }
+  var api = window.Wasser = { start: start, stop: stop, warm: warmUp, MOBIL: MOBIL, DESKTOP: DESKTOP, info: info };
 })();
