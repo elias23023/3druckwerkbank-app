@@ -80,7 +80,7 @@ export async function session({ engine = 'chromium' } = {}) {
   return { engine, browser, base: server.url, harness: (o) => openHarness(browser, server.url, engine, o), app: (o) => openApp(browser, engine, o), close: async () => { await browser.close(); await server.close(); } };
 }
 const listen = (page) => { const errors = []; page.on('pageerror', (e) => errors.push(String(e).slice(0, 300))); page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); }); return errors; };
-const lookQuery = (look) => (look === 'vorlage' ? '' : !look ? '&ohne=1' : isTemplate(look) ? `&vorlage=${encodeURIComponent(urlOf(lookDir(look)))}` : `&alt=${encodeURIComponent(urlOf(lookDir(look)))}`);
+const lookQuery = (look) => (look === 'vorlage' || look === 'auto' || look === 'eingebaut' ? '' : !look ? '&ohne=1' : isTemplate(look) ? `&vorlage=${encodeURIComponent(urlOf(lookDir(look)))}` : `&alt=${encodeURIComponent(urlOf(lookDir(look)))}`);
 // the boxes of the drop canvases that are shown, in device px of a screenshot: [left, top, right, bottom].
 // pad (CSS px) widens them; all = also the canvases whose drop is not drawn yet; clip = the part of the page a screenshot shows
 const dropBoxes = (page, scale, { pad = 0, all = false, clip = null } = {}) => page.evaluate(([s, pad, all, ox, oy]) => [...document.querySelectorAll('.w3-drop')].filter((e) => e.getClientRects().length && (all || getComputedStyle(e).visibility === 'visible')).map((e) => { const r = e.getBoundingClientRect(); return [Math.floor((r.left - pad - ox) * s), Math.floor((r.top - pad - oy) * s), Math.ceil((r.right + pad - ox) * s), Math.ceil((r.bottom + pad - oy) * s)]; }), [scale, pad, all, clip ? clip.x : 0, clip ? clip.y : 0]);
@@ -96,28 +96,147 @@ export async function openHarness(browser, base, engine, { look = 'vorlage', ton
   return { page, context, errors, url, scale, drops: (o) => dropBoxes(page, scale, o), close: async () => { const v = video ? page.video() : null; await context.close(); return v ? v.path() : null; } };
 }
 
-/* ------------------------------------------------------------------ the real app at phone size, the look injected once */
-// The app is a single-page app with hash routes, so what is injected stays alive across screens exactly like a built-in look
-// would (React mounts and unmounts everything underneath it). A fresh browser opens the "Beispiel" workshop with demo data.
-// options: look ('vorlage'), ton, reduced, scale, video (folder), zeit (an ISO time: the app's clock stands still there and it gets no weather, so two runs show the same screens)
-export async function openApp(browser, engine, { look = 'vorlage', ton = '', reduced = false, scale = 2, video = null, zeit = null, start = {} } = {}) {
+/* ------------------------------------------------------------------ which look: built in, injected, replaced, none */
+// (the rules are in the head of this file)
+const rd = (f) => fs.readFileSync(abs(f), 'utf8');
+const APP_CSS = /\/assets\/[^/?]+\.css(\?.*)?$/;                   // the stylesheet(s) of the built app
+// a script that does nothing, for "no look" in an app whose bundle carries one (its hook calls Wasser.start / reads Wasser.DESKTOP)
+const NO_LOOK = 'window.Wasser = { start: function () { return this; }, stop: function () { return this; }, MOBIL: {}, DESKTOP: {}, info: { state: "ohne", frames: 0, drops: 0, level: 0, ms: 0 }, ohne: true };';
+// the look's rules inside a built stylesheet: its tail, from the first "[data-wasser" on (the app's own rules never name the
+// attribute). Returns the index, -1 = this stylesheet carries no look. Throws when rules of the app follow the look: then the
+// order of the build is wrong (docs/Wasser-Look.md, pitfall 44) and no tool may go on.
+export function lookStart(css) {
+  const i = css.indexOf('[data-wasser'); if (i < 0) return -1;
+  if (/[{}]\s*(\.m-shell|\.stage|\.topbar|\.glass)[\s.{,>:[]/.test(css.slice(i))) throw new Error('the look does not come LAST in the built stylesheet: rules of the app follow it and win over it (docs/Wasser-Look.md, pitfall 44; src/wasser/wasser.ts imports the app\'s stylesheets first to prevent this). Nothing was measured.');
+  return i;
+}
+// are the copies in src/wasser the template? (They carry one head line more.) null = there is no src/wasser
+export function inSync() {
+  const pairs = [['kern.css', 'kern.css'], ['mobil.css', 'mobil.css'], ['desktop.css', 'desktop.css'], ['wasser.js', 'wasser-skript.js']]; const off = [];
+  if (!fs.existsSync(abs('src/wasser'))) return null;
+  for (const [from, to] of pairs) { const f = abs(`src/wasser/${to}`); if (!fs.existsSync(f) || rd(f).replace(/^\/\* Kopie[^\n]*\n/, '') !== rd(`${VORLAGE}/${from}`)) off.push(to); }
+  return off;
+}
+// --look as the tools take it: 'ohne' = '', a folder must exist. Ends the tool with a message otherwise.
+export function lookArg(look, { harness = false } = {}) {
+  if (look === 'ohne') return '';
+  if (look === true || look === '') fail('--look needs a value: auto | eingebaut | vorlage | ohne | <folder> | git:<revision>');
+  if (look === 'auto' || look === 'eingebaut') return harness ? 'vorlage' : look;
+  if (look === 'vorlage' || /^git:/.test(look)) { try { lookDir(look); } catch (e) { fail(`--look ${look}: ${String(e.message || e).split('\n')[0]}`); } return look; }
+  const dir = lookDir(look); if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) fail(`--look ${look}: there is no such folder (${dir}). Known words: auto | eingebaut | vorlage | ohne | git:<revision>`);
+  if (!fs.existsSync(`${dir}/kern.css`) && !fs.existsSync(`${dir}/look.css`)) fail(`--look ${look}: the folder holds neither a copy of the template (kern.css, mobil.css, desktop.css, wasser.js) nor an earlier look (look.css, look.js)`);
+  return look;
+}
+export function fail(text, code = 2) { console.error('!! ' + text); process.exit(code); }
+const said = new Set();
+// one line per run and kind of look: what was really measured
+export function sayLook(h) { if (!h || !h.look || said.has(h.look.text)) return; said.add(h.look.text); console.log('Look: ' + h.look.text); const off = h.look.mode === 'eingebaut' ? inSync() : null; if (off && off.length) console.log(`!! src/wasser differs from the template (${off.join(', ')}): what is built in is NOT the template. node scripts/wasser/uebernehmen.mjs && npm run build`); }
+
+// Step 1, BEFORE the page loads: the stylesheet and the script of the look that was asked for.
+//   kind 'mobil' | 'desktop';  returns the state that lookAfter() needs
+export async function lookBefore(page, look) {
+  const st = { asked: look, bundled: false, served: false, err: null };
+  if (look === 'auto' || look === 'eingebaut') return st;
+  const tpl = isTemplate(look), dir = look ? lookDir(look) : '';
+  if (look && !tpl && !fs.existsSync(`${dir}/look.css`)) throw new Error(`look: ${look} is neither a copy of the template (kern.css) nor an earlier look (look.css)`);
+  const css = tpl ? ['kern.css', 'mobil.css', 'desktop.css'].map((f) => rd(`${dir}/${f}`)).join('\n') : '';
+  st.unroute = APP_CSS; st.dir = dir; st.tpl = tpl;
+  await page.route(APP_CSS, async (route) => {
+    try {
+      const r = await route.fetch(); let body = await r.text(); const i = lookStart(body);
+      if (i >= 0) { st.bundled = true; body = body.slice(0, i); }
+      if (css && !st.served && (i >= 0 || /\/index-[^/]*\.css/.test(route.request().url()))) { st.served = true; body += '\n' + css; }   // in one piece with the app's own rules, as its build bundles them
+      await route.fulfill({ response: r, body });
+    } catch (e) { st.err = e; await route.abort().catch(() => {}); }
+  });
+  await page.addInitScript({ content: tpl ? rd(`${dir}/wasser.js`) : NO_LOOK });
+  return st;
+}
+// Step 2, when the shell is there (rootSel: '.m-shell' or '.stage'): decide, and say what the page now runs.
+//   returns { asked, mode, dir, text, injected (the TOOL has to set the attribute and start), builtIn (the app's own hook runs the look, the app chooses the tone) }
+export async function lookAfter(page, st, rootSel) {
+  if (st.err) throw st.err;
+  const has = await page.evaluate((sel) => { const r = document.querySelector(sel); return { root: !!r && r.hasAttribute('data-wasser'), script: !!window.Wasser && !window.Wasser.ohne }; }, rootSel);
+  const look = st.asked, name = (d) => (d === abs(VORLAGE) ? 'the template (docs/wasser-look/vorlage)' : d);
+  if (look === 'eingebaut') return { asked: look, mode: has.root ? 'eingebaut' : 'ohne', dir: '', builtIn: has.root, injected: false, text: has.root ? 'built in (the app as it is built, nothing injected)' : 'none: this shell of the app has no look built in, and nothing was injected (--look eingebaut)' };
+  if (look === 'auto') return has.root ? { asked: look, mode: 'eingebaut', dir: '', builtIn: true, injected: false, text: 'built in (the app as it is built, nothing injected)' } : null;   // null: this shell has none - the caller takes the template
+  if (!look) return { asked: look, mode: 'ohne', dir: '', builtIn: false, injected: false, text: st.bundled ? 'none (the built-in look was taken out: its rules cut from the stylesheet, its script replaced by one that does nothing)' : 'none (the app has no look built in)' };
+  if (!st.tpl) return { asked: look, mode: 'alt', dir: st.dir, builtIn: false, injected: true, text: `the earlier look ${st.dir} (look.css, look.js), injected${st.bundled ? ' after the built-in look was taken out' : ''}` };
+  if (!st.served) throw new Error(`look: the app's stylesheet was not seen (no request matched ${APP_CSS}), so ${st.dir} could not be put in. Nothing was measured.`);
+  if (has.root && !st.bundled) throw new Error('look: the shell carries data-wasser but its stylesheet has no look to replace. Nothing was measured.');
+  return has.root ? { asked: look, mode: 'ersetzt', dir: st.dir, builtIn: true, injected: false, text: `${name(st.dir)} IN PLACE OF the built-in copies (the app's own hook runs it)` }
+    : { asked: look, mode: 'eingespielt', dir: st.dir, builtIn: false, injected: true, text: `${name(st.dir)}, injected (this shell of the app has no look built in${st.bundled ? '; the look bundled for the other shell was taken out' : ''})` };
+}
+// The tone through the app's own setting "Erscheinungsbild": written into the stored state, then the page is reloaded.
+// Returns true when the page was reloaded. (Storage is frozen between the write and the reload: the app saves its state often.)
+export async function setTheme(page, ton) {
+  if (ton === 'auto') return false; const theme = ton === 'klar' ? 'hell' : 'dunkel';
+  const did = await page.evaluate((theme) => { const k = localStorage.getItem('3druckwerkbank:bereich') === 'echt' ? '3druckwerkbank:echt:v1' : '3druckwerkbank:v1'; const raw = localStorage.getItem(k); if (!raw) return 'none'; const j = JSON.parse(raw); if (!j.state || !j.state.settings) return 'none'; if (j.state.settings.theme === theme) return 'same'; j.state.settings.theme = theme; localStorage.setItem(k, JSON.stringify(j)); Storage.prototype.setItem = function () {}; return 'set'; }, theme);
+  if (did === 'none') throw new Error('tone: the app has stored no state yet, its setting "Erscheinungsbild" cannot be set');
+  if (did === 'set') await page.reload({ waitUntil: 'networkidle' });
+  return did === 'set';
+}
+export const tonOf = (page) => page.evaluate(() => document.documentElement.getAttribute('data-wa-ton') || 'dunkel');
+
+/* ------------------------------------------------------------------ made-up weather */
+// a made-up answer of api.open-meteo.com/v1/forecast for seven days from the app's "today" (local times, Europe/Vienna)
+const CODE = { klar: 1, bedeckt: 3, regen: 61, nebel: 45, schnee: 73 };
+export function wetterJson(now, kind) {
+  const loc = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Vienna', dateStyle: 'short', timeStyle: 'short' }).format(now);
+  const [d0, hm] = loc.split(' '); const [Y, M, D] = d0.split('-').map(Number); const hNow = Number(hm.slice(0, 2));
+  const day = (i) => new Date(Date.UTC(Y, M - 1, D + i)).toISOString().slice(0, 10);
+  const code = CODE[kind] ?? 1, grey = kind !== 'klar', wet = kind === 'regen' || kind === 'schnee';
+  const H = { time: [], temperature_2m: [], precipitation_probability: [], precipitation: [], weather_code: [], cloud_cover: [], shortwave_radiation: [], is_day: [], wind_speed_10m: [], wind_gusts_10m: [], surface_pressure: [], uv_index: [] };
+  for (let i = 0; i < 7; i++) for (let h = 0; h < 24; h++) {
+    const isDay = h >= 7 && h <= 16, sun = isDay ? Math.sin(Math.PI * (h - 6.95) / 9.35) : 0;
+    H.time.push(`${day(i)}T${String(h).padStart(2, '0')}:00`);
+    H.temperature_2m.push(Math.round((6 + 4.5 * Math.sin((h - 9) / 24 * 2 * Math.PI) - i * .4 + (kind === 'schnee' ? -7 : 0)) * 10) / 10);
+    H.precipitation_probability.push(wet ? 85 : grey ? 25 : 5); H.precipitation.push(wet ? .6 : 0);
+    H.weather_code.push(i === 0 ? code : [code, 2, 3, 61, 1, 2][i - 1]); H.cloud_cover.push(grey ? 96 : 14);
+    H.shortwave_radiation.push(Math.round(Math.max(0, sun) * (grey ? 110 : 430))); H.is_day.push(isDay ? 1 : 0);
+    H.wind_speed_10m.push(9 + (h % 5)); H.wind_gusts_10m.push(21 + (h % 7)); H.surface_pressure.push(1016 - i); H.uv_index.push(Math.round(Math.max(0, sun) * (grey ? .6 : 1.9) * 10) / 10);
+  }
+  const days = [0, 1, 2, 3, 4, 5, 6];
+  return {
+    current: { time: `${d0}T${hm.slice(0, 2)}:${String(Math.floor(Number(hm.slice(3)) / 15) * 15).padStart(2, '0')}`, temperature_2m: H.temperature_2m[hNow], relative_humidity_2m: wet ? 91 : 68, apparent_temperature: H.temperature_2m[hNow] - 2, is_day: H.is_day[hNow], precipitation: wet ? .6 : 0, weather_code: code, cloud_cover: grey ? 96 : 14, wind_speed_10m: 11, surface_pressure: 1016 },
+    hourly: H,
+    daily: { time: days.map(day), weather_code: days.map((i) => (i === 0 ? code : [code, 2, 3, 61, 1, 2][i - 1])), temperature_2m_max: days.map((i) => 10.5 - i * .4), temperature_2m_min: days.map((i) => 1.5 - i * .4), sunrise: days.map((i) => `${day(i)}T06:57`), sunset: days.map((i) => `${day(i)}T16:18`), daylight_duration: days.map(() => 33660), precipitation_sum: days.map((i) => (wet && i === 0 ? 7.2 : i === 4 ? 3.1 : 0)), shortwave_radiation_sum: days.map(() => (grey ? 1.9 : 6.8)), wind_gusts_10m_max: days.map((i) => 27 + i), uv_index_max: days.map(() => (grey ? .6 : 1.9)) },
+  };
+}
+// the weather of a page: 'aus' = the request fails, else a made-up answer (the same on every run)
+export async function wetterRoute(page, kind, t0) {
+  if (kind === 'aus') return page.route(/open-meteo\.com/, (r) => r.abort());
+  if (!(kind in CODE)) throw new Error(`wetter: "${kind}" is none of ${Object.keys(CODE).join(' | ')} | aus`);
+  await page.route('**/geocoding-api.open-meteo.com/**', (r) => r.abort());
+  return page.route('**/api.open-meteo.com/v1/forecast**', (r) => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(wetterJson(new Date(t0), kind)) }));
+}
+
+/* ------------------------------------------------------------------ the real app at phone size */
+// The app is a single-page app with hash routes: what runs in it stays alive across screens (React mounts and unmounts
+// everything underneath). A fresh browser opens the "Beispiel" workshop with demo data.
+// options: look ('auto': see the head of this file), ton ('dunkel' | 'klar' | 'auto'), reduced, scale, video (folder),
+//          zeit (a name - morgen | tag | abend | nacht - or an ISO time: the app's clock STANDS STILL there; timers and animations run),
+//          wetter ('aus': the weather request fails - the default with zeit; klar | bedeckt | regen | nebel | schnee: a made-up answer;
+//          without zeit and without wetter the app asks the real service), start (options for Wasser.start on top of the shell's own),
+//          app (another address than WASSER_APP / :4173)
+export async function openApp(browser, engine, { look = 'auto', ton = '', reduced = false, scale = 2, video = null, zeit = null, wetter = null, start = {}, app = APP } = {}) {
   const context = await browser.newContext({ viewport: PHONE, deviceScaleFactor: scale, isMobile: engine !== 'firefox', hasTouch: true, timezoneId: 'Europe/Vienna', locale: 'de-AT', reducedMotion: reduced ? 'reduce' : 'no-preference', ...(engine === 'webkit' ? { userAgent: IPHONE } : {}), ...(video ? { recordVideo: { dir: video, size: PHONE } } : {}) });
-  const page = await context.newPage(); const errors = listen(page);
-  if (zeit) { await page.clock.setFixedTime(new Date(zeit)); await page.route(/open-meteo\.com/, (r) => r.abort()); }   // only the clock stands still, timers and animations run; and no weather from the network (it comes on one run and not on the next)
-  await page.goto(`${APP}/#/start`, { waitUntil: 'networkidle' }).catch((e) => { throw new Error(`the app is not reachable at ${APP} (npm run build && npm run preview): ${String(e).split('\n')[0]}`); });
-  await page.waitForSelector('.m-shell', { timeout: 15000 });
-  const rd = (f) => fs.readFileSync(abs(f), 'utf8');
-  if (ton && ton !== 'dunkel') await page.evaluate((t) => { document.documentElement.dataset.waTon = t; }, ton);
-  if (isTemplate(look)) {
-    // what the app will do itself once the look is built in: the attribute on the root, the three stylesheets after its own
-    // (in one piece, as its build bundles them), the script, start()
-    const dir = lookDir(look);
-    await page.evaluate(() => document.querySelector('.m-shell').setAttribute('data-wasser', 'mobil'));
-    await page.addStyleTag({ content: ['kern.css', 'mobil.css', 'desktop.css'].map((f) => rd(`${dir}/${f}`)).join('\n') });
-    await page.addScriptTag({ content: rd(`${dir}/wasser.js`) });
-    await page.evaluate((o) => window.Wasser.start(o), start);
-  } else if (look) {
-    await page.addStyleTag({ content: rd(`${lookDir(look)}/look.css`) }); await page.addScriptTag({ content: rd(`${lookDir(look)}/look.js`) });
+  const page = await context.newPage(); const errors = listen(page); ton = ton || 'dunkel';
+  if (zeit) await page.clock.setFixedTime(new Date(zeitOf(zeit)));     // only the clock stands still, timers and animations run
+  if (zeit || wetter) await wetterRoute(page, wetter || 'aus', zeit ? zeitOf(zeit) : Date.now());   // (real weather comes on one run and not on the next)
+  const load = async (fn) => { await fn().catch((e) => { throw new Error(`the app is not reachable at ${app} (npm run build && npm run preview): ${String(e).split('\n')[0]}`); }); await page.waitForSelector('.m-shell', { timeout: 15000 }); };
+  let st = await lookBefore(page, look);
+  await load(() => page.goto(`${app}/#/start`, { waitUntil: 'networkidle' }));
+  let got = await lookAfter(page, st, '.m-shell');
+  if (!got) { st = await lookBefore(page, 'vorlage'); await load(() => page.reload({ waitUntil: 'networkidle' })); got = await lookAfter(page, st, '.m-shell'); }   // 'auto' in a shell without a look: the template
+  if (got.builtIn) {                                               // the app chooses the tone: tell it through its own setting
+    if (await setTheme(page, ton)) await page.waitForSelector('.m-shell', { timeout: 15000 });
+    if (ton !== 'auto' && await tonOf(page) !== ton) throw new Error(`tone: the app was told "${ton}" through its setting and shows "${await tonOf(page)}". Nothing was measured.`);
+    if (Object.keys(start).length) await page.evaluate((o) => window.Wasser.start(o), start);   // (a second start() replaces the app's own instance)
+  } else if (got.injected) {
+    if (ton !== 'auto') await page.evaluate((t) => { if (t === 'klar') document.documentElement.dataset.waTon = t; else delete document.documentElement.dataset.waTon; }, ton);
+    if (got.mode === 'alt') { await page.addStyleTag({ content: rd(`${got.dir}/look.css`) }); await page.addScriptTag({ content: rd(`${got.dir}/look.js`) }); }
+    else { await page.evaluate(() => document.querySelector('.m-shell').setAttribute('data-wasser', 'mobil')); await page.evaluate((o) => window.Wasser.start(o), start); }   // what the app does itself once the look is built in
   }
   await page.waitForTimeout(900);
   const go = async (hash, wait = 700) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(wait); };
@@ -136,10 +255,17 @@ export async function openApp(browser, engine, { look = 'vorlage', ton = '', red
     if (name === 'geraet') return tap('#/druck', page.locator('.m-main .btn', { hasText: 'Gerät hinzufügen' }));           // form
     if (name === 'haken') return tap('#/heute', page.locator('.m-main .check'));                                             // ticks a task (the row goes, a ring runs; the app shows no toast here)
     if (name === 'toast') { await go('#/material'); await page.locator('.m-main').evaluate((e) => { e.scrollTop = 99999; }); await page.waitForTimeout(400); return tap(null, page.locator('.m-main .m-shop .btn--icon')); }   // removes a shopping entry: a toast with "Rückgängig"
-    throw new Error('unknown sheet ' + name);
+    throw new Error('unknown sheet ' + name + ' (phone: konto einstellungen hinweise suche projekt rolle neuerolle geraet haken toast)');
   };
   const project = async () => { await go('#/projekte'); await page.locator('.m-main .m-row--click').first().click(); await page.waitForTimeout(800); };
-  return { page, context, errors, scale, go, shot, sheet, closeSheet, project, drops: (o) => dropBoxes(page, scale, o), close: async () => { const v = video ? page.video() : null; await context.close(); return v ? v.path() : null; } };
+  // the other workspace ('echt' = Meine Werkstatt, starts completely empty): the page reloads, look and tone are set again
+  const bereich = async (ws) => {
+    await page.evaluate((x) => { localStorage.setItem('3druckwerkbank:bereich', x); location.hash = '#/start'; }, ws); await load(() => page.reload({ waitUntil: 'networkidle' }));
+    if (got.builtIn) { if (await setTheme(page, ton)) await page.waitForSelector('.m-shell', { timeout: 15000 }); if (Object.keys(start).length) await page.evaluate((o) => window.Wasser.start(o), start); }
+    else if (got.injected) { if (ton !== 'auto') await page.evaluate((t) => { if (t === 'klar') document.documentElement.dataset.waTon = t; else delete document.documentElement.dataset.waTon; }, ton); if (got.mode === 'alt') { await page.addStyleTag({ content: rd(`${got.dir}/look.css`) }); await page.addScriptTag({ content: rd(`${got.dir}/look.js`) }); } else { await page.evaluate(() => document.querySelector('.m-shell').setAttribute('data-wasser', 'mobil')); await page.evaluate((o) => window.Wasser.start(o), start); } }
+    await page.waitForTimeout(900);
+  };
+  return { page, context, errors, scale, look: got, ton, go, shot, sheet, closeSheet, project, bereich, drops: (o) => dropBoxes(page, scale, o), close: async () => { const v = video ? page.video() : null; await context.close(); return v ? v.path() : null; } };
 }
 
 /* ------------------------------------------------------------------ pictures */
@@ -234,9 +360,24 @@ export async function stack(files, out, { palette = false } = {}) {
   const ms = []; for (const f of files) ms.push(await sharp(f).metadata()); let y = 0; const layers = files.map((f, i) => { const l = { input: f, left: 0, top: y }; y += ms[i].height; return l; });
   await sharp({ create: { width: Math.max(...ms.map((m) => m.width)), height: y, channels: 3, background: '#16171a' } }).composite(layers).png(palette ? { palette: true, colours: 256, effort: 10, dither: 1 } : {}).toFile(out); return out;
 }
-// "--name value" and "--flag" from the command line; everything else stays in ._
-export function args(defaults = {}) {
-  const o = { ...defaults, _: [] }; const a = process.argv.slice(2);
-  for (let i = 0; i < a.length; i++) { if (a[i].startsWith('--')) { const k = a[i].slice(2); if (i + 1 < a.length && !a[i + 1].startsWith('--')) o[k] = a[++i]; else o[k] = true; } else o._.push(a[i]); }
+// The command line: "--name value", "--name=value" and "--flag"; everything else stays in ._
+//   defaults  every option the tool knows that takes a value, with its default
+//   flags     the options without a value (--app, --reduced ...)
+//   choices   { name: [allowed values] } - a list separated by commas is checked word by word
+// An option the tool does not know, a misspelt one, a missing value or a value that is not allowed ENDS the tool with a
+// message and exit code 2. (Until 14.11. such an option was ignored without a word - and "--loook kopie" checked the template.)
+export function args(defaults = {}, { flags = [], choices = {} } = {}) {
+  const o = { ...defaults, _: [] }; const a = process.argv.slice(2); const known = [...Object.keys(defaults), ...flags];
+  const dist = (x, y) => { const d = Array.from({ length: x.length + 1 }, (_, i) => [i, ...Array(y.length).fill(0)]); for (let j = 1; j <= y.length; j++) d[0][j] = j; for (let i = 1; i <= x.length; i++) for (let j = 1; j <= y.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (x[i - 1] === y[j - 1] ? 0 : 1)); return d[x.length][y.length]; };
+  const list = () => `This tool knows: ${known.map((k) => '--' + k).join(' ')}`;
+  for (let i = 0; i < a.length; i++) {
+    if (!a[i].startsWith('--')) { o._.push(a[i]); continue; }
+    const eq = a[i].indexOf('='); const k = a[i].slice(2, eq < 0 ? undefined : eq);
+    if (!known.includes(k)) { const near = known.filter((n) => dist(n, k) <= 2 || n.startsWith(k) || k.startsWith(n)); fail(`unknown option --${k}${near.length ? ` (did you mean --${near[0]}?)` : ''}. ${list()}`); }
+    if (flags.includes(k)) { if (eq >= 0) fail(`--${k} takes no value`); o[k] = true; continue; }
+    const v = eq >= 0 ? a[i].slice(eq + 1) : a[i + 1]; if (v === undefined || (eq < 0 && v.startsWith('--') && known.includes(v.slice(2).split('=')[0]))) fail(`--${k} needs a value. ${list()}`);
+    if (eq < 0) i++; o[k] = v;
+  }
+  for (const [k, allowed] of Object.entries(choices)) for (const v of String(o[k] ?? '').split(',')) if (v !== '' && !allowed.includes(v) && !(allowed.includes('<iso>') && +new Date(v) > 0) && !(allowed.includes('<WxH>') && /^\d+x\d+$/.test(v))) fail(`--${k} ${o[k]}: "${v}" is not one of ${allowed.join(' | ')}`);
   return o;
 }
