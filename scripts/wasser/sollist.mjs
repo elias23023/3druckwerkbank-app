@@ -50,7 +50,10 @@ if (!a.soll && !a.liste) fail('--soll <state> is missing: git:<revision> | baum 
 const look = lookArg(a.look); if (look === 'auto') fail('--look auto would give two apps two different looks without saying so: eingebaut (each as built), a folder, vorlage or ohne');
 const out = mkdir(abs(a.out)); const parts = (v) => String(v || '').split(',').map((x) => x.trim()).filter(Boolean);
 const nur = parts(a.nur), erwartet = parts(a.erwartet); const only = (n) => !nur.length || nur.some((w) => n.includes(w)); const expected = (n) => erwartet.some((w) => n.includes(w));
-const STILL = '.cloudbank { animation: none !important; } *, *::before, *::after { caret-color: transparent !important; }';
+// held still for the pictures, on both sides: the cloud banks (they drift even with reduced motion); the caret; and the islands'
+// own transition and layer hint - an island is a layer that the browser rasters at whatever scale it had while the world
+// changed (600 ms, also with reduced motion), so one and the same page showed the day ring and the island labels in two ways
+const STILL = '.cloudbank { animation: none !important; } *, *::before, *::after { caret-color: transparent !important; } .island { transition: none !important; will-change: auto !important; }';
 
 /* ------------------------------------------------------------------ the two states */
 const CACHE = path.join(os.tmpdir(), 'wasser-sollist-staende'); const closers = [];

@@ -30,7 +30,8 @@ if (what === 'ruhe') {
   const reg = await p.evaluate(() => {
     const r = (e) => { const q = e.getBoundingClientRect(); return [q.left, q.top, q.right, q.bottom].map((v) => Math.round(v * 2)); }; const vis = (e) => e.getClientRects().length > 0;
     const texts = { 'row title': '.m-main > .m-card .m-row b', 'small muted line in a row': '.m-main > .m-card .m-row .xs.muted', 'card title': '.m-main > .m-card h3', 'count in the title row': '.m-main > .m-card h3 .cnt', 'caption of a number tile': '.m-main > .m-card .m-stat span', 'label of an inactive tab': '.m-tabs button:not(.on) span' };
-    const t = {}; for (const [k, sel] of Object.entries(texts)) { const e = [...document.querySelectorAll(sel)].filter(vis)[0]; if (e) { e.setAttribute('data-bw', '1'); t[k] = r(e); } }
+    const seen = (e) => { const q = e.getBoundingClientRect(); return vis(e) && q.top >= 0 && q.bottom <= document.querySelector('.m-tabs').getBoundingClientRect().top; };   // (in the picture, above the tab bar: the page is longer than a phone)
+    const t = {}; for (const [k, sel] of Object.entries(texts)) { const e = [...document.querySelectorAll(sel)].filter(seen)[0]; if (e) { e.setAttribute('data-bw', '1'); t[k] = r(e); } else t[k] = null; }
     return { cards: [...document.querySelectorAll('.m-main > .glass.m-card')].filter(vis).map(r), bar: [r(document.querySelector('.m-tabs'))], drops: [...document.querySelectorAll('.w3-drop')].filter(vis).map(r), texts: t, running: document.getAnimations().filter((x) => x.playState === 'running').length };
   });
   // glyph mask: the same texts in magenta, nothing else touched
@@ -42,7 +43,7 @@ if (what === 'ruhe') {
   console.log(`alive but calm: ${a.look}, ton ${a.ton || 'dunkel'}, scene ${a.scene}, ${a.engine}; ${reg.running} animations running; stills ${tb.toFixed(1)} s and ${tc.toFixed(1)} s after the first`);
   for (const [name, boxes] of [['cards', reg.cards], ['tab bar', reg.bar]]) { const b1 = count(B, boxes), c1 = count(C, boxes);
     console.log(`${name.padEnd(8)} outside the drops: after 1 s ${pc(b1.ch, b1.n)} of the pixels changed (${pc(b1.ch4, b1.n)} by 4 or more), mean ${(b1.sum / b1.n).toFixed(2)}, largest ${b1.max}   |   after 4 s ${pc(c1.ch, c1.n)} (${pc(c1.ch4, c1.n)} by 4 or more), largest ${c1.max}`); }
-  for (const [name, box] of Object.entries(reg.texts)) { const b1 = count(B, [box], true), c1 = count(C, [box], true); console.log(`glyph pixels, ${name.padEnd(26)} ${String(b1.n).padStart(5)} px: changed after 1 s ${b1.ch} (largest ${b1.max}), after 4 s ${c1.ch} (largest ${c1.max})`); }
+  for (const [name, box] of Object.entries(reg.texts)) { if (!box) { console.log(`glyph pixels, ${name.padEnd(26)} not in view on this page (the list is not rolled)`); continue; } const b1 = count(B, [box], true), c1 = count(C, [box], true); console.log(`glyph pixels, ${name.padEnd(26)} ${String(b1.n).padStart(5)} px: changed after 1 s ${b1.ch} (largest ${b1.max}), after 4 s ${c1.ch} (largest ${c1.max})`); }
   await h.close();
 } else if (what === 'takt') {
   const h = a.seite === 'mobil' ? await s.harness({ look, ton: a.ton, scene: a.scene, touch: true, scale: +a.scale }) : await s.app({ look, ton: a.ton, scale: +a.scale }); const p = h.page; if (a.seite !== 'mobil') { sayLook(h); await h.go(a.hash, 2500); }

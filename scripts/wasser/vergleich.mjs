@@ -10,8 +10,8 @@
 // parts app, stile and film work against an app with the look built in. TWO STATES OF THE APP (two addresses, two commits)
 // are compared by sollist.mjs.
 //
-//   bilder   the harness page with reduced motion (frozen water): all eight scenes and their close-ups, both tones.
-//            Pixel by pixel; counted apart: inside the boxes of the drop canvases, and everywhere else.
+//   bilder   the harness page with reduced motion (frozen water): all eight scenes (each as it opens and rolled to its end)
+//            and their close-ups, both tones. Pixel by pixel; counted apart: inside the boxes of the drop canvases, and everywhere else.
 //   app      the same for the REAL app (preview on :4173, clock standing still): main screens, a project, sheets, search, toast.
 //   stile    the computed style of EVERY element, ::before, ::after and ::placeholder (all properties, and the look's
 //            custom properties) on the harness page and in the app; with motion, with reduced motion and with the app's
@@ -83,11 +83,13 @@ async function pair(name, open, steps) {                           // open(look)
   }
   for (const h of hs) await h.close();
 }
+// the phone view is longer than a phone since it begins with the card of the day: its second half, the list rolled to its end
+const UNTEN = async (h) => { await h.page.locator('.m-main').evaluate((e) => { e.scrollTop = 99999; }); await h.page.waitForTimeout(700); };
 async function bilder() {
   say(`\n== harness page, reduced motion, ${a.engine} ==`);
   for (const ton of TONES) for (const nah of [false, true]) for (const scene of SZENEN) {
     const name = `${ton}-${scene}${nah ? '-nah' : ''}`; if (!only(name)) continue;
-    await pair(name, (look) => s.harness({ look, ton, scene, nah, reduced: true }), [['', async () => {}]]);
+    await pair(name, (look) => s.harness({ look, ton, scene, nah, reduced: true }), [['', async () => {}], ...(nah ? [] : [['unten', UNTEN]])]);
   }
 }
 async function app() {

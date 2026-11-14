@@ -2,7 +2,8 @@
 //
 //   node scripts/wasser/bild.mjs <out-dir> [was] [--look auto|eingebaut|vorlage|<folder>|ohne] [--toene dunkel,klar] [--zeit tag|nacht|<ISO>] [--engine chromium|webkit|firefox] [--query fallback=1] [--reduced]
 //
-//   was = szenen   all eight scenes of the phone view (390 x 844 @2x): <ton>-<scene>.png, and one contact sheet <ton>-szenen.png
+//   was = szenen   all eight scenes of the phone view (390 x 844 @2x): <ton>-<scene>.png, the first one also rolled to its end
+//                  (<ton>-start-unten.png: the page is longer than a phone), and one contact sheet <ton>-szenen.png
 //         nah      close-ups of the buttons, free over the scene and on a card: <ton>-nah-<scene>.png (start, wetter, innen)
 //         alles    the phone view with a bottom sheet full of the small building blocks (?alles=1): <ton>-alles.png
 //         app      the real app: main screens, a project, sheets with forms, search, toast:
@@ -23,8 +24,10 @@ const say = (h, name) => { const e = h.errors.filter((x) => !/open-meteo|Failed 
 for (const ton of a.toene.split(',')) {
   if (!was || was === 'szenen') {
     const frames = [];
-    for (const scene of SZENEN) { const h = await s.harness({ look, ton, scene, reduced, query: a.query }); const file = `${out}/${ton}-${scene}.png`; await h.page.screenshot({ path: file }); frames.push({ file, label: scene }); say(h, scene); await h.close(); }
-    await strip(frames, `${out}/${ton}-szenen.png`, { title: `Vorschauseite (Vorlage Mobil), Ton ${ton}: die acht Szenen`, scale: 0.5, cols: 8 });
+    for (const scene of SZENEN) { const h = await s.harness({ look, ton, scene, reduced, query: a.query }); const file = `${out}/${ton}-${scene}.png`; await h.page.screenshot({ path: file }); frames.push({ file, label: scene });
+      if (scene === 'start') { await h.page.locator('.m-main').evaluate((e) => { e.scrollTop = 99999; }); await h.page.waitForTimeout(900); await h.page.screenshot({ path: `${out}/${ton}-start-unten.png` }); frames.push({ file: `${out}/${ton}-start-unten.png`, label: 'start, gerollt' }); }   // (the page is longer than a phone: its second card)
+      say(h, scene); await h.close(); }
+    await strip(frames, `${out}/${ton}-szenen.png`, { title: `Vorschauseite (Vorlage Mobil), Ton ${ton}: die acht Szenen`, scale: 0.5, cols: 9 });
   }
   if (!was || was === 'nah') for (const scene of ['start', 'wetter', 'innen']) { const h = await s.harness({ look, ton, scene, nah: true, reduced, query: a.query }); await h.page.screenshot({ path: `${out}/${ton}-nah-${scene}.png` }); say(h, 'nah ' + scene); await h.close(); }
   if (!was || was === 'alles') { const h = await s.harness({ look, ton, reduced, query: 'alles=1' + (a.query ? '&' + a.query : ''), settle: 2200 }); await h.page.screenshot({ path: `${out}/${ton}-alles.png` }); say(h, 'alles'); await h.close(); }

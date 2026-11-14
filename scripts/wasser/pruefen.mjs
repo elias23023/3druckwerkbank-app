@@ -53,7 +53,7 @@ const CARD_BTN = '.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon):not(
   await tap(p, '.m-tabs button', 1); await p.waitForTimeout(60); check(await flights(p) === 1, '2 a bar that was replaced: its first tap flies', await flights(p)); await p.waitForTimeout(700);
 
   await tap(p, CARD_BTN); await p.waitForTimeout(150); check(await rings(p) === 1, '3 tap on a card button: one ring', await rings(p));
-  await p.evaluate(() => { const card = document.querySelector('.m-main > .m-card'); [...card.children].forEach((ch) => { if (ch.className === 'wa-floor') ch.remove(); else if (ch.className !== 'wa-licht') ch.replaceWith(ch.cloneNode(true)); }); }); await p.waitForTimeout(1800);
+  await p.evaluate(() => { const card = document.querySelector('.m-main > .m-card:not(.m-today)'); [...card.children].forEach((ch) => { if (ch.className === 'wa-floor') ch.remove(); else if (ch.className !== 'wa-licht') ch.replaceWith(ch.cloneNode(true)); }); }); await p.waitForTimeout(1800);
   check(await rings(p) === 0, '3 the card re-rendered meanwhile, 1.8 s later: no ring left', await rings(p));
   { const [x, y] = await centre(p, CARD_BTN); await p.mouse.move(x, y); await p.mouse.down(); await p.waitForTimeout(400); check(await rings(p) === 0, '3 finger held down: no ring yet', await rings(p)); await p.mouse.move(x, y - 40, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(150); check(await rings(p) === 0, '3 finger dragged away (40 px): no ring', await rings(p)); }
   await p.evaluate(() => { document.querySelector('.m-main > .m-card .btn--primary').disabled = true; }); await tap(p, '.m-main > .m-card .btn--primary'); await p.waitForTimeout(120); check(await rings(p) === 0, '3 disabled button: no ring', await rings(p));
@@ -140,7 +140,7 @@ const CARD_BTN = '.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon):not(
   await tap(p, CARD_BTN); await p.waitForTimeout(120); check(await rings(p) === 0, '7 after stop(): a tap sends no ring', await rings(p));
   await tap(p, '.m-tabs button', 3); await p.waitForTimeout(700); check(await flights(p) === 0 && await p.evaluate(() => getComputedStyle(document.querySelector('.m-tabs')).getPropertyValue('--wa-tab').trim()) === '3', '7 after stop(): the bead still moves, by CSS alone', '');
   await p.evaluate(() => { window.Wasser.start(); window.Wasser.start(); }); await p.waitForTimeout(1500); const again = await left();
-  check(JSON.stringify(again) === JSON.stringify(first), '7 start() twice: one instance, everything is back as it was', again);   // (the page has 18 buttons and 3 cards, six and one of them in the hidden close-up)
+  check(JSON.stringify(again) === JSON.stringify(first), '7 start() twice: one instance, everything is back as it was', again);   // (the page has 18 buttons and 4 cards, six buttons and one card of them in the hidden close-up)
   await p.evaluate(() => window.Wasser.start({ drops: '.m-ico', light: '', ringOn: '' })); await p.waitForTimeout(1200); const opt = await left();
   check(opt.canvases === 3 && opt.lights === 0, '7 options: drops ".m-ico" only, no light', opt);
   await tap(p, CARD_BTN); await p.waitForTimeout(120); check(await rings(p) === 0, '7 options: ringOn "" switches the ring off', await rings(p));

@@ -6,6 +6,8 @@
    WHICH BLOCK EACH MOBILE ELEMENT IS MADE OF is written in kern.css, in the selector list of the block (CSS cannot add
    to a list from another file). For orientation:
      .glass.m-card              Becken        (+ ring and light: wasser.js, options ringOn, light)
+     .glass.m-card.m-today      the card of the day on Start (src/ui/Tageskarte.tsx): a Becken like every card; its two
+                                tiles are .m-row (Mulde). Nothing of the look names it: it is made of the blocks.
      .glass.m-stat              stilles Wasser, Lichtlauf
      .m-card .m-row, .m-stat    Mulde;  .m-card .m-row--click  Mulde zum Tippen
      .m-tabs                    dichtes Wasser, Markierung, Lichtlauf

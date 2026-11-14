@@ -1,10 +1,17 @@
 // Wasser-Look: Anschluss an die App. Der Look selbst sind die Kopien aus docs/wasser-look/vorlage
 // (kern.css, mobil.css, desktop.css, wasser-skript.js; neu holen mit node scripts/wasser/uebernehmen.mjs).
 // Er gilt nur innerhalb des Elements mit dem Attribut data-wasser.
+//
+// The look wins over the app's own rules by coming LATER in the built stylesheet. So the app's stylesheets are imported
+// here first: whichever module imports this one first, the order stays app -> kern -> mobil -> desktop. (Without these
+// three lines an early import - say from SheetHost.tsx - puts the look BEFORE mobile.css, and it loses on the phone
+// without a word. Check after a build: docs/Wasser-Look.md, 8.3, the command for the order.)
+import '../styles/tokens.css';
+import '../styles/global.css';
+import '../mobile/mobile.css';
 import './kern.css';
 import './mobil.css';
 import './desktop.css';
-import './einbau.css';
 import './wasser-skript.js'; // Nebenwirkung: window.Wasser
 import { useEffect } from 'react';
 

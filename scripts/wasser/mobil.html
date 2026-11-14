@@ -4,6 +4,9 @@
 <!--
   The mobile template to look at: a faithful mock of the mobile screen (src/mobile/Mobile.tsx) that loads the REAL app
   stylesheets from src/ and, on top, the water look from docs/wasser-look/vorlage. Nothing of the app is changed.
+  It begins like the app's start tab - the card of the day (src/ui/Tageskarte.tsx) - and then shows what the start tab
+  does not have on one screen: buttons free over the scene, buttons on cards, labels, number tiles. With the card of the
+  day the page is longer than a phone (844 px): the second card ends under the tab bar, the list scrolls as in the app.
   Serve the repository root and open this page at phone width:
       python3 -m http.server 4310          ->  http://localhost:4310/scripts/wasser/mobil.html
       npm run dev                          ->  http://localhost:5173/scripts/wasser/mobil.html
@@ -61,7 +64,20 @@
     <button class="glass m-ico" aria-label="Konto"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></button>
   </header>
   <main class="m-main">
-    <div class="m-clock"><b>17:42</b><span>Donnerstag, 12. November</span><p class="q">Aus Ideen entstehen Lieblingsstücke.</p></div>
+    <!-- the card of the day, as the app's start tab shows it (src/ui/Tageskarte.tsx, variant "mobil": a .glass.m-card with two .m-row tiles;
+         its own rules are the block "Tageskarte" in src/styles/global.css and .m-today in src/mobile/mobile.css) -->
+    <section class="glass m-card m-today tk">
+      <div class="tk__top">
+        <div class="tk__time"><span class="tk__hello">Guten Abend</span><b class="tk__clock">17<i>:</i>42</b><span class="tk__date"><b>Donnerstag</b><span>12. November 2026</span></span></div>
+        <div class="tk__wx"><div class="tk__temp"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ico" style="color: rgb(223, 233, 255);"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg><b>10 °C</b></div><span class="small">Überwiegend klar</span><span class="xs muted">Open-Meteo</span></div>
+      </div>
+      <div class="tk-day" role="img" aria-label="Tageslicht von 06:57 bis 16:18 Uhr"><div class="tk-day__track"><i class="tk-day__light" style="left: 28.9583%; width: 38.9583%;"></i><i class="tk-day__now" style="left: 73.75%;"></i></div><span class="tk-day__lbl" style="left: 28.9583%;">↑ 06:57</span><span class="tk-day__lbl" style="left: 67.9167%;">↓ 16:18</span></div>
+      <div class="tk-facts">
+        <div class="m-row tk-fact"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 14"></path><path d="M5 19 14 10"></path></svg><div><b>Herbst</b><span>Winter in 39 Tagen</span></div></div>
+        <div class="m-row tk-fact"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M4 18h16M6 18V9l6-4 6 4v9"></path><path d="M10 18v-4h4v4"></path></svg><div><b>Solarfenster</b><span>morgen ab 11:00</span></div></div>
+      </div>
+      <p class="tk__quote">„Aus Ideen entstehen Lieblingsstücke.“</p>
+    </section>
     <!-- buttons directly over the painted scene -->
     <div class="frei"><button class="btn btn--primary">Projekt öffnen <svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="btn">Bearbeiten</button><button class="btn btn--icon" aria-label="Neu"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
     <!-- buttons on a card, as in most of the app -->

@@ -6,6 +6,8 @@
    WHICH BLOCK EACH DESKTOP ELEMENT IS MADE OF is written in kern.css, in the selector list of the block (marked
    "desktop"). For orientation:
      .glass.panel                    Becken        (+ ring and light: wasser.js, options ringOn, light)
+     .glass.panel.tk                 the card of the day in the world Start (src/ui/Tageskarte.tsx, in a panel column): a
+                                     Becken like every panel; its two tiles are .item (Mulde). Nothing here names it.
      .glass.wchip                    stilles Wasser
      .dock                           dichtes Wasser, Markierung (seven children), Lichtlauf
      .chip.btn--icon (top bar)       Tropfen (round, live)
@@ -42,9 +44,10 @@
    .glass.carousel-nav.carousel-nav with one class twice: the list of "Perle" is the only one that weighs THREE classes.
    A lighter rule loses without a word, and no still shows it. After writing such a rule look at the COMPUTED value
    (DevTools, or getComputedStyle in a probe) - and press what can be pressed.
-   Five rules carry !important or name an inline style: the app styles those places inline today (the large panel's
-   place, the mark of the current version, the padding of small selects, the blue of two icons). Each says what to do
-   when the look is built in.
+   Three places the app used to style inline carry a class since the look is built in, and are named by it here (part 2):
+   the one large panel of a world (panel--haupt), the current version of a project (col--aktuell), the tile of the
+   "next task" row (thumb--naechstes). Two rules still carry !important and name an inline style: the padding of small
+   selects (part 5) - it says what to do.
    After a change:  node scripts/wasser/desktop.mjs pruefen   (and vergleich.mjs, if kern.css was touched). */
 
 /* == 1. Tokens of the desktop shell ============================================================================== */
@@ -118,10 +121,9 @@
   :root[data-motion="reduziert"] & { animation: none !important; }
 }
 [data-wasser="desktop"] .panel-col > .glass.panel { position: relative; padding: 13px 15px; }   /* (a basin needs a position; in a column the app's panels have none) */
-/* the one large panel in the middle of a world (druck, material, wetter, archiv: placed with a bottom edge; the first
-   project card): the full depth of a basin and the light on its floor. When the look is built in, give that panel a
-   class and name it here instead of the inline style. */
-[data-wasser="desktop"] :is(.ui > .glass.panel[style*="bottom:"], .glass.panel.project-card) {
+/* the one large panel in the middle of a world (druck, material, wetter, archiv: the app marks it with the class
+   panel--haupt; the first project card): the full depth of a basin and the light on its floor. */
+[data-wasser="desktop"] :is(.glass.panel.panel--haupt, .glass.panel.project-card) {
   --wa-shelf-inset: 20px;  --wa-shelf-soft: 14px;
   --wa-deep-inset: 42px 40px 46px 36px;  --wa-deep-soft: 32px;
   & > .wa-licht { opacity: 1; }
@@ -132,7 +134,7 @@
 [data-wasser="desktop"] .panel .item--on { background: var(--wa-trough-press); }
 [data-wasser="desktop"] .panel .alert.info { background: var(--wa-trough); border-color: var(--wa-pill-line); }   /* a plain note in a panel: a trough, not blue (a warning keeps its amber) */
 [data-wasser="desktop"] .panel .glass:where(.col) { -webkit-backdrop-filter: none; backdrop-filter: none; }   /* a box inside a panel is a trough, never a second blurred sheet */
-[data-wasser="desktop"] .panel .glass:where(.col)[style*="solid"] { border-color: rgba(var(--wa-core), .62) !important; }   /* the current version is marked by the app with an inline blue line: a line of light instead (!important only because it is an inline style; when the look is built in, the app marks it with a class) */
+[data-wasser="desktop"] .panel .glass.col--aktuell { border: 1px solid rgba(var(--wa-core), .62); }   /* the current version of a project (the app marks it with this class; without the look: a blue line): a line of light */
 [data-wasser="desktop"] .panel .filter-select.on, [data-wasser="desktop"] .filter-select.on { border-color: transparent; box-shadow: var(--wa-trough-walls), inset 0 0 0 1.5px rgba(var(--wa-core), .62); }   /* a filter that is set: a line of light, not blue */
 /* the running line under the material of a print that runs. The app: a blue streak, 2.2 s a lap, moved by "left" (the
    page's own thread lays it out and paints it for every picture), and it ran on while the water slept. Here: a glint of
@@ -146,11 +148,11 @@
   @media (prefers-reduced-motion: reduce) { & { animation: none; left: 0; width: 100%; opacity: .5; } }
 }
 @keyframes wa-fluss { to { transform: translateX(434%); } }   /* from 30 % before the tube to its far end: 130 % of the tube = 4.34 times the glint's own width */
-/* two icons the app colours blue INLINE: the sign of a plain note, the tile of the "next task" row in "Aktuelles im
-   Projekt" (its three neighbours keep green, violet and amber: those say what kind of row it is).
-   (!important only because they are inline styles. When the look is built in: the app gives both a class.) */
-[data-wasser="desktop"] .panel .alert.info > .ico { color: var(--wa-zeichen) !important; }
-[data-wasser="desktop"] .panel .thumb[style*="124, 198, 255"] { background: var(--wa-zeichen-grund) !important; color: var(--wa-zeichen) !important; }
+/* two icons that are blue in the app without the look: the sign of a plain note, the tile of the "next task" row in
+   "Aktuelles im Projekt" (the app marks it with the class thumb--naechstes; its three neighbours keep green, violet and
+   amber: those say what kind of row it is). */
+[data-wasser="desktop"] .panel .alert.info > .ico { color: var(--wa-zeichen); }
+[data-wasser="desktop"] .panel .thumb.thumb--naechstes { background: var(--wa-zeichen-grund); color: var(--wa-zeichen); }
 
 /* == 3. Kopfzeile ================================================================================================ */
 /* The three round buttons are live drops (kern.css, "Tropfen"). The text chips - workspace, search, weather - lie free
