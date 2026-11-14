@@ -10,7 +10,7 @@ import { NotesField } from '../forms/ProjektDetail';
 import { STATUS_COLOR } from '../forms/GeraetForm';
 import { bestPvWindow, todayDaily, wmo, pvKw } from '../lib/weather';
 import { sceneLook, type Look } from '../scene/looks';
-import { resolveSeason, SEASON_META, daysUntilNextSeason } from '../lib/season';
+import { resolveSeason, SEASON_META, daysUntilNextSeason, type Season } from '../lib/season';
 import { islandSrc } from '../scene/Island';
 import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { Logo } from '../ui/TopBar';
@@ -21,7 +21,7 @@ import { CommandBar } from '../ui/CommandBar';
 import { Toast } from '../ui/Toast';
 import { useHints } from '../ui/Hinweise';
 import { STAGES, type Project } from '../types';
-import { IHome, IClock, IFlag, ILayers, IList, ISearch, IBolt, IGear, IUser, IPrinter, ISun, IArchive, IArrowL, IChevR, IPlus, ISkip, IPlay, ISpool, IWrench, ICal, ICart, ITrash } from '../ui/Icons';
+import { IHome, IClock, IFlag, ILayers, IList, ISearch, IBolt, IGear, IUser, IPrinter, ISun, IArchive, IArrowL, IChevR, IPlus, ISkip, IPlay, ISpool, IWrench, ICal, ICart, ITrash, ISparkle, ISnow, IEnergy } from '../ui/Icons';
 
 type Tab = 'start' | 'heute' | 'projekte' | 'material' | 'mehr';
 /** Uhrzeit für heute, „Morgen“ für den Folgetag, sonst Wochentag und Datum. */
@@ -75,10 +75,53 @@ export function Mobile() {
   );
 }
 
+const ILeaf = (p: React.SVGProps<SVGSVGElement>) => <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="ico" {...p}><path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 14"/><path d="M5 19 14 10"/></svg>;
+const SEASON_ICON: Record<Season, (p: React.SVGProps<SVGSVGElement>) => React.ReactNode> = { fruehling: ISparkle, sommer: ISun, herbst: ILeaf, winter: ISnow };
+/** Fraction of the day (0–1) of an ISO time or Date. */
+const dayFrac = (t: string | Date) => { const d = typeof t === 'string' ? new Date(t) : t; return (d.getHours() * 60 + d.getMinutes()) / 1440; };
+
+/** Start: the card of the day. Greeting, clock, date, weather, daylight track, season, solar window and quote in one sheet instead of loose lines over the scene. */
+function MToday({ now, pvStart }: { now: Date; pvStart?: string }) {
+  const { settings, weather } = useStore(useShallow((st) => ({ settings: st.settings, weather: st.weather })));
+  const cur = weather?.data.hourly.length ? weather.data.current : undefined;
+  const today = todayDaily(weather?.data, now);
+  const season = resolveSeason(settings.season, now);
+  const SeasonIcon = SEASON_ICON[season];
+  const days = daysUntilNextSeason(now);
+  const [hh, mm] = fmtTime(now).split(':');
+  const [weekday, ...rest] = fmtLongDate(now).split(', ');
+  const rise = today ? dayFrac(today.sunrise) : 0; const set = today ? dayFrac(today.sunset) : 0;
+  return (
+    <section className="glass m-card m-today">
+      <div className="m-today__top">
+        <div className="m-today__time">
+          <span className="m-today__hello">{greeting(now)}{settings.userName ? `, ${settings.userName}` : ''}</span>
+          <b className="m-today__clock">{hh}<i>:</i>{mm}</b>
+          <span className="m-today__date"><b>{weekday}</b><span>{rest.join(', ')}</span></span>
+        </div>
+        <div className="m-today__wx">
+          {cur ? <><div className="m-today__temp"><WeatherIcon code={cur.code} isDay={cur.isDay} size={30} /><b>{fmtNum(cur.temp)} °C</b></div><span className="small">{wmo(cur.code).label}</span><span className="xs muted">{[settings.location.name.split(',')[0], 'Open-Meteo'].filter(Boolean).join(' · ')}</span></> : <span className="muted small">{weather?.error ? 'Wetter nicht verfügbar' : 'Wetter …'}</span>}
+        </div>
+      </div>
+      {today ? (
+        <div className="m-day" role="img" aria-label={`Tageslicht von ${fmtTime(today.sunrise)} bis ${fmtTime(today.sunset)} Uhr`}>
+          <div className="m-day__track"><i className="m-day__light" style={{ left: `${rise * 100}%`, width: `${Math.max(0, set - rise) * 100}%` }} /><i className="m-day__now" style={{ left: `${dayFrac(now) * 100}%` }} /></div>
+          <span className="m-day__lbl" style={{ left: `${rise * 100}%` }}>↑ {fmtTime(today.sunrise)}</span>
+          <span className="m-day__lbl" style={{ left: `${set * 100}%` }}>↓ {fmtTime(today.sunset)}</span>
+        </div>
+      ) : null}
+      <div className="m-facts">
+        <div className="m-row m-fact"><SeasonIcon /><div><b>{SEASON_META[season].label}</b><span>{SEASON_META[season].next} in {days} {days === 1 ? 'Tag' : 'Tagen'}</span></div></div>
+        {cur ? <div className="m-row m-fact"><IEnergy /><div><b>Solarfenster</b><span>{pvStart ? `${sameDay(new Date(pvStart), now) ? 'heute' : 'morgen'} ab ${fmtTime(pvStart)}` : 'keines in 48 h'}</span></div></div> : null}
+      </div>
+      {settings.showQuote ? <p className="m-today__quote">„{quoteOfDay(now)}“</p> : null}
+    </section>
+  );
+}
+
 function MStart({ now }: { now: Date }) {
   const { settings, weather, prints, devices, appointments, tasks, projects } = useStore(useShallow((st) => ({ settings: st.settings, weather: st.weather, prints: st.prints, devices: st.devices, appointments: st.appointments, tasks: st.tasks, projects: st.projects })));
   const openSheet = useStore((st) => st.openSheet);
-  const cur = weather?.data.hourly.length ? weather.data.current : undefined;
   const running = prints.filter((p) => p.status === 'läuft');
   const pv = weather?.data.hourly.length ? bestPvWindow(weather.data.hourly, settings.pvKwp, 3, now) : null;
   const events = useMemo(() => {
@@ -91,10 +134,7 @@ function MStart({ now }: { now: Date }) {
   }, [running, appointments, devices, tasks, now]);
   return (
     <>
-      <div className="m-clock"><b>{fmtTime(now)}</b><span>{fmtLongDate(now)}</span><span className="xs" style={{ color: 'rgba(255,255,255,.8)' }}>{SEASON_META[resolveSeason(settings.season, now)].label} · noch {daysUntilNextSeason(now)} Tage bis {SEASON_META[resolveSeason(settings.season, now)].next}</span><span style={{ color: '#fff', fontSize: 16, marginTop: 8 }}>{greeting(now)}{settings.userName ? `, ${settings.userName}` : ''}</span>{settings.showQuote ? <p className="q">„{quoteOfDay(now)}“</p> : null}</div>
-      <Card>
-        {cur ? <div className="row" style={{ gap: 12 }}><WeatherIcon code={cur.code} isDay={cur.isDay} size={40} /><div className="col grow" style={{ gap: 1 }}><b className="m-big">{fmtNum(cur.temp)} °C</b><span className="small muted">{wmo(cur.code).label} · {settings.location.name.split(',')[0]}</span></div><div className="col xs muted" style={{ textAlign: 'right' }}><span>{pv ? `Solarfenster ${fmtTime(pv.start)}` : 'kein Solarfenster'}</span><span>Open-Meteo</span></div></div> : <span className="muted small">{weather?.error ? 'Wetter nicht verfügbar' : 'Wetter …'}</span>}
-      </Card>
+      <MToday now={now} pvStart={pv?.start} />
       <Card title="Läuft gerade" icon={<IPrinter />} count={running.length} onMore={() => navigate({ world: 'druck' })}>
         {running.length === 0 ? <span className="muted small">Kein Druck läuft.</span> : running.map((p) => (
           <div key={p.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'druck', printId: p.id })}>
