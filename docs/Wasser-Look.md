@@ -513,6 +513,7 @@ Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in
    node scripts/wasser/vergleich.mjs bilder --alt git:HEAD --toene klar     # zeigt, was sich geändert hat (DIFF ist hier gewollt)
    ```
 
+   Wurde in einer Kopie geändert (4.1): statt `--alt git:HEAD` hier `--alt docs/wasser-look/vorlage --look <Kopie>`, und `--look <Kopie>` an jeden Befehl der Punkte 5 bis 7.
    Ausprobiert mit `--wa-ink-2-trough` im Ton „klar“ (.8 → .9): „dunkel“ ohne Abweichung, „klar“ acht Bilder mit je etwa 4400 geänderten Bildpunkten. `bilder` sieht nur, was auf der Vorschauseite steht. Ein Wert, der nur in Bögen oder Feldern vorkommt (z. B. `--wa-ink-3-trough`, die Platzhalter), zeigt sich dort nicht: dann `app` statt `bilder` nehmen, oder `stile` (jeder berechnete Stil, auch die Werte des Looks).
 
 5. Lesbarkeit messen. Die Werkzeuge messen die Schriftfarbe gegen die Bildpunkte, die wirklich hinter den Buchstaben liegen:
