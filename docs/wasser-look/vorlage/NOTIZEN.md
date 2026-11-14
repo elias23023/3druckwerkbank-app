@@ -1301,7 +1301,13 @@ only offsets a start by fractions of `--wa-t-ruhe-3`).
   10.6 -> 9.6, row title 11.2 -> 10.2, count 6.6 -> 5.8, drop on a card 7.4 -> 6.7, small drop 6.8 -> 6.1 (worst 5 %:
   5.1 -> 4.5); sheets, fields, search, toast within 0.2. By hand (Start, the start scene's snow and clouds behind the day
   card): clock 10.2 -> 9.1, greeting 6.1 -> 5.4, date 9.5 -> 8.7; a placeholder in a field ON a card 6.8 -> 6.6.
-- Contrast, desktop: DESKTOP_NUMBERS
+- Contrast, desktop (`desktop.mjs kontrast --toene klar`, built look; night, a November day, a winter day; 2000 x 993,
+  and day + winter at 1920 x 1080): no median below its floor. By day at 2000: panel titles 9.6 to 14.2 (before 9.6 to
+  14.1), main panel title 9.5 -> 7.8, text on open water 9.1 -> 7.6. Winter at 2000: bottom panel title 8.1 -> 8.1,
+  "Projekte" 8.8 -> 8.6, main panel title 9.1 -> 7.4, row "Projekte" small 5.9 -> 4.6, clickable label 5.7 -> 4.7.
+  Winter at 1920: clickable label 4.5 and row "Projekte" small 4.6 - at the floor. The day card by hand (night / day /
+  winter, before -> after): clock 14.5 -> 14.8 / 7.1 -> 7.1 / 7.2 -> 7.1, greeting 6.6 -> 7.5 by day, date 7.2 -> 5.9
+  by day and 6.0 -> 4.9 in winter. Dock, weather signs, search, drawer, toast: within 0.4.
 - Found, not caused by this step and not repaired: the placeholder of the search field has 2.3 to 2.6 in "klar" (1.9
   on the desktop by day), below 3, before and after. The field carries no class of the look; its placeholder has the
   browser's colour. In "dunkel" it has 4.0 and may not change, so a repair needs a tone token of its own.

@@ -231,3 +231,12 @@ wählen sie über die Einstellung der App; ein falsch geschriebener Schalter bee
 `sollist.mjs` (zwei Stände der App, Bildpunkt für Bildpunkt). An der Vorlage geändert: `desktop.css` nennt die drei
 Klassen des Einbaus selbst (die Brücke `src/wasser/einbau.css` ist aufgelöst), dazu Kommentare. Die Vorschauseite
 beginnt mit der Tageskarte. Was dabei geprüft wurde: `docs/Wasser-Look.md`, Abschnitt 11.
+
+**Tempo und „klar“ (14.11., abends; Entscheidungen 7 und 8 – der Besitzer hat beides noch nicht gesehen):** Die
+wandernden Lichter laufen etwa 1,4-mal so schnell (17 / 24 / 29 / 33 s statt 24 / 34 / 40 / 46 s; die Stärke bleibt 1).
+Der Ton „klar“ ist durchsichtiger: weniger Tiefe in der Mitte der Karten und Panels, am Desktop dunkelt ein Panel die
+Landschaft weniger ab. Damit die Titel der Panels auch an einem Wintertag lesbar bleiben, liegt im Ton „klar“ ein
+weicher Schatten über dem Kopf jedes Panels (auf der Tageskarte unter Gruß, Uhr und Datum); Dock, Wetterzeichen und
+Suche behalten ihre Abdunkelung. Zwei neue Werte je Ton (`--wa-weit-grund-panel`, `--wa-weit-kopf`), „dunkel“ ist
+Bildpunkt für Bildpunkt gleich. Bilder vorher/nachher und der Film zum Tempo: `docs/wasser-look/entwurf/tempo-und-ton/`;
+Werte, Zahlen und wie man sie zurückdreht: `docs/Wasser-Look.md`, Abschnitt 8, Schritte 9 und 10.
