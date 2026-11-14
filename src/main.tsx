@@ -15,5 +15,8 @@ import './styles/tokens.css';
 import './styles/global.css';
 import { App } from './App';
 import { ErrorBoundary } from './ui/ErrorBoundary';
+import { registerServiceWorker } from './lib/pwa';
 
 createRoot(document.getElementById('root')!).render(<StrictMode><ErrorBoundary><App /></ErrorBoundary></StrictMode>);
+// Installierbare App: Service Worker nur im gebauten Stand, nach dem ersten Bild (src/lib/pwa.ts)
+registerServiceWorker();
