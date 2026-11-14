@@ -32,7 +32,7 @@
 // All take --look auto|eingebaut|vorlage|<folder>|ohne (default auto = the look the app has built in; ohne = the app with its
 // look taken out), --engine chromium|webkit|firefox, --format, --reduced. An option that is not known ends the tool.
 import fs from 'fs'; import path from 'path'; import http from 'http';
-import { REPO, abs, mkdir, args, strip, sharp, lookDir, isTemplate, lookArg, lookStart, sayLook, fail, TOENE, ENGINES, ZEITEN } from './lib.mjs';
+import { REPO, abs, mkdir, outDir, args, strip, sharp, lookDir, isTemplate, lookArg, lookStart, sayLook, fail, TOENE, ENGINES, ZEITEN } from './lib.mjs';
 import { openDesktop, WELTEN } from './desktop-lib.mjs';
 
 const MODES = ['zeigen', 'bild', 'film', 'kontrast', 'pruefen', 'takt', 'clip'];
@@ -159,7 +159,7 @@ const lum = (r, g, b) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 const parseCol = (col) => { const v = (col.match(/[\d.]+/g) || []).map(Number); const f = col.startsWith('color(srgb') ? 255 : 1; return [v[0] * f, v[1] * f, v[2] * f, v.length > 3 ? v[3] : 1]; };
 const PROBE_CSS = '.__pt::placeholder{color:transparent!important;-webkit-text-fill-color:transparent!important} .__pm::placeholder{color:#ff00ff!important;-webkit-text-fill-color:#ff00ff!important;opacity:1!important} .__vt{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important} .__vm{color:#ff00ff!important;-webkit-text-fill-color:#ff00ff!important;text-shadow:none!important;caret-color:transparent!important} .__vt svg,.__vm svg,.__vt .pill,.__vm .pill,.__vt .badge,.__vm .badge{visibility:hidden!important}';
 async function kontrast() {
-  const out = mkdir(abs(a.out || path.join((await import('os')).tmpdir(), 'wasser-kontrast-desktop'))); const table = {}; const cols = []; const low = [];
+  const od = outDir(a.out, 'kontrast-desktop'), out = od.dir; const table = {}; const cols = []; const low = [];   // (--out <dir> keeps the small pictures and the table)
   const raw = async (file) => { const { data, info } = await sharp(file).removeAlpha().raw().toBuffer({ resolveWithObject: true }); return { data, w: info.width, h: info.height }; };
   for (const ton of String(a.toene).split(',')) for (const zeit of String(a.zeiten).split(',')) {
     const col = `${ton} ${zeit}`; cols.push(col); const d = await openDesktop({ look, format: a.format, ton, zeit, engine: a.engine, reduced: true }); const p = d.page; sayLook(d); await p.addStyleTag({ content: PROBE_CSS });
@@ -219,7 +219,7 @@ async function kontrast() {
   const lines = [`Wasser-Look am Desktop, ${a.format}: median (worst 5 %)`, ''.padEnd(30) + cols.map((c) => c.padEnd(15)).join(''), ...Object.entries(table).map(([name, row]) => name.padEnd(30) + cols.map((c) => cell(row[c]).padEnd(15)).join(''))];
   low.sort((x, y) => x[0] - y[0]); const under = low.filter((l) => l[1] < l[4]);
   lines.push('', 'lowest worst-5-% values: ' + low.slice(0, 6).map((l) => `${l[0].toFixed(1)} (${l[2]}, ${l[3]})`).join('; '), under.length ? `BELOW THE FLOOR (median; titles 7, text 4.5, placeholders 3): ${under.map((l) => `${l[2]}, ${l[3]}: ${l[1].toFixed(1)}`).join('; ')}` : 'no median below its floor (titles 7, text 4.5, placeholders 3)');
-  console.log(lines.join('\n')); fs.writeFileSync(`${out}/kontrast-desktop-${a.engine}.txt`, lines.join('\n') + '\n'); if (under.length) process.exitCode = 1;
+  console.log(lines.join('\n')); if (od.own) od.keep(false); else fs.writeFileSync(`${out}/kontrast-desktop-${a.engine}.txt`, lines.join('\n') + '\n'); if (under.length) process.exitCode = 1;
 }
 
 /* ------------------------------------------------------------------ pruefen */

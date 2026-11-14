@@ -50,8 +50,11 @@ const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebK
 const PHONE = { width: 390, height: 844 };
 export const abs = (p) => (path.isAbsolute(p) ? p : path.join(REPO, p));
 export const mkdir = (d) => { fs.mkdirSync(d, { recursive: true }); return d; };
+// where a tool keeps its pictures: the folder given with --out, or a scratch folder of ITS OWN in the OS temp dir (two tools that
+// run at the same time - two chats on one machine - must never write into the same folder). keep(false) removes a scratch folder.
+export function outDir(given, name) { const own = !given; const dir = own ? fs.mkdtempSync(path.join(os.tmpdir(), `wasser-${name}-`)) : mkdir(abs(given)); return { dir, own, keep: (yes) => { if (own && !yes) fs.rmSync(dir, { recursive: true, force: true }); return own && !yes ? '' : dir; } }; }
 // a look given as 'git:<revision>' (git:HEAD): the template as that commit has it, written to a scratch folder once
-const fromGit = {};
+const fromGit = {}; process.on('exit', () => { for (const d of Object.values(fromGit)) fs.rmSync(d, { recursive: true, force: true }); });
 export function lookDir(look) {
   if (look === 'vorlage') return abs(VORLAGE);
   if (!/^git:/.test(look)) return abs(look);

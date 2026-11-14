@@ -25,15 +25,16 @@
 // Prints one line per comparison and a summary; exit code 1 when something differs that is not listed in KNOWN below.
 // ok = no pixel differs; ok* = pixels differ INSIDE the drop canvases only (never a DIFF: the water lives; and see KNOWN,
 // point 4); ok~ = a difference that is known and explained (the strip "scroll"; changed drops of "klar" behind a blur).
-// Pictures of what differs: <out>/*-diff.png (red = outside the drops, yellow = inside). Default out: scratch folder in the OS temp dir.
+// Pictures of what differs: <out>/*-diff.png (red = outside the drops, yellow = inside). Without --out: a scratch folder of this
+// run's own in the OS temp dir, named in the last line and removed when nothing differs (the filmstrips are always kept).
 import fs from 'fs'; import os from 'os'; import path from 'path';
-import { session, diff, strip, args, mkdir, abs, lookDir, isTemplate, lookArg, sayLook, fail, TOENE, ENGINES, ALT, SZENEN } from './lib.mjs';
+import { session, diff, strip, args, outDir, lookDir, isTemplate, lookArg, sayLook, fail, TOENE, ENGINES, ALT, SZENEN } from './lib.mjs';
 import { film, STRIPS } from './film.mjs';
-const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', look: '', out: path.join(os.tmpdir(), 'wasser-vergleich'), nur: '' }, { choices: { engine: ENGINES, toene: TOENE } }); if (a.look) a.neu = a.look;
+const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', look: '', out: '', nur: '' }, { choices: { engine: ENGINES, toene: TOENE } }); if (a.look) a.neu = a.look;
 const MODES = ['bilder', 'app', 'stile', 'film', 'alles']; if (a._.length > 1 || (a._[0] && !MODES.includes(a._[0]))) fail(`"${a._.join(' ')}": one of ${MODES.join(' | ')} (nothing = alles)`);
 for (const k of ['alt', 'neu']) { a[k] = lookArg(a[k]); if (!a[k] || a[k] === 'auto') fail(`--${k}: a folder, vorlage, git:<revision> or eingebaut`); }
 const dirOf = (l) => lookDir(l === 'eingebaut' ? 'vorlage' : l);   // (the files of a look: what is built in are the copies of the template)
-const mode = a._[0] || 'alles'; const out = mkdir(abs(a.out)); const TONES = a.toene.split(','); const ZEIT = '2026-11-12T17:42:00+01:00';
+const mode = a._[0] || 'alles'; const od = outDir(a.out, 'vergleich'), out = od.dir; const TONES = a.toene.split(','); const ZEIT = '2026-11-12T17:42:00+01:00';
 const only = (name) => !a.nur || name.includes(a.nur);
 const s = await session({ engine: a.engine }); let bad = 0; const lines = []; const say = (t) => { console.log(t); lines.push(t); };
 
@@ -237,6 +238,7 @@ if (mode === 'app' || mode === 'alles') await app();
 if (mode === 'stile' || mode === 'alles') await stile();
 if (mode === 'film' || mode === 'alles') await filme();
 await s.close();
-say(`\n${bad ? bad + ' comparison(s) differ' : 'no difference outside the drops and in no computed style'}  (reference ${a.alt}, engine ${a.engine}; pictures in ${out})`);
-fs.writeFileSync(`${out}/vergleich-${mode}-${a.engine}.txt`, lines.join('\n') + '\n');
+const kept = od.own && !bad && mode !== 'film' && mode !== 'alles' ? '' : out;   // (a scratch folder of its own is removed when nothing differs - the filmstrips are kept: they are worth a look either way)
+say(`\n${bad ? bad + ' comparison(s) differ' : 'no difference outside the drops and in no computed style'}  (reference ${a.alt}, engine ${a.engine}${kept ? '; pictures in ' + kept : ''})`);
+if (kept) fs.writeFileSync(`${out}/vergleich-${mode}-${a.engine}.txt`, lines.join('\n') + '\n'); else od.keep(false);
 process.exit(bad ? 1 : 0);

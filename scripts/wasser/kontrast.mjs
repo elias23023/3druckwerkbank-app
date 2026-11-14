@@ -21,16 +21,17 @@
 //   --grenze   the floor it must reach (default 4.5; platzhalter 3; a title on the desktop should reach 7)
 //   --desktop  on the desktop (2000 x 993, by night and by day) instead of the phone. --zeiten: the hours to measure at
 //              (morgen tag abend nacht; phone: default the real hour, with a name the clock stands still and there is no weather)
-// Exit code 1 when a median falls below its floor, or when --css matched nothing. --out keeps the small pictures that were measured.
+// Exit code 1 when a median falls below its floor, or when --css matched nothing. --out <dir> keeps the small pictures that were
+// measured and the table (kontrast-<engine>.txt); without it nothing is kept.
 // --look: head of lib.mjs. Default auto: the app is measured with the look it has BUILT IN, the harness page with the template.
 import fs from 'fs'; import os from 'os'; import path from 'path';
-import { session, rgb, args, abs, mkdir, lookArg, sayLook, geheZu, fail, TOENE, ENGINES, SZENEN, ZEITEN } from './lib.mjs';
+import { session, rgb, args, outDir, lookArg, sayLook, geheZu, fail, TOENE, ENGINES, SZENEN, ZEITEN } from './lib.mjs';
 import { openDesktop } from './desktop-lib.mjs';
-const a = args({ look: 'auto', toene: 'dunkel,klar', engine: 'chromium', szenen: 'start,wetter,innen', out: path.join(os.tmpdir(), 'wasser-kontrast'), css: '', welt: '', bogen: '', klick: '', art: 'text', name: '', grenze: '', format: '2000', zeiten: '' },
+const a = args({ look: 'auto', toene: 'dunkel,klar', engine: 'chromium', szenen: 'start,wetter,innen', out: '', css: '', welt: '', bogen: '', klick: '', art: 'text', name: '', grenze: '', format: '2000', zeiten: '' },
   { flags: ['app', 'desktop'], choices: { toene: TOENE, engine: ENGINES, szenen: SZENEN, art: ['text', 'platzhalter', 'wert'], zeiten: Object.keys(ZEITEN), format: ['2000', '1920', '<WxH>'] } });
 if (a._.length) fail(`this tool takes no word without "--": ${a._.join(' ')}`); if (!a.css && (a.welt || a.bogen || a.klick || a.desktop || a.name || a.grenze)) fail('--welt, --bogen, --klick, --name, --grenze and --desktop belong to --css <selector> (one element of your own)');
 const appLook = lookArg(a.look), hLook = lookArg(a.look, { harness: true }); if (!appLook) fail('--look ohne: this tool measures the look');
-const out = mkdir(abs(a.out)); const s = await session({ engine: a.engine }); const table = {}; const cols = []; let low = []; let vw = 390, missing = 0;
+const od = outDir(a.out, 'kontrast'), out = od.dir; const s = await session({ engine: a.engine }); const table = {}; const cols = []; let low = []; let vw = 390, missing = 0;
 const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
 const lum = (r, g, b) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 const parse = (col) => { const v = (col.match(/[\d.]+/g) || []).map(Number); const f = col.startsWith('color(srgb') ? 255 : 1; return [v[0] * f, v[1] * f, v[2] * f, v.length > 3 ? v[3] : 1]; };
@@ -107,4 +108,4 @@ const lines = ['median (worst 5 %)'.padEnd(wide) + cols.map((c) => c.padEnd(15))
 low.sort((x, y) => x[0] - y[0]); const under = low.filter((l) => l[1] < l[4]);
 lines.push('', 'lowest worst-5-% values: ' + low.slice(0, 4).map((l) => `${l[0].toFixed(1)} (${l[2]}, ${l[3]})`).join('; '), under.length ? `BELOW THE FLOOR (median): ${under.map((l) => `${l[2]}, ${l[3]}: ${l[1].toFixed(1)} (floor ${l[4]})`).join('; ')}` : `no median below the floor (${a.css ? (low[0] ? low[0][4] : '-') : '4.5; placeholders 3'})`);
 if (missing) lines.push(`NOT MEASURED in ${missing} of ${cols.length} column(s): see the lines with "!!" above`);
-console.log(lines.join('\n')); fs.writeFileSync(`${out}/kontrast-${a.engine}.txt`, lines.join('\n') + '\n'); process.exit(under.length || missing ? 1 : 0);
+console.log(lines.join('\n')); if (od.own) od.keep(false); else fs.writeFileSync(`${out}/kontrast-${a.engine}.txt`, lines.join('\n') + '\n'); process.exit(under.length || missing ? 1 : 0);

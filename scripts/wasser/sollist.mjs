@@ -45,15 +45,15 @@
 // Needs Chromium (or --engine webkit) and, for git: and baum, a few seconds per build. The work machine draws WebGL in
 // software: "equal" here means equal on THIS machine in ONE run - both sides are always drawn by the same browser.
 import fs from 'fs'; import os from 'os'; import path from 'path'; import { execFileSync } from 'child_process';
-import { session, serve, diff, strip, args, abs, mkdir, REPO, lookArg, sayLook, fail, TOENE, ENGINES, ZEITEN } from './lib.mjs';
+import { session, serve, diff, strip, args, abs, mkdir, outDir, REPO, lookArg, sayLook, fail, TOENE, ENGINES, ZEITEN } from './lib.mjs';
 import { openDesktop, WELTEN } from './desktop-lib.mjs';
 
-const a = args({ soll: '', ist: 'baum', look: 'eingebaut', toene: 'dunkel,klar', formate: '2000,1920', zeiten: '', bereiche: 'demo,echt', nur: '', erwartet: '', out: path.join(os.tmpdir(), 'wasser-sollist'), engine: 'chromium', api: '' },
+const a = args({ soll: '', ist: 'baum', look: 'eingebaut', toene: 'dunkel,klar', formate: '2000,1920', zeiten: '', bereiche: 'demo,echt', nur: '', erwartet: '', out: '', engine: 'chromium', api: '' },
   { flags: ['liste', 'tropfen'], choices: { toene: TOENE, engine: ENGINES, zeiten: Object.keys(ZEITEN), bereiche: ['demo', 'echt'], formate: ['2000', '1920', '<WxH>'], api: ['node'] } });
 const WAS = ['handy', 'desktop', 'alles']; const was = a._[0] || 'alles'; if (!WAS.includes(was) || a._.length > 1) fail(`"${a._.join(' ')}": one of ${WAS.join(' | ')} (nothing = alles)`);
 if (!a.soll && !a.liste) fail('--soll <state> is missing: git:<revision> | baum | an address | a folder with a built app   (see the head of this file)');
 const look = lookArg(a.look); if (look === 'auto') fail('--look auto would give two apps two different looks without saying so: eingebaut (each as built), a folder, vorlage or ohne');
-const out = mkdir(abs(a.out)); const parts = (v) => String(v || '').split(',').map((x) => x.trim()).filter(Boolean);
+const od = a.liste ? { dir: '', own: false, keep: () => '' } : outDir(a.out, 'sollist'), out = od.dir; const parts = (v) => String(v || '').split(',').map((x) => x.trim()).filter(Boolean);
 const nur = parts(a.nur), erwartet = parts(a.erwartet); const only = (n) => !nur.length || nur.some((w) => n.includes(w)); const expected = (n) => erwartet.some((w) => n.includes(w));
 // held still for the pictures, on both sides: the cloud banks (they drift even with reduced motion); the caret; and the islands'
 // own transition and layer hint - an island is a layer that the browser rasters at whatever scale it had while the world
@@ -70,10 +70,11 @@ async function stand(spec, label) {
   if (/^git:/.test(spec)) {
     let hash; try { hash = execFileSync('git', ['rev-parse', '--verify', `${spec.slice(4)}^{commit}`], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'] }).toString().trim(); } catch (e) { fail(`--${label} ${spec}: git does not know this revision`); }
     const dir = path.join(CACHE, hash.slice(0, 12) + (a.api ? '-' + a.api : ''));
-    if (!fs.existsSync(`${dir}/dist/index.html`)) {
-      fs.rmSync(dir, { recursive: true, force: true }); mkdir(dir);
+    if (!fs.existsSync(`${dir}/dist/index.html`)) {                // built in a folder of this run's own, then moved into place: two runs at the same time never see half a build
+      const tmp = `${dir}.${process.pid}`; fs.rmSync(tmp, { recursive: true, force: true }); mkdir(tmp);
       const files = execFileSync('git', ['ls-tree', '--name-only', hash], { cwd: REPO }).toString().split('\n').filter((f) => /^(src|public|index\.html|package\.json|vite\.config\.[jt]s|tsconfig.*\.json)$/.test(f));
-      execFileSync('sh', ['-c', `git archive ${hash} ${files.join(' ')} | tar -x -C "${dir}"`], { cwd: REPO }); fs.symlinkSync(abs('node_modules'), `${dir}/node_modules`); vite(dir, `${dir}/dist`);
+      execFileSync('sh', ['-c', `git archive ${hash} ${files.join(' ')} | tar -x -C "${tmp}"`], { cwd: REPO }); fs.symlinkSync(abs('node_modules'), `${tmp}/node_modules`); vite(tmp, `${tmp}/dist`);
+      try { if (fs.existsSync(`${dir}/dist/index.html`)) fs.rmSync(tmp, { recursive: true, force: true }); else { fs.rmSync(dir, { recursive: true, force: true }); fs.renameSync(tmp, dir); } } catch (e) { fs.rmSync(tmp, { recursive: true, force: true }); if (!fs.existsSync(`${dir}/dist/index.html`)) throw e; }
     }
     return served(`${dir}/dist`, `${spec} = ${hash.slice(0, 7)}, built in ${dir}`);
   }
@@ -149,7 +150,7 @@ if (a.liste) {
 }
 
 const soll = await stand(a.soll, 'soll'), ist = await stand(a.ist, 'ist');
-say(`Soll: ${soll.text}\nIst:  ${ist.text}\nreduced motion, the clock stands still, made-up weather; pictures of what differs in ${out}`);
+say(`Soll: ${soll.text}\nIst:  ${ist.text}\nreduced motion, the clock stands still, made-up weather; pictures of what differs: ${out}${od.own ? ' (removed when every screen is equal; --out <dir> keeps a folder of your choice)' : ''}`);
 const s = await session({ engine: a.engine }); const t0 = Date.now();
 try {
   for (const ton of parts(a.toene)) for (const zeit of zeitenOf(ton)) {
@@ -181,5 +182,5 @@ if (water.length) { say('equal outside the drops, other water in a drop (not com
 if (real.length) { say('DIFFER, and were not expected to:'); for (const d of real) say(`  ${d.full.padEnd(44)} ${d.text}${d.pic ? '\n      ' + d.pic : ''}`); }
 if (exp.length) { say('differ as expected (--erwartet):'); for (const d of exp) say(`  ${d.full.padEnd(44)} ${d.text}${d.pic ? '\n      ' + d.pic : ''}`); }
 if (!count) say('!! no screen matched --nur: --liste prints the names');
-fs.writeFileSync(`${out}/sollist.txt`, lines.join('\n') + '\n');
+if (od.own && !differ.length) od.keep(false); else fs.writeFileSync(`${out}/sollist.txt`, lines.join('\n') + '\n');   // (a scratch folder of its own is removed when every screen is equal)
 process.exit(real.length || failed || !count ? 1 : 0);
