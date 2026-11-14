@@ -23,7 +23,9 @@ const RING: [number, number, number, number][] = [[12, 47, 16, 0.5], [88, 47, 16
 /** Per-world overrides so neighbour islands stay visible beside that world's panels (side columns start lower there). */
 // the fifth slot sits right of the search field (top centre is covered by it)
 const HIGH_RING: typeof RING = [[11, 27, 10.5, 0.5], [89, 27, 10.5, 0.5], [25, 9, 9.5, 0.66], [75, 9.5, 9.5, 0.66], [61.5, 9, 8, 0.78]];
-const RING_BY_WORLD: Partial<Record<WorldId, typeof RING>> = { heute: HIGH_RING, druck: HIGH_RING, material: HIGH_RING, wetter: HIGH_RING, archiv: HIGH_RING };
+// Wetter: der fünfte Platz (dort steht „Archiv“) liegt etwas höher, in der Lücke zwischen Suchfeld und Uhr. Sonst steht auf einem 2:1-Bildschirm (2000×993) das Wetterschild „Luftdruck“ auf seiner Beschriftung
+const WETTER_RING: typeof RING = [...HIGH_RING.slice(0, 4), [61.5, 5.5, 8, 0.78]];
+const RING_BY_WORLD: Partial<Record<WorldId, typeof RING>> = { heute: HIGH_RING, druck: HIGH_RING, material: HIGH_RING, wetter: WETTER_RING, archiv: HIGH_RING };
 // the main islands are wide (3:2), so they get more width than the old square sprites
 const CENTRE_BY_WORLD: Partial<Record<WorldId, [number, number, number]>> = { heute: [50, 34, 40], druck: [50, 34.5, 30], material: [50, 34.5, 30], wetter: [50, 34.5, 30], archiv: [50, 34.5, 30] };
 
