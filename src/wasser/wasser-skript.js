@@ -14,7 +14,8 @@
      Wasser.warm(img)        images the page will show LATER as its scene (an <img> or new Image(), loaded or not; one or a
                              list), e.g. the scenes of the other tabs: their pictures are made ready for the drops in quiet
                              moments, one at a time, so that the first visit of a tab is as quick as the second. Same address
-                             as the page's <img> will have: give the same srcset and sizes. Up to five are kept (Teil 1, KEEP).
+                             as the page's <img> will have: give the same srcset and sizes. They fill the store of scene
+                             pictures up to one place below its size (Teil 1, KEEP: five of six), the rest is made when asked.
                              Does nothing before start() or after stop(); returns Wasser.
      Wasser.MOBIL            the default options: the mobile shell of this app. The base for another shell:
                              Wasser.start(Object.assign({}, Wasser.MOBIL, { scene: '...', shade: '', bar: '...' }))
@@ -515,7 +516,7 @@
       want = src;                                                  // (also while it still loads: a scene being made for another page is given up)
       if (!gl || lost) return;
       if (!force && src === scene.src && texReady) return;
-      if (e && img.currentSrc) { show(src, e); W3.reused++; return; }   // kept: shown at once, even before the new <img> has finished loading
+      if (e) { show(src, e); W3.reused++; return; }               // kept: shown at once, even before the new <img> has finished loading (if its srcset then picks another candidate, that one is made)
       if (!img.complete || !img.naturalWidth) return;             // (an image that failed to load: the old scene stays)
       if (!job && !bad.has(src)) make(img, src);                  // (one scene is made at a time: when it is done, make() looks at "want" again)
     }
@@ -619,7 +620,7 @@
     function forget() {                                           // the context is gone (lost, failed, stopped): every texture with it
       gen++; if (job) drop(job);
       if (gl && !lost) store.forEach(function (e) { gl.deleteTexture(e.tex); });
-      store.clear(); tex = null; texReady = false; scene.src = ''; W3.scenes = 0;
+      store.clear(); tex = null; texReady = false; scene.src = ''; W3.scenes = 0; W3.scene = '';
     }
     // the darkening the page lays over the scene (::after of option "shade"), read from the real style so the copy never drifts from the page
     function readGradient() {

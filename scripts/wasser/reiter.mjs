@@ -7,19 +7,27 @@
 //
 //   handy       390 x 844 @3x, touch: Heute, Projekte, Material, Mehr, Start (first visits), the same five again (second visits)
 //   desktop     2000 x 993 and 1920 x 1080 (--format), the dock: Heute, Projekte, Druck, Material, Wetter, Archiv, Start, twice
-//   landschaft  desktop 2000 x 993: the clock stands 15 s before the look of the hour changes (13.11., 15:27:45; the made-up
-//               weather sets sunset at 16:18, at 15:28 "nachmittag" turns "golden": the landscape goes from herbst-mittag to
-//               herbst-abend with the app's 2.5 s crossfade) and the 20 s around it are watched
+//   landschaft  desktop 2000 x 993: the clock stands 15 s before the look of the hour changes (13.11., 16:09:45; without
+//               weather the app takes sunset 17:00, at 16:10 "nachmittag" turns "golden": the landscape goes from herbst-mittag
+//               to herbst-abend with the app's 2.5 s crossfade) and the 20 s around it are watched
 //   profil      a CPU profile of two tab changes on the phone (each scene seen once before), the look's script being the
 //               template (--look vorlage, default) or a commit (--look git:feinschliff-basis), so its functions have their names:
 //               time under each function, the largest first
 //   --app       the apps, name=address, separated by commas (default: jetzt=WASSER_APP or :4173). Two builds side by side:
-//               --app vorher=http://localhost:4180,nachher=http://localhost:4181 (sollist.mjs shows how to build a commit)
+//               --app vorher=http://localhost:4180,nachher=http://localhost:4181 (sollist.mjs shows how to build a commit).
+//               Instead of an address a FOLDER with a built app (dist/): it is served here with the cache headers of the live
+//               server (server/index.js: images, scripts, styles and fonts "immutable", everything else "no-cache") - vite
+//               preview sends "no-cache" for images, so every new <img> of a scene is asked for again (a round trip)
+// The page is never intercepted (no page.route: Playwright switches the browser's HTTP cache off while a route is set, and the
+// cache is part of what is measured). The weather service is made unreachable instead (a resolver rule): no weather, the
+// app takes sunrise 7:00 and sunset 17:00.
 //   --drossel   CPU slowdowns of Chromium (1 = as the machine is, 4 = four times slower), each a series of its own
 //   --laeufe    runs per app and slowdown, each in a fresh page (the tables give the median and, after the slash, the largest)
 //   --netz langsam   the page loads over a slow line (80 ms, 6.4 Mbit/s down) from the first byte: does the first visit of a tab
 //               wait for its scene? (the app preloads the scenes of the other tabs in a quiet moment after the start)
 //   --ohne      also each app with its look taken out (stylesheet cut, script replaced: lib.mjs, --look ohne) - the floor
+//   --gestoppt  also each app with its look's script stopped after the start (Wasser.stop(): the stylesheets stay) - what the
+//               look's CSS alone costs
 //   --look      what each app shows (default eingebaut: the look it has built in; profil: vorlage)
 //
 // Per change (handy, desktop):
@@ -37,14 +45,23 @@
 //             script has no info.scene, or the drops did not get there within 1.2 s)
 // The work machine draws WebGL in software and is shared: compare two apps measured in one run, never absolute numbers with
 // a phone. Exit code 0 always (a measurement, not a check).
-import fs from 'fs';
-import { pw, args, fail, lookArg, lookBefore, lookAfter, wetterRoute, APP } from './lib.mjs';
+import fs from 'fs'; import path from 'path'; import http from 'http';
+import { pw, args, fail, lookArg, lookBefore, lookAfter, abs, APP } from './lib.mjs';
 
-const a = args({ app: '', drossel: '1,4', laeufe: '3', netz: '', format: '2000,1920', look: '', json: '' }, { flags: ['ohne'], choices: { netz: ['langsam'], format: ['2000', '1920'] } });
+const a = args({ app: '', drossel: '1,4', laeufe: '3', netz: '', format: '2000,1920', look: '', json: '' }, { flags: ['ohne', 'gestoppt'], choices: { netz: ['langsam'], format: ['2000', '1920'] } });
 const WAS = ['handy', 'desktop', 'landschaft', 'profil']; const was = a._[0]; if (!WAS.includes(was) || a._.length > 1) fail(`usage: node scripts/wasser/reiter.mjs ${WAS.join('|')} [options]  (see the head of this file)`);
-{ const FOR = { handy: ['app', 'drossel', 'laeufe', 'netz', 'ohne', 'look', 'json'], desktop: ['app', 'drossel', 'laeufe', 'format', 'ohne', 'look', 'json'], landschaft: ['app', 'drossel', 'laeufe', 'look', 'json'], profil: ['app', 'drossel', 'look'] };
+{ const FOR = { handy: ['app', 'drossel', 'laeufe', 'netz', 'ohne', 'gestoppt', 'look', 'json'], desktop: ['app', 'drossel', 'laeufe', 'format', 'ohne', 'gestoppt', 'look', 'json'], landschaft: ['app', 'drossel', 'laeufe', 'look', 'json'], profil: ['app', 'drossel', 'look'] };
   for (const k of process.argv.slice(2).filter((x) => x.startsWith('--')).map((x) => x.slice(2).split('=')[0])) if (!FOR[was].includes(k)) fail(`--${k} has no effect in "${was}". "${was}" takes: ${FOR[was].map((x) => '--' + x).join(' ')}`); }
 const apps = (a.app || `jetzt=${APP}`).split(',').map((x) => { const i = x.indexOf('='); if (i < 1) fail(`--app ${x}: name=address`); return [x.slice(0, i), x.slice(i + 1).replace(/\/$/, '')]; });
+// a folder: served with the live server's cache headers
+const MIME = { html: 'text/html; charset=utf-8', js: 'text/javascript', css: 'text/css', webp: 'image/webp', avif: 'image/avif', png: 'image/png', svg: 'image/svg+xml', woff2: 'font/woff2', woff: 'font/woff', json: 'application/json', webmanifest: 'application/manifest+json', ico: 'image/x-icon' };
+const servers = [];
+for (const app of apps) {
+  if (/^https?:/.test(app[1])) continue; const dir = abs(app[1]); if (!fs.existsSync(path.join(dir, 'index.html'))) fail(`--app ${app[0]}=${app[1]}: neither an address nor a folder with a built app (index.html)`);
+  const srv = http.createServer((req, res) => { let f = path.join(dir, decodeURIComponent(new URL(req.url, 'http://x').pathname)); if (req.url.startsWith('/api/')) { res.writeHead(404); res.end('{}'); return; } if (!f.startsWith(dir) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(dir, 'index.html'); const ext = path.extname(f).slice(1);
+    res.writeHead(200, { 'content-type': MIME[ext] || 'application/octet-stream', 'cache-control': /^(js|css|avif|webp|woff2?)$/.test(ext) ? 'public, max-age=31536000, immutable' : 'no-cache' }); fs.createReadStream(f).pipe(res); });
+  await new Promise((ok) => srv.listen(0, '127.0.0.1', ok)); servers.push(srv); app[1] = `http://127.0.0.1:${srv.address().port}`;
+}
 const drossel = a.drossel.split(',').map(Number); if (drossel.some((d) => !(d >= 1))) fail('--drossel: numbers of 1 and more');
 const laeufe = Math.max(1, Number(a.laeufe) || 1); const look = lookArg(a.look || (was === 'profil' ? 'vorlage' : 'eingebaut'));
 const VIENNA = { timezoneId: 'Europe/Vienna', locale: 'de-AT' };
@@ -86,17 +103,17 @@ const CHANGE = ([bar, name, sceneSel, ms]) => new Promise((resolve) => {
   }, ms);
 });
 
-const browser = await pw.chromium.launch();
-async function open(url, { kind, lk, format = '2000', netz = '', zeit = 0 }) {
+const browser = await pw.chromium.launch({ args: ['--host-resolver-rules=MAP api.open-meteo.com 127.0.0.1:9, MAP geocoding-api.open-meteo.com 127.0.0.1:9'] });
+async function open(url, { kind, lk, format = '2000', netz = '', zeit = 0, stopped = false }) {
   const [w, h] = kind === 'handy' ? [390, 844] : format === '1920' ? [1920, 1080] : [2000, 993];
   const ctx = await browser.newContext(kind === 'handy' ? { viewport: { width: w, height: h }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, ...VIENNA } : { viewport: { width: w, height: h }, deviceScaleFactor: 1, ...VIENNA });
   if (zeit) await ctx.addInitScript((t) => { const R = Date, off = t - R.now(); class D extends R { constructor(...x) { if (x.length) super(...x); else super(R.now() + off); } static now() { return R.now() + off; } } window.Date = D; }, zeit);
   const page = await ctx.newPage(); const cdp = await ctx.newCDPSession(page); const errors = []; page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));
   if (netz) await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 80, downloadThroughput: 6.4e6 / 8, uploadThroughput: 750e3 / 8 });
-  await wetterRoute(page, 'klar', zeit || Date.now());
   const root = kind === 'handy' ? '.m-shell' : '.stage';
   const st = await lookBefore(page, lk); await page.goto(url + '/#/start', { waitUntil: 'load' }); await page.waitForSelector(root, { timeout: 20000 });
   const got = await lookAfter(page, st, root); if (!got) throw new Error('lookAfter');
+  if (stopped) { await page.waitForTimeout(1500); await page.evaluate(() => window.Wasser && window.Wasser.stop()); got.text += ', its script then stopped (Wasser.stop())'; }
   if (kind !== 'handy') await page.waitForSelector('.stage[data-scene-ready="true"]', { timeout: 20000 }).catch(() => {});
   await page.waitForTimeout(3500); await page.evaluate(INSTRUMENT);
   return { page, cdp, ctx, errors, look: got.text };
@@ -106,13 +123,14 @@ const rows = [];   // { app, drossel, art, visit, ...change }
 const BAR = { handy: '.m-tabs button', desktop: '.dock button' }, SCENE = { handy: '.m-bg img', desktop: '.land img' };
 const ORDER = { handy: ['Heute', 'Projekte', 'Material', 'Mehr', 'Start'], desktop: ['Heute', 'Projekte', 'Druck', 'Material', 'Wetter', 'Archiv', 'Start'] };
 async function series(kind, name, url, lk, d, extra) {
+  const tag = lk === '' ? ' ohne Look' : extra.stopped ? ' gestoppt' : '';
   for (let run = 0; run < laeufe; run++) {
-    const o = await open(url, { kind, lk, ...extra }); if (run === 0 && d === drossel[0]) console.log(`${name}${lk === '' ? ' (ohne Look)' : ''}: ${o.look}`);
+    const o = await open(url, { kind, lk, ...extra }); if (run === 0 && d === drossel[0]) console.log(`${name}${tag}: ${o.look}`);
     await o.cdp.send('Emulation.setCPUThrottlingRate', { rate: d });
     const order = ORDER[kind];
     for (const [i, tab] of [...order, ...order].entries()) {
       const r = await o.page.evaluate(CHANGE, [BAR[kind], tab, SCENE[kind], 1200]);
-      rows.push({ app: name + (lk === '' ? ' ohne Look' : ''), drossel: d, art: kind + (extra.format && kind === 'desktop' ? ' ' + extra.format : ''), visit: i < order.length ? 'erster' : 'zweiter', run, ...r });
+      rows.push({ app: name + tag, drossel: d, art: kind + (extra.format && kind === 'desktop' ? ' ' + extra.format : ''), visit: i < order.length ? 'erster' : 'zweiter', run, ...r });
       await o.page.waitForTimeout(500);
     }
     if (o.errors.length) console.log('  page errors:', o.errors.slice(0, 3).join(' | '));
@@ -134,11 +152,12 @@ if (was === 'handy' || was === 'desktop') {
   const formats = was === 'desktop' ? a.format.split(',') : [''];
   for (const fm of formats) for (const d of drossel) for (const [name, url] of apps) {
     await series(was, name, url, look, d, { format: fm, netz: a.netz });
+    if (a.gestoppt) await series(was, name, url, look, d, { format: fm, netz: a.netz, stopped: true });
     if (a.ohne) await series(was, name, url, '', d, { format: fm, netz: a.netz });
   }
   table();
 } else if (was === 'landschaft') {
-  const T = +new Date('2026-11-13T15:27:45+01:00');
+  const T = +new Date('2026-11-13T16:09:45+01:00');
   for (const d of drossel) for (const [name, url] of apps) for (let run = 0; run < laeufe; run++) {
     const o = await open(url, { kind: 'desktop', lk: look, zeit: T }); if (!run) console.log(`${name}: ${o.look}`);
     await o.cdp.send('Emulation.setCPUThrottlingRate', { rate: d });
@@ -174,4 +193,4 @@ if (was === 'handy' || was === 'desktop') {
   }
 }
 if (a.json) fs.writeFileSync(a.json, JSON.stringify(rows, null, 1));
-await browser.close();
+await browser.close(); for (const s of servers) s.close();

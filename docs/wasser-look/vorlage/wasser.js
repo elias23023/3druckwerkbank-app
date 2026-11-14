@@ -515,7 +515,7 @@
       want = src;                                                  // (also while it still loads: a scene being made for another page is given up)
       if (!gl || lost) return;
       if (!force && src === scene.src && texReady) return;
-      if (e && img.currentSrc) { show(src, e); W3.reused++; return; }   // kept: shown at once, even before the new <img> has finished loading
+      if (e) { show(src, e); W3.reused++; return; }               // kept: shown at once, even before the new <img> has finished loading (if its srcset then picks another candidate, that one is made)
       if (!img.complete || !img.naturalWidth) return;             // (an image that failed to load: the old scene stays)
       if (!job && !bad.has(src)) make(img, src);                  // (one scene is made at a time: when it is done, make() looks at "want" again)
     }

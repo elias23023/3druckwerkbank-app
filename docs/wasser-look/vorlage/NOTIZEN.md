@@ -281,6 +281,60 @@ until reload). `Wasser.info.level` and `.wait` show it; `node scripts/wasser/pru
 of it in three minutes with pretended picture costs (start option `debug.cost`). The waits count the time of drawn
 pictures, at most 0.1 s each: at 12 pictures a second 20 s take about 25 s by the clock.
 
+**The scene inside the drops** (Teil 1, "landscape texture"; rebuilt 14.11. evening, finding
+`docs/wasser-look/entwurf/reiterwechsel/BEFUND.md`). Until then every change of tab drew the new scene image
+synchronously onto a 2048 x 1024 canvas, uploaded it and built its mipmaps - in the frame of the change, also for a scene
+seen before. Now:
+- **A store of scene textures**, by image address (`store`, at most `KEEP` = 6, the one used longest ago goes first,
+  never the one shown). A second visit is a bind: no decode, no upload. Memory: 2048 x 1024 RGB with mipmaps is 8.4 MB,
+  11.2 MB where the GPU keeps RGB as RGBA (likely on an iPhone): at most about 67 MB for six. Five tabs and one more
+  (a project's inner world, or Wetter / Archiv) fit; a ninth scene costs a decode and an upload again.
+- **Made away from the beat of the change** (`make()`): the bytes from the HTTP cache (`fetch`, `cache: 'force-cache'`)
+  and `createImageBitmap(blob)` - the decode runs on another thread in Chromium and in WebKit (measured: the page's
+  thread is free while it decodes). `createImageBitmap(img)` decodes on the page's thread in Chromium (14 ms, 4 x
+  throttled 60 ms), and `img.decode()` does not help a canvas there (the canvas decodes again): both measured. Fallback
+  where fetch or `createImageBitmap` is missing or fails: `img.decode()`, then the image itself.
+- **Scaled exactly as before, in four strips** (`STRIPS`, one after each frame: `later()` = rAF + setTimeout 0): a canvas
+  of one strip's height gets the whole picture drawn moved up, `texSubImage2D` puts it into a new texture, mipmaps after
+  the last one. Texels identical to the old one-piece upload (checked in Chromium for webp and avif; WebKit: webp
+  identical, the avif landscape 1/255 on 0.5 % of the texels). `createImageBitmap` with `resizeWidth` was NOT taken: it
+  scales differently (mean 0.45/255, up to 11/255) and the drops would no longer be pixel-identical.
+- **Until the new picture is ready the drops keep the old scene**; a scene that is being made for a page the user has
+  left is given up (`want`), so ten quick taps end with the scene of the last tab. A scene in the store is shown at once,
+  even before the page's new `<img>` has loaded (its `src` serves as the key until `currentSrc` is known).
+- **`Wasser.warm(imgs)`**: images the page will show later (the app hands in the scenes of the other tabs, loaded with
+  the same `srcset` and `sizes` in a quiet moment after the start: `usePreloadScenes` in `src/mobile/Mobile.tsx`). They
+  are made one at a time while nothing else is being made and the page's own scene is ready, and fill the store up to
+  `KEEP - 1`. Measured worth it: without it the first visit of a tab showed the old scene in the header drops for
+  0.1 to 0.6 s on this machine (the guide's step 8 lists exactly that under "must not happen").
+- **The texture size stays 2048 x 1024**: 1024 x 512 (and 1024 x 1024) were compared at 3x - the gear drop of
+  "Projekte" over leaves is visibly softer when enlarged (up to 27/255 on 0.5 % of its pixels); the drops over sky
+  differ by 1/255. Pictures and numbers: the finding.
+- **The WebKit guard** (an image whose `load` fired before it can be drawn gives an empty picture) is kept only on the
+  fallback path (the image itself): its middle sampled into one pixel, looked at again after the next frame, at most 30
+  times (`Wasser.info.blank`). A bitmap decoded from the bytes cannot be empty.
+- Lost context: the store is emptied with it and the current scene made again on restore. `stop()`: every texture,
+  the scene being made (bitmap closed, canvas set to 0 x 0, frame and timer cancelled), the image's load listener and
+  the `warm` queue go.
+- `Wasser.info`: `scene` (address shown), `scenes` (kept), `uploads`, `reused`, `warmed`.
+
+**The first frame of a new screen** (tab, world, a sheet: `scan()` found new drops) goes out without the drops' work;
+their first water picture follows in the next frame. The new buttons show their plain glass for that one frame - they
+arrive inside cards, panels and sheets that enter from opacity 0, so it is not seen. With reduced motion (no entrance)
+they are drawn at once, as before. On this machine the drops' picture is the expensive part (WebGL in software): this
+alone brought the new screen 60 to 80 ms earlier.
+
+**Behind a sheet** (`modal`; finding `docs/wasser-look/entwurf/stehenbleiben/BEFUND.md`). A drop that goes behind an
+open sheet finishes its answer first: the press springs back, a running ring fades within `RING_OUT` (300 ms), and at
+`SETTLE` (380 ms) at the latest the drop is set to its rest pose and drawn one last time - then it is `quiet`, not drawn
+any more, and costs nothing. Until 14.11. it was reset but never drawn again, so its canvas kept the picture of the
+moment: for the drop that opened the sheet always one in the middle of its answer (rings and all). Its water time stands
+still with it (`lag`): when the sheet goes, it goes on from its last picture instead of jumping to the page's water time.
+A pointer that reaches a resting drop beside a drawer (desktop) wakes it for its answer. `Wasser.info.resting` and
+`.settling` count them. The CSS side needed nothing: `--wa-lauf: paused` ("Ruhe hinter einem Bogen") holds only the
+loops at rest; the one-time answers (ring on the floor, `:active` of plain glass and rows, the bead's flight - Web
+Animations - and the Schwappen transitions) never read it.
+
 ---
 
 ## 5. Tokens: where to turn what
@@ -460,8 +514,10 @@ Motion
 Script and React
 25. **The drops do not notice a changed custom property at once.** They re-read once a second, and not at all while
     the water is frozen (reduced motion). After injecting CSS in a test, dispatch `resize` on `window`.
-26. **Anything that hides a drop without unmounting it must end its press** (done for `modal`; remember it for any
-    new way of covering the page).
+26. **Anything that hides a drop without unmounting it must let its answer END - and draw that end.** Resetting the
+    press without drawing again froze the drop in the middle of its answer behind every sheet (live from 14.11. 13:09
+    to the evening). Done for `modal` (render: ring out, rest pose, one last picture, then quiet); remember it for any new
+    way of covering the page.
 27. **React writes `name` and `type` on every input each time the app re-renders** (once a second while a print
     runs). An observer must filter by attribute name.
 28. **React reuses the toast node** when one toast follows another, so no copy leaves then. The copy carries the
@@ -568,6 +624,21 @@ Desktop, found by its checker on 14.11.
 58. **React writes an inline colour into the attribute as `rgb(124, 198, 255)`**, whatever the source says (`#7cc6ff`,
     `rgba(124,198,255,.2)`): an attribute selector that has to find it spells it that way, with the spaces.
 
+Tab change, scene textures, measuring (14.11. evening)
+59. **Playwright switches the browser's HTTP cache off while a route is set** (`page.route`, also the made-up weather).
+    A measurement of loading then fetches every image anew - the script's `fetch(..., { cache: 'force-cache' })` went to
+    the network a second time. `reiter.mjs` sets no route (the weather service is made unreachable by a resolver rule).
+60. **vite preview sends `no-cache` for images; the live server `immutable`** (`server/index.js`). Under preview every new
+    `<img>` of a scene asks the server again (a round trip, `currentSrc` empty until then). Measure loading against a
+    folder served with the live headers (`reiter.mjs --app name=<dist folder>`).
+61. **`createImageBitmap(img)` decodes on the page's thread in Chromium**, and `img.decode()` does not help a canvas
+    there. Off the thread: `createImageBitmap(blob)`. With `resizeWidth` it also scales - differently from a canvas.
+62. **Two function declarations of one name in one scope: the later one wins without a word.** Teil 1 has `next()` for
+    the frame loop; a second `next()` for the scene silently replaced it during this rebuild (now `onward()`).
+63. **On this machine a drop's picture is a long task** (WebGL in software: copying the water into the drop canvases
+    waits for the shading, 60 to 150 ms per picture with five drops). A tap that lands in one waits for it. Compare the
+    app against itself with the script stopped (`reiter.mjs --gestoppt`), never against a phone.
+
 ---
 
 ## 8. Tools (`scripts/wasser/`, run from the repository root)
@@ -578,7 +649,9 @@ Desktop, found by its checker on 14.11.
 | `lib.mjs` | shared: `session({ engine })` -> `harness(options)`, `app(options)` (the REAL app at phone size; `go`, `sheet`, `closeSheet`, `project`, `bereich`, `shot`), WHICH LOOK a page shows (`lookBefore` / `lookAfter`: built in, injected, replaced, none - section 14), the tone through the app's own setting (`setTheme`), made-up weather, a file server for the repository or a built app, `diff` (with the box around what differs), `strip`, `stack`, the screencast recorder `cast` / `encodeCast`, and the command line (`args`: an unknown option ends the tool) |
 | `sollist.mjs [handy\|desktop\|alles] --soll <state>` | SOLL GEGEN IST: two states of the APP (`git:<rev>`, `baum` = the working tree built now, an address, a folder with a built app), the same 164 screens pixel by pixel - phone and desktop in both formats, both tones, both workspaces, reduced motion, clock and weather standing still. Lists the screens that differ, with the box of the difference and a picture Soll / Ist / difference. `--erwartet <name parts>`: screens meant to differ. Builds a commit itself (cache: `<tmp>/wasser-sollist-staende`) |
 | `vergleich.mjs [bilder\|app\|stile\|film\|alles]` | TWO LOOKS in one app (in the real app each takes the place of the built-in look). Default: template against the approved look: pixels (inside / outside the drops), computed styles incl. pressed and focused, motion at fixed times. Exit code 1 on a difference that is not on its list of deliberate ones (`KNOWN`). `--alt git:HEAD` or `--alt <a copy of the template folder>`: against the template as it was before YOUR change |
-| `pruefen.mjs [--app] [--regler]` | checks (harness: the template; `--app`: the look the app has built in; fails when the copies in `src/wasser` are not the template): start, marker, ring, every block by class alone, sleep, reduced motion, stop / start / options, no WebGL, the real app, pull and arrival of the light, the bounds of `--wa-leben`, the token lists of the two tones; `--regler`: the governor of the drops (three minutes) |
+| `pruefen.mjs [--app] [--regler]` | checks (harness: the template; `--app`: the look the app has built in; fails when the copies in `src/wasser` are not the template): start, marker, ring, every block by class alone, sleep, reduced motion, stop / start / options, no WebGL, the real app (with: the drop that opened a sheet comes to rest behind it - with reduced motion its very picture at rest - and lives again after it), pull and arrival of the light, the bounds of `--wa-leben`, the token lists of the two tones; `--regler`: the governor of the drops (three minutes) |
+| `reiter.mjs handy\|desktop\|landschaft\|profil` | THE CHANGE OF SCREEN in numbers: a tab (phone), a world (desktop, both formats), a new landscape (desktop): ms until the new screen has gone out, the longest task, the scene work in one task, long tasks that are mostly scene work, the drops' copying before the new screen, ms until the drops show the new scene. `--app vorher=<url or dist folder>,nachher=...` side by side, `--drossel 1,4`, `--laeufe 3`, `--ohne` (look taken out), `--gestoppt` (script stopped: the CSS alone), `--netz langsam`; `profil`: CPU profile with readable names. A folder is served with the live server's cache headers |
+| `bogen.mjs [handy\|desktop]` | BEHIND A SHEET: a live drop, plain glass, a row and the search open a sheet with a real pointer; pictures and the drop's own canvas 60 to 2500 ms after: it stands from 600 ms on, nothing behind the sheet still answers, with reduced motion it is the picture of the same drop at rest (sheet opened without a touch), it lives again after closing and does not jump. `--app` two apps, `--bild` strips |
 | `bild.mjs <out> [szenen\|nah\|alles\|app]` | stills, both tones, contact sheets; `--zeit tag\|nacht\|<ISO>`: the app's clock stands still (repeatable) |
 | `film.mjs <out>` | filmstrips from the real app: ruhe, tab, druck, scroll, bogen, haken (`--reduced`, `--fest`) |
 | `clip.mjs <out.mp4> [--cast]` | a recording of the real app (or `--seite mobil`). `--cast`: through the browser's screencast - use it whenever soft light is to be judged (pitfall 42) |
@@ -590,7 +663,7 @@ Desktop, found by its checker on 14.11.
 | `desktop.mjs bild <out>` | stills of the real app at desktop size: the eight worlds; `--alles`: sheets, forms, search, keyboard focus, toast, the empty workspace. `--format 2000\|1920`, `--zeit nacht\|tag\|morgen\|abend`, `--ton klar`, `--look ohne` (the app with its look taken out) |
 | `desktop.mjs film <out>` | filmstrips: ruhe, dock, druck (press and ring), zeiger (hover), zeiger-panel, bogen (the drawer), pfeil (the arrow beside the island held down, a line marks its centre at rest), fluss (the running line of a print at fixed times) |
 | `desktop.mjs kontrast` | WCAG contrast of 50 kinds of text on the desktop, both tones, by night and by day |
-| `desktop.mjs pruefen` | 24 checks: live drops per world (3 to 12, none free over an island), nothing leaves its place while pressed (about 300 clickable elements forced into `:active`; Chromium only), the arrows beside the island under a real pointer, the marker, the drawer, the search, the toast, keyboard focus, sleep and waking by the mouse, reduced motion, stop / start, and "nothing has moved" against the same app with its look taken out |
+| `desktop.mjs pruefen` | 27 checks: live drops per world (3 to 12, none free over an island), nothing leaves its place while pressed (about 300 clickable elements forced into `:active`; Chromium only), the arrows beside the island under a real pointer, the marker, the drawer, the search, the toast, keyboard focus, sleep and waking by the mouse, reduced motion, stop / start, the drop that opened a drawer comes to rest behind it and lives again (with reduced motion: its very picture at rest), and "nothing has moved" against the same app with its look taken out |
 | `desktop.mjs takt` | what the look costs: pictures a second and work per picture - the app without the look, with it, with it but without lights / drops / blur |
 | `desktop.mjs clip <out.mp4>` | a tour through the real app as a film (screencast, a drawn pointer) |
 | `desktop-lib.mjs` | `openDesktop({ look, format, ton, zeit, uhr, wetter, engine, reduced, start, app })`: the real app at 2000 x 993 or 1920 x 1080 with a fixed hour (`uhr: 'steht'`: the clock does not run on) and made-up weather, with the look it has built in or another one in its place; `go`, `welt`, `project`, `sheet`, `search`, `toast`, `bereich`, `shot`, `park`, `still` |
