@@ -546,7 +546,7 @@ pictures of drops (41), weather that comes and goes (38).
 | `film` against the approved look, Chromium | the same motion in all 12 strips (the arrival of the light named as transitions); 0 pixels differ outside the drops in the 58 stills of ruhe, tab, druck, bogen, haken - also in "tab", where the light arrives; scroll as before (real frame times) |
 | `stile` against the approved look, Chromium | REF_STILE |
 | `bilder`, `app` against the template as it was packed (`--alt <copy of commit f811b9d>`), Chromium | harness, 32 pairs: "dunkel" 0 pixels, outside and inside; "klar" 0 outside, inside the drops as above. App, 32 pairs: "dunkel" 0 pixels on all 16 screens; "klar" 0 outside the drops on 14 screens, inside the drops on the five screens with clear drops on cards; on two screens 6 and 3,134 pixels differ by 1 of 255 outside the drop boxes - the changed drops seen through a blur (behind the scrim of the form sheet; under the toast) |
-| the same in the WebKit test build | REST_WK |
+| the same in the WebKit test build | harness, 32 pairs: "dunkel" 0 pixels, outside and inside the drops; "klar" 0 outside, inside the drops as in Chromium. App, 32 pairs: "dunkel" 0 pixels on all 16 screens; "klar" 0 outside the drops on all 16 (that build paints no blur, nothing spreads). In the first of two runs two single pixels behind the sheet "Hinweise" differed by 1 of 255; in the repeat none, and the template compared with itself there gives 0 |
 
 **The corrections of 14.11., in numbers** (Chromium unless said; "before" = the template as packed, commit `f811b9d`;
 the probes are the second checker's, run on both states):

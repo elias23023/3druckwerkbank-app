@@ -50,7 +50,7 @@ const SINCE_1411 = new Set(['--wa-zug-weit', '--wa-zug-boden', '--wa-drop-veil']
 const KNOWN = (prop, x, y, key) => (prop === 'transition-duration' && /^0\.18s(, 0\.18s)*$/.test(x[prop] || '') && y[prop] === x[prop].replace(/0\.18s/g, '0.14s'))
   || (prop === 'transition-property' && x['transition-duration'] === '0s' && y['transition-duration'] === '0s')
   || (prop === 'aspect-ratio' && /canvas:\d+\|/.test(key))
-  || (/^animation/.test(prop) && /\|wa-(licht|boden)$/.test(key))
+  || ((/^animation/.test(prop) || prop === '--wa-schwappt-oben') && /\|wa-(licht|boden)$/.test(key))   // (--wa-schwappt-oben: the helper of a bottom sheet says "no arrival" with this token; before, its animation list left the arrival out)
   || (prop === 'translate' && /\|wa-boden$/.test(key) && /%$/.test(x.width || ''));   // (a floor light that is NOT RENDERED - a card inside display: none, its width is still a percentage: the reference's arrival animation never starts there and stands at its first keyframe)
 // the strip "tab": the arrival of the light is named differently on the two sides (see 4.)
 const sameMotion = (ref, neu) => { const set = (t) => [...new Set(t.replace(/::before:wa-schwappt-oben/g, '::before:scale').replace(/::after:wa-schwappt-unten/g, '::after:scale').replace(/:wa-schwappt-boden/g, ':translate').split(/\s+\|\s+|\s\s+/).map((v) => v.trim()).filter(Boolean))].sort().join('  '); return set(ref) === set(neu); };
