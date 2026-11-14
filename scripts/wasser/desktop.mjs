@@ -12,13 +12,14 @@
 //        empty workspace. NN-name.png plus contact sheets uebersicht-N.png.
 //   node scripts/wasser/desktop.mjs film <out-dir> [--ton klar] [--nur dock,druck]
 //        Motion as filmstrips: a panel at rest, the dock's marker, a button on a panel pressed (ring), the pointer over a row
-//        of buttons, the drawer opening.
+//        of buttons, the drawer opening, the arrow beside the island pressed (pfeil), the running line of a print (fluss).
 //   node scripts/wasser/desktop.mjs kontrast [--toene dunkel,klar] [--zeiten nacht,tag] [--format 2000]
 //        WCAG contrast of the texts against the pixels really behind the glyphs (as kontrast.mjs does for the phone).
 //   node scripts/wasser/desktop.mjs pruefen [--ton klar] [--format 1920]
-//        Checks: few live drops in every world and none free over an island, the dock's marker, the drawer, the search, a
-//        toast, the keyboard focus, sleep and waking by the mouse, reduced motion, stop / start - and that no panel, title or
-//        island has moved against the app without the look.
+//        Checks: few live drops in every world and none free over an island, nothing leaves its place while it is pressed,
+//        the arrows beside the island, the dock's marker, the drawer, the search, a toast, the keyboard focus, sleep and
+//        waking by the mouse, reduced motion, stop / start - and that no panel, title or island has moved against the app
+//        without the look.
 //   node scripts/wasser/desktop.mjs takt [--nur heute,wetter] [--sekunden 5]
 //        What the look costs: pictures a second and work per picture for today's app, the template, and the template
 //        without its lights / drops / blur.
@@ -94,7 +95,7 @@ async function film(out) {
   if (only('ruhe')) {
     begin('ruhe'); await d.go('druck', 3200); await d.park(); const clip = union(await box('.ui > .panel[style*="bottom"]', 14), await box('.dock', 10));
     let t = 0; for (const at of [0, 3000, 6000, 9000, 12000]) { await p.waitForTimeout(Math.max(0, at - t)); const t0 = Date.now(); await shot(`${at / 1000} s`, clip); t = at + (Date.now() - t0); }
-    await make('In Ruhe: Licht wandert am Rand des großen Beckens und des Docks', 'Fünf Bilder im Abstand von drei Sekunden. Darunter, was sich gegenüber dem ersten Bild verändert hat: Randlichter, Bodenlicht, die Perle, der Tropfen (und Laub hinter dem Wasser).', { scale: 0.5, diffGain: 8 });
+    await make('In Ruhe: Licht wandert am Rand des großen Beckens und des Docks', 'Fünf Bilder im Abstand von drei Sekunden. Darunter, was sich gegenüber dem ersten Bild verändert hat: Randlichter, Bodenlicht, die Lauflinie des Drucks, die Perle, der Tropfen (und Laub hinter dem Wasser).', { scale: 0.5, diffGain: 8 });
   }
   if (only('dock')) {
     begin('dock'); await d.go('heute', 2600); await d.park(); const clip = await box('.dock', 18); await shot('vorher', clip);
@@ -124,6 +125,18 @@ async function film(out) {
     await shot('vorher', clip); await p.locator('.topbar [aria-label="Einstellungen"]').dispatchEvent('click'); await frames3(); await grab();
     for (const t of [60, 140, 240, 400, 900]) { await seek(t); await shot(`${t} ms`, clip); }
     await finish(); await d.closeSheet(); await make('Schublade: der Bogen fließt von rechts herein und setzt sich', 'Zeit nach dem Klick auf „Einstellungen“. Die Bühne dahinter bleibt sichtbar: ein leichter Schleier, kein Weichzeichner.', { cols: 6, scale: 0.42 });
+  }
+  if (only('pfeil')) {   // the arrow beside the island gives way and KEEPS ITS PLACE (the line marks its centre at rest)
+    begin('pfeil'); await d.go('projekte', 3000); await d.park(); const nav = p.locator('.carousel-nav').last(), b = await nav.boundingBox(), clip = await box('.carousel-nav', 52, 1);
+    await p.evaluate(([x, y, w]) => { const l = document.createElement('i'); l.id = 'wa-probe-linie'; l.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:${w}px;height:1px;background:rgba(255,80,80,.9);z-index:9999;pointer-events:none`; document.body.appendChild(l); }, [clip.x, b.y + b.height / 2, clip.width]);
+    await shot('in Ruhe', clip); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2 - 8, { steps: 4 }); await p.waitForTimeout(450); await shot('Zeiger darüber', clip);
+    await swallow(); await p.mouse.down(); await p.waitForTimeout(700); await shot('gedrückt, 0,7 s gehalten', clip); await p.mouse.up(); await p.waitForTimeout(700); await shot('losgelassen', clip);
+    await p.evaluate(() => document.getElementById('wa-probe-linie').remove()); await make('Pfeil neben der Insel: er gibt nach und bleibt an seinem Platz', 'Die rote Linie (nur im Bildstreifen) ist seine Mitte in Ruhe: gedrückt wird er kleiner und springt nicht.', { cols: 4, scale: 1.6 });
+  }
+  if (only('fluss')) {   // the running line of a print: its one loop set to fixed times
+    begin('fluss'); await d.go('druck', 3000); await d.park(); const fb = await p.locator('.flow').first().boundingBox(), clip = { x: Math.floor(fb.x - 16), y: Math.floor(fb.y - 44), width: Math.ceil(fb.width + 32), height: 76 };
+    for (const t of [0, 1300, 2600, 3900, 5200]) { await p.evaluate((t) => { for (const x of document.querySelector('.flow > i').getAnimations()) { x.pause(); x.currentTime = t; } }, t); await p.waitForTimeout(150); await shot(`${(t / 1000).toFixed(1).replace('.', ',')} s`, clip); }
+    await p.evaluate(() => document.querySelector('.flow > i').getAnimations().forEach((x) => x.play())); await make('Die Lauflinie eines laufenden Drucks: ein Lichtschein in einem Röhrchen', 'Eine Runde dauert 6,6 s (heute: ein blauer Streifen in 2,2 s). Sie ruht mit dem Wasser und steht ohne Bewegung.', { cols: 1, scale: 1.3 });
   }
   if (d.errors.length) console.log('page errors:', d.errors.slice(0, 6));
   await d.close(); console.log('ok', out);
@@ -226,7 +239,31 @@ async function pruefen() {
     }
     return { state: window.Wasser.info.state, live: live.length, onPanel: live.filter((el) => el.closest('.panel')).length, blurred: blur.length, pct: Math.round(area / (innerWidth * innerHeight) * 100), over, lights: document.querySelectorAll('.wa-licht').length };
   });
-  for (const w of WELTEN) { await d.welt(w); await p.waitForTimeout(900); const c = await census(); say(c.state === 'gl' && c.live >= 3 && c.live <= 12 && !c.over.length, `Welt ${w.padEnd(9)} Tropfen`, `${c.live} lebend (${c.onPanel} auf einem Panel), ${c.blurred} weichgezeichnete Flächen = ${c.pct} % des Bildschirms, ${c.lights} Lichter${c.over.length ? ', FREI ÜBER EINER INSEL: ' + c.over.join(' | ') : ''}`); }
+  // 1b. pressed: nothing that can be clicked leaves its place. (The press of some blocks is a transform; an element the app
+  //     places with a transform of its own - the arrows beside the island - then hops away from under the pointer unless the
+  //     shell's rule repeats that place AND is heavy enough to win. No still shows this.) Every clickable element is forced
+  //     into :active through the DevTools protocol, so this part runs in Chromium only.
+  const CLICK = '.ui button, .ui a, .ui .check, .ui .item--click, .ui select, .ui .gcard, .ui .pill, .ui .chip, .island__cta';
+  const cdp = a.engine === 'chromium' ? await d.context.newCDPSession(p) : null; if (cdp) { await cdp.send('DOM.enable'); await cdp.send('CSS.enable'); }
+  const hops = async (w) => {
+    if (!cdp) return [0, []]; await d.park(); await p.waitForTimeout(300);
+    const { root } = await cdp.send('DOM.getDocument', { depth: 0 }); const { nodeIds } = await cdp.send('DOM.querySelectorAll', { nodeId: root.nodeId, selector: CLICK }); const force = async (st) => { for (const id of nodeIds) await cdp.send('CSS.forcePseudoState', { nodeId: id, forcedPseudoClasses: st }).catch(() => {}); };
+    // (the elements themselves are remembered, not their order: the app re-renders once a second while a print runs)
+    const k = await p.evaluate((sel) => { const mid = (e) => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.height]; }; window.__rest = [...document.querySelectorAll(sel)].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 1 && r.height > 1 && r.bottom > 0 && r.top < innerHeight; }).map((e) => [e, mid(e)]); return window.__rest.length; }, CLICK);
+    await force(['active']); await p.waitForTimeout(700);
+    const out = await p.evaluate((w) => window.__rest.filter(([e]) => e.isConnected).map(([e, m]) => { const r = e.getBoundingClientRect(); return [Math.hypot(r.left + r.width / 2 - m[0], r.top + r.height / 2 - m[1]), m[2], (e.getAttribute('aria-label') || e.textContent || e.className).trim().slice(0, 22)]; }).filter(([dd, h]) => dd > Math.max(3, h * 0.12)).map(([dd, h, name]) => `${w}: „${name}“ ${dd.toFixed(0)} px`), w);
+    await force([]); await p.waitForTimeout(300); return [k, out];
+  };
+  let pressed = 0; const hopped = [];
+  for (const w of WELTEN) { await d.welt(w); await p.waitForTimeout(900); const c = await census(); say(c.state === 'gl' && c.live >= 3 && c.live <= 12 && !c.over.length, `Welt ${w.padEnd(9)} Tropfen`, `${c.live} lebend (${c.onPanel} auf einem Panel), ${c.blurred} weichgezeichnete Flächen = ${c.pct} % des Bildschirms, ${c.lights} Lichter${c.over.length ? ', FREI ÜBER EINER INSEL: ' + c.over.join(' | ') : ''}`); const [k, h] = await hops(w); pressed += k; hopped.push(...h); }
+  if (cdp) say(!hopped.length && pressed > 100, 'Gedrückt: nichts verlässt seinen Platz', `${pressed} klickbare Elemente in acht Welten${hopped.length ? ', VERSCHOBEN: ' + [...new Set(hopped)].slice(0, 6).join(' | ') : ''}`); else console.log('--   Gedrückt: nichts verlässt seinen Platz   (nicht geprüft: nur in Chromium möglich)');
+  // 1c. the arrows beside the island, with a real pointer: held for 0.9 s on its upper half (on a slow machine the hop took up
+  //     to half a second to show), the arrow stays under the pointer
+  //     and the click pages on; and the shell's own material has arrived (smoke glass - a sign that its rule outweighs the block's)
+  { await d.go('projekte', 1800); await d.park(); const nav = p.locator('.carousel-nav').last(), b = await nav.boundingBox(); const first = () => p.evaluate(() => document.querySelector('.project-hero').innerText.split('\n').filter(Boolean)[0]); const t0 = await first();
+    await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2 - 8, { steps: 3 }); await p.waitForTimeout(250); await p.mouse.down(); await p.waitForTimeout(900); const q = await nav.boundingBox(); await p.mouse.up(); await p.waitForTimeout(1300);
+    const smoke = await nav.evaluate((e) => /gradient/.test(getComputedStyle(e).backgroundImage)); const dy = Math.abs(q.y + q.height / 2 - b.y - b.height / 2), t1 = await first(); await d.park();
+    say(dy < 3 && t1 !== t0 && smoke, 'Projekte: der Pfeil neben der Insel bleibt unter dem Zeiger und blättert', `beim Drücken um ${dy.toFixed(1)} px verschoben, ${t1 !== t0 ? 'blättert' : 'KLICK VERLOREN'}, ${smoke ? 'Rauchglas' : 'OHNE sein Rauchglas (die Regel der Schale verliert gegen den Baustein)'}`); }
   // 2. the dock's marker stands on the active world, for all seven
   let worst = 0; for (let i = 0; i < 7; i++) { await p.locator('.dock button').nth(i).dispatchEvent('click'); await p.waitForTimeout(1100); worst = Math.max(worst, await p.evaluate(() => { const dk = document.querySelector('.dock'), cs = getComputedStyle(dk, '::before'), r = dk.getBoundingClientRect(), on = dk.querySelector('button.on').getBoundingClientRect(); const m = /matrix\(([^)]+)\)/.exec(cs.transform); const tx = m ? parseFloat(m[1].split(',')[4]) : 0; return Math.abs(r.left + parseFloat(cs.left) + tx + parseFloat(cs.width) / 2 - (on.left + on.width / 2)); })); }
   say(worst <= 1.5, 'Dock: die Perle steht auf der aktiven Welt', `größte Abweichung ${worst.toFixed(2)} px bei sieben Welten`);
@@ -250,7 +287,7 @@ async function pruefen() {
   await d.close();
   // 8. sleep: after the time without touch the water rests; a moving mouse wakes it
   { const s = await open({ start: { sleep: 1500 } }); const q = s.page; await s.go('heute', 800); await q.waitForTimeout(2600); const asleep = await q.evaluate(() => [document.querySelector('.stage').hasAttribute('data-wa-ruht'), getComputedStyle(document.querySelector('.dock')).getPropertyValue('--wa-lauf').trim()]);
-    await q.mouse.move(600, 500); await q.mouse.move(640, 520); await q.waitForTimeout(400); const awake = await q.evaluate(() => document.querySelector('.stage').hasAttribute('data-wa-ruht'));
+    await q.mouse.move(600, 500); await q.mouse.move(640, 520); let awake = true; for (let i = 0; i < 12 && awake; i++) { await q.waitForTimeout(100); awake = await q.evaluate(() => document.querySelector('.stage').hasAttribute('data-wa-ruht')); }   // (up to 1.2 s: the WebKit test build delivers the pointer after about 0.4 s)
     say(asleep[0] && asleep[1] === 'paused' && !awake, 'Ruhe: das Wasser schläft ein, eine bewegte Maus weckt es', `schläft ${asleep[0]} (${asleep[1]}), nach der Mausbewegung schläft ${awake}`); await s.close(); }
   // 9. reduced motion: no lights, nothing eases
   { const s = await open({ reduced: true }); const q = s.page; await s.go('heute', 1200); await q.locator('.topbar [aria-label="Einstellungen"]').dispatchEvent('click'); await q.waitForTimeout(500);

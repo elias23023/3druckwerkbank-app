@@ -1232,7 +1232,10 @@
 [data-wasser] .steps span.on { background: var(--wa-pegel-voll); box-shadow: none; }
 
 /* -- Perle (.wa-perle): a small round icon button (close, skip, remove, "more") as a glass bead - no bending, no
-      script. It gives way under the finger and springs back. It needs: width and height (28 px and more). -- */
+      script. It gives way under the finger and springs back. It needs: width and height (28 px and more).
+      This list weighs THREE classes (.btn.btn--icon.btn--ghost), one more than the other lists: a shell's rule for one
+      of its members needs as many (desktop.css, the arrows beside the island). And its press is a transform: a member
+      that is placed by a transform of its own must repeat that place in its :active, or it hops under the finger. -- */
 [data-wasser] :is(
   .wa-perle,
   .btn.btn--icon.btn--ghost,                    /* both shells: ghost icon buttons */

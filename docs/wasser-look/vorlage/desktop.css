@@ -11,6 +11,7 @@
      .chip.btn--icon (top bar)       Tropfen (round, live)
      .chip (text), .glass.pill       Etikett
      .glass.carousel-nav             Perle
+     .flow                           (the running line of a print) a glint of light in a Pegel tube - part 2, by hand
      .panel .item, .sim-item, .hour, .hours-mini > div, .ams > div, .gcard, .tabs, .col.glass     Mulde (clickable ones: Mulde zum Tippen)
      .panel (as a ground)            Etikett auf Wasser; Perle mit Schrift (its plain buttons are no live drops)
      .dock button, .chip, .carousel-nav, .gcard, .back, .topbar .brand, .island, .scroll-hint     Wasserlinie
@@ -37,9 +38,13 @@
      own blur.
 
    Rules for this file: a rule that changes something a block has set needs at least the weight of that block's list
-   (see the head of kern.css) - hence .glass.panel, .glass.chip, .glass.dock written with both classes.
-   Three rules carry !important or name an inline style: the app styles those places inline today (the large panel's
-   place, the mark of the current version, the padding of small selects). Each says what to do when the look is built in.
+   (see the head of kern.css) - hence .glass.panel, .glass.chip, .glass.dock written with both classes, and
+   .glass.carousel-nav.carousel-nav with one class twice: the list of "Perle" is the only one that weighs THREE classes.
+   A lighter rule loses without a word, and no still shows it. After writing such a rule look at the COMPUTED value
+   (DevTools, or getComputedStyle in a probe) - and press what can be pressed.
+   Five rules carry !important or name an inline style: the app styles those places inline today (the large panel's
+   place, the mark of the current version, the padding of small selects, the blue of two icons). Each says what to do
+   when the look is built in.
    After a change:  node scripts/wasser/desktop.mjs pruefen   (and vergleich.mjs, if kern.css was touched). */
 
 /* == 1. Tokens of the desktop shell ============================================================================== */
@@ -84,6 +89,10 @@
   --wa-zeiger: rgba(var(--wa-core), .07);       /* what can be clicked lights up this much under the pointer (pressed: --wa-trough-press) */
   --wa-zeiger-film: linear-gradient(180deg, rgba(255, 255, 255, .11), rgba(255, 255, 255, .04));   /* a ghost button under the pointer: half the film of a press */
   --wa-zeiger-licht: brightness(1.16);          /* plain glass and drops under the pointer */
+  /* what was the app's blue (#7cc6ff) on the stage and is no data colour: signs of light (owner: no blue) */
+  --wa-zeichen: rgba(var(--wa-light), .92);     /* the icons of the weather signs, of a plain note, of the "next task" row */
+  --wa-zeichen-grund: rgba(var(--wa-core), .1); /* ... and the small tile behind such an icon */
+  --wa-t-fluss: 6.6s;                           /* one lap of the running line of a print (the app: 2.2 s - the liveliest thing on the screen) */
 }
 
 /* == 2. Panels (Becken) ========================================================================================== */
@@ -125,6 +134,23 @@
 [data-wasser="desktop"] .panel .glass:where(.col) { -webkit-backdrop-filter: none; backdrop-filter: none; }   /* a box inside a panel is a trough, never a second blurred sheet */
 [data-wasser="desktop"] .panel .glass:where(.col)[style*="solid"] { border-color: rgba(var(--wa-core), .62) !important; }   /* the current version is marked by the app with an inline blue line: a line of light instead (!important only because it is an inline style; when the look is built in, the app marks it with a class) */
 [data-wasser="desktop"] .panel .filter-select.on, [data-wasser="desktop"] .filter-select.on { border-color: transparent; box-shadow: var(--wa-trough-walls), inset 0 0 0 1.5px rgba(var(--wa-core), .62); }   /* a filter that is set: a line of light, not blue */
+/* the running line under the material of a print that runs. The app: a blue streak, 2.2 s a lap, moved by "left" (the
+   page's own thread lays it out and paints it for every picture), and it ran on while the water slept. Here: a glint of
+   light in a Pegel tube, moved by a transform, a third as fast, resting with the water (--wa-lauf). Without motion it
+   stands as the app lets it stand under its own switch: a full, faint line. (Not measured what the transform saves.) */
+[data-wasser="desktop"] .flow { background: var(--wa-pegel-tube); box-shadow: var(--wa-pegel-glass); }
+[data-wasser="desktop"] .flow > i {
+  background: linear-gradient(90deg, rgba(var(--wa-light), 0), rgba(var(--wa-light), .8), rgba(var(--wa-light), 0));
+  animation: wa-fluss var(--wa-t-fluss) linear infinite;
+  animation-play-state: var(--wa-lauf);
+  @media (prefers-reduced-motion: reduce) { & { animation: none; left: 0; width: 100%; opacity: .5; } }
+}
+@keyframes wa-fluss { to { transform: translateX(434%); } }   /* from 30 % before the tube to its far end: 130 % of the tube = 4.34 times the glint's own width */
+/* two icons the app colours blue INLINE: the sign of a plain note, the tile of the "next task" row in "Aktuelles im
+   Projekt" (its three neighbours keep green, violet and amber: those say what kind of row it is).
+   (!important only because they are inline styles. When the look is built in: the app gives both a class.) */
+[data-wasser="desktop"] .panel .alert.info > .ico { color: var(--wa-zeichen) !important; }
+[data-wasser="desktop"] .panel .thumb[style*="124, 198, 255"] { background: var(--wa-zeichen-grund) !important; color: var(--wa-zeichen) !important; }
 
 /* == 3. Kopfzeile ================================================================================================ */
 /* The three round buttons are live drops (kern.css, "Tropfen"). The text chips - workspace, search, weather - lie free
@@ -179,8 +205,12 @@
 [data-wasser="desktop"] .world-title .pills > .pill:is(.on, .pill--on) { background: var(--wa-frei); }
 /* filter selects and the station select: a Feld on smoke glass */
 [data-wasser="desktop"] .world-title .select { background-color: var(--wa-frei-feld); -webkit-backdrop-filter: none; backdrop-filter: none; }
-/* the two arrows beside the island: beads (they keep the app's own centring while they give way) */
-[data-wasser="desktop"] .glass.carousel-nav {
+/* the two arrows beside the island: beads on smoke glass. The app centres them with a transform of its own
+   (translateY(-50%)) and the press of a Perle is a transform too: the pressed state repeats the centring, or the arrow
+   hops 23 px down under the pointer and the click is lost.
+   The class is written TWICE on purpose: the list of "Perle" weighs three classes (.btn.btn--icon.btn--ghost), and with
+   two this whole rule lost without a word (found by the checker on 14.11.; "desktop.mjs pruefen" now presses the arrows). */
+[data-wasser="desktop"] .glass.carousel-nav.carousel-nav {
   border: 0;
   background: var(--wa-frei);
   -webkit-backdrop-filter: none;
@@ -194,6 +224,7 @@
   -webkit-backdrop-filter: var(--wa-blur) var(--wa-weit-grund);
   backdrop-filter: var(--wa-blur) var(--wa-weit-grund);
 }
+[data-wasser="desktop"] .wchip .ico { color: var(--wa-zeichen); }   /* (the app: its blue) */
 
 /* small selects: the app sets their padding inline (11 places, also in sheets), which takes away the room the block "Feld"
    keeps for the arrow - the arrow then lies ON the text. Here they get that room back, with a smaller arrow.

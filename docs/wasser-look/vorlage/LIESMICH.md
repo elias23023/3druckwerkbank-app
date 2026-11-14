@@ -62,9 +62,10 @@ dann http://localhost:4320 öffnen. Das ist die gebaute App mit der Vorlage oben
 - `klar-heute`, `klar-projekte`, `klar-wetter` (bei Tag) und `klar-heute-nacht`: der Ton „klar“
 - `format-1920-material`, `format-1920-innenwelt`: zwei Welten in 1920 × 1080
 - `vorher-nachher-heute`, `vorher-nachher-bogen`, `vorher-nachher-tag`: oben der Desktop von heute, unten die Vorlage
-- `film-1` (Dock, Schublade, Ruhe) und `film-2` (Knopfdruck mit Ring, Mauszeiger): Bewegung als Bildstreifen
+- `film-1` (Dock, Schublade, Ruhe), `film-2` (Knopfdruck mit Ring, Mauszeiger) und `film-3` (Pfeil neben der Insel
+  gedrückt, Lauflinie eines Drucks): Bewegung als Bildstreifen
 - `desktop.mp4`: ein Rundgang durch die echte App, am Ende der Wechsel zum Ton „klar“ (auf der Arbeitsmaschine
-  aufgenommen: etwa 8 Bilder je Sekunde, daher ruckelig – am eigenen Rechner läuft es anders)
+  aufgenommen: 6 bis 8 Bilder je Sekunde, daher ruckelig – am eigenen Rechner läuft es anders)
 
 **Was am Desktop anders ist als am Handy** (Einzelheiten in `NOTIZEN.md`, Abschnitt 11):
 
@@ -87,7 +88,7 @@ dann http://localhost:4320 öffnen. Das ist die gebaute App mit der Vorlage oben
 ```
 node scripts/wasser/desktop.mjs bild /tmp/desktop --alles          # Standbilder: Welten, Bögen, Suche, Hinweis (--ton klar --zeit tag --format 1920)
 node scripts/wasser/desktop.mjs film /tmp/desktop-film             # Bewegung als Bildstreifen
-node scripts/wasser/desktop.mjs pruefen                            # 22 Prüfungen (Tropfen, Dock, Schublade, Maus, Ruhe, „nichts ist verrückt“)
+node scripts/wasser/desktop.mjs pruefen                            # 24 Prüfungen (Tropfen, Dock, Schublade, Maus, Ruhe, „nichts ist verrückt“, „nichts springt beim Drücken“)
 node scripts/wasser/desktop.mjs kontrast                           # Lesbarkeit: beide Töne, Nacht und Tag
 node scripts/wasser/desktop.mjs takt                               # Was der Look kostet (Bilder je Sekunde)
 node scripts/wasser/desktop.mjs clip /tmp/desktop.mp4              # der Rundgang als Film
@@ -155,14 +156,48 @@ Seitenwechsel gelegentlich schwarz (im freigegebenen Stand bei 8 von 48 Wechseln
 - Alle acht Welten, die Innenwelt, zwölf Bögen und Formulare, Suche, Hinweis, Tastatur und die leere Werkstatt wurden
   in beiden Formaten (2000 × 993 und 1920 × 1080), in beiden Tönen, bei Nacht und bei Tag angesehen, dreimal auch im
   WebKit-Testbrowser.
-- `desktop.mjs pruefen`: 22 Prüfungen bestanden – darunter „nichts ist verrückt“: Panels, Titel, Kopfzeile und Inseln
-  stehen wie in der App ohne Look (größte Abweichung 1,8 px); nur das Dock ist 21 px breiter.
+- `desktop.mjs pruefen`: 24 Prüfungen bestanden (22 bei der ersten Abgabe, zwei kamen nach der Kontrolle dazu) –
+  darunter „nichts ist verrückt“: Panels, Titel, Kopfzeile und Inseln stehen wie in der App ohne Look (größte
+  Abweichung 1,8 px); nur das Dock ist 21 px breiter.
 - Lesbarkeit: kein Text unter der Grenze (Titel 7 : 1, Text 4,5 : 1) – in beiden Tönen, bei Nacht und bei Tag. Der
   Desktop von heute liegt bei Tag an elf Stellen darunter (das Bereichs-Etikett bei 1,0 : 1).
 - **Die Handy-Vorlage ist unverändert**: derselbe Vergleich wie oben gegen den Stand vor dem Desktop-Schritt – kein
   einziger abweichender Bildpunkt (auch nicht in den Tropfen), kein abweichender Stil.
 - An der Vorlage selbst wurde dabei verbessert, was das Anwenden schwer gemacht hat (Liste in `NOTIZEN.md`,
   Abschnitt 9, Punkt 8, und Fallstricke 47 bis 54).
+
+**Nach der Kontrolle der Desktop-Vorlage nachgebessert (14.11.)** – ein unabhängiger Prüfer hat einen schweren und
+vier mittlere Mängel gefunden (Tabelle in `NOTIZEN.md`, Abschnitt 11.4):
+
+- **Behoben – die zwei Pfeile neben der Insel in „Projekte“.** Sie sprangen beim Drücken 23 px nach unten, ein Klick auf
+  ihre Mitte oder obere Hälfte ging verloren (8 von 10 Probeklicks in Chromium, 7 von 10 im WebKit-Testbrowser). Ursache: eine Regel der Desktop-Vorlage war
+  leichter als der Baustein „Perle“ und kam nie an. Jetzt: 60 Probeklicks in beiden Formaten, beiden Tönen, Chromium
+  und WebKit-Testbrowser – keiner verloren. Die Pfeile sind dadurch auch zum ersten Mal das Rauchglas, das für sie
+  gedacht war (vorher eine fast durchsichtige Perle, bei Tag kaum zu sehen). Bild: `film-3`.
+- **Behoben – das letzte Blau der App.** Die Lauflinie eines laufenden Drucks (jetzt ein heller Lichtschein in einem
+  Röhrchen, dreimal langsamer; sie ruht mit dem Wasser und steht, wenn Bewegung reduziert ist), die Zeichen der fünf
+  Wetterschilder, das Zeichen eines Hinweises und das Zeichen „Nächstes“ in „Aktuelles im Projekt“. Farben, die etwas
+  bedeuten (Statuspunkte, Material-Diagramm, Materialnamen), bleiben.
+- **Nicht behoben, weil es die Anordnung der App ist:** In „Wetter“ steht bei 2000 × 993 das Schild „Luftdruck“ auf
+  dem Namen der kleinen Insel „Archiv“. Das ist auch heute so (heute scheint der Name durch das dünne Glas und stößt
+  mit dem Zeichen des Schilds zusammen; unter dem Wasser der Vorlage ist er ganz verdeckt). Ein Look kann nichts
+  verschieben – das Schild oder die Insel muss in der App einen anderen Platz bekommen (`NOTIZEN.md`, Abschnitt 10,
+  Punkt 8). Bei 1920 × 1080 steht der Name frei.
+- **Nicht geändert, weil es das Material ist:** Die blassen Hintergrund-Inseln, über die die App schon heute Panels
+  legt (vor allem in der Innenwelt eines Projekts), sieht man durch das Wasser weniger als durch das heutige Glas.
+  Die großen Inseln, die sechs Inseln von „Start“ und ihre Namen sind unberührt.
+- **Nicht geändert, aber nachgemessen – was es kostet:** Die Vorlage bringt in Chromium zum ersten Mal echten
+  Weichzeichner auf den Desktop (heute keine einzige weichgezeichnete Fläche, mit Vorlage in „Heute“ und „Wetter“ 9 und
+  12 auf 30 und 42 % des Bildschirms). Auf der Arbeitsmaschine, die ohne Grafikkarte rechnet: 15 bis 29 % weniger Bilder je Sekunde, beim
+  Wechsel der Welt eine längste Pause von 267 bis 300 statt 183 bis 233 Millisekunden. Ohne Weichzeichner läuft die
+  Vorlage so schnell wie die App heute. Was das auf dem eigenen Rechner heißt, zeigt nur der eigene Rechner:
+  `?weich=aus` zum Vergleichen.
+- Dabei sind zwei Prüfungen dazugekommen (`desktop.mjs pruefen`): Jedes anklickbare Element wird gedrückt und darf
+  seinen Platz nicht verlassen; der Pfeil wird mit echtem Mauszeiger gehalten und muss blättern. Beide schlagen bei
+  der Vorlage von vor der Korrektur an.
+- **Die Handy-Vorlage ist unverändert** (derselbe Vergleich wie oben gegen den Stand vor diesen Korrekturen, in
+  Chromium): 64 Bildpaare mit 99 Millionen Bildpunkten – kein einziger weicht ab, auch nicht in den Tropfen; kein
+  abweichender Stil; dieselbe Bewegung in 12 Bildstreifen.
 
 **Noch nie auf einem echten Handy und noch nie auf einer echten Grafikkarte gelaufen** – alles wurde auf der
 Arbeitsmaschine geprüft; ob es am iPhone und am eigenen Desktop flüssig läuft, ist offen (die Arbeitsmaschine zeichnet

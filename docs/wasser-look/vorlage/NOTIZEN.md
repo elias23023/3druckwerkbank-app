@@ -1,7 +1,8 @@
 # Wasser-Look, the template: notebook for whoever applies it
 
 State 14.11. (packed 13.11.; the corrections after the two checkers of the package are in: section 9, "What changed on
-14.11."; the DESKTOP template was added on 14.11.: section 11). Written for a helper who has not seen the look being built. German names of the building blocks are
+14.11."; the DESKTOP template was added on 14.11.: section 11, and corrected after its checker the same day: 11.4,
+"After the checker"). Written for a helper who has not seen the look being built. German names of the building blocks are
 kept (they are the names the owner knows). Read `LIESMICH.md` first for what is where and how to look at it; the
 owner's decisions are in `docs/wasser-look/entwurf/entscheidungen.md` and override everything here.
 
@@ -32,10 +33,14 @@ drops are round.) The desktop's elements are in the same lists, marked `desktop`
 
 **The weight of a list entry.** A list weighs as much as its heaviest entry, and the rules of the shells are written
 against that weight. So: A NEW ENTRY IS NEVER HEAVIER THAN THE HEAVIEST ENTRY ALREADY IN ITS LIST (two classes in most
-lists; one in "Etikett", "Etikett auf Wasser", "dichtes Wasser", "Markierung", "Bogen", "Feld", "Haken", "Pegel"). What
+lists; one in "Etikett", "Etikett auf Wasser", "dichtes Wasser", "Markierung", "Bogen", "Feld", "Haken", "Pegel";
+THREE in "Perle" alone - `.btn.btn--icon.btn--ghost`). What
 it needs beyond that to be found goes inside `:where()`, which weighs nothing: `.panel .glass:where(.col)`,
 `.chip:where(:not(.btn--icon))`, `:where(.topbar) .brand`, `.panel .item--click:where(.item)`.
 A heavier entry changes the phone without a word (pitfall 1); `vergleich.mjs stile` shows it.
+The other direction is as silent: A RULE OF A SHELL THAT IS LIGHTER THAN THE LIST LOSES, and no still shows it
+(pitfall 55: the arrows beside the island). After writing a rule in `mobil.css` or `desktop.css` that changes what a
+block has set, read the computed value once.
 
 Dosage, as told to the owner: the more often something appears on a screen and the more text it carries, the less
 water. Drops and the marker are the only glossy things; sheets are still; troughs carry the text.
@@ -63,7 +68,7 @@ water. Drops and the marker are the only glossy things; sheets are still; trough
 | **Wahl** (one of several) | 1 | group `.wa-wahl`, chosen child `.on` | `.pills > .pill` (`pill--on`), `.seg > button`, `.tabs > button`, `.tile`, `.island-lib > button` | `groups`, `chosen` | padding per label |
 | **Haken** (check) | 1 | `.wa-haken`, ticked `.on`, skipped `.wa-haken--aus` | `.check` (`check--on`, `check--skip`) | `ringFrom`, `tick`, `ticked` | width, height, `border-radius: 50%` |
 | **Pegel** (progress) | 1 | `.wa-pegel > i`, amber `.wa-pegel--amber` | `.progress`; the form's `.steps` are a Pegel in pieces | `levels` | tube: height, radius, `overflow: hidden`; `<i>`: `display: block; height: 100%`, width in % inline |
-| **Perle** (icon bead) | 1 | `.wa-perle` | `.btn.btn--icon.btn--ghost`; desktop `.glass.carousel-nav` | - | width and height (28 px and more; the desktop has some of 22 px, they hold). Its press is a `transform`: an element that is placed by a transform of its own must repeat it in its `:active` (the carousel arrows do) |
+| **Perle** (icon bead) | 1 | `.wa-perle` | `.btn.btn--icon.btn--ghost`; desktop `.glass.carousel-nav` | - | width and height (28 px and more; the desktop has some of 22 px, they hold). Its press is a `transform`: an element that is placed by a transform of its own must repeat it in its `:active` - in a rule with THREE classes, the weight of this list (the carousel arrows: `desktop.css` 5, pitfall 55) |
 | **Perle mit Schrift** | 1 | - | buttons inside the ROWS `.item`; mobil `.m-row`; desktop: every plain button on a `.panel` | left out of `drops` and `ringFrom` | - |
 | **Ring** (answer to a tap) | - | helper `.wa-floor > .wa-ring` (made by the script) | - | `ringOn`, `ringFrom` | the sheet: `position: relative; isolation: isolate` |
 | **Markierung** (flowing marker) + **Atmen** | - | `.wa-markierung` | mobil `.m-tabs`; desktop `.dock` | `bar`, `tabOn` | EQUALLY wide children without a gap (a flex row of labels is not: the dock is a grid of `1fr` columns), the active one has class `on`; `--wa-bar-tabs: <n>` (up to nine); a position and `isolation: isolate` |
@@ -531,6 +536,25 @@ Desktop, found on 14.11.
 54. **A filmstrip of the desktop:** pause only the animations of the interface (`.ui`), not the stage's own - the
     islands' flight and the leaves are the app's, and the drops must follow them (`desktop.mjs film`, `grab()`).
 
+Desktop, found by its checker on 14.11.
+55. **A shell's rule that is lighter than a block's list loses without a word - and it can take a click with it.**
+    The rule for the arrows beside the island was written with two classes (`.glass.carousel-nav`), the list of
+    "Perle" weighs three. Nothing of the rule arrived: no smoke glass, and the block's own press (`transform:
+    scale(.92)`) replaced the app's centring (`translateY(-50%)`) - the pressed arrow hopped 23 px down, out from
+    under the pointer, and a click on its centre or upper half was lost. Stills and the first 22 checks were green.
+    Cure: one more class of weight (`.glass.carousel-nav.carousel-nav`). Habit: read the computed value of a new shell
+    rule once, and press what can be pressed; `desktop.mjs pruefen` now forces every clickable element into `:active`
+    and holds a real pointer on the arrow.
+56. **Compare an element with ITSELF, not the n-th with the n-th.** The app re-creates elements while one looks (in
+    the inner world of a project 8 of 57 clickable elements were new within a second): a scan that compares two lists
+    by their order reports shifts of 80 to 900 px that are a neighbour's place. Keep the elements (`isConnected`).
+57. **A loop of the APP on a sheet does not sleep with the water** - and it may move by a layout property. The running
+    line of a print (`.flow > i`) ran on at 2.2 s a lap while everything else slept, moved by `left`, in the app's
+    blue. A loop the look takes over gets `animation-play-state: var(--wa-lauf)`, keyframes of `transform` and the
+    "no motion" rule (the app's own switch stops only `data-motion="reduziert"`, not the system setting).
+58. **React writes an inline colour into the attribute as `rgb(124, 198, 255)`**, whatever the source says (`#7cc6ff`,
+    `rgba(124,198,255,.2)`): an attribute selector that has to find it spells it that way, with the spaces.
+
 ---
 
 ## 8. Tools (`scripts/wasser/`, run from the repository root)
@@ -550,9 +574,9 @@ Desktop, found on 14.11.
 | `keyframes.mjs` | prints the keyframes of the loops at rest |
 | `desktop.mjs zeigen` | THE DESKTOP TEMPLATE IN YOUR OWN BROWSER: a small server with the built app (`dist/`) and the template on top - `http://localhost:4320`. Wide window = desktop, narrow = phone. The tone follows the app's setting "Erscheinungsbild"; `?ton=klar`, `?ton=dunkel`, `?ohne=1` (the app as it is), `?weich=aus` (no blur), `?leben=1.5` |
 | `desktop.mjs bild <out>` | stills of the real app at desktop size: the eight worlds; `--alles`: sheets, forms, search, keyboard focus, toast, the empty workspace. `--format 2000\|1920`, `--zeit nacht\|tag\|morgen\|abend`, `--ton klar`, `--look ohne` (today's desktop) |
-| `desktop.mjs film <out>` | filmstrips: ruhe, dock, druck (press and ring), zeiger (hover), zeiger-panel, bogen (the drawer) |
+| `desktop.mjs film <out>` | filmstrips: ruhe, dock, druck (press and ring), zeiger (hover), zeiger-panel, bogen (the drawer), pfeil (the arrow beside the island held down, a line marks its centre at rest), fluss (the running line of a print at fixed times) |
 | `desktop.mjs kontrast` | WCAG contrast of 50 kinds of text on the desktop, both tones, by night and by day |
-| `desktop.mjs pruefen` | 22 checks: live drops per world (3 to 12, none free over an island), the marker, the drawer, the search, the toast, keyboard focus, sleep and waking by the mouse, reduced motion, stop / start, and "nothing has moved" against the app without the look |
+| `desktop.mjs pruefen` | 24 checks: live drops per world (3 to 12, none free over an island), nothing leaves its place while pressed (about 300 clickable elements forced into `:active`; Chromium only), the arrows beside the island under a real pointer, the marker, the drawer, the search, the toast, keyboard focus, sleep and waking by the mouse, reduced motion, stop / start, and "nothing has moved" against the app without the look |
 | `desktop.mjs takt` | what the look costs: pictures a second and work per picture - today's app, the template, the template without lights / drops / blur |
 | `desktop.mjs clip <out.mp4>` | a tour through the real app as a film (screencast, a drawn pointer) |
 | `desktop-lib.mjs` | `openDesktop({ look, format, ton, zeit, wetter, engine, reduced, start })`: the real app at 2000 x 993 or 1920 x 1080 with a fixed hour and made-up weather, the template injected once; `go`, `welt`, `project`, `sheet`, `search`, `toast`, `bereich`, `shot`, `park`, `still` |
@@ -601,6 +625,10 @@ All on the work machine (software rendering; Chromium and Playwright's WebKit fo
    `--wa-bogen-fuss`; the marker places up to nine children; two more tone tokens (`--wa-weit-*`, read by the desktop
    only); the lists carry the desktop's entries; `Wasser.DESKTOP`; a moving MOUSE wakes the water, and a live drop
    gives way a breath under a resting mouse (`HOVER` - a finger never hovers).
+9. After the checker of the desktop template (14.11.; section 11.4, "After the checker") - rules in `desktop.css`
+   only, two comments in `kern.css`, two more checks in `desktop.mjs pruefen`: the arrows' rule outweighs the list of
+   "Perle" (pitfall 55); the running line of a print and four kinds of icons lost the app's blue (pitfalls 57, 58).
+   For the phone nothing to see and nothing to measure (numbers in 11.4).
 
 **Is it the same look?** `node scripts/wasser/vergleich.mjs` (machine otherwise idle), Chromium. The table is the
 state of the package (13.11.); what the same comparisons say after the corrections of 14.11. follows below it.
@@ -750,10 +778,12 @@ with pretended costs or forced levels, never by a machine that really got slow a
    the desktop's options in `App()` beside the stage: `useWasser(window.Wasser.DESKTOP)`. One instance at a time: when
    the window crosses 900 px React swaps the two shells, the clean-up of one hook stops the look, the other starts it
    (`scripts/wasser/einspielen.js` does the same by hand for the preview - read it, it is 40 lines).
-   Then take the three inline styles away that `desktop.css` has to fight (each rule there says so): give the large
+   Then take the five inline styles away that `desktop.css` has to fight (each rule there says so): give the large
    panel of druck, material, wetter and archiv a class (`<Panel className="panel--haupt">`) and name it in
    `desktop.css` part 2 instead of `[style*="bottom:"]`; mark the current version with a class instead of the inline
-   blue border (`ProjektInnen.tsx`); drop the inline paddings of the small selects (11 places).
+   blue border (`ProjektInnen.tsx`); drop the inline paddings of the small selects (11 places); take the inline blue
+   off the icon of a plain note (`Wetter.tsx`, `IInfo`) and off the tile of the "next task" row (`Projekte.tsx`) -
+   then the two `!important` rules of `desktop.css` part 2 go, or shrink to a class.
 3. Tone: `src/App.tsx` sets `document.documentElement.dataset.theme` today and forces "dunkel" on mobile (on the
    desktop it follows the setting - by day the old light theme with DARK text: that must go). Keep the
    app's theme at "dunkel" wherever the look is on (the look has light text in both tones; the app's
@@ -770,6 +800,16 @@ with pretended costs or forced levels, never by a machine that really got slow a
    leaves a copy for 0.26 s, the ring appears on release, the dock is a grid and 21 px wider.
 7. After building it in: `node scripts/wasser/desktop.mjs pruefen` needs one change - it injects the template; point
    it at the built app without injecting (`--look ohne` opens the app as it is).
+8. One thing in the APP'S LAYOUT to settle on the way (it is there today, the look only shows it differently): in the
+   world "Wetter" at 2000 x 993 - the owner's screen - the weather sign "Luftdruck" stands on the label of the small
+   island in the fifth slot of the ring ("Archiv": label 1184..1222 x 118..136, sign 1136..1232 x 111..189; at
+   1920 x 1080 the label ends 23 px above the sign). Cause: the signs are placed by the stage's WIDTH in both
+   directions (`chip(6.8, -19.3, ...)` = `top: calc(50% - 19.3cqw)`, `src/worlds/Wetter.tsx`), the small islands by
+   width and HEIGHT (`HIGH_RING`, `[61.5, 9, 8]`, `src/scene/worldLayouts.ts`): on a screen of 2:1 the sign stands
+   48 px higher against that label than at 1920 x 1080. Today the label shows through the app's thin glass and
+   collides with the sign's icon; under the look's water it is gone. A sheet of water cannot cure a place: the sign
+   or the island needs another place in the app, or "Wetter" a ring of its own (right beside the island the date line
+   of the clock begins). Nothing was tried - the app is not changed now. Section 12 keeps it as open.
 
 ---
 
@@ -793,7 +833,7 @@ How to look at it: `LIESMICH.md` ("Die Desktop-Vorlage ansehen") - `node scripts
 | primary button on a panel | Tropfen (3), live: shows the panel's water | nothing in CSS; option `drops` keeps it |
 | every other plain button on a panel | plain glass ("Perle mit Schrift", 1) | `.panel` in the list of rows; option `drops` leaves them out |
 | ghost buttons, ghost icon buttons | Film, Perle (1) | shared lists, nothing to do; hover in `desktop.css` 9 |
-| arrows beside the island `.glass.carousel-nav` | Perle (1) | list; `desktop.css` 5: smoke ground, its own centring kept while pressed |
+| arrows beside the island `.glass.carousel-nav` | Perle (1) | list; `desktop.css` 5: smoke ground, its own centring kept while pressed - in a rule of three classes, the weight of that list (pitfall 55) |
 | weather signs on the island `.glass.wchip` | stilles Wasser (2), small | list (+ "Etikett auf Wasser"); `desktop.css` 5 |
 | rows, hour tiles, AMS slots, gallery cards, tab groups, nested boxes on panels | Mulde / Mulde zum Tippen (1) | lists |
 | pills on panels; filter pills under a world title | Etikett auf Wasser; Wahl (1) | `.panel` in the list of sheets; the filter group was already a `.pills` group - `desktop.css` 5 gives it smoke ground |
@@ -802,6 +842,9 @@ How to look at it: `LIESMICH.md` ("Die Desktop-Vorlage ansehen") - `node scripts
 | drawer `.sheet` | Bogen (2), another shape | shared list; `desktop.css` 1 and 6: the Bogen tokens re-declared, entrance `wa-fliesst` from the right, crest along its left edge, its own blur |
 | search panel, toast | dichtes Wasser, Tropfen-Hinweis (2) | shared lists; `desktop.css` 6: the panel's own blur, the scrim without fade (pitfall 47) |
 | scrims | tint | `--wa-scrim: .3`, `--wa-scrim-blur: none` |
+| the running line under the material of a print `.flow` | none of the blocks: a glint of light in the tube of a Pegel | `desktop.css` 2, by hand: the tube tokens of "Pegel", keyframes `wa-fluss` (a transform; 6.6 s a lap, `--wa-t-fluss`; the app: 2.2 s, by `left`), it rests with the water and stands without motion |
+| icons that were the app's blue and are no data: the five weather signs, a plain note, the "next task" row of "Aktuelles im Projekt" | none (0): a colour | `desktop.css` 1: `--wa-zeichen`, `--wa-zeichen-grund`; parts 2 and 5. Two of them are coloured inline by the app: `!important` |
+| data colours: status dots, the print's ring, the material chart, material names, the three coloured row signs | none (0) | nothing - they say WHAT something is (blue there means "druckt", "ABS", "Planung") |
 | islands, their labels, the day ring, loose text over the stage, hand-written notes, charts, the scene | none (0) | nothing |
 
 Counted (`desktop.mjs pruefen`, 2000 x 993, demo data): live drops per world 9 (start), 3, 8, 7, 4, 3, 3, 3 - never more
@@ -838,6 +881,15 @@ than 9; blurred surfaces 1, 9, 3, 10, 7, 6, 12, 6 covering 2 to 41 % of the scre
   would be a full-screen blur for every picture. In "klar" the drawer without blur would show the page's words.
 - **Sleep:** a moving mouse counts as a touch (`wasser.js`); the page behind a drawer or the search rests
   (`desktop.css` 7).
+- **What lies BEHIND a sheet belongs to the water.** A panel blurs and dims what is behind it; that is the material.
+  So the faded islands the app's layout already lays panels over (in the inner world of a project six ghosts at 20 to
+  25 % opacity; in "Projekte" and the inner world the small "Heute" island behind the title and the filter labels)
+  show less than in today's Chromium: their brightness is 0.73 to 0.87 of today's at night, 0.33 to 0.55 by day (the
+  checker's numbers). Nothing moved, and the large islands, the six of "Start", every free label and the day ring are
+  untouched. It is less new than it looks: the app's own glass ASKS for an 18 px blur (`global.css`, `.glass`); today's
+  build keeps it only as `-webkit-backdrop-filter` (pitfall 8), which Chromium ignores and Safari should paint (not
+  seen: the WebKit test build paints no backdrop-filter at all). Not changed: thinner water would cost the contrast
+  floor (above), and a panel through which a ghost island shows is harder to read, not better.
 - **Not done on purpose:** no blur on chips and labels free over the stage (smoke glass instead); no drop on the
   per-row buttons, the queue's 22 px buttons stay beads; the app's own entrance of the panels ("rise") stays.
 
@@ -854,7 +906,8 @@ than 9; blurred surfaces 1, 9, 3, 10, 7, 6, 12, 6 covering 2 to 41 % of the scre
 
 ### 11.4 Verified (14.11., work machine: software rendering; Chromium, and Playwright's WebKit which paints no backdrop-filter)
 
-- `desktop.mjs pruefen`: 22 checks pass (three runs in a row; `--format 1920` and `--ton klar` as well).
+- `desktop.mjs pruefen`: 22 checks passed at the first hand-over (three runs in a row; `--format 1920` and `--ton klar`
+  as well); 24 since the corrections after the checker (below).
 - Looked at: every world, the inner world, 12 sheets and forms, search, keyboard focus, toast, the empty workspace -
   2000 x 993 and 1920 x 1080, both tones, by night and by day; WebKit three times.
 - Contrast (`desktop.mjs kontrast`, 50 kinds of text, median; worst 5 % in brackets):
@@ -895,6 +948,36 @@ than 9; blurred surfaces 1, 9, 3, 10, 7, 6, 12, 6 covering 2 to 41 % of the scre
   drops; `pruefen.mjs --app --engine webkit`: all 60 checks. (To compare against the state before a step when
   intermediate commits exist: `--alt git:<commit before the step>` - for the desktop step that is `git:ae614b7` - or a
   copy of the folder.)
+
+**After the checker (14.11.).** An independent checker went through the desktop template: one defect of grade "hoch",
+four of grade "mittel". What was done, and what was not:
+
+| Finding | State | What |
+|---|---|---|
+| The two arrows beside the island in "Projekte" hopped 23 px down while pressed; a click on their centre or upper half was lost (both formats, both tones, Chromium and WebKit) | **fixed** | pitfall 55: the shell's rule had two classes against the three of "Perle". Now `.glass.carousel-nav.carousel-nav`. Reproduced first (2000 x 993, reduced motion, 110 ms clicks at five heights on both arrows: 8 of 10 lost in Chromium, 7 of 10 in WebKit, pressed box 518..561 instead of 493..539), then: 60 clicks, none lost, pressed box 495..538 - 2000 x 993 and 1920 x 1080, "dunkel" and "klar" in Chromium; 2000 "dunkel" and 1920 "klar" in WebKit. The rule's other values arrive for the first time too: the arrows ARE smoke glass now (the first hand-over showed the plain bead, almost invisible over a bright lake by day) |
+| Still the app's blue by accident: the running line of a print, the icons of the five weather signs, the icon of a plain note, the tile of the "next task" row | **fixed** | `desktop.css` 1, 2, 5 (`--wa-zeichen`, `wa-fluss`); pitfalls 57, 58. The checker's own scan (every visible element for the app's blue, glass, frame and blur) now finds only data colours: status dots, the material chart, a material name. The running line: 6.6 s a lap instead of 2.2 s, moved by a transform instead of `left`, paused when the water sleeps (measured: its place does not change over 0.5 s asleep), a full faint line without motion (system setting and the app's switch) |
+| "Wetter" at 2000 x 993: the label "Archiv" of the small island lies under the sign "Luftdruck" and is gone (today it shows through and collides with the sign's icon) | **not fixed: the app's layout** | measured with and without the look: the same boxes, the label lies entirely under the sign at 2000 x 993 and 23 px above it at 1920 x 1080. A sheet of water cannot cure a place; section 10, point 8, has the cause and the options |
+| Faded background islands under panels show less than today | **not changed: the material** | section 11.2, "What lies BEHIND a sheet" |
+| Cost: the first real backdrop blur on the desktop in Chromium (0 blurred surfaces today, 9 to 12 covering 30 to 42 % with the look) | **not changed; numbers confirmed** | the checker's own measurement (pictures a second by `requestAnimationFrame`, 2000 x 993, night): "Heute" 9.9 today, 7.8 template, 9.4 without blur; "Wetter" 11.1 / 7.8 / 9.9; with the mouse moving 9.3 -> 7.0 and 10.0 -> 6.7; a change of world: 17 -> 11 and 16 -> 12 pictures in the first 1.5 s, longest pause 183 -> 267 ms and 233 -> 300 ms. WebKit test build: "Heute" 3.9 -> 2.1, "Wetter" 3.7 -> 3.5, longest pause at a change of world 578 -> 922 ms and 631 -> 1123 ms. Software rendering: on a graphics card a blur of this size is ordinary work, but nobody has seen it there. The lever stays the one of 11.5, row 1 (`?weich=aus` to compare; fewer blurred sheets) |
+
+After these corrections: `desktop.mjs pruefen` 24 of 24 at 2000 x 993 "dunkel" and at 1920 x 1080 "klar" (the two new
+checks FAIL on the template as it was: both arrows 23 px away, the click lost, no smoke glass).
+In the WebKit test build (`--engine webkit`; the press scan needs Chromium's DevTools protocol and is skipped there):
+22 of the 23 checks that run there pass, the arrow under a real pointer among them. The one that fails failed before
+the corrections as well (the checker's log): "nothing has moved" finds a size change of 8.1 px in "Material" - that
+build draws the app's own small selects 33 px high (its native control) and the look's Feld 25 px (as Chromium draws
+both), so a panel head is 8 px lower with the look. Whether Safari on a Mac does the same is unknown. The check "a
+moving mouse wakes the water" failed there too until its wait went from 0.4 s to at most 1.2 s: that build delivers
+the pointer after about 0.4 s - the water does wake.
+The phone
+is unchanged against the template before the corrections (`vergleich.mjs alles --alt <copy>`, Chromium): 64 picture
+pairs, 98.9 million pixels - no pixel differs, outside or inside the drops; 17,792 computed styles and 1,132 pressed /
+focused elements - none differs; 12 filmstrips - the same motion, no pixel in ten of them, the two "scroll" strips
+differ as always (real frame times); `pruefen.mjs --app`: all 60 checks. WebKit was not run for the phone this time:
+no rule outside `[data-wasser="desktop"]` was touched, `kern.css` got two comments.
+Looked at again: "Projekte", "3D-Druck" and "Wetter" in six combinations (each format in both tones, by night and by
+day) and twice in the WebKit test build. Not run again: `desktop.mjs kontrast` (no text and no ground under a text
+was changed) and `desktop.mjs takt` (what the running line costs as a transform was not measured).
 
 ### 11.5 The first look on the owner's own desktop (nothing has run on a real graphics card)
 
@@ -957,6 +1040,13 @@ than 9; blurred surfaces 1, 9, 3, 10, 7, 6, 12, 6 covering 2 to 41 % of the scre
 - **`scripts/verify.mjs`:** never run against a build with the look.
 
 Desktop (section 11):
+- **"Wetter" at 2000 x 993: the sign "Luftdruck" stands on the label of the small island "Archiv".** The app's layout,
+  there today; under the look's water the label is gone instead of colliding with the sign's icon. To settle in the
+  app when the look is built in (section 10, point 8). It is the only one: of the 36 labels of islands that are not
+  faded (opacity 0.5 and more) in the eight worlds, no other lies under a panel, sign, chip, pill, select or button -
+  at 2000 x 993 one of 36, at 1920 x 1080 none (boxes against boxes).
+- **Faded islands the app lays panels over** are blurred away by the water (11.2). If the owner misses them: that is a
+  wish for thinner water (`--wa-weit-tiefe`, `--wa-blur`), bounded by the contrast floor.
 - **Never on a real graphics card.** Smoothness of the desktop template is unknown: the work machine draws today's
   desktop at 9 to 11 pictures a second and the template at 8. Section 11.5 is the order in which to look.
 - **A free drop does not see islands** (11.2). Safe on today's screens (checked per world); a layout change can move
