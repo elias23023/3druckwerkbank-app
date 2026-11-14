@@ -3,13 +3,14 @@
 **Die Anleitung zum Ansehen, Anwenden und Einbauen ist [`docs/Wasser-Look.md`](../../Wasser-Look.md)** – Bausteine mit
 Rezepten, Dosierung, Töne, Bewegung, der Fahrplan für den Einbau in die App, Fallstricke, offene Punkte. Dort steht
 auch der aktuelle Stand (14.11.: am Handy eingebaut und live, der Desktop in Arbeit) und was der Besitzer seither
-entschieden hat. Dieses Blatt sagt nur, was in diesem Ordner liegt und was an der Vorlage zuletzt geprüft wurde; wo es
-„nichts ist eingebaut“ sagt, gilt die Anleitung.
+entschieden hat. Dieses Blatt sagt nur, was in diesem Ordner liegt und was an der Vorlage zuletzt geprüft wurde.
 
 Stand 14.11. Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann – jetzt als
 **zwei Vorlagen zum Ansehen: Handy und Desktop**.
-**Nichts hier ist in die App eingebaut**: Build und Website laden diese Dateien nicht, `src/`, `public/`, `server/`
-sind unverändert. Die Vorlage wird von außen dazugeladen (Vorschauseite) oder in die laufende App eingespielt (Werkzeuge).
+**Dieser Ordner ist die Vorlage, nicht der Einbau**: Build und Website laden diese Dateien nicht. Die Vorlage wird von
+außen dazugeladen (Vorschauseite) oder in die laufende App eingespielt (Werkzeuge). In die App kommt sie über Kopien in
+`src/wasser/` (`node scripts/wasser/uebernehmen.mjs`): am Handy geschehen und seit 14.11. live, am Desktop in Arbeit –
+Stand und Fahrplan: `docs/Wasser-Look.md`, Abschnitt 8. Auf diesem Branch ist der App-Code noch der ohne Look.
 
 ## Was hier liegt
 
@@ -205,7 +206,8 @@ vier mittlere Mängel gefunden (Tabelle in `NOTIZEN.md`, Abschnitt 11.4):
   Chromium): 64 Bildpaare mit 99 Millionen Bildpunkten – kein einziger weicht ab, auch nicht in den Tropfen; kein
   abweichender Stil; dieselbe Bewegung in 12 Bildstreifen.
 
-**Noch nie auf einem echten Handy und noch nie auf einer echten Grafikkarte gelaufen** – alles wurde auf der
-Arbeitsmaschine geprüft; ob es am iPhone und am eigenen Desktop flüssig läuft, ist offen (die Arbeitsmaschine zeichnet
-den Desktop von heute mit 9 bis 11 Bildern je Sekunde, die Vorlage mit 8). Womit man anfängt und welche eine Zeile
-man jeweils ändert, steht in `NOTIZEN.md`: Abschnitt 13 fürs Handy, Abschnitt 11.5 für den Desktop.
+**Auf echten Geräten:** Der Handy-Einbau lief am 14.11. auf der Baustelle am Handy des Besitzers – flüssig, bis auf
+eine kurze Wartezeit beim Reiterwechsel (`docs/Wasser-Look.md`, Abschnitt 8, Schritt 8). Einzeln durchgemessen ist dort
+nichts. **Auf einer echten Grafikkarte lief der Desktop noch nie** (die Arbeitsmaschine zeichnet den Desktop von heute
+mit 9 bis 11 Bildern je Sekunde, die Vorlage mit 8). Womit man anfängt und welche eine Zeile man jeweils ändert, steht
+in `NOTIZEN.md`: Abschnitt 13 fürs Handy, Abschnitt 11.5 für den Desktop.

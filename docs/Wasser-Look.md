@@ -1,7 +1,7 @@
 # Wasser-Look: Anleitung
 
 Stand 14.11., 11:10 Uhr. Für alle, die den Wasser-Look ansehen, anwenden oder weiter in die App einbauen.
-**Am Handy ist der Look eingebaut und live** (seit 14.11., Commit `c7e8299` auf `main`). **Der Desktop ist in Arbeit** (Branch `welt/wasser-desktop`) und bleibt unverändert, bis der Besitzer ihn an seinem Bildschirm gesehen hat. Was getan ist und was als Nächstes kommt: Abschnitt 8.
+**Am Handy ist der Look eingebaut und live** (seit 14.11.; Commit `c7e8299`, seither auf `main`). **Der Desktop ist in Arbeit** (Branch `welt/wasser-desktop`) und bleibt unverändert, bis der Besitzer ihn an seinem Bildschirm gesehen hat. Was getan ist und was als Nächstes kommt: Abschnitt 8. Der Stand bewegt sich – 8.1 sagt, wie man ihn nachsieht.
 
 | Was | Wo |
 |---|---|
@@ -516,9 +516,16 @@ Der Unterschied zwischen 1 und 1,5 ist auf Handygröße kaum zu sehen ([leben-ve
 
 | | Stand | Wo |
 |---|---|---|
-| **Handy** | eingebaut, auf `main`, **live** auf 3druckwerkbank.com | Commit `c7e8299` (Branch `welt/wasser-mobil`). Nachgeprüft: Die CSS-Datei der Live-Seite ist genau die dieses Commits |
-| **Desktop** | Einbau **in Arbeit** – nicht auf `main`, nicht live | Branch `welt/wasser-desktop`, Zwischenstand `e6eb9ef`. Er bleibt, bis der Besitzer ihn an seinem Bildschirm gesehen hat (Entscheidung 9) |
+| **Handy** | eingebaut, auf `main`, **live** auf 3druckwerkbank.com | Commit `c7e8299` (Branch `welt/wasser-mobil`), seither in `main`. Nachgeprüft am 14.11. gegen 11 Uhr: Die CSS-Datei der Live-Seite war genau die dieses Commits |
+| **Desktop** | Einbau **in Arbeit** – nicht auf `main`, nicht live | Branch `welt/wasser-desktop`. Für diese Anleitung angesehen: der Zwischenstand `e6eb9ef`; der Branch geht weiter. Der Desktop bleibt, wie er ist, bis der Besitzer den Einbau an seinem Bildschirm gesehen hat (Entscheidung 9) |
 | **Dieser Branch** (`wasser-look`) | Vorlage, Werkzeuge, Bilder, Anleitung | Der App-Code ist hier noch der ohne Look |
+
+Den Stand selbst nachsehen (nach `git fetch`):
+
+```
+git ls-tree --name-only origin/main src/wasser/      # Dateien da: Der Look ist auf main eingebaut
+git log --oneline -5 origin/welt/wasser-desktop      # wie weit der Desktop-Einbau ist
+```
 
 | Schritt | | Stand |
 |---|---|---|
