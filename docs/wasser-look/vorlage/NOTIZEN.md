@@ -6,6 +6,11 @@ State 14.11. (packed 13.11.; the corrections after the two checkers of the packa
 kept (they are the names the owner knows). Read `LIESMICH.md` first for what is where and how to look at it; the
 owner's decisions are in `docs/wasser-look/entwurf/entscheidungen.md` and override everything here.
 
+**The guide for applying the template and building it into the app is `docs/Wasser-Look.md` (German).** It was written
+after this notebook and tested step by step in a scratch copy of the repository; where the two disagree about HOW to
+build the look in (section 10 here), the guide is right. This notebook stays the place for numbers, reasons and
+measurements.
+
 The template is not built into the app. It was made from the approved look (`docs/wasser-look/entwurf/nachgebessert`,
 a stylesheet and a script injected under `.m-shell`) by restructuring, plus the few corrections of 14.11.;
 `scripts/wasser/vergleich.mjs` proves after every change that it still paints the same (section 9).
@@ -768,6 +773,13 @@ with pretended costs or forced levels, never by a machine that really got slow a
 ---
 
 ## 10. Building it into the app (not done; the owner decides when)
+
+> Superseded as a to-do list by `docs/Wasser-Look.md`, section 8 ("Fahrplan"), which was carried out once in a scratch
+> copy on 14.11. What that run changed against the points below: (2) the hook is called in `Mobile()` and in `Stage()`,
+> not in `App()` (which returns early for the mobile shell); `wasser.ts` must import the app's own stylesheets BEFORE
+> the look's, or the built CSS carries the look before `mobile.css` as soon as `Stage.tsx` imports the module;
+> (6) `scripts/verify.mjs` has now been run against such a build: 69 of 69; and after the tone follows the app's
+> setting, `openApp` in `scripts/wasser/lib.mjs` must set the tone both ways (one line, in the guide's step 3).
 
 1. Copy the four files to `src/wasser/` (the script as `wasser-skript.js`), add `wasser.ts` (head of `wasser.js`).
    Import order: after `mobile.css` and `global.css`. Tried in a scratch project with the app's Vite 8 and target

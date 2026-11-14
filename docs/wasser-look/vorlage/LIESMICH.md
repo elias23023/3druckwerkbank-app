@@ -1,5 +1,9 @@
 # Wasser-Look: die Vorlage
 
+**Die Anleitung zum Ansehen, Anwenden und Einbauen ist [`docs/Wasser-Look.md`](../../Wasser-Look.md)** – Bausteine mit
+Rezepten, Dosierung, Töne, Bewegung, der Fahrplan für den Einbau in die App, Fallstricke, offene Punkte. Dieses Blatt
+sagt nur, was in diesem Ordner liegt und was zuletzt geprüft wurde.
+
 Stand 14.11. Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann – jetzt als
 **zwei Vorlagen zum Ansehen: Handy und Desktop**.
 **Nichts hier ist in die App eingebaut**: Build und Website laden diese Dateien nicht, `src/`, `public/`, `server/`
@@ -13,7 +17,7 @@ sind unverändert. Die Vorlage wird von außen dazugeladen (Vorschauseite) oder 
 | `mobil.css` | Was nur die mobile Ansicht braucht: Seitenabdunklung, Maße der Karten, Menüleiste, Bogen am unteren Rand. |
 | `desktop.css` | Was nur die Desktop-Ansicht braucht: flache Becken für die Panels, das Dock mit der fließenden Perle, die Schublade von rechts, Antwort auf den Mauszeiger. |
 | `wasser.js` | Das Skript: Wassertropfen (WebGL), Ring, fließende Markierung, Licht, Antwort aufs Scrollen, gemeinsames Ruhen. Zwei Befehle: `Wasser.start(optionen)` und `Wasser.stop()`; `Wasser.DESKTOP` sind die Angaben für den Desktop. |
-| `NOTIZEN.md` | Das Notizbuch für alle, die die Vorlage anwenden (englisch): Bausteine, Rezepte, Fallstricke, Prüfbefehle, offene Punkte. |
+| `NOTIZEN.md` | Das Notizbuch der Erbauer (englisch): alle Zahlen, Gründe und Messungen. Zum Anwenden zuerst die Anleitung `docs/Wasser-Look.md` lesen. |
 
 Die Werkzeuge: `scripts/wasser/`. Bilder der Desktop-Vorlage: `docs/wasser-look/bilder/desktop/` (siehe unten).
 Bilder der mobilen Vorlage: `docs/wasser-look/bilder/mobil/` –

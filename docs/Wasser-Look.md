@@ -249,7 +249,7 @@ Suchwort = danach in `kern.css` suchen. Stufe = wie viel Wasser (Abschnitt 5). A
 
 - **Was:** eine Perle aus klarem Wasser, die das aktive Kind einer Leiste markiert und zum nächsten fließt. In Ruhe atmet sie. Streifen: [film-tab](wasser-look/bilder/mobil/film-tab.webp).
 - **Wo:** Suchwort `-- Markierung (.wa-markierung)`. Skript: `bar`; Klasse des aktiven Kinds: `tabOn` (heute `on`). Neutrale Klasse `.wa-markierung`.
-- **Braucht:** gleich breite Kinder ohne Lücke (ein Flex-Zeile aus verschieden langen Wörtern ist das nicht: dann `flex: 1` oder ein Raster aus `1fr`-Spalten). Das aktive Kind trägt `on`. `--wa-bar-tabs: <Anzahl>` an der Leiste (bis neun). Eine `position` und `isolation: isolate` (die zweite bringt „dichtes Wasser“ mit).
+- **Braucht:** gleich breite Kinder ohne Lücke (eine Flex-Zeile aus verschieden langen Wörtern ist das nicht: dann `flex: 1` oder ein Raster aus `1fr`-Spalten). Das aktive Kind trägt `on`. `--wa-bar-tabs: <Anzahl>` an der Leiste (bis neun). Eine `position` und `isolation: isolate` (die zweite bringt „dichtes Wasser“ mit).
 - **Beispiel:** dieselbe Zeile `.merk-leiste,` in die drei Listen „dichtes Wasser“, „Markierung“, „Lichtlauf“; in der App `--wa-bar-tabs: 3`; dazu `bar: '.m-tabs, .wa-markierung, .merk-leiste',`
 
 #### Bogen (Stufe 2) ![](wasser-look/bilder/anleitung/baustein-bogen.webp)
@@ -397,7 +397,7 @@ Die Regel muss unter `[data-wasser]` stehen, sonst gibt es die Werte nicht.
 
 **Die Grenzen:**
 
-- **Lebende Tropfen je Bildschirm:** wenige. Handy heute 3 bis 7, Desktop 3 bis 9 (`desktop.mjs pruefen` lässt höchstens 12 zu). Knöpfe, die sich je Zeile wiederholen, sind nie lebende Tropfen. Das Skript begrenzt zusätzlich die Bildpunkte aller Tropfen zusammen und schaltet bei Überlast selbst herunter (weniger Bilder, dann weniger Bildpunkte, zuletzt ein stiller Tropfen).
+- **Lebende Tropfen je Bildschirm:** wenige. Handy heute 4 bis 7 (mit offenem Bogen einer mehr; die dahinter ruhen), Desktop 3 bis 9 (`desktop.mjs pruefen` lässt höchstens 12 zu). Knöpfe, die sich je Zeile wiederholen, sind nie lebende Tropfen. Das Skript begrenzt zusätzlich die Bildpunkte aller Tropfen zusammen und schaltet bei Überlast selbst herunter (weniger Bilder, dann weniger Bildpunkte, zuletzt ein stiller Tropfen).
 - **Kein Weichzeichner auf Weichzeichner.** `backdrop-filter` steht nur auf der Fläche selbst, nie auf einem Kind oder Pseudo-Element. Ein Kasten in einem Panel ist eine Mulde, keine zweite weichgezeichnete Fläche. Am Handy trägt der Schleier hinter dem Bogen den Weichzeichner, nicht der Bogen; am Desktop ist es umgekehrt (die Bühne ruht nie).
 - **Text bewegt sich nie.** Scharfes Licht läuft nur in einem Streifen am Rand, wo kein Text steht. Das Bodenlicht liegt unter Text und Zeilen. Animiert werden nur `transform` und `opacity`, auf eigenen Ebenen.
 - **Die Fläche selbst wird in Ruhe nie animiert** (`.m-card`, `.panel` …). Was sich auf einer weichgezeichneten Fläche bewegt, ist eine kleine eigene Ebene.
@@ -443,12 +443,14 @@ Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in
 1. Den Wert im Block des Tons ändern – nur dort. Soll er in beiden Tönen anders sein: in beiden Blöcken.
 2. Ist der Wert aus anderen gebaut (`--wa-meniscus` benutzt `--wa-core`): Er wird dort aufgelöst, wo er steht. Wer `--wa-core` nur für eine Karte ändert, muss dort auch `--wa-meniscus` neu setzen.
 3. Diese Werte nicht „aufräumen“, sie sind mit dem Auge gefunden: `--wa-sat` (nicht über etwa 0,6: sonst wird warmes Holz braun), `--wa-drop-veil` im Ton „klar“ (nicht über etwa 0,35), `--wa-shallow`, `--wa-far`. Gründe: `NOTIZEN.md`, Abschnitt 5.
-4. Prüfen, dass nur der gemeinte Ton sich ändert – gegen den Stand vor der Änderung:
+4. Prüfen, dass nur der gemeinte Ton sich ändert – gegen den Stand vor der Änderung (vor dem Commit):
 
    ```
    node scripts/wasser/vergleich.mjs bilder --alt git:HEAD --toene dunkel   # muss ohne Abweichung bleiben, wenn nur „klar“ geändert wurde
    node scripts/wasser/vergleich.mjs bilder --alt git:HEAD --toene klar     # zeigt, was sich geändert hat (DIFF ist hier gewollt)
    ```
+
+   Ausprobiert mit `--wa-ink-2-trough` im Ton „klar“ (.8 → .9): „dunkel“ ohne Abweichung, „klar“ acht Bilder mit je etwa 4400 geänderten Bildpunkten. `bilder` sieht nur, was auf der Vorschauseite steht. Ein Wert, der nur in Bögen oder Feldern vorkommt (z. B. `--wa-ink-3-trough`, die Platzhalter), zeigt sich dort nicht: dann `app` statt `bilder` nehmen, oder `stile` (jeder berechnete Stil, auch die Werte des Looks).
 
 5. Lesbarkeit messen. Die Werkzeuge messen die Schriftfarbe gegen die Bildpunkte, die wirklich hinter den Buchstaben liegen:
 
@@ -591,7 +593,8 @@ Erst wenn der Besitzer es sagt. Reihenfolge einhalten; nach jedem Schritt prüfe
 
 ### Schritt 3 – Der Ton folgt der Einstellung
 
-- **Dateien:** `src/App.tsx` (eine Import-Zeile, ein Effekt).
+- **Dateien:** `src/App.tsx` (eine Import-Zeile, ein Effekt), `scripts/wasser/lib.mjs` (eine Zeile).
+- **Heute:** `src/App.tsx` setzt `data-theme` und erzwingt am Handy „dunkel“ (`const theme = mobile ? 'dunkel' : …`). Das dunkle Thema am Handy bleibt. Neu ist nur, dass die Einstellung jetzt den Ton wählt.
 - **Tun:** `import { setWaterTone } from './wasser/wasser';` und den Effekt, der heute `data-theme` setzt, ersetzen durch:
 
   ```ts
@@ -602,8 +605,21 @@ Erst wenn der Besitzer es sagt. Reihenfolge einhalten; nach jedem Schritt prüfe
   }, [settings.theme, look, mobile]);
   ```
 
-- **Prüfen:** der Prüfblock (`verify.mjs` prüft weiter „Mobile: dark theme forced“). Im schmalen Fenster die Einstellungen öffnen und „Erscheinungsbild“ umschalten: Hell → `<html data-wa-ton="klar">`, Dunkel → kein Attribut, Automatisch → nach der Tageszeit. `data-theme` bleibt am Handy „dunkel“.
-- **Darf nicht passieren:** `data-theme="hell"` zusammen mit dem Look (dunkle Schrift auf Wasser). Am Desktop ändert sich in diesem Schritt nichts: `data-wa-ton` wirkt nur innerhalb von `[data-wasser]`.
+  Ab jetzt wählt die App den Ton selbst – bei Tag „klar“. Die Handy-Werkzeuge sagen den Ton bisher nur, wenn er „klar“ sein soll; für „dunkel“ verlassen sie sich darauf, dass kein Attribut da ist. Darum in `scripts/wasser/lib.mjs`, in `openApp`, die Zeile
+
+  ```js
+  if (ton && ton !== 'dunkel') await page.evaluate((t) => { document.documentElement.dataset.waTon = t; }, ton);
+  ```
+
+  ersetzen durch
+
+  ```js
+  await page.evaluate((t) => { if (t && t !== 'dunkel') document.documentElement.dataset.waTon = t; else delete document.documentElement.dataset.waTon; }, ton);   // (with the look built in the app sets the tone itself: say it both ways)
+  ```
+
+  (Die Zeile gibt es einmal, gleich nach `waitForSelector('.m-shell'`.) Die Desktop-Werkzeuge sagen den Ton schon in beide Richtungen.
+- **Prüfen:** der Prüfblock (`verify.mjs` prüft weiter „Mobile: dark theme forced“). Im schmalen Fenster die Einstellungen öffnen und „Erscheinungsbild“ umschalten: Hell → `<html data-wa-ton="klar">`, Dunkel → kein Attribut, Automatisch → nach der Tageszeit. `data-theme` bleibt am Handy „dunkel“. Dann bei Tag: `node scripts/wasser/bild.mjs screenshots/wasser/eingebaut app --look ohne --toene dunkel` – die Bilder müssen wirklich dunkel sein.
+- **Darf nicht passieren:** `data-theme="hell"` zusammen mit dem Look (dunkle Schrift auf Wasser). Am Desktop ändert sich in diesem Schritt nichts: `data-wa-ton` wirkt nur innerhalb von `[data-wasser]`. Ohne die Zeile in `lib.mjs` messen `kontrast.mjs --app` und `bild.mjs` bei Tag unter dem Namen „dunkel“ in Wahrheit „klar“ (so geschehen: Helligkeit eines Kartenstreifens 70 statt 33).
 
 ### Schritt 4 – Das Handy abnehmen (lokal)
 
@@ -722,7 +738,7 @@ Seit Schritt 6 ist `data-theme` immer „dunkel“. Die Regeln für `:root[data-
 
 ### Schritt 11 – Aufräumen (später, nicht ausprobiert)
 
-Ist alles eingebaut und abgenommen, kann `src/wasser/` die einzige Quelle werden: die vier Dateien aus `docs/wasser-look/vorlage/` löschen und die Werkzeuge umstellen (`VORLAGE` in `scripts/wasser/lib.mjs`, der Name `wasser.js` an sechs Stellen in `lib.mjs`, `desktop-lib.mjs`, `desktop.mjs`, `mobil.html`). Bis dahin gilt: Vorlage ändern, kopieren, `cmp`.
+Ist alles eingebaut und abgenommen, kann `src/wasser/` die einzige Quelle werden: die vier Dateien aus `docs/wasser-look/vorlage/` löschen und die Werkzeuge umstellen (der Ordner `VORLAGE` in `scripts/wasser/lib.mjs` und in `mobil.html`; der Dateiname `wasser.js` in `lib.mjs`, `desktop-lib.mjs`, `desktop.mjs` und `mobil.html`). Bis dahin gilt: Vorlage ändern, kopieren, `cmp`.
 
 ### Alle Prüfungen auf einen Blick
 
