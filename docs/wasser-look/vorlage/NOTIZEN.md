@@ -366,7 +366,7 @@ Animations - and the Schwappen transitions) never read it.
 - **The two tone tokens of a wide stage** (`kern.css` part 1, last two of each tone; read by `desktop.css` only):
   `--wa-weit-tiefe` (how much of a basin's depth is left where the painted scene is the star: dunkel .7, klar 1) and
   `--wa-weit-grund` (what a sheet does to the scene seen THROUGH it, a filter function added to its blur: dunkel
-  `brightness(.88)`, klar `brightness(.7)`). The second one is the desktop's stand-in for the page's darkening
+  `brightness(.88)`, klar `brightness(.8)`; `.7` until the owner's decision 8, 14.11.). The second one is the desktop's stand-in for the page's darkening
   (`--wa-page-*`): without it light text has no ground by day in the tone "klar". Turn them with
   `node scripts/wasser/desktop.mjs kontrast` open: lighter water costs contrast at once (numbers in section 11).
 
@@ -382,7 +382,7 @@ The motion language:
 | `--wa-t-wave` | 1.1 s | light travels over a sheet | `--wa-ring-time`, `--wa-kamm-t` |
 | `--wa-t-swing` | 1.6 s | water that was moved swings out | after scrolling, arrival of a sheet's light |
 | `--wa-t-step` | 40 ms | things that arrive together, one after the other | cards of a new screen |
-| `--wa-t-ruhe-1/-2/-3/-4`, `--wa-t-atem` | 24 / 34 / 40 / 46 s, 9 s | loops at rest: lit rim, far rim, bars and sheets, floor; breath of the bead | with `--wa-gang-*`: `steps(n)`, in WebKit `linear` |
+| `--wa-t-ruhe-1/-2/-3/-4`, `--wa-t-atem` | 17 / 24 / 29 / 33 s, 9 s (the four were 24 / 34 / 40 / 46 s until 14.11., owner's decision 7) | loops at rest: lit rim, far rim, bars and sheets, floor; breath of the bead | with `--wa-gang-*`: `steps(n)`, in WebKit `linear` |
 | `--wa-ease-flow` / `-settle` / `-drain` / `-wave` / `-swing` | cubic-beziers; swing = a damped `linear()` | runs off and arrives softly / a little past and rests / lets go slowly / a ring that spreads / 35 % past, 12 % back, 4 % past, still | |
 
 The script reads `--wa-t-flow`, `--wa-t-settle`, `--wa-t-leave`, `--wa-ease-flow`, `--wa-ease-settle` and the
@@ -424,9 +424,9 @@ timers of helpers.
 | Element | At rest | On touch | While scrolling | On a change of state |
 |---|---|---|---|---|
 | Drops | always alive: flowing outline, ripples (15 pictures a second); the glint under a drop on a sheet breathes | spreads, the glint flares, a ripple runs from the finger | the picture inside follows the scene | follows a card that slides in; a press ends when a sheet covers the drop |
-| Becken (cards) | a glint with a soft glow wanders along the lit rim and back (24 s), another along the far rim the other way (34 s); a large soft patch of light crosses the floor (46 s); every card at another place of the loop | ONE ring over the floor, when the finger lets go (1.1 s) | the lights lean (up to 90 % deeper / 70 % drawn back), the glints slide 24 px, the floor light stays 28 px behind; let go, all swings out (1.6 s) | the card arrives with the app's own entrance, one 40 ms after the other; its light arrives too deep and swings into place |
-| Tab bar | one glint along its top rim (40 s); the bead breathes (9 s) | icon and label of a tab give way and spring back | - | the marker flows to the new tab (0.46 s, 70 ms more per further tab) |
-| Bottom sheet | one soft glint on its top rim (40 s) | the ring, from its foot buttons only | its light leans with the scrolling of its body | rises like a wave and settles (0.62 s), a crest of light spreads and fades (1.1 s). Closing: gone in one frame |
+| Becken (cards) | a glint with a soft glow wanders along the lit rim and back (17 s), another along the far rim the other way (24 s); a large soft patch of light crosses the floor (33 s); every card at another place of the loop | ONE ring over the floor, when the finger lets go (1.1 s) | the lights lean (up to 90 % deeper / 70 % drawn back), the glints slide 24 px, the floor light stays 28 px behind; let go, all swings out (1.6 s) | the card arrives with the app's own entrance, one 40 ms after the other; its light arrives too deep and swings into place |
+| Tab bar | one glint along its top rim (29 s); the bead breathes (9 s) | icon and label of a tab give way and spring back | - | the marker flows to the new tab (0.46 s, 70 ms more per further tab) |
+| Bottom sheet | one soft glint on its top rim (29 s) | the ring, from its foot buttons only | its light leans with the scrolling of its body | rises like a wave and settles (0.62 s), a crest of light spreads and fades (1.1 s). Closing: gone in one frame |
 | Toast | one glint (the common Lichtlauf) | - | - | lands like a drop (0.62 s), leaves like one (0.26 s) |
 | Search panel | one glint along its top rim | the hit under the finger lights up | - | the app's own entrance |
 | Number tiles (free) | a short glint along the top rim | - | - | - |
@@ -1132,10 +1132,10 @@ was changed) and `desktop.mjs takt` (what the running line costs as a transform 
   swings (before 14.11. the swing ran during those frames, unseen).
 - **Life at rest is there by numbers and hard to find by eye** - at `--wa-leben` 1 and at 1.5 alike
   (`docs/wasser-look/bilder/mobil/leben-vergleich.mp4` / `.png`, numbers in section 9). What the eye finds is the
-  glint on the rim lines and the lean when a list stops; the light on the floor (at most +17 of 255, a loop of 46 s)
-  is not seen. 1.5 makes the lights brighter, not livelier: they move at the same pace (the glint about 8 px a
-  second). The owner decides; if more is wanted, the lever is the pace (`--wa-t-ruhe-*` with their `--wa-gang-*`),
-  not the strength - nothing was built for that.
+  glint on the rim lines and the lean when a list stops; the light on the floor (at most +17 of 255, a loop of 46 s,
+  33 s since 14.11.) is not seen. 1.5 makes the lights brighter, not livelier: they move at the same pace (the glint
+  about 8 px a second at the first pace). The owner decided (decision 7): strength 1, the pace a little faster - the
+  four loops are about 1.4 times faster since 14.11. (section 15). Not yet seen by him.
 - **The blur under the tab bar of "dunkel" stays** (tried on 14.11.: water of .93 opacity, does it need its blur?).
   Without it the picture inside the bar changes by 0.02 to 0.5 of 255 on average (largest 8), but rows that pass
   under the bar leave a faint sharp ghost of their words in it; and it buys nothing that can be told from the
@@ -1145,7 +1145,7 @@ was changed) and `desktop.mjs takt` (what the running line costs as a transform 
   phone.
 - **The toast's own light.** The motion step gave the toast a smaller, quicker light (8 px high, 28 % wide, a 12 s
   loop). Since the step after it that rule lost by weight (pitfall 1), so the approved state - and this template -
-  shows the common Lichtlauf on the toast (13 px, 30 %, 40 s). The rule is kept as a comment in "Tropfen-Hinweis";
+  shows the common Lichtlauf on the toast (13 px, 30 %, 40 s; 29 s since 14.11.). The rule is kept as a comment in "Tropfen-Hinweis";
   the tokens `--wa-t-ruhe-kurz`, `--wa-gang-kurz` are ready. The owner has only seen the toast as it is now.
 - **A sheet of "klar" without backdrop blur** shows the page behind it sharp at about a fifth of its strength, the
   search panel at about a third (its water is `--wa-dense`, .66): in the WebKit test build the clock, the greeting

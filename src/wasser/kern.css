@@ -155,9 +155,9 @@
   --wa-warm: 255, 255, 255;
   --wa-dark: 0, 0, 0;
   --wa-clear: rgba(84, 94, 103, .28);           /* a veil of mid-grey: it lifts dark ground, lowers bright ground and takes the mottle out of foliage - calm, still see-through. A breath cool, against the brown of timber */
-  --wa-shelf: rgba(10, 14, 16, .21);            /* depth is neutral smoke in gentle steps */
-  --wa-deep: rgba(8, 12, 14, .25);
-  --wa-under: rgba(31, 35, 37, .56);
+  --wa-shelf: rgba(10, 14, 16, .16);            /* depth is neutral smoke in gentle steps. Owner's decision 8 (14.11.): more of the scene through the water, only in this tone - shelf and deep were .21 and .25 */
+  --wa-deep: rgba(8, 12, 14, .19);
+  --wa-under: rgba(31, 35, 37, .51);            /* (moves with them: 1 - (1 - .28) x (1 - shelf) x (1 - deep); was .56) */
   --wa-still: rgba(16, 20, 23, .5);
   --wa-dense: rgba(62, 66, 70, .66);            /* the light mode: bar, toast and search are smoke-grey water you can see through, not black */
   --wa-sheet: rgba(56, 60, 64, .82);            /* smoked-clear where text needs it: the page behind stays a soft presence, its words do not come through */
@@ -210,7 +210,7 @@
     4px 8px 9px -6px rgba(var(--wa-light), .4),
     2px 6px 11px -2px rgba(var(--wa-dark), .7);
   --wa-weit-tiefe: 1;                           /* clear water keeps its gentle depth ... */
-  --wa-weit-grund: brightness(.7);              /* ... and the scene under it is dimmed as the page dims it on the phone (there: --wa-page-3, --wa-page-4) - without it light text has no ground by day */
+  --wa-weit-grund: brightness(.8);              /* ... and the scene under it is dimmed as the page dims it on the phone (there: --wa-page-3, --wa-page-4) - without it light text has no ground by day. (Owner's decision 8: was .7) */
 }
 
 /* == 2. Form (the same in every tone; colours here are either neutral or built from the tone tokens) ============== */
@@ -410,7 +410,7 @@
    - Crisp light (the glints) moves only in a strip along the rim, where no text is. The light on the floor is so soft
      that it has no edge anywhere, lies UNDER the deep middle, the rows and the text of a basin and keeps below its
      title row. Text itself never moves.
-   - Loops at rest take 9 to 46 s. Where the browser's compositor can do it (Chromium) they are drawn at a steady
+   - Loops at rest take 9 to 33 s. Where the browser's compositor can do it (Chromium) they are drawn at a steady
      beat of eight pictures a second (steps() as "gait"): every picture of a resting light makes the browser redo the
      backdrop blur of its sheet, and at these speeds no eye can tell eight pictures from sixty. Answers to a touch, to
      scrolling and to a change run at the full rate - they are short.
@@ -434,11 +434,14 @@
   /* loops at rest: length, and "gait" (the timing function between two keyframes). The keyframes have eight equal
      intervals; with the gait steps(N) for a loop of N seconds resting light is redrawn at a steady beat of eight
      pictures a second, and lights that started together are redrawn together. The lengths share no rhythm: the lights
-     never fall into step. (WebKit gets another gait, see below.) */
-  --wa-t-ruhe-1: 24s;  --wa-gang-1: steps(24);        /* the light on the lit rim of a sheet */
-  --wa-t-ruhe-2: 34s;  --wa-gang-2: steps(34);        /* the light on its far side */
-  --wa-t-ruhe-3: 40s;  --wa-gang-3: steps(40);        /* the light along a bar or a bottom sheet */
-  --wa-t-ruhe-4: 46s;  --wa-gang-4: steps(46);        /* the light on the floor of a basin */
+     never fall into step. (WebKit gets another gait, see below.)
+     The pace: owner's decision 7 (14.11.) - "a little faster", clearly less than 2.5 times. These four are about 1.4
+     times the pace first built (24 / 34 / 40 / 46 s, in the same proportions); to go back, set those four lengths and
+     their gaits again. A length always with its gait: steps(N) for N seconds. */
+  --wa-t-ruhe-1: 17s;  --wa-gang-1: steps(17);        /* the light on the lit rim of a sheet */
+  --wa-t-ruhe-2: 24s;  --wa-gang-2: steps(24);        /* the light on its far side */
+  --wa-t-ruhe-3: 29s;  --wa-gang-3: steps(29);        /* the light along a bar or a bottom sheet */
+  --wa-t-ruhe-4: 33s;  --wa-gang-4: steps(33);        /* the light on the floor of a basin */
   --wa-t-ruhe-kurz: 12s;  --wa-gang-kurz: steps(12);  /* for a light on something that stays only a moment (ready, not used: see the note in "Tropfen-Hinweis") */
   --wa-t-atem: 9s;  --wa-gang-atem: steps(9);         /* one breath of the bead that marks the active one of a bar */
   /* easings */
