@@ -50,6 +50,7 @@
 
 /* == 3. Karten (Becken) ========================================================================================== */
 [data-wasser="mobil"] .glass.m-card {
+  position: relative;                           /* (a basin needs a position and does not set one itself: its depth and its helpers are placed inside it) */
   padding: 15px;                                /* the app's 14 px plus the 1 px border that is gone: nothing shifts */
   &:nth-of-type(4n+2) { border-radius: var(--wa-r-becken-2); }   /* four outlines in turn */
   &:nth-of-type(4n+3) { border-radius: var(--wa-r-becken-3); }

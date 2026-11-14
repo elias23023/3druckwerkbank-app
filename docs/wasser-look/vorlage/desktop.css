@@ -1,29 +1,265 @@
 /* ---- Wasser-Look: Desktop ----
-   THE PLACE FOR THE DESKTOP. No rule yet: the next step fills this file. Load after kern.css (and after mobil.css; the
-   two never meet - every rule here starts with [data-wasser="desktop"], every rule there with [data-wasser="mobil"]).
+   What only the desktop shell needs (the stage with its islands, panels, top bar and dock; root .stage with
+   data-wasser="desktop"). Load after kern.css and mobil.css. Every rule starts with [data-wasser="desktop"], so nothing
+   here reaches the mobile shell. The script is started with the desktop's options:  Wasser.start(Wasser.DESKTOP)
 
-   The desktop root carries data-wasser="desktop" (the stage: the scene image a free drop bends must lie inside the
-   root), and the script is started with the desktop's own lists:
-     Wasser.start(Object.assign({}, Wasser.MOBIL, { scene: '...', shade: '', drops: '...', bar: '...', ringOn: '...',
-       ringFrom: '...', light: '...', scrollers: '...' }))
+   WHICH BLOCK EACH DESKTOP ELEMENT IS MADE OF is written in kern.css, in the selector list of the block (marked
+   "desktop"). For orientation:
+     .glass.panel                    Becken        (+ ring and light: wasser.js, options ringOn, light)
+     .glass.wchip                    stilles Wasser
+     .dock                           dichtes Wasser, Markierung (seven children), Lichtlauf
+     .chip.btn--icon (top bar)       Tropfen (round, live)
+     .chip (text), .glass.pill       Etikett
+     .glass.carousel-nav             Perle
+     .panel .item, .sim-item, .hour, .hours-mini > div, .ams > div, .gcard, .tabs, .col.glass     Mulde (clickable ones: Mulde zum Tippen)
+     .panel (as a ground)            Etikett auf Wasser; Perle mit Schrift (its plain buttons are no live drops)
+     .dock button, .chip, .carousel-nav, .gcard, .back, .brand, .island, .scroll-hint             Wasserlinie
+   Shared classes (.btn, .pill, .sheet, .toast, .cmd, .input, .check, .progress, .tabs, .seg ...) are in the same lists
+   and look as they do on the phone. Here follows only what these elements need ON TOP of their block.
 
-   What belongs here (and what does not):
-   1. Tokens of the desktop shell on [data-wasser="desktop"]: the text colours the mobile shell declares on .m-shell
-      (color, --text, --text-2, --text-3 - the look has light text in BOTH tones; the app's light theme with dark text
-      must be off), and re-declared form tokens where the desktop differs: the sheet as a drawer (--wa-r-bogen with four
-      round corners, --wa-bogen-rim, --wa-bogen-lift), no blur on the scrim (--wa-scrim-blur: none), a dock with seven
-      children (--wa-bar-tabs: 7).
-   2. Which block each desktop element is made of: NOT here. Add its selector to the list of the block in kern.css
-      ("apply this block to further elements here"), marked "desktop" - as the mobile elements are marked "mobil".
-   3. What these elements need ON TOP of their block: places, sizes, outlines, a hover state, the sheet's entrance from
-      the side (another animation-name), a dock that keeps its own centring. Written with at least the weight of the
-      block's list.
-   4. A rule like "Ruhe hinter einem Bogen" (mobil.css, 7) for the desktop's own children.
+   What is different on a desktop, and what was decided (NOTIZEN.md, section 11):
+   - The islands are the stars. Nothing here changes a place or a size; islands, their labels, the day ring, loose text
+     over the stage and the hand-written notes get nothing at all.
+   - Many sheets at once. Every panel is a basin, but a shallow one (smaller depth steps), and only the large panel in
+     the middle has the light on its floor; the side panels carry their two rim lights at part strength until the
+     pointer is over them.
+   - Few live drops: the three round buttons of the top bar, every button that lies free over the stage, the primary
+     button of a panel, the buttons of a sheet. Every other button on a panel is plain glass.
+   - A drop that lies free over the stage bends the LANDSCAPE image only (wasser.js, option "scene"); it does not see
+     islands, clouds or leaves. So nothing that may have an island behind it is a live drop: the arrows beside the
+     island are beads, the weather signs on the island are small still sheets with a real blur.
+   - Pointer, not finger: what can be clicked answers the pointer with a little light (part 9), the keyboard focus is
+     the Wasserlinie everywhere (part 10), a moving mouse keeps the water awake (wasser.js).
+   - The stage never rests (clouds, leaves, floating islands), so a blur behind the scrim of a sheet would be a
+     full-screen blur for every picture: the scrim is a plain tint here, the drawer and the search panel carry their
+     own blur.
 
-   Known before the first line is written (docs/wasser-look/vorlage/NOTIZEN.md, "Desktop"):
-   - Becken sets position: relative; panels that are placed absolutely must not be in its list.
-   - Becken's depth steps (22 and 46 px in) fill a 150 px panel black in the tone "dunkel": side panels are "stilles
-     Wasser", one large main panel per world may be a Becken.
-   - A drop free over the stage shows only the ONE scene image, bent: not the islands, clouds or leaves. Anything that
-     may have an island behind it must not be a live drop.
-   - The stage never rests: every blurred sheet is blurred again for every picture. Few blurred sheets. */
+   Rules for this file: a rule that changes something a block has set needs at least the weight of that block's list
+   (see the head of kern.css) - hence .glass.panel, .glass.chip, .glass.dock written with both classes. */
+
+/* == 1. Tokens of the desktop shell ============================================================================== */
+[data-wasser="desktop"] {
+  /* text is light in both tones (the app's old light theme with dark text must be off: keep data-theme="dunkel") */
+  color: #f4f6fb;
+  --text: #f4f6fb;
+  --text-2: rgba(244, 246, 251, .74);
+  --text-3: rgba(244, 246, 251, .5);
+  --glass-border: rgba(255, 255, 255, .14);
+  /* panels: shallow basins. Their outlines (three in turn) and their depth - smaller steps than a card on the phone,
+     because most panels are 150 to 300 px high */
+  --wa-r-panel-1: 20px 29px 23px 31px / 26px 20px 29px 23px;
+  --wa-r-panel-2: 30px 21px 32px 23px / 21px 27px 23px 29px;
+  --wa-r-panel-3: 23px 27px 20px 31px / 23px 25px 22px 28px;
+  --wa-panel-shelf: 15px;                       /* where the first step down begins (a card on the phone: 22 px) ... */
+  --wa-panel-shelf-soft: 11px;
+  --wa-panel-deep: 33px 31px 35px 29px;         /* ... and the deep middle (46 px) */
+  --wa-panel-deep-soft: 24px;
+  --wa-panel-ruhe: .6;                          /* strength of the rim light of a panel at rest (1 under the pointer) */
+  /* things that carry text FREE over the stage (chips, filter labels, arrows): flat smoke glass, no blur */
+  --wa-frei: linear-gradient(rgba(36, 38, 43, .6), rgba(21, 22, 26, .68));
+  --wa-frei-ink-2: rgba(244, 246, 251, .86);
+  --wa-frei-feld: rgba(21, 22, 26, .64);        /* ... and a field among them (a filter select): the trough needs more ground than on a sheet */
+  --wa-r-chip: 19px 23px 18px 22px / 54% 46% 56% 44%;
+  /* the dock */
+  --wa-r-dock: 31px 35px 32px 29px / 32px 30px 34px 32px;
+  --wa-r-tab: 22px;
+  --wa-tab-lens: 1.1;                           /* the icon under the bead is slightly magnified */
+  /* the sheet is a drawer at the right edge: four round corners, its lit rim faces the page, nothing below its foot */
+  --wa-r-bogen: 27px 33px 29px 35px / 31px 27px 33px 29px;
+  --wa-bogen-rim: inset 0 1px 0 rgba(var(--wa-core), .5), inset 1px 0 0 rgba(var(--wa-core), .34), inset 0 0 0 1px rgba(var(--wa-core), .08),
+    inset 18px 0 22px -18px rgba(var(--wa-light), .16), var(--wa-dense-far);
+  --wa-bogen-lift: -16px 12px 40px -8px rgba(var(--wa-dark), .6);
+  --wa-bogen-fuss: 0 0 0 0 transparent;
+  --wa-bogen-zug: 44px;                         /* how far to the right of its place the drawer starts */
+  --wa-kamm: radial-gradient(100% 58% at 0% 50%, rgba(var(--wa-light), .28) 0%, rgba(var(--wa-light), 0) 72%);   /* the crest: on the edge that faces the page */
+  --wa-scrim: rgba(var(--wa-abyss), .3);        /* the stage stays in sight beside the drawer: a light tint ... */
+  --wa-scrim-blur: none;                        /* ... and no blur (a full-screen blur over a stage that never rests) */
+  /* pointer */
+  --wa-haken-hit: -5px;                         /* a check is 20 px here and is hit with a pointer: 30 px are enough */
+  --wa-zeiger: rgba(var(--wa-core), .07);       /* what can be clicked lights up this much under the pointer (pressed: --wa-trough-press) */
+  --wa-zeiger-film: linear-gradient(180deg, rgba(255, 255, 255, .11), rgba(255, 255, 255, .04));   /* a ghost button under the pointer: half the film of a press */
+  --wa-zeiger-licht: brightness(1.16);          /* plain glass and drops under the pointer */
+}
+
+/* == 2. Panels (Becken) ========================================================================================== */
+[data-wasser="desktop"] .glass.panel {
+  padding: 15px 17px;                           /* the app's 14 / 16 px plus the 1 px border that is gone: nothing shifts */
+  border-radius: var(--wa-r-panel-1);
+  --wa-shelf-inset: var(--wa-panel-shelf);  --wa-shelf-soft: var(--wa-panel-shelf-soft);
+  --wa-deep-inset: var(--wa-panel-deep);  --wa-deep-soft: var(--wa-panel-deep-soft);
+  &:nth-of-type(3n+2) { border-radius: var(--wa-r-panel-2); }
+  &:nth-of-type(3n) { border-radius: var(--wa-r-panel-3); }
+  /* the stage is the star: the depth is thinner than on the phone, and what the phone's page does to the scene (it darkens
+     it) the panel does to the scene seen through it - both are values of the tone (kern.css, --wa-weit-*) */
+  -webkit-backdrop-filter: var(--wa-blur) var(--wa-weit-grund);
+  backdrop-filter: var(--wa-blur) var(--wa-weit-grund);
+  &::before, &::after { opacity: var(--wa-weit-tiefe); }
+  /* its light: only the one on the lit rim, at part strength (a wall of panels must not shimmer); under the pointer the
+     water wakes. No light on the far rim, none on the floor - those are for the one large basin of a world (below) */
+  & > .wa-licht { opacity: var(--wa-panel-ruhe); transition: opacity var(--wa-t-settle) var(--wa-ease-flow); }
+  & > .wa-licht::after { content: none; animation: none; }
+  & > .wa-licht > .wa-boden { display: none; animation: none; }
+  @media (hover: hover) { &:hover > .wa-licht { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { & { animation: none !important; } }   /* the app's own entrance of the panels ("rise") is off too */
+  :root[data-motion="reduziert"] & { animation: none !important; }
+}
+[data-wasser="desktop"] .panel-col > .glass.panel { position: relative; padding: 13px 15px; }   /* (a basin needs a position; in a column the app's panels have none) */
+/* the one large panel in the middle of a world (druck, material, wetter, archiv: placed with a bottom edge; the first
+   project card): the full depth of a basin and the light on its floor. When the look is built in, give that panel a
+   class and name it here instead of the inline style. */
+[data-wasser="desktop"] :is(.ui > .glass.panel[style*="bottom:"], .glass.panel.project-card) {
+  --wa-shelf-inset: 20px;  --wa-shelf-soft: 14px;
+  --wa-deep-inset: 42px 40px 46px 36px;  --wa-deep-soft: 32px;
+  & > .wa-licht { opacity: 1; }
+  & > .wa-licht::after { content: ""; animation: wa-licht-unten var(--wa-t-ruhe-2) var(--wa-gang-2) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-2)) infinite; animation-play-state: var(--wa-lauf); }
+  & > .wa-licht > .wa-boden { display: block; animation: wa-boden var(--wa-t-ruhe-4) var(--wa-gang-4) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-4)) infinite; animation-play-state: var(--wa-lauf); }
+}
+[data-wasser="desktop"] .panel .btn.btn--ghost { text-shadow: var(--wa-shade); }   /* buttons do not inherit text-shadow */
+[data-wasser="desktop"] .panel .item--on { background: var(--wa-trough-press); }
+[data-wasser="desktop"] .panel .alert.info { background: var(--wa-trough); border-color: var(--wa-pill-line); }   /* a plain note in a panel: a trough, not blue (a warning keeps its amber) */
+[data-wasser="desktop"] .panel .glass:where(.col) { -webkit-backdrop-filter: none; backdrop-filter: none; }   /* a box inside a panel is a trough, never a second blurred sheet */
+[data-wasser="desktop"] .panel .glass:where(.col)[style*="solid"] { border-color: rgba(var(--wa-core), .62) !important; }   /* the current version is marked by the app with an inline blue line: a line of light instead (!important only because it is an inline style; when the look is built in, the app marks it with a class) */
+[data-wasser="desktop"] .panel .filter-select.on, [data-wasser="desktop"] .filter-select.on { border-color: transparent; box-shadow: var(--wa-trough-walls), inset 0 0 0 1.5px rgba(var(--wa-core), .62); }   /* a filter that is set: a line of light, not blue */
+
+/* == 3. Kopfzeile ================================================================================================ */
+/* The three round buttons are live drops (kern.css, "Tropfen"). The text chips - workspace, search, weather - lie free
+   over the sky: flat smoke glass with the outline of an Etikett, no blur. */
+[data-wasser="desktop"] .glass.chip:not(.btn--icon) {
+  border-radius: var(--wa-r-chip);
+  background: var(--wa-frei);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  --text-2: var(--wa-frei-ink-2);
+}
+[data-wasser="desktop"] .topbar .chip .pill { box-shadow: none; border-color: var(--wa-pill-line); }   /* the key hint in the search chip: a flat label */
+
+/* == 4. Dock ===================================================================================================== */
+/* The dock is the tab bar of the desktop: the same dense pool, the same bead that flows to the active world. It keeps
+   its own place (centred by the app); nothing scrolls under it, so no dark band below. */
+[data-wasser="desktop"] .glass.dock {
+  --wa-bar-tabs: 7;
+  --wa-bar-pad: 6px;
+  display: grid;                                /* the bead is exactly one child wide: seven equal columns, side by side - */
+  grid-auto-flow: column;                       /* each as wide as the longest label needs (in the app's own flex row "3D-Druck" was 5 px wider than the others) */
+  grid-auto-columns: 1fr;
+  gap: 0;
+  padding: var(--wa-bar-pad);
+  border-radius: var(--wa-r-dock);
+  -webkit-backdrop-filter: var(--wa-blur-dense) var(--wa-weit-grund);
+  backdrop-filter: var(--wa-blur-dense) var(--wa-weit-grund);
+
+  & button {
+    position: relative;
+    white-space: nowrap;
+    border-radius: var(--wa-r-tab);
+    background: none;
+    color: var(--wa-tab-ink);
+    transition: color var(--wa-t-fast);
+  }
+  & button.on { color: var(--wa-tab-ink-on); background: none; text-shadow: var(--wa-tab-halo); }
+  @supports not selector(:has(a)) { & button.on { background: var(--wa-tab-fallback); } }   /* no bead there (see "Markierung"): a tinted tab */
+  /* a pressed world gives way (1.5 px down, 7 % smaller); the icon under the bead is slightly magnified (a lens) */
+  & button > * { transition: transform var(--wa-t-leave) var(--wa-ease-settle); }
+  & button.on > .ico { transform: scale(var(--wa-tab-lens)); }
+  & button:active > * { transform: translateY(1.5px) scale(.93); transition-duration: var(--wa-t-touch); }
+  @media (prefers-reduced-motion: reduce) { & button, & button > * { transition: none !important; } }
+  :root[data-motion="reduziert"] & button, :root[data-motion="reduziert"] & button > * { transition: none !important; }
+}
+
+/* == 5. Frei über der Bühne ====================================================================================== */
+/* Labels and controls that lie directly on the painted stage. No blur, no bending - an island may lie behind them. */
+/* filter labels under a world title (a Wahl: the chosen one is the bead), the labels of a project */
+[data-wasser="desktop"] .world-title .pills > .pill,
+[data-wasser="desktop"] .world-title .glass.pill { background: var(--wa-frei); -webkit-backdrop-filter: none; backdrop-filter: none; }
+[data-wasser="desktop"] .world-title .pills > .pill:is(.on, .pill--on) { background: var(--wa-frei); }
+/* filter selects and the station select: a Feld on smoke glass */
+[data-wasser="desktop"] .world-title .select { background-color: var(--wa-frei-feld); -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* the two arrows beside the island: beads (they keep the app's own centring while they give way) */
+[data-wasser="desktop"] .glass.carousel-nav {
+  border: 0;
+  background: var(--wa-frei);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--wa-perle-rim), 0 2px 8px -2px rgba(var(--wa-dark), .5);
+  &:active { transform: translateY(-50%) scale(.92); background: var(--wa-frei); }
+}
+/* the weather signs stand ON the island on purpose: small still sheets (their blur sees the island) */
+[data-wasser="desktop"] .glass.wchip {
+  --wa-shallow: inset 0 0 8px 1px rgba(var(--wa-light), .1);
+  -webkit-backdrop-filter: var(--wa-blur) var(--wa-weit-grund);
+  backdrop-filter: var(--wa-blur) var(--wa-weit-grund);
+}
+
+/* small selects: the app sets their padding inline (11 places, also in sheets), which takes away the room the block "Feld"
+   keeps for the arrow - the arrow then lies ON the text. Here they get that room back, with a smaller arrow.
+   (!important only because it is an inline style. When the look is built in: drop the inline paddings.) */
+[data-wasser="desktop"] .select[style*="padding"] { padding-right: 24px !important; background-position: 0 100%, right 8px center; background-size: 0% var(--wa-feld-line-h), 10px 7px; }
+[data-wasser="desktop"] .select[style*="padding"]:focus { background-size: 100% var(--wa-feld-line-h), 10px 7px; }
+
+/* == 6. Bogen als Schublade ====================================================================================== */
+/* The sheet is the same dense water as on the phone, in another shape: a drawer that flows in from the right edge
+   (tokens in part 1). It carries its own blur here - the scrim has none - and its crest of light runs down the edge
+   that faces the page. */
+[data-wasser="desktop"] .sheet {
+  -webkit-backdrop-filter: var(--wa-blur-dense);
+  backdrop-filter: var(--wa-blur-dense);
+  animation-name: wa-fliesst;
+  &::before {
+    left: 0; top: 0; bottom: 0; right: auto;
+    width: var(--wa-kamm-h); height: auto;
+    transform-origin: 0 50%;
+    animation-name: wa-kamm-seite;
+  }
+}
+[data-wasser="desktop"] .cmd { -webkit-backdrop-filter: var(--wa-blur-dense) var(--wa-weit-grund); backdrop-filter: var(--wa-blur-dense) var(--wa-weit-grund); }
+[data-wasser="desktop"] .cmd-back { animation: none; }   /* the search panel lies INSIDE its scrim: while the scrim's own fade is applied (and with fill-mode "both" it is applied for good) the panel's blur sees nothing behind the scrim. The panel has its own entrance */
+@keyframes wa-fliesst {                         /* flows in fast, runs a little past its place, comes back, rests */
+  0%   { transform: translateX(var(--wa-bogen-zug)); opacity: 0; }
+  40%  { opacity: 1; }
+  58%  { transform: translateX(calc(-1 * var(--wa-bogen-swing))); }
+  80%  { transform: translateX(calc(var(--wa-bogen-swing) * .3)); }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes wa-kamm-seite {                      /* a gleam in the middle of the edge that spreads along it and fades */
+  0%   { opacity: 0; transform: scaleY(.25); }
+  30%  { opacity: 1; }
+  100% { opacity: 0; transform: scaleY(1.3); }
+}
+
+/* == 7. Ruhe hinter einem Bogen ================================================================================== */
+/* The stage's interface behind an open drawer or the search rests: its loops pause (the drops there are stopped by
+   wasser.js, option "modal" - keep both lists the same). The drawer's own light goes on. */
+[data-wasser="desktop"]:has(.sheet, .cmd-back) .ui > :not(.sheet, .cmd-back, .toast) { --wa-lauf: paused; }
+
+/* == 8. Stufe 0 ================================================================================================== */
+/* Islands, their labels, the day ring, loose text over the stage, hand-written notes, charts: nothing. */
+
+/* == 9. Zeiger =================================================================================================== */
+/* What can be clicked answers the pointer with a little light - at once, never with a movement of its own, and only
+   where a pointer can hover at all. The press answers as on the phone. */
+@media (hover: hover) {
+  /* troughs that can be clicked */
+  [data-wasser="desktop"] :is(.item--click, .sim-item, .gcard, .cmd__item, .tile:not(.on), .island-lib > button:not(.on)):hover:not(:has(:is(button, a, .check):hover)) { background-color: var(--wa-zeiger); transition-duration: var(--wa-t-fast); }
+  [data-wasser="desktop"] .item .item--click { border-radius: 9px; }   /* (the clickable part of a row that is not the whole row) */
+  [data-wasser="desktop"] .gcard:hover { transform: none; }   /* (the app lifts a gallery card by 2 px: the light is the answer here) */
+  /* labels to choose from, clickable pills */
+  [data-wasser="desktop"] :is(.seg > button, .tabs > button, .pills > .pill, button.pill):not(.on, .pill--on):hover { color: var(--text); }
+  /* ghost buttons: half the film of a press; beads light up */
+  [data-wasser="desktop"] .btn.btn--ghost:not(.btn--icon):not(:disabled):hover { background: var(--wa-zeiger-film); }
+  [data-wasser="desktop"] :is(.btn.btn--icon.btn--ghost, .glass.carousel-nav):not(:disabled):hover { filter: brightness(1.35); }
+  /* plain glass and live drops: a breath brighter */
+  [data-wasser="desktop"] :is(.btn:not(.btn--ghost), .chip.btn--icon):not(:disabled):not([data-w3="on"]):hover { filter: var(--wa-zeiger-licht); }
+  [data-wasser="desktop"] [data-w3="on"]:not(:disabled):hover > .w3-drop { filter: var(--wa-zeiger-licht); }
+  /* chips that are buttons, the dock */
+  [data-wasser="desktop"] button.glass.chip:not(.btn--icon):hover { border-color: var(--wa-pill-on-line); }
+  [data-wasser="desktop"] .glass.dock button:hover { color: var(--wa-tab-ink-on); }
+}
+[data-wasser="desktop"] .w3-drop { transition: filter var(--wa-t-fast); }
+[data-wasser="desktop"] .glass.chip { transition: border-color var(--wa-t-fast); }
+@media (prefers-reduced-motion: reduce) { [data-wasser="desktop"] :is(.w3-drop, .glass.chip) { transition: none !important; } }
+:root[data-motion="reduziert"] [data-wasser="desktop"] :is(.w3-drop, .glass.chip) { transition: none !important; }
+
+/* == 10. Tastatur ================================================================================================ */
+/* The keyboard focus is the Wasserlinie everywhere: what is not in one of the two lists of kern.css still gets the
+   line of light instead of the app's blue ring. (Fields have their own, the sheet itself shows none.) */
+[data-wasser="desktop"] :focus-visible:where(:not(.cmd__input input)) { outline: var(--wa-focus); outline-offset: var(--wa-focus-gap-nah); }
