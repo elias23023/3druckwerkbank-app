@@ -58,3 +58,5 @@ Bildstreifen (Ruhe, REF = derselbe Bogen ohne Tippen geöffnet, dann die Bilder 
 In `pruefen.mjs --app` (drei Prüfungen) und `desktop.mjs pruefen` (drei Prüfungen) steht der Fall jetzt als Prüfung: Der Tropfen, der den Bogen geöffnet hat, ruht dahinter (`Wasser.info.settling` 0, sein Bild steht), bei reduzierter Bewegung ist er Bildpunkt für Bildpunkt sein Bild in Ruhe, und nach dem Schließen lebt er wieder.
 
 Live ist das erst mit dem nächsten Einspielen (die Live-Seite läuft auf `9c4afa7`).
+
+**Folge für Vergleiche mit älteren Ständen:** `sollist.mjs --soll git:feinschliff-basis` zeigt jeden Bildschirm mit offenem Bogen oder offener Suche als abweichend (57 von 164, fast alles in den Leinwänden der Tropfen): Die Tropfen hinter dem Bogen zeigen jetzt ihr letztes Bild in Ruhelage statt des Bilds von davor. Gewollt; beim Vergleich mit Ständen vor diesem `--erwartet bogen,suche` angeben. Noch offen: Ruhende Tropfen werden nicht neu gezeichnet, solange der Bogen offen bleibt – auch nicht, wenn sich darunter die Szene, der Ton oder die Fenstergröße ändert (war vorher genauso; `NACHSEHEN-FABLE.md`, Punkt 18).
