@@ -1,15 +1,35 @@
 // Shared by the tools in scripts/wasser: Playwright, a small file server for the repository, the harness page
-// (scripts/wasser/mobil.html), the REAL app with the template injected, and picture helpers (sharp).
+// (scripts/wasser/mobil.html), the REAL app at phone size, picture helpers (sharp), the command line.
 // Everything is addressed from the repository root, so the tools run from a fresh clone:  node scripts/wasser/<tool>.mjs
 //
 //   const s = await session({ engine: 'chromium' | 'webkit' | 'firefox' })
 //   const h = await s.harness({ ton: 'klar', scene: 'wetter', nah: false, reduced: false, look: 'vorlage' })   -> h.page, h.errors, h.drops(), h.close()
-//   const a = await s.app({ ton: '', reduced: false, look: 'vorlage', zeit: '2026-11-12T17:42:00+01:00' })      -> a.page, a.go(hash), a.sheet(name), a.closeSheet(), a.project(), a.shot(file), a.errors, a.close()
+//   const a = await s.app({ ton: 'klar', reduced: false, look: 'auto', zeit: 'tag' })      -> a.page, a.look, a.go(hash), a.sheet(name), a.closeSheet(), a.project(), a.shot(file), a.errors, a.close()
 //   await s.close()
-// look: 'vorlage' = the template (docs/wasser-look/vorlage), '' = no look (the app as it is), anything else = a folder (path
-//       from the repository root, or absolute): either ANOTHER COPY OF THE TEMPLATE (it holds kern.css, mobil.css, desktop.css,
-//       wasser.js - e.g. a copy made before a change, or 'git:HEAD' = the template as it is committed), or an earlier state
-//       of the look (look.css + look.js), e.g. docs/wasser-look/entwurf/nachgebessert
+//
+// WHICH LOOK (option "look" of app() and of openDesktop() in desktop-lib.mjs; the tools' --look):
+//   'auto'       (default) the look the app HAS BUILT IN (src/wasser, bundled by the build). A shell that has none (an older
+//                state of the app) gets the template injected, as before the look was built in.
+//   'eingebaut'  the app exactly as it is built: nothing injected, nothing replaced, whether it has a look or not.
+//   'vorlage', a folder (path from the repository root, or absolute), 'git:<revision>'   THAT COPY OF THE TEMPLATE (kern.css,
+//                mobil.css, desktop.css, wasser.js), e.g. a copy in which something is being tried, or the template as a
+//                commit has it. In a shell without a look it is injected. Where a look is built in it REPLACES the built-in
+//                copies: the look's rules are cut out of the app's stylesheet before the page sees it (they are its tail,
+//                from the first "[data-wasser" on) and the folder's three stylesheets take their place; the folder's script
+//                is defined before the app's bundle runs, so the bundled copy steps back (wasser.js: "if (window.Wasser)
+//                return") and the app's own hook starts the folder's script. Never two looks on one page.
+//   ''  (--look ohne)   no look: a built-in look is taken out the same way (stylesheet cut, a script that does nothing).
+//   a folder with look.css + look.js   an earlier state of the look (docs/wasser-look/entwurf/nachgebessert, the approved
+//                reference of vergleich.mjs): injected after a built-in look was taken out.
+// Every handle says what it got: a.look = { asked, mode: 'eingebaut' | 'eingespielt' | 'ersetzt' | 'ohne' | 'alt', dir, text }.
+// For the harness page 'auto' and 'eingebaut' mean the template (the copies in src/wasser are the template: inSync()).
+//
+// THE TONE (option "ton": 'dunkel' | 'klar' | 'auto'; '' = 'dunkel'): where the look is built in, the APP chooses the tone
+// from its setting "Erscheinungsbild" and the hour. The tools therefore do not touch data-wa-ton there: they write the
+// setting into the app's stored state (settings.theme: dunkel -> "dunkel", klar -> "hell") and reload, as if a person had
+// chosen it - then "dunkel" is dark by day and "klar" is clear by night. 'auto' leaves the setting alone (the hour decides).
+// In a shell without a built-in look the attribute is set directly, both ways.
+//
 // The real app needs its preview server:  npm run build && npm run preview   (http://localhost:4173; another address: WASSER_APP=...)
 // WebKit and Firefox need Playwright's builds of them (on the work machine: source <scratchpad>/judge-phone/env.sh first).
 import { createRequire } from 'module'; import fs from 'fs'; import os from 'os'; import path from 'path'; import http from 'http'; import { fileURLToPath } from 'url'; import { execFileSync } from 'child_process';
@@ -20,6 +40,10 @@ export const VORLAGE = 'docs/wasser-look/vorlage';                 // the templa
 export const ALT = 'docs/wasser-look/entwurf/nachgebessert';      // the state the owner approved (injected look, rules under .m-shell): what the template is compared with
 export const SZENEN = ['start', 'heute', 'projekte', 'material', 'druck', 'wetter', 'archiv', 'innen'];
 export const APP = process.env.WASSER_APP || 'http://localhost:4173';
+// 13 Nov 2026 in Vienna: sunrise 06:57, sunset 16:18 (what the made-up weather says as well)
+export const ZEITEN = { morgen: '2026-11-13T08:40:00+01:00', tag: '2026-11-13T12:40:00+01:00', abend: '2026-11-13T15:50:00+01:00', nacht: '2026-11-13T21:30:00+01:00' };
+export const zeitOf = (z) => { const t = +new Date(ZEITEN[z] ?? z); if (!(t > 0)) throw new Error(`zeit: "${z}" is neither ${Object.keys(ZEITEN).join(' | ')} nor an ISO time`); return t; };
+export const ENGINES = ['chromium', 'webkit', 'firefox'], TOENE = ['dunkel', 'klar'];
 export const pw = (() => { try { return require('/opt/node-tools/node_modules/playwright/index.js'); } catch { return require('playwright'); } })();
 export { sharp };
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
