@@ -25,7 +25,7 @@ await page.mouse.move(960, 540); await page.mouse.wheel(0, 400); await page.wait
 check('Wheel on start dives into Heute', (await page.evaluate(() => location.hash)) === '#/heute');
 check('Heute portal sits inside the island', (await page.locator('.island--active .portal').count()) === 1);
 check('Portal shows the clock and the next light change', await page.evaluate(() => { const c = document.querySelector('.portal__centre b'); const l = document.querySelector('.portal__centre span'); return !!c && /\d{2}:\d{2}/.test(c.textContent || '') && /Sonnen(aufgang|untergang)/.test(l?.textContent || ''); }));
-for (const w of ['projekte', 'druck', 'material', 'wetter', 'archiv']) { await page.goto(`${base}/#/${w}`); await page.waitForTimeout(400); check(`World ${w} title`, (await page.locator('.world-title h1').count()) === 1); }
+for (const w of ['projekte', 'druck', 'material', 'wetter', 'archiv']) { await page.goto(`${base}/#/${w}`); await page.waitForTimeout(400); check(`World ${w} title`, (await page.locator('.feld-kopf h1').count()) === 1); }
 await page.goto(`${base}/#/druck`); await page.waitForTimeout(500);
 check('Druck: Eingang shows imported print', (await page.getByText('Kabelclip_v2.gcode').count()) > 0);
 await page.getByRole('button', { name: /Neues Projekt/ }).first().click(); await page.waitForTimeout(500);

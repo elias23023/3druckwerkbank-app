@@ -4,6 +4,7 @@ import { STAGES } from '../types';
 import { useStore, availableGrams, printProgress } from '../store';
 import { navigate } from '../router';
 import { Panel, Progress, Stack } from '../ui/Glass';
+import { Weltkopf, Spruchfeld } from '../ui/Felder';
 import { IArrowL, IPlus, IFlag, ICheck, IGit, IPrinter, IFile, ILayers, IHistory, ICopy, IArchive, IImage, IWrench, ISparkle, IChevR } from '../ui/Icons';
 import { fmtDate, fmtDuration, fmtGrams } from '../lib/format';
 import { useNow } from '../lib/time';
@@ -28,21 +29,19 @@ export function ProjektInnen({ project: p }: { project: Project }) {
 
   return (
     <>
-      <div className="world-title" style={{ maxWidth: '26%', top: '10%' }}>
-        <button className="back" onClick={() => navigate({ world: 'projekte' })}><IArrowL width={14} height={14} /> Projekte</button>
-        <h1 style={{ fontSize: 'clamp(22px, 2.5cqw, 36px)' }}>{p.name}{p.favorite ? <span style={{ color: '#ffd77a', marginLeft: 8 }}>★</span> : null}</h1>
-        <p className="small">{p.description}</p>
-        <div className="pills" style={{ marginTop: 8 }}>
+      <Weltkopf width="21%" className="feld-kopf--projekt" before={<button className="back" onClick={() => navigate({ world: 'projekte' })}><IArrowL width={14} height={14} /> Projekte</button>}
+        title={<>{p.name}{p.favorite ? <span style={{ color: '#ffd77a', marginLeft: 8 }}>★</span> : null}</>} sub={p.description || undefined}>
+        <div className="pills">
           <select className="glass select" style={{ width: 'auto', padding: '3px 8px', fontSize: 12 }} value={p.stage} onChange={(e) => s.setStage(p.id, e.target.value as Project['stage'])} aria-label="Entwicklungsstation">{STAGES.map((st) => <option key={st}>{st}</option>)}</select>
           <span className="glass pill xs">{p.type}</span>{p.areas.slice(0, 2).map((a) => <span key={a} className="glass pill xs">{a}</span>)}{p.areas.length > 2 ? <span className="glass pill xs" title={p.areas.slice(2).join(', ')}>+{p.areas.length - 2}</span> : null}
         </div>
-        <div className="row" style={{ marginTop: 8, gap: 6, flexWrap: 'wrap' }}>
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
           <button className="glass btn btn--sm" onClick={() => s.openSheet({ kind: 'projektForm', projectId: p.id })}>Bearbeiten</button>
           <button className="glass btn btn--sm" onClick={() => { const nid = s.duplicateProject(p.id); if (nid) navigate({ world: 'projekte', projectId: nid }); }}><ICopy width={13} height={13} /> Duplizieren</button>
           <button className="glass btn btn--sm" onClick={() => s.setTemplate(p.id, !p.isTemplate)}>{p.isTemplate ? '★ Vorlage' : 'Als Vorlage'}</button>
           {!p.archivedAt ? <button className="btn btn--sm btn--primary" onClick={() => s.openSheet({ kind: 'abschliessen', projectId: p.id })}><IArchive width={13} height={13} /> Abschließen</button> : <span className="pill pill--acc">Archiviert {fmtDate(p.archivedAt)}</span>}
         </div>
-      </div>
+      </Weltkopf>
 
       {/* top centre: milestones */}
       <Panel title="Meilensteine" icon={<IFlag />} right={<><span className="xs muted">{p.progress} %</span><More t="meilensteine" /></>} style={{ left: '30%', top: '10%', width: '40%' }} delay={40}>
@@ -108,7 +107,7 @@ export function ProjektInnen({ project: p }: { project: Project }) {
           {p.history.slice(0, 3).map((h) => <div key={h.id} className="row small"><span className="dot" style={{ background: HCOL[h.type] ?? '#fff' }} /><span className="grow ellipsis">{h.title}</span><span className="xs muted" style={{ flex: 'none' }}>{fmtDate(h.at).slice(0, 6)}</span></div>)}
         </Panel>
       </div>
-      <div className="hand hand--tr" style={{ top: '10%' }}>{'„Aus Ideen\nentstehen Lieblingsstücke.“'}</div>
+      <Spruchfeld />
     </>
   );
 }

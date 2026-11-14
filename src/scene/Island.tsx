@@ -21,6 +21,9 @@ export const FRAME_BOX: Partial<Record<LibraryIsland, CSSProperties>> = {
 };
 /** Bump when island sprites change: the CDN and browsers cache /img/* for a year (immutable), so the URL must change. */
 export const ASSET_VERSION = '20261108a';
+/** Desktop: name and subtitle under an island stand on a small label of smoke glass (block „Felder“ in global.css, class
+ *  `island__label--feld`). false = the names stand free on the landscape as before (only the text shadow). */
+const LABEL_FIELD = true;
 export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${id}-${w}.webp?v=${ASSET_VERSION}`;
 
 export interface IslandProps {
@@ -48,10 +51,12 @@ export function Island({ image, x, y, size, depth, active, opacity, label, sub, 
         {children ? <div className="island__props" style={FRAME_BOX[image]}>{children}</div> : null}
       </div>
       {label ? (
-        <div className={`island__label island__label--${labelSize}`}>
-          <b>{label}</b>
-          {sub ? <span>{sub}</span> : null}
-          {status ? <span className="island__status"><i className="dot" style={{ background: status.color }} />{status.text}</span> : null}
+        <div className={`island__label island__label--${labelSize}${LABEL_FIELD ? ' island__label--feld' : ''}`}>
+          <div className="island__name">
+            <b>{label}</b>
+            {sub ? <span>{sub}</span> : null}
+            {status ? <span className="island__status"><i className="dot" style={{ background: status.color }} />{status.text}</span> : null}
+          </div>
           {cta ? <span className="btn btn--sm island__cta">{cta} <IArrowR width={12} height={12} /></span> : null}
         </div>
       ) : null}

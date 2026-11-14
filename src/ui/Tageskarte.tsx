@@ -4,6 +4,7 @@ import { greeting, quoteOfDay, sameDay } from '../lib/time';
 import { fmtLongDate, fmtTime, fmtNum } from '../lib/format';
 import { todayDaily, wmo } from '../lib/weather';
 import { resolveSeason, SEASON_META, daysUntilNextSeason, type Season } from '../lib/season';
+import { sunTurn } from '../lib/sun';
 import { WeatherIcon } from './WeatherIcon';
 import { ISun, ISparkle, ISnow, IEnergy } from './Icons';
 
@@ -17,7 +18,8 @@ const dayFrac = (t: string | Date) => { const d = typeof t === 'string' ? new Da
  * over 24 hours, season and solar window, quote – one sheet instead of loose lines over the scene.
  * `variant="mobil"`: a `.glass.m-card` with `.m-row` tiles (the phone's blocks of the Wasser-Look: Becken, Mulde).
  * `variant="desktop"`: a `.glass.panel` with `.item` tiles (the desktop's blocks), meant for a `PanelColumn`; it also carries the
- * sentence of the day that used to hang loose under the weather on the right.
+ * sentence of the day that used to hang loose under the weather on the right. The quote of the day is not in it on the desktop:
+ * there it has a field of its own at the right edge (`src/ui/Spruchfeld.tsx`). Below the daylight track: the next change of light.
  * Rules: block „Tageskarte“ in `src/styles/global.css` (`.tk*`); the phone's own spacing stays in `mobile.css` (`.m-today`).
  */
 export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: string; variant: 'mobil' | 'desktop' }) {
@@ -30,6 +32,7 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
   const days = daysUntilNextSeason(now);
   const [hh, mm] = fmtTime(now).split(':');
   const [weekday, ...rest] = fmtLongDate(now).split(', ');
+  const turn = sunTurn(weather?.data, now);   // "Sonnenuntergang in …": the same helper as the ring and the weather panels
   const rise = today ? dayFrac(today.sunrise) : 0; const set = today ? dayFrac(today.sunset) : 0;
   const tile = desktop ? 'item tk-fact' : 'm-row tk-fact';
   const motto = !desktop || !cur ? null : cur.precip > 0 ? 'Drinnen ist heute Werkstatt-Wetter.' : pvStart ? 'Ein guter Tag für neue Projekte.' : 'Ein ruhiger Tag zum Planen.';
@@ -46,17 +49,18 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
         </div>
       </div>
       {today ? (
-        <div className="tk-day" role="img" aria-label={`Tageslicht von ${fmtTime(today.sunrise)} bis ${fmtTime(today.sunset)} Uhr`}>
+        <div className={`tk-day${turn ? ' tk-day--turn' : ''}`} role="img" aria-label={`Tageslicht von ${fmtTime(today.sunrise)} bis ${fmtTime(today.sunset)} Uhr${turn ? `, ${turn.text}` : ''}`}>
           <div className="tk-day__track"><i className="tk-day__light" style={{ left: `${rise * 100}%`, width: `${Math.max(0, set - rise) * 100}%` }} /><i className="tk-day__now" style={{ left: `${dayFrac(now) * 100}%` }} /></div>
           <span className="tk-day__lbl" style={{ left: `${rise * 100}%` }}>↑ {fmtTime(today.sunrise)}</span>
           <span className="tk-day__lbl" style={{ left: `${set * 100}%` }}>↓ {fmtTime(today.sunset)}</span>
+          {turn ? <span className="tk-day__turn" aria-hidden>{turn.text}</span> : null}
         </div>
       ) : null}
       <div className="tk-facts">
         <div className={tile}><SeasonIcon /><div><b>{SEASON_META[season].label}</b><span>{SEASON_META[season].next} in {days} {days === 1 ? 'Tag' : 'Tagen'}</span></div></div>
         {cur ? <div className={tile}><IEnergy /><div><b>Solarfenster</b><span>{pvStart ? `${sameDay(new Date(pvStart), now) ? 'heute' : 'morgen'} ab ${fmtTime(pvStart)}` : 'keines in 48 h'}</span></div></div> : null}
       </div>
-      {settings.showQuote ? <p className="tk__quote">„{quoteOfDay(now)}“</p> : null}
+      {settings.showQuote && !desktop ? <p className="tk__quote">„{quoteOfDay(now)}“</p> : null}
     </>
   );
   return desktop

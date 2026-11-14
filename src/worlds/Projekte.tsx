@@ -4,6 +4,7 @@ import { useStore, availableGrams, printProgress, printRemainingMin } from '../s
 import { useShallow } from 'zustand/react/shallow';
 import { navigate } from '../router';
 import { Panel } from '../ui/Glass';
+import { Weltkopf, Spruchfeld } from '../ui/Felder';
 import { IChevL, IChevR, IPlus, IStar, IArrowR, ICopy, IPrinter, ISpool, IClock, IGit, ICheck, ISun, IBolt } from '../ui/Icons';
 import { islandSrc } from '../scene/Island';
 import { useNow } from '../lib/time';
@@ -45,17 +46,16 @@ export function Projekte({ index, setIndex, projects }: { index: number; setInde
 
   return (
     <>
-      <div className="world-title">
-        <h1>Projekte</h1><p>Deine Ideen. Schritt für Schritt.</p>
-        {total > 0 ? <div className="pills" style={{ marginTop: 14 }}>
+      <Weltkopf title="Projekte" sub="Deine Ideen. Schritt für Schritt.">
+        {total > 0 ? <div className="pills" style={{ marginTop: 4 }}>
           {([['alle', 'Alle'], ['aktiv', 'Aktiv'], ['geplant', 'Geplant'], ['blockiert', 'Blockiert'], ['fav', 'Favoriten']] as [StatusF, string][]).map(([k, l]) => <button key={k} className={`glass pill${pillOn(k)}`} style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => setFilter({ ...filter, status: k })}>{k === 'fav' ? <IStar width={12} height={12} /> : null}{l} <span className="pill xs" style={{ padding: '0 6px', background: 'rgba(255,255,255,.14)' }}>{counts[k]}</span></button>)}
         </div> : null}
-        {types.length + areas.length > 1 ? <div className="pills" style={{ marginTop: 8 }}>
+        {types.length + areas.length > 1 ? <div className="pills">
           {types.length > 1 ? <select className={`glass select filter-select${filter.typ ? ' on' : ''}`} value={filter.typ ?? ''} aria-label="Nach Projektart filtern" onChange={(e) => setFilter({ ...filter, typ: e.target.value || undefined })}><option value="">Alle Arten</option>{types.map((t) => <option key={t} value={t}>{t}</option>)}</select> : null}
           {areas.length > 1 ? <select className={`glass select filter-select${filter.bereich ? ' on' : ''}`} value={filter.bereich ?? ''} aria-label="Nach Bereich filtern" onChange={(e) => setFilter({ ...filter, bereich: e.target.value || undefined })}><option value="">Alle Bereiche</option>{areas.map((a) => <option key={a} value={a}>{a}</option>)}</select> : null}
         </div> : null}
-        {total > 0 ? (projects.some(matches) ? <p className="xs faint" style={{ marginTop: 6 }}>{projects.filter(matches).length} von {total}{total > 1 ? ' · ← → blättern · Enter öffnen' : ' · Enter öffnen'}</p> : <p className="xs" style={{ marginTop: 6 }}>Kein Projekt passt zu diesem Filter. <button className="link" onClick={() => setFilter({ status: 'alle' })}>Filter zurücksetzen</button></p>) : null}
-      </div>
+        {total > 0 ? (projects.some(matches) ? <p className="xs muted">{projects.filter(matches).length} von {total}{total > 1 ? ' · ← → blättern · Enter öffnen' : ' · Enter öffnen'}</p> : <p className="xs">Kein Projekt passt zu diesem Filter. <button className="link" onClick={() => setFilter({ status: 'alle' })}>Filter zurücksetzen</button></p>) : null}
+      </Weltkopf>
       {total > 1 ? <><button className="glass carousel-nav desktop-only" style={{ left: '29%' }} onClick={() => go(-1)} aria-label="Vorheriges Projekt"><IChevL /></button>
       <button className="glass carousel-nav desktop-only" style={{ right: '29%' }} onClick={() => go(1)} aria-label="Nächstes Projekt"><IChevR /></button></> : null}
       <div className="mobile-only carousel-mobile"><button className="btn" onClick={() => go(-1)}><IChevL /> Zurück</button><button className="btn" onClick={() => go(1)}>Weiter <IChevR /></button></div>
@@ -100,7 +100,7 @@ export function Projekte({ index, setIndex, projects }: { index: number; setInde
       ) : (
         <Panel className="project-card" strong><h2>Dein erstes Projekt</h2><p className="small">Jedes Projekt bekommt eine eigene Insel: mit Meilensteinen, Versionen, Drucken, Material und Notizen. Eine Idee und ein Name reichen für den Anfang.</p><div className="row" style={{ gap: 8, flexWrap: 'wrap' }}><button className="btn btn--primary" onClick={() => openSheet({ kind: 'projektForm' })}><IPlus width={14} height={14} /> Neues Projekt</button>{devices.every((d) => d.kind !== 'drucker') ? <button className="btn" onClick={() => openSheet({ kind: 'geraetForm', deviceKind: 'drucker' })}><IPrinter width={14} height={14} /> Drucker anlegen</button> : null}</div></Panel>
       )}
-      <div className="hand hand--tr">{'„Aus Ideen\nentstehen Lieblingsstücke.“'}</div>
+      <Spruchfeld />
     </>
   );
 }

@@ -508,6 +508,56 @@ p { margin: 0; }
 .tk--desk .tk-fact { padding: 4px 9px; gap: 8px; }
 .tk--desk .tk__quote { padding-top: 6px; font-size: 18.5px; }
 
+.tk-day--turn { padding-bottom: 0; }   /* the line below the track takes the room the labels need */
+.tk-day__turn { display: block; padding-top: 26px; text-align: center; font-size: 12.5px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk--desk .tk-day__turn { padding-top: 21px; font-size: 12px; }
+
+/* ---- Felder ---- */
+/* Desktop: what stood loose on the landscape now stands on ground (src/ui/Felder.tsx, the worlds, Island.tsx, TopBar.tsx).
+   - .feld-kopf: the head of a world (title, one line, the world's own controls) - a .glass.panel in a PanelColumn top left,
+     the same place in every world (where the card of the day stands on Start). The Wasser-Look draws it as a basin like any panel.
+   - .feld-spruch: the quote of the day at the right edge (Caveat) - a .glass.panel in a PanelColumn top right; replaced the
+     handwritten notes .hand. Only with „Spruch des Tages“ on.
+   - .feld-etikett and .island__label--feld > .island__name: a small label for short lines on the landscape (scroll hint, the
+     line under the Heute island, the brand, the names under the islands). The look's block "Etikett" (outline, rim light, radius
+     of a pill free over the scene) with the fill of things free over the stage (--wa-frei, desktop.css Teil 5): its values are
+     taken from the look's tokens here, because the list of the block lives in the template (kern.css) and is not this branch's.
+     Without the look (no tokens): plain smoke glass. The names of islands: switch with the ONE class island__label--feld
+     (set in Island.tsx, LABEL_FIELD); without it they stand free as before. */
+.panel-col > .feld-kopf { gap: 7px; padding: 12px 16px 14px; }
+.feld-kopf h1 { font-size: 30px; font-weight: 600; letter-spacing: -.02em; line-height: 1.08; overflow-wrap: anywhere; }
+.feld-kopf__sub { color: var(--text-2); font-size: 13.5px; line-height: 1.35; }
+.feld-kopf .back { margin-bottom: -2px; align-self: flex-start; }
+.feld-kopf .pills { gap: 6px; }
+.feld-kopf--projekt h1 { font-size: 26px; }
+.feld-kopf--projekt .feld-kopf__sub { font-size: 13px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.feld-kopf--gruss h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* a long name ends in "…" instead of growing the field */
+.panel-col > .feld-spruch { padding: 13px 18px 14px; }
+.feld-spruch__text { margin: 0; font-family: var(--hand); font-size: 24px; line-height: 1.12; color: #fff; text-wrap: balance; }
+.feld-etikett, .island__label--feld > .island__name {
+  border: 1px solid var(--wa-pill-frei-line, rgba(255,255,255,.18));
+  border-radius: var(--wa-r-pill, 999px);
+  box-shadow: var(--wa-pill-frei-rim, 0 2px 10px rgba(0,0,0,.25));
+  background: var(--wa-frei, linear-gradient(rgba(36,38,43,.6), rgba(21,22,26,.68)));
+  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.island__label--feld { gap: 0; }
+.island__label--feld > .island__name { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 16px 6px; }
+.island__label--feld.island__label--small > .island__name { padding: 2px 10px 3px; }
+.island__label--feld .island__cta { margin-top: 7px; }
+.heute-time .feld-etikett { display: inline-block; margin-top: 0; padding: 4px 14px 5px; color: #fff; }
+.scroll-hint.feld-etikett { flex-direction: row; align-items: center; gap: 6px; padding: 5px 10px 5px 14px; color: #fff; }
+.scroll-hint.feld-etikett .ico { width: 18px; height: 18px; }
+.topbar .brand.feld-etikett { padding: 4px 14px 4px 5px; gap: 8px; }
+.topbar .brand.feld-etikett .brand__logo { width: 30px; height: 30px; }
+.topbar .brand.feld-etikett span { color: rgba(244,246,251,.86); }
+.topbar .topbar__clock.chip { margin-left: 0; gap: 9px; padding: 5px 13px; align-self: flex-start; margin-top: 4px; text-align: left; white-space: nowrap; }   /* 30 px high and up at the top edge of the buttons, not 40: the small island right of the search field reaches up to y 51 (2000 x 993) */
+.topbar .topbar__clock.chip b { display: inline; font-size: 16px; line-height: 1; }
+.topbar .topbar__clock.chip span { font-size: 12.5px; line-height: 18px; color: rgba(244,246,251,.86); }
+.feld-sonne { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 500; }
+.feld-sonne .ico { color: #ffd77a; flex: none; }
+.archiv-filter { gap: 6px; flex: none; }
+
 /* ---- Wasser-Look: Einbau ---- */
 /* Drei Stellen, die bisher inline gefärbt waren, tragen jetzt eine Klasse (so erreicht sie der Look ohne !important). Hier steht ihr Aussehen ohne Look. */
 .glass.col--aktuell { border: 1px solid #7cc6ff; }

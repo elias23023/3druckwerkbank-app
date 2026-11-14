@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useStore, availableGrams, liveProjects } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { fmtDate, fmtGrams, fmtNum, fold } from '../lib/format';
+import { Weltkopf, Spruchfeld } from '../ui/Felder';
 import { PanelColumn, Panel, Stack, Stat } from '../ui/Glass';
 import { ILayers, ISpool, ICart, IPlus, IList, IStar, IX } from '../ui/Icons';
 import { FILAMENT_CATALOG } from '../types';
@@ -32,7 +33,7 @@ export function Material() {
 
   return (
     <>
-      <div className="world-title"><h1>Material</h1><p>Filamente. Werkstoffe. Möglichkeiten.</p></div>
+      <Weltkopf title="Material" sub="Filamente. Werkstoffe. Möglichkeiten." />
 
       <PanelColumn side="left" top="38%" bottom="2.5%" width="22%">
       <Panel title="Materialbestand" icon={<ILayers />} delay={60}>
@@ -94,7 +95,7 @@ export function Material() {
         <p className="xs faint">Produktlinks lösen keine Bestellung aus.</p>
       </Panel>
       </PanelColumn>
-      <div className="hand hand--tr">{'Gute Ideen brauchen\ndie richtigen Werkstoffe.'}</div>
+      <Spruchfeld />
     </>
   );
 }

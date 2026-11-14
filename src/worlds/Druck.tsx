@@ -4,6 +4,7 @@ import { useStore, printProgress, printRemainingMin, liveProjects } from '../sto
 import { useShallow } from 'zustand/react/shallow';
 import { useNow } from '../lib/time';
 import { fmtDuration, fmtNum, relTime, fmtGrams, fold } from '../lib/format';
+import { Weltkopf, Spruchfeld } from '../ui/Felder';
 import { PanelColumn, Panel, Check, Stat } from '../ui/Glass';
 import { IPrinter, IList, IWrench, IUp, IDown, IPlay, IX, ILayers, IDownload, IBolt, IPlus } from '../ui/Icons';
 import { STATUS_COLOR as stColor } from '../forms/GeraetForm';
@@ -58,7 +59,7 @@ export function Druck() {
 
   return (
     <>
-      <div className="world-title"><h1>3D-Druck</h1><p>Deine Drucker. Immer im Blick.</p></div>
+      <Weltkopf title="3D-Druck" sub="Deine Drucker. Immer im Blick." />
 
       <PanelColumn side="left" top="38%" bottom="10.5%" width="22%">
       <Panel title="Drucker & Geräte" icon={<IPrinter />} delay={60} right={<><button className="btn btn--sm btn--ghost" style={{ fontSize: 11 }} onClick={() => a.openSheet({ kind: 'geraete' })}>verwalten</button><button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} aria-label="Gerät hinzufügen" title="Gerät hinzufügen" onClick={() => a.openSheet({ kind: 'geraetForm', deviceKind: 'drucker' })}><IPlus width={14} height={14} /></button></>}>
@@ -155,7 +156,7 @@ export function Druck() {
 
 
 
-      <div className="hand hand--tr">{'Nicht nur drucken,\nsondern Möglichkeiten\nerschaffen.'}</div>
+      <Spruchfeld />
     </>
   );
 }
