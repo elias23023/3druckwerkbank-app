@@ -4,7 +4,7 @@
 //
 //   node scripts/wasser/sollist.mjs [handy|desktop|alles] --soll <state> [--ist <state>] [--toene dunkel,klar] [--formate 2000,1920]
 //        [--zeiten nacht,tag] [--bereiche demo,echt] [--nur <name parts>] [--erwartet <name parts>] [--out <dir>] [--look eingebaut]
-//        [--engine chromium|webkit] [--api node] [--liste]
+//        [--engine chromium|webkit] [--api node] [--tropfen] [--liste]
 //
 //   <state>   git:<revision>   that commit (git:HEAD, git:feinschliff-basis, git:9c4afa7): its src/ and public/ are exported to a
 //                              scratch folder, built there with THIS tree's node_modules and served. Built once per commit
@@ -15,9 +15,9 @@
 //             a folder         a built app (it holds index.html), or a project folder with dist/ in it
 //   --soll    what it should look like (required).   --ist  what it looks like (default: baum).
 //   handy     390 x 844 @2x: Start, Heute, Projekte, a project, Material, Mehr, Wetter, Archiv (long screens also scrolled to their
-//             end), six sheets and forms, the search, a toast; the empty workspace: five screens.
-//   desktop   2000 x 993 and 1920 x 1080 (--formate): the eight worlds, eight sheets and forms, the search, a toast; the empty
-//             workspace: five worlds.
+//             end), nine sheets and forms, the search, a toast; the empty workspace: five screens. 28 screens per tone.
+//   desktop   2000 x 993 and 1920 x 1080 (--formate): the eight worlds, twelve sheets and forms, the search, a toast; the empty
+//             workspace: five worlds. 27 screens per tone and format.
 //   alles     both (default).
 //   --toene   both tones (default), each set through the app's own setting "Erscheinungsbild".
 //   --zeiten  the app's clock (it stands still): default nacht for "dunkel" and tag for "klar"; --zeiten nacht,tag = every tone at both.
@@ -33,8 +33,13 @@
 // pointer parked, the app's cloud banks held (they drift even with reduced motion), no blinking caret; every still is taken
 // until the same picture comes twice in a row; a screen that differs is looked at a second and a third time (the page may not
 // have settled; the desktop then gets its window nudged by one pixel, which makes the browser raster its layers again).
-// Every line: ok / DIFF, the screen, how many pixels differ and by how much (inside the drop canvases counted apart), and the
-// box around all of them in CSS px. For every DIFF a picture <out>/<name>-vergleich.png: Soll | Ist | where they differ (red;
+// THE WATER INSIDE A DROP is not compared: every living drop takes its water from a running number (wasser.js, "seed"), and
+// how often the app rebuilt a button before the picture was taken differs from page to page - on the desktop two loads of
+// ONE build showed three of 27 screens with other water in a drop. So a screen whose pixels differ only INSIDE the drop
+// canvases is "ok*" (listed at the end, not a failure) - provided the drops themselves are the same: as many, at the same
+// places, of the same size, with the same labels. --tropfen makes such a screen a DIFF (to judge a change of the drops).
+// Every line: ok / ok* / DIFF, the screen, how many pixels differ and by how much (inside the drop canvases counted apart),
+// and the box around all of them in CSS px. For every DIFF a picture <out>/<name>-vergleich.png: Soll | Ist | where they differ (red;
 // yellow inside drops). At the end the list of the screens that differ. Exit code 1 when a screen differs that is not named in
 // --erwartet, when a step failed on one side, or when one side reported a page error the other did not.
 // Needs Chromium (or --engine webkit) and, for git: and baum, a few seconds per build. The work machine draws WebGL in
@@ -44,7 +49,7 @@ import { session, serve, diff, strip, args, abs, mkdir, REPO, lookArg, sayLook, 
 import { openDesktop, WELTEN } from './desktop-lib.mjs';
 
 const a = args({ soll: '', ist: 'baum', look: 'eingebaut', toene: 'dunkel,klar', formate: '2000,1920', zeiten: '', bereiche: 'demo,echt', nur: '', erwartet: '', out: path.join(os.tmpdir(), 'wasser-sollist'), engine: 'chromium', api: '' },
-  { flags: ['liste'], choices: { toene: TOENE, engine: ENGINES, zeiten: Object.keys(ZEITEN), bereiche: ['demo', 'echt'], formate: ['2000', '1920', '<WxH>'], api: ['node'] } });
+  { flags: ['liste', 'tropfen'], choices: { toene: TOENE, engine: ENGINES, zeiten: Object.keys(ZEITEN), bereiche: ['demo', 'echt'], formate: ['2000', '1920', '<WxH>'], api: ['node'] } });
 const WAS = ['handy', 'desktop', 'alles']; const was = a._[0] || 'alles'; if (!WAS.includes(was) || a._.length > 1) fail(`"${a._.join(' ')}": one of ${WAS.join(' | ')} (nothing = alles)`);
 if (!a.soll && !a.liste) fail('--soll <state> is missing: git:<revision> | baum | an address | a folder with a built app   (see the head of this file)');
 const look = lookArg(a.look); if (look === 'auto') fail('--look auto would give two apps two different looks without saying so: eingebaut (each as built), a folder, vorlage or ohne');
@@ -85,6 +90,8 @@ const HANDY = [
   ['projekt', (h) => h.project()], ['projekt-unten', async (h) => { await h.project(); await unten(h); }], ['material', (h) => h.go('#/material')], ['material-unten', async (h) => { await h.go('#/material'); await unten(h); }],
   ['mehr', (h) => h.go('#/druck')], ['mehr-unten', async (h) => { await h.go('#/druck'); await unten(h); }], ['wetter', (h) => h.go('#/wetter')], ['archiv', (h) => h.go('#/archiv')],
   ['bogen-projekt', (h) => h.sheet('projekt')], ['bogen-rolle', (h) => h.sheet('rolle')], ['bogen-neuerolle', (h) => h.sheet('neuerolle')], ['bogen-geraet', (h) => h.sheet('geraet')],
+  ['bogen-geraete', async (h) => { await h.go('#/druck'); await h.page.locator('.m-main [aria-label^="Drucker & Warteschlange"]').first().click(); await h.page.waitForTimeout(900); }],
+  ['bogen-werkzeuge', async (h) => { await h.go('#/druck'); await h.page.locator('.m-main [aria-label^="Werkzeuge"]').first().click(); await h.page.waitForTimeout(900); }],
   ['bogen-einstellungen', async (h) => { await h.go('#/start'); await h.sheet('einstellungen'); }], ['bogen-konto', async (h) => { await h.go('#/start'); await h.sheet('konto'); }], ['bogen-hinweise', async (h) => { await h.go('#/start'); await h.sheet('hinweise'); }],
   ['suche', async (h) => { await h.go('#/start'); await h.sheet('suche'); await h.page.keyboard.type('sens'); await h.page.waitForTimeout(600); }], ['hinweis', (h) => h.sheet('toast')],
 ];
@@ -93,12 +100,14 @@ const DESKTOP = [
   ...WELTEN.map((w) => [w, (d) => d.welt(w)]),
   ['bogen-einstellungen', async (d) => { await d.go('heute'); await d.sheet('einstellungen'); }], ['bogen-konto', async (d) => { await d.go('heute'); await d.sheet('konto'); }], ['bogen-hinweise', async (d) => { await d.go('heute'); await d.sheet('hinweise'); }],
   ['bogen-projekt', (d) => d.sheet('projekt')], ['bogen-bearbeiten', (d) => d.sheet('projektBearbeiten')], ['bogen-rolle', (d) => d.sheet('rolle')], ['bogen-geraet', (d) => d.sheet('geraet')], ['bogen-geraete', (d) => d.sheet('geraete')],
+  ['bogen-geraetform', (d) => d.sheet('geraetForm')], ['bogen-druck', (d) => d.sheet('druck')], ['bogen-bereich', async (d) => { await d.go('heute'); await d.sheet('bereich'); }],
+  ['bogen-versionen', async (d) => { await d.project(); await d.click(d.page.locator('.panel .btn', { hasText: 'Versionen vergleichen' })); await d.page.waitForSelector('.sheet', { timeout: 4000 }); }],
   ['suche', async (d) => { await d.go('heute'); await d.search('sens'); }], ['hinweis', (d) => d.toast()],
 ];
 const DESKTOP_LEER = ['start', 'heute', 'projekte', 'druck', 'material'].map((w) => ['leer-' + w, (d) => d.go(w)]);
 
 /* ------------------------------------------------------------------ one pair of pages, screen by screen */
-const lines = [], differ = []; let count = 0, failed = 0; const say = (t) => { console.log(t); lines.push(t); };
+const lines = [], differ = [], water = []; let count = 0, failed = 0; const say = (t) => { console.log(t); lines.push(t); };
 // a still that stands: the same picture twice in a row (at most five looks)
 async function fest(h, file, desk) {
   if (desk) await h.park(); let last = null;
@@ -112,21 +121,23 @@ async function pair(group, hs, screens, desk) {
     const id = full.replace(/[^\w]+/g, '-'), files = [`${out}/${id}-soll.png`, `${out}/${id}-ist.png`]; let broke = '';
     for (let i = 0; i < 2; i++) { try { await esc(hs[i]); await fn(hs[i]); if (desk) await hs[i].page.waitForTimeout(600); } catch (e) { broke += ` ${i ? 'ist' : 'soll'}: ${String(e).split('\n')[0].slice(0, 110)}`; } }
     const look = async (nudge) => { for (let i = 0; i < 2; i++) { if (nudge && desk) { const v = hs[i].page.viewportSize(); await hs[i].page.setViewportSize({ width: v.width, height: v.height + 1 }); await hs[i].page.waitForTimeout(150); await hs[i].page.setViewportSize(v); await hs[i].page.waitForTimeout(500); } await fest(hs[i], files[i], desk); }
-      const boxes = [...await drops(hs[0], scale), ...await drops(hs[1], scale)]; return diff(files[0], files[1], boxes, `${out}/${id}-diff.png`); };
+      const dr = [await drops(hs[0], scale), await drops(hs[1], scale)]; const d = await diff(files[0], files[1], [...dr[0], ...dr[1]].map((x) => x.slice(0, 4)), `${out}/${id}-diff.png`); d.sameDrops = JSON.stringify(dr[0]) === JSON.stringify(dr[1]); d.drops = dr[1].length; return d; };
     let d = await look(false), looks = 1;
-    while ((d.outside || d.inside) && looks < 3) { await hs[0].page.waitForTimeout(1500); d = await look(looks === 2); looks++; }
-    const n = d.outside + d.inside, same = n === 0 && !broke;
+    while ((d.outside || !d.sameDrops || (d.inside && looks < 2)) && looks < 3) { await hs[0].page.waitForTimeout(1500); d = await look(looks === 2); looks++; }   // (other water in a drop does not go away by looking again: one more look, not two)
+    const n = d.outside + d.inside, onlyWater = !broke && !a.tropfen && d.outside === 0 && d.inside > 0 && d.sameDrops, same = (n === 0 || onlyWater) && !broke && d.sameDrops !== false;
+    if (onlyWater) water.push(`${full} (${d.inside} px in ${d.drops} drops)`);
     const where = d.box ? `  x ${Math.floor(d.box[0] / scale)}..${Math.ceil(d.box[2] / scale)}, y ${Math.floor(d.box[1] / scale)}..${Math.ceil(d.box[3] / scale)}` : '';
     if (same) { for (const f of [...files, `${out}/${id}-diff.png`]) fs.rmSync(f, { force: true }); }
-    else { if (!broke && d.size === undefined) await strip([{ file: files[0], label: 'Soll' }, { file: files[1], label: 'Ist' }, { file: `${out}/${id}-diff.png`, label: 'Unterschied (rot; gelb = in einem Tropfen)' }], `${out}/${id}-vergleich.png`, { title: full, scale: desk ? 0.5 : 0.5 }); differ.push({ full, n, expected: expected(full) && !broke, text: broke ? `STEP FAILED:${broke}` : `${n} px differ (largest ${Math.max(d.maxOutside, d.maxInside)}; ${d.inside} of them inside drops)${where}`, pic: broke ? '' : `${out}/${id}-vergleich.png` }); if (broke) failed++; }
-    say(`${same ? 'ok  ' : expected(full) && !broke ? 'diff' : 'DIFF'} ${full.padEnd(44)} ${same ? `equal${looks > 1 ? ` (at the ${looks}. look)` : ''}` : differ[differ.length - 1].text}`);
+    else { if (!broke && d.size === undefined) await strip([{ file: files[0], label: 'Soll' }, { file: files[1], label: 'Ist' }, { file: `${out}/${id}-diff.png`, label: 'Unterschied (rot; gelb = in einem Tropfen)' }], `${out}/${id}-vergleich.png`, { title: full, scale: desk ? 0.5 : 0.5 }); differ.push({ full, n, expected: expected(full) && !broke, text: broke ? `STEP FAILED:${broke}` : `${n} px differ (largest ${Math.max(d.maxOutside, d.maxInside)}; ${d.inside} of them inside drops)${d.sameDrops ? '' : '; THE DROPS THEMSELVES DIFFER (number, place, size or label)'}${where}`, pic: broke ? '' : `${out}/${id}-vergleich.png` }); if (broke) failed++; }
+    say(`${same ? (onlyWater ? 'ok* ' : 'ok  ') : expected(full) && !broke ? 'diff' : 'DIFF'} ${full.padEnd(44)} ${same ? (onlyWater ? `equal outside the drops; other water in a drop (${d.inside} px inside ${d.drops} drops)` : `equal${looks > 1 ? ` (at the ${looks}. look)` : ''}`) : differ[differ.length - 1].text}`);
   }
   // page errors: the same on both sides, or it is a difference
   const errs = hs.map((h) => [...new Set(h.errors.splice(0).filter((e) => !/open-meteo|Failed to load resource|ERR_|net::|favicon/i.test(e)))]);
   if (errs[0].join('|') !== errs[1].join('|')) { failed++; say(`!!   ${group}: page errors differ   soll: ${errs[0].slice(0, 2).join(' | ') || 'none'}   ist: ${errs[1].slice(0, 2).join(' | ') || 'none'}`); }
   else if (errs[0].length) say(`     ${group}: both sides report: ${errs[0].slice(0, 2).join(' | ')}`);
 }
-const drops = (h, scale) => h.page.evaluate((s) => [...document.querySelectorAll('.w3-drop')].filter((e) => e.getClientRects().length).map((e) => { const r = e.getBoundingClientRect(); return [Math.floor(r.left * s), Math.floor(r.top * s), Math.ceil(r.right * s), Math.ceil(r.bottom * s)]; }), scale);
+// the drop canvases of a page: [left, top, right, bottom] in px of the picture, and the label of the button each lies in
+const drops = (h, scale) => h.page.evaluate((s) => [...document.querySelectorAll('.w3-drop')].filter((e) => e.getClientRects().length).map((e) => { const r = e.getBoundingClientRect(), b = e.parentElement; return [Math.floor(r.left * s), Math.floor(r.top * s), Math.ceil(r.right * s), Math.ceil(r.bottom * s), ((b && (b.textContent || b.getAttribute('aria-label'))) || '').trim().slice(0, 40)]; }), scale);
 const zeitenOf = (ton) => (a.zeiten ? parts(a.zeiten) : [ton === 'klar' ? 'tag' : 'nacht']);
 
 if (a.liste) {
@@ -165,7 +176,8 @@ try {
 } finally { await s.close(); for (const c of closers) await c(); }
 
 const real = differ.filter((d) => !d.expected), exp = differ.filter((d) => d.expected);
-say(`\n== Soll gegen Ist: ${count} screens, ${count - differ.length} equal, ${differ.length} differ${exp.length ? ` (${exp.length} of them named in --erwartet)` : ''}; ${((Date.now() - t0) / 60000).toFixed(1)} min ==`);
+say(`\n== Soll gegen Ist: ${count} screens, ${count - differ.length} equal${water.length ? ` (${water.length} of them with other water inside a drop)` : ''}, ${differ.length} differ${exp.length ? ` (${exp.length} of them named in --erwartet)` : ''}; ${((Date.now() - t0) / 60000).toFixed(1)} min ==`);
+if (water.length) { say('equal outside the drops, other water in a drop (not compared; --tropfen counts it):'); for (const w of water) say(`  ${w}`); }
 if (real.length) { say('DIFFER, and were not expected to:'); for (const d of real) say(`  ${d.full.padEnd(44)} ${d.text}${d.pic ? '\n      ' + d.pic : ''}`); }
 if (exp.length) { say('differ as expected (--erwartet):'); for (const d of exp) say(`  ${d.full.padEnd(44)} ${d.text}${d.pic ? '\n      ' + d.pic : ''}`); }
 if (!count) say('!! no screen matched --nur: --liste prints the names');

@@ -23,9 +23,9 @@
    (data-wasser="mobil" on .m-shell, data-wasser="desktop" on the desktop root). The script only looks inside it.
 
    In the React app: the four files are fetched into src/wasser/ by  node scripts/wasser/uebernehmen.mjs  (this script
-   under the name wasser-skript.js). Beside them lies src/wasser/wasser.ts: it imports the three stylesheets and the
-   script and exports the hook useWasser(options, on), which calls Wasser.start() in an effect and Wasser.stop() in its
-   clean-up. The whole file and the lines that use it (Mobile(), App(), Stage) are printed in docs/Wasser-Look.md,
+   under the name wasser-skript.js). Beside them lies src/wasser/wasser.ts: it imports the app's own stylesheets, then
+   the three stylesheets of the look (so the look always comes last in the built CSS) and the script, and exports the
+   hook useWasser(options, on), which calls Wasser.start() in an effect and Wasser.stop() in its clean-up. The whole file and the lines that use it (Mobile(), App(), Stage) are printed in docs/Wasser-Look.md,
    section 8.2 - in that one place only, so that there is one copy to keep right.
    (Not wasser.js beside wasser.ts: an import of './wasser/wasser' without extension finds the .js first and the
    build fails with "not exported". Tried with Vite 8: with these names the build lowers the CSS nesting, keeps both

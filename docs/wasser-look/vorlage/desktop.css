@@ -47,7 +47,7 @@
    Three places the app used to style inline carry a class since the look is built in, and are named by it here (part 2):
    the one large panel of a world (panel--haupt), the current version of a project (col--aktuell), the tile of the
    "next task" row (thumb--naechstes). Two rules still carry !important and name an inline style: the padding of small
-   selects (part 5) - it says what to do.
+   selects (part 5) - it says why those stay.
    After a change:  node scripts/wasser/desktop.mjs pruefen   (and vergleich.mjs, if kern.css was touched). */
 
 /* == 1. Tokens of the desktop shell ============================================================================== */
@@ -228,9 +228,13 @@
 }
 [data-wasser="desktop"] .wchip .ico { color: var(--wa-zeichen); }   /* (the app: its blue) */
 
-/* small selects: the app sets their padding inline (11 places, also in sheets), which takes away the room the block "Feld"
-   keeps for the arrow - the arrow then lies ON the text. Here they get that room back, with a smaller arrow.
-   (!important only because it is an inline style. When the look is built in: drop the inline paddings.) */
+/* small selects: the app sets their padding inline (ten places with five different paddings, five of them in sheets that
+   the phone shows too), which takes away the room the block "Feld" keeps for the arrow - the arrow then lies ON the text.
+   Here they get that room back, with a smaller arrow. (!important only because it is an inline style.)
+   The inline paddings stay (measured on 14.11.): just dropping them makes each of these selects 12 to 34 px wider and 8 to
+   13 px higher, in both shells - a queue row of "3D-Druck" grows from 17 to 30 px. A cure in the app needs the paddings as
+   classes, and mobile.css (.m-shell .select) and the block "Feld" (its padding-right) must then leave such a select alone:
+   docs/Wasser-Look.md, step 6. */
 [data-wasser="desktop"] .select[style*="padding"] { padding-right: 24px !important; background-position: 0 100%, right 8px center; background-size: 0% var(--wa-feld-line-h), 10px 7px; }
 [data-wasser="desktop"] .select[style*="padding"]:focus { background-size: 100% var(--wa-feld-line-h), 10px 7px; }
 

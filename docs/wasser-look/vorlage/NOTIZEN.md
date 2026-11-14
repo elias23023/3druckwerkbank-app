@@ -482,7 +482,9 @@ Testing
     "klar" shows ghost words of the page behind it), drops the depth layers of small cards in the zoomed close-up,
     and needs more than 100 ms for the first frame of a new screen. Judge blur and depth in Chromium.
 36. **Playwright's `click()` on `.m-head .ws-chip` times out** (a span inside the brand button); use
-    `evaluate(el => el.click())`.
+    `evaluate(el => el.click())`. Changing the workspace then needs the button "Zu ... wechseln" and reloads the
+    page; an init script that sets the workspace on every load undoes the change. The tools switch with
+    `h.bereich('echt')` (the storage key, then a reload).
 37. **Ticking a task on "Heute" shows no toast** (the row goes, a ring runs). A real toast with "Rückgängig":
     remove a shopping entry on "Material" (`sheet('toast')` in `lib.mjs`).
 38. **In `vergleich.mjs` the app's clock stands still** (`page.clock.setFixedTime`) **and Open-Meteo is blocked**;
@@ -572,34 +574,37 @@ Desktop, found by its checker on 14.11.
 
 | Tool | What it does |
 |---|---|
-| `mobil.html` | the harness page: a mock of the mobile screen with the real app stylesheets, the template on top. `?ton=klar`, `?scene=...`, `?nah=1`, `?alles=1`, `?fallback=1`, `?ohne=1`, `?alt=<folder>`, `?vorlage=<folder>`, `?schlaf=<ms>` |
-| `lib.mjs` | shared: `session({ engine })` -> `harness(options)`, `app(options)` (the REAL app, look injected once; `go`, `sheet`, `closeSheet`, `project`, `shot`), a file server for the repository, `diff`, `strip`, `stack`, and the screencast recorder `cast` / `encodeCast` |
-| `vergleich.mjs [bilder\|app\|stile\|film\|alles]` | template against the approved look: pixels (inside / outside the drops), computed styles incl. pressed and focused, motion at fixed times. Exit code 1 on a difference that is not on its list of deliberate ones (`KNOWN`). `--alt git:HEAD` or `--alt <a copy of the template folder>`: against the template as it was before YOUR change |
-| `pruefen.mjs [--app] [--regler]` | checks: start, marker, ring, every block by class alone, sleep, reduced motion, stop / start / options, no WebGL, the real app, pull and arrival of the light, the bounds of `--wa-leben`, the token lists of the two tones; `--regler`: the governor of the drops (three minutes) |
-| `bild.mjs <out> [szenen\|nah\|alles\|app]` | stills, both tones, contact sheets |
+| `mobil.html` | the harness page: a mock of the mobile screen with the real app stylesheets, the template on top. Since 14.11. it begins with the card of the day like the app's start tab and is therefore longer than a phone (the second card is reached by scrolling). `?ton=klar`, `?scene=...`, `?nah=1`, `?alles=1`, `?fallback=1`, `?ohne=1`, `?alt=<folder>`, `?vorlage=<folder>`, `?schlaf=<ms>` |
+| `lib.mjs` | shared: `session({ engine })` -> `harness(options)`, `app(options)` (the REAL app at phone size; `go`, `sheet`, `closeSheet`, `project`, `bereich`, `shot`), WHICH LOOK a page shows (`lookBefore` / `lookAfter`: built in, injected, replaced, none - section 14), the tone through the app's own setting (`setTheme`), made-up weather, a file server for the repository or a built app, `diff` (with the box around what differs), `strip`, `stack`, the screencast recorder `cast` / `encodeCast`, and the command line (`args`: an unknown option ends the tool) |
+| `sollist.mjs [handy\|desktop\|alles] --soll <state>` | SOLL GEGEN IST: two states of the APP (`git:<rev>`, `baum` = the working tree built now, an address, a folder with a built app), the same 164 screens pixel by pixel - phone and desktop in both formats, both tones, both workspaces, reduced motion, clock and weather standing still. Lists the screens that differ, with the box of the difference and a picture Soll / Ist / difference. `--erwartet <name parts>`: screens meant to differ. Builds a commit itself (cache: `<tmp>/wasser-sollist-staende`) |
+| `vergleich.mjs [bilder\|app\|stile\|film\|alles]` | TWO LOOKS in one app (in the real app each takes the place of the built-in look). Default: template against the approved look: pixels (inside / outside the drops), computed styles incl. pressed and focused, motion at fixed times. Exit code 1 on a difference that is not on its list of deliberate ones (`KNOWN`). `--alt git:HEAD` or `--alt <a copy of the template folder>`: against the template as it was before YOUR change |
+| `pruefen.mjs [--app] [--regler]` | checks (harness: the template; `--app`: the look the app has built in; fails when the copies in `src/wasser` are not the template): start, marker, ring, every block by class alone, sleep, reduced motion, stop / start / options, no WebGL, the real app, pull and arrival of the light, the bounds of `--wa-leben`, the token lists of the two tones; `--regler`: the governor of the drops (three minutes) |
+| `bild.mjs <out> [szenen\|nah\|alles\|app]` | stills, both tones, contact sheets; `--zeit tag\|nacht\|<ISO>`: the app's clock stands still (repeatable) |
 | `film.mjs <out>` | filmstrips from the real app: ruhe, tab, druck, scroll, bogen, haken (`--reduced`, `--fest`) |
 | `clip.mjs <out.mp4> [--cast]` | a recording of the real app (or `--seite mobil`). `--cast`: through the browser's screencast - use it whenever soft light is to be judged (pitfall 42) |
 | `leben.mjs <out> [--werte 1,1.5]` | how much life? The same walk through the real app once per value of `--wa-leben`, side by side as labelled phones: `<out>.mp4` and a filmstrip `<out>.png` |
-| `kontrast.mjs [--app]` | WCAG contrast of the texts - and of the labels on drops - against the pixels really behind the glyphs |
+| `kontrast.mjs [--app]` | WCAG contrast of the texts - and of the labels on drops - against the pixels really behind the glyphs. ONE element of your own without editing the tool: `--css '<selector>' [--welt] [--bogen] [--klick] [--art text\|platzhalter\|wert] [--grenze 4.5] [--desktop]` |
 | `messen.mjs ruhe\|takt` | alive but calm (pixels that change at rest, glyph pixels); frames a second coupled to the compositor (`--css '<rules>' --mal 3`: what does a change buy?) |
 | `keyframes.mjs` | prints the keyframes of the loops at rest |
-| `desktop.mjs zeigen` | THE DESKTOP TEMPLATE IN YOUR OWN BROWSER: a small server with the built app (`dist/`) and the template on top - `http://localhost:4320`. Wide window = desktop, narrow = phone. The tone follows the app's setting "Erscheinungsbild"; `?ton=klar`, `?ton=dunkel`, `?ohne=1` (the app as it is), `?weich=aus` (no blur), `?leben=1.5` |
-| `desktop.mjs bild <out>` | stills of the real app at desktop size: the eight worlds; `--alles`: sheets, forms, search, keyboard focus, toast, the empty workspace. `--format 2000\|1920`, `--zeit nacht\|tag\|morgen\|abend`, `--ton klar`, `--look ohne` (today's desktop) |
+| `desktop.mjs zeigen` | THE BUILT APP IN YOUR OWN BROWSER: a small server with `dist/` - `http://localhost:4320`. Wide window = desktop, narrow = phone. Without `--look`: the app as it is built; `--look vorlage\|<folder>`: that copy of the template in the place of the built-in look (a change in the folder shows after a reload). `?ton=klar`, `?ton=dunkel` (sets the app's own setting), `?ohne=1` (the app without the look), `?weich=aus` (no blur), `?leben=1.5` |
+| `desktop.mjs bild <out>` | stills of the real app at desktop size: the eight worlds; `--alles`: sheets, forms, search, keyboard focus, toast, the empty workspace. `--format 2000\|1920`, `--zeit nacht\|tag\|morgen\|abend`, `--ton klar`, `--look ohne` (the app with its look taken out) |
 | `desktop.mjs film <out>` | filmstrips: ruhe, dock, druck (press and ring), zeiger (hover), zeiger-panel, bogen (the drawer), pfeil (the arrow beside the island held down, a line marks its centre at rest), fluss (the running line of a print at fixed times) |
 | `desktop.mjs kontrast` | WCAG contrast of 50 kinds of text on the desktop, both tones, by night and by day |
-| `desktop.mjs pruefen` | 24 checks: live drops per world (3 to 12, none free over an island), nothing leaves its place while pressed (about 300 clickable elements forced into `:active`; Chromium only), the arrows beside the island under a real pointer, the marker, the drawer, the search, the toast, keyboard focus, sleep and waking by the mouse, reduced motion, stop / start, and "nothing has moved" against the app without the look |
-| `desktop.mjs takt` | what the look costs: pictures a second and work per picture - today's app, the template, the template without lights / drops / blur |
+| `desktop.mjs pruefen` | 24 checks: live drops per world (3 to 12, none free over an island), nothing leaves its place while pressed (about 300 clickable elements forced into `:active`; Chromium only), the arrows beside the island under a real pointer, the marker, the drawer, the search, the toast, keyboard focus, sleep and waking by the mouse, reduced motion, stop / start, and "nothing has moved" against the same app with its look taken out |
+| `desktop.mjs takt` | what the look costs: pictures a second and work per picture - the app without the look, with it, with it but without lights / drops / blur |
 | `desktop.mjs clip <out.mp4>` | a tour through the real app as a film (screencast, a drawn pointer) |
-| `desktop-lib.mjs` | `openDesktop({ look, format, ton, zeit, wetter, engine, reduced, start })`: the real app at 2000 x 993 or 1920 x 1080 with a fixed hour and made-up weather, the template injected once; `go`, `welt`, `project`, `sheet`, `search`, `toast`, `bereich`, `shot`, `park`, `still` |
-| `einspielen.js` | the browser script the desktop tools inject: root attribute for whichever shell is mounted, `Wasser.start()` with its options, the app's theme held at "dunkel", the tone from what the app wanted |
-| `stelle.mjs <out.png>` | ONE spot of the real app, looked at and read (desktop, or `--mobil`): `--welt`, `--bogen`, `--klick '<text>'`, then one picture and, for `--css '<selector>'`, how many elements it matches, in which shell, and the computed values a block sets (background, border, shadow, backdrop-filter, radius, padding, position, colour, live drop). For a sheet the other tools do not know and for whoever has no browser window |
-| `uebernehmen.mjs` | fetches the template into the app: copies the four files to `src/wasser/` (the script as `wasser-skript.js`), each with one head line. It CREATES `src/wasser/` where there is none - on a branch without the integration run it in a copy of the project only (guide, 8.3) |
+| `desktop-lib.mjs` | `openDesktop({ look, format, ton, zeit, uhr, wetter, engine, reduced, start, app })`: the real app at 2000 x 993 or 1920 x 1080 with a fixed hour (`uhr: 'steht'`: the clock does not run on) and made-up weather, with the look it has built in or another one in its place; `go`, `welt`, `project`, `sheet`, `search`, `toast`, `bereich`, `shot`, `park`, `still` |
+| `einspielen.js` | the browser script for a shell WITHOUT a built-in look (an older state of the app): root attribute for whichever shell is mounted, `Wasser.start()` with its options, the app's theme held at "dunkel", the tone from what the app wanted. In a shell that already carries `data-wasser` it does nothing |
+| `stelle.mjs <out.png>` | ONE spot of the real app (with its built-in look, or `--look <folder>` in its place), looked at and read (desktop, or `--mobil`): `--welt`, `--bogen`, `--klick '<text>'`, then one picture and, for `--css '<selector>'`, how many elements it matches, in which shell, and the computed values a block sets (background, border, shadow, backdrop-filter, radius, padding, position, colour, live drop). For a sheet the other tools do not know and for whoever has no browser window |
+| `uebernehmen.mjs` | fetches the template into the app: copies the four files to `src/wasser/` (the script as `wasser-skript.js`), each with one head line. Then `npm run build`: the tools measure the built-in look |
 
 All take `--engine chromium|webkit` (the screencast tools: Chromium only), most `--ton klar` or `--toene dunkel,klar`,
-and all but `keyframes.mjs` and `uebernehmen.mjs` take `--look <folder>` (another copy of the template, inside the
-repository or anywhere else; `vergleich.mjs` calls the same thing `--neu` and compares it with `--alt`; `desktop.mjs
-zeigen --look <folder>` serves it to your own browser). `--look ohne` = the app as it is, where a tool can show that.
-An option a tool does not know is ignored WITHOUT a word - a misspelt `--look` checks the template itself.
+and all but `keyframes.mjs` and `uebernehmen.mjs` take `--look`: nothing or `auto` = the look the app has BUILT IN (a
+shell without one gets the template injected), `eingebaut` = the app exactly as built, `vorlage` / a folder /
+`git:<rev>` = that copy of the template (in the app IN PLACE OF the built-in look), `ohne` = no look (a built-in one is
+taken out). `vergleich.mjs` calls its two looks `--alt` and `--neu`. Every tool prints which look it took.
+An option a tool does not know, a missing value, a value that is not allowed and a folder that does not exist END the
+tool with a message (exit code 2). Until 14.11. such an option was ignored without a word.
 The real app needs `npm run build && npm run preview` (port 4173; `WASSER_APP=<url>` for another address). WebKit
 needs Playwright's WebKit; on the work machine: `source <scratchpad>/judge-phone/env.sh` in the same shell first (and
 not for Chromium afterwards: it points Playwright at a folder without Chromium). Playwright is taken from
@@ -796,17 +801,19 @@ looked at.
 
 ## 10. Building it into the app (not done; the owner decides when)
 
-> Superseded as a to-do list by `docs/Wasser-Look.md`, section 8 ("Fahrplan"). State 14.11., 11:10: the look IS built
-> into the mobile shell (commit `c7e8299`, on `main`, live); the desktop is being built in on `welt/wasser-desktop`
-> (`e6eb9ef`, an intermediate state). What is different from the points below: (1) the copies are fetched by
-> `node scripts/wasser/uebernehmen.mjs` (they carry one head line more than the template); (2) the hook is called in
-> `Mobile()` and - with a flag - in `App()` AFTER the effect that sets `--ui-scale` (started before it, the drops are
-> measured at the wrong scale); the cleaned-up inline styles are bridged by `src/wasser/einbau.css` for now;
-> (6) `scripts/verify.mjs` has been run against builds with the look: 69 of 69. Three small safeguards found while
-> the guide was tested are listed in its step 5: `wasser.ts` should import the app's own stylesheets before the
-> look's (a module imported before `Mobile.tsx` that imports `wasser.ts` puts the look BEFORE `mobile.css` in the built
-> CSS) and `openApp` in `scripts/wasser/lib.mjs` must set the tone both ways now that the app sets it itself - both
-> still open; `desktop.mjs pruefen` no longer measures the app's own bobbing hint (done on the branch `wasser-look`).
+> Superseded as a to-do list by `docs/Wasser-Look.md`, section 8 ("Fahrplan"). State 14.11., afternoon: the look IS
+> built into both shells (phone `c7e8299`, desktop `a24ce60` .. `5132a10`), on `main` and live. What is different from
+> the points below: (1) the copies are fetched by `node scripts/wasser/uebernehmen.mjs` (they carry one head line more
+> than the template); (2) the hook is called in `Mobile()` and - with a second argument "the stage is mounted" - in
+> `App()`, which returns `<Mobile />` early on a phone and so cannot call a hook conditionally; it is called AFTER the
+> effect that sets `--ui-scale` (started before it, the drops are measured at the wrong scale); the three places that
+> were styled inline carry classes and `desktop.css` names them (the bridge `src/wasser/einbau.css` is gone); the
+> inline paddings of the small selects STAY (point 2 said "11 places": it is ten, with five different paddings, and
+> dropping them changes sizes in both shells - guide, step 6); (5) two states of the built app ARE compared pixel by
+> pixel: `scripts/wasser/sollist.mjs`; (6) `scripts/verify.mjs` runs unchanged against builds with the look; (7) all
+> tools measure the built-in look by default (section 14). The three safeguards of the guide's step 5 are in:
+> `wasser.ts` imports the app's own stylesheets first, the tools set the tone through the app's setting, and
+> `desktop.mjs pruefen` holds the app's bobbing hint.
 
 1. Copy the four files to `src/wasser/` (the script as `wasser-skript.js`), add `wasser.ts` (head of `wasser.js`).
    Import order: after `mobile.css` and `global.css`. Tried in a scratch project with the app's Vite 8 and target
@@ -1132,3 +1139,43 @@ itself goes into `kern.css` (the line is named).
 
 Then, in any order: whether the glints read as light on water at arm's length; "klar" in daylight; the select and
 the date picker on iOS; hit areas of the header drops and of the tabs with a thumb.
+
+---
+
+## 14. The tools after the integration (14.11., afternoon)
+
+Until the look was built in, every tool INJECTED the template into an app without a look. Against an app WITH the
+look that measured a mixture: two stylesheets on top of each other, and the injected script never started
+(`wasser.js` begins with `if (window.Wasser) return;`), so the bundled script ran with rules of both. What the tools
+do now (all of it in `lib.mjs`, used by `app()` and by `openDesktop()`):
+
+- **Built in** (`look: 'auto'`, the default; `'eingebaut'`): nothing is injected. The shell carries `data-wasser`,
+  the app's own hook started the script. Start options a tool needs (`sleep: 0` ...) go in by a second
+  `Wasser.start()` on top of the shell's own options.
+- **Replaced** (`look: 'vorlage'` / a folder / `git:<rev>` against a built-in look): BEFORE the page loads, a route on
+  the app's stylesheet cuts the look out - it is the tail of the bundle, from the first `[data-wasser` on (the app's
+  own rules never name the attribute; `lookStart()` throws when rules of the app follow, i.e. when the build order is
+  wrong) - and appends the folder's three stylesheets in one piece; an init script defines the folder's `wasser.js`
+  before the bundle runs, so the bundled copy steps back and THE APP'S OWN HOOK starts the folder's script with the
+  folder's `Wasser.DESKTOP`. Checked with a copy that carried a marker token and another sleep time: both arrive,
+  on the phone and on the desktop; `Wasser.info.state` is `gl`; the same number of live drops as built in.
+  The folder's CSS is the unbuilt one (nesting, colours not shortened): compared with the built look a few pixels at
+  round corners can differ by 1 of 255, so proofs of "nothing changed" are made on built states (`sollist.mjs`).
+- **Injected** (the same looks against a shell WITHOUT a look - an older commit, or the desktop of `65b1e44`): the
+  stylesheet goes in by the same route (appended to the app's), the script by the same init script; the tool then
+  sets the attribute and starts (`einspielen.js` on the desktop). Tried against `a54b030` (no look at all) and
+  `65b1e44` (phone built in, desktop not): 4 and 9 live drops, marker token and sleep time of the copy arrive.
+- **None** (`look: ''`, `--look ohne`): the look's rules are cut, the script is replaced by one that does nothing.
+  This is "the app without the look" for `desktop.mjs pruefen` ("nothing has moved") and `desktop.mjs takt`.
+- **The tone** is the app's business where the look is built in (`settings.theme` and the hour). The tools write the
+  setting into the stored state (`3druckwerkbank:v1`, or `...:echt:v1`), freeze `Storage.setItem` for the moment
+  (the app saves its state often) and reload - one more load of about a second - then read `data-wa-ton` back and
+  throw when it is not what was asked. A partial state cannot be planted BEFORE the first load: the store's `merge`
+  ignores a stored state without projects, devices and spools.
+- **Pixel-equal desktop pictures** needed one more thing than the helpers had found (clock, clouds, window nudge, two
+  equal shots): `.island` has `will-change: transform` and a 600 ms transition on `transform`, also with reduced
+  motion, so the browser rasters the island's layer at whatever scale it had while the world changed. The day ring and
+  the island labels then come out in two ways from one and the same page (174 to 6030 px on Start and Heute between two
+  loads of ONE build). With `.island { transition: none !important; will-change: auto !important; }` on both sides
+  the same build is equal to itself on all screens (`sollist.mjs`, its constant `STILL`).
+

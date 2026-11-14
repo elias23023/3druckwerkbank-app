@@ -106,12 +106,14 @@ const rd = (f) => fs.readFileSync(abs(f), 'utf8');
 const APP_CSS = /\/assets\/[^/?]+\.css(\?.*)?$/;                   // the stylesheet(s) of the built app
 // a script that does nothing, for "no look" in an app whose bundle carries one (its hook calls Wasser.start / reads Wasser.DESKTOP)
 const NO_LOOK = 'window.Wasser = { start: function () { return this; }, stop: function () { return this; }, MOBIL: {}, DESKTOP: {}, info: { state: "ohne", frames: 0, drops: 0, level: 0, ms: 0 }, ohne: true };';
-// the look's rules inside a built stylesheet: its tail, from the first "[data-wasser" on (the app's own rules never name the
-// attribute). Returns the index, -1 = this stylesheet carries no look. Throws when rules of the app follow the look: then the
-// order of the build is wrong (docs/Wasser-Look.md, pitfall 44) and no tool may go on.
+// the look's rules inside a built stylesheet: its tail, from the rule that first names "[data-wasser" on (the app's own
+// rules never name the attribute). Returns the index where that rule begins - a top-level rule, also when the name stands
+// inside an @media block or after ":root[...] " -, -1 = this stylesheet carries no look. Throws when rules of the app
+// follow the look: then the order of the build is wrong (docs/Wasser-Look.md, pitfall 44) and no tool may go on.
 export function lookStart(css) {
-  const i = css.indexOf('[data-wasser'); if (i < 0) return -1;
-  if (/[{}]\s*(\.m-shell|\.stage|\.topbar|\.glass)[\s.{,>:[]/.test(css.slice(i))) throw new Error('the look does not come LAST in the built stylesheet: rules of the app follow it and win over it (docs/Wasser-Look.md, pitfall 44; src/wasser/wasser.ts imports the app\'s stylesheets first to prevent this). Nothing was measured.');
+  const at = css.indexOf('[data-wasser'); if (at < 0) return -1;
+  let depth = 0, i = 0; for (let k = 0; k < at; k++) { const c = css.charCodeAt(k); if (c === 123) depth++; else if (c === 125) { depth--; if (depth === 0) i = k + 1; } }   // the top-level rule that holds the first mention
+  if (/[{}]\s*(\.m-shell|\.stage|\.topbar|\.glass)[\s.{,>:[]|@font-face/.test(css.slice(i))) throw new Error('the look does not come LAST in the built stylesheet: rules of the app follow it and win over it (docs/Wasser-Look.md, pitfall 44; src/wasser/wasser.ts imports the app\'s stylesheets first to prevent this). Nothing was measured.');
   return i;
 }
 // are the copies in src/wasser the template? (They carry one head line more.) null = there is no src/wasser
