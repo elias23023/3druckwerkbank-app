@@ -24,11 +24,12 @@
 // Every handle says what it got: a.look = { asked, mode: 'eingebaut' | 'eingespielt' | 'ersetzt' | 'ohne' | 'alt', dir, text }.
 // For the harness page 'auto' and 'eingebaut' mean the template (the copies in src/wasser are the template: inSync()).
 //
-// THE TONE (option "ton": 'dunkel' | 'klar' | 'auto'; '' = 'dunkel'): where the look is built in, the APP chooses the tone
-// from its setting "Erscheinungsbild" and the hour. The tools therefore do not touch data-wa-ton there: they write the
-// setting into the app's stored state (settings.theme: dunkel -> "dunkel", klar -> "hell") and reload, as if a person had
-// chosen it - then "dunkel" is dark by day and "klar" is clear by night. 'auto' leaves the setting alone (the hour decides).
-// In a shell without a built-in look the attribute is set directly, both ways.
+// THE TONE (option "ton": 'dunkel' | 'klar' | 'auto'; '' = 'dunkel'): where the app's bundle carries a look, the APP chooses
+// the tone from its setting "Erscheinungsbild" and the hour - also when a tool has replaced that look or put an earlier one
+// in its place. The tools therefore do not touch data-wa-ton there: they write the setting into the app's stored state
+// (settings.theme: dunkel -> "dunkel", klar -> "hell") and reload, as if a person had chosen it - then "dunkel" is dark by
+// day and "klar" is clear by night - and read the attribute back (a mismatch ends the tool). 'auto' leaves the setting
+// alone (the hour decides). In an app without a look of its own the attribute is set directly, both ways.
 //
 // The real app needs its preview server:  npm run build && npm run preview   (http://localhost:4173; another address: WASSER_APP=...)
 // WebKit and Firefox need Playwright's builds of them (on the work machine: source <scratchpad>/judge-phone/env.sh first).
@@ -247,15 +248,25 @@ export async function openApp(browser, engine, { look = 'auto', ton = '', reduce
   await load(() => page.goto(`${app}/#/start`, { waitUntil: 'networkidle' }));
   let got = await lookAfter(page, st, '.m-shell');
   if (!got) { st = await lookBefore(page, 'vorlage'); await load(() => page.reload({ waitUntil: 'networkidle' })); got = await lookAfter(page, st, '.m-shell'); }   // 'auto' in a shell without a look: the template
-  if (got.builtIn) {                                               // the app chooses the tone: tell it through its own setting
-    if (await setTheme(page, ton)) await page.waitForSelector('.m-shell', { timeout: 15000 });
-    if (ton !== 'auto' && await tonOf(page) !== ton) throw new Error(`tone: the app was told "${ton}" through its setting and shows "${await tonOf(page)}". Nothing was measured.`);
-    if (Object.keys(start).length) await page.evaluate((o) => window.Wasser.start(o), start);   // (a second start() replaces the app's own instance)
-  } else if (got.injected) {
-    if (ton !== 'auto') await page.evaluate((t) => { if (t === 'klar') document.documentElement.dataset.waTon = t; else delete document.documentElement.dataset.waTon; }, ton);
-    if (got.mode === 'alt') { await page.addStyleTag({ content: rd(`${got.dir}/look.css`) }); await page.addScriptTag({ content: rd(`${got.dir}/look.js`) }); }
-    else { await page.evaluate(() => document.querySelector('.m-shell').setAttribute('data-wasser', 'mobil')); await page.evaluate((o) => window.Wasser.start(o), start); }   // what the app does itself once the look is built in
-  }
+  // THE TONE. Wherever the app's bundle carries a look, the APP sets data-wa-ton (from its setting and the hour) - also when a
+  // tool has taken that look out and injected an earlier one ('alt'): there an attribute set by the tool is overwritten by the
+  // app's next effect, so the app is told through its setting. Only an app without a look of its own gets the attribute.
+  const appTone = got.builtIn || st.bundled;
+  const setTon = async () => {
+    if (ton === 'auto' || !(got.builtIn || got.injected)) return;
+    if (appTone) {
+      if (await setTheme(page, ton)) await page.waitForSelector('.m-shell', { timeout: 15000 });
+      if (await tonOf(page) !== ton) throw new Error(`tone: the app was told "${ton}" through its setting and shows "${await tonOf(page)}". Nothing was measured.`);
+    } else await page.evaluate((t) => { if (t === 'klar') document.documentElement.dataset.waTon = t; else delete document.documentElement.dataset.waTon; }, ton);
+  };
+  const lookOn = async () => {
+    if (got.builtIn) { if (Object.keys(start).length) await page.evaluate((o) => window.Wasser.start(o), start); }   // (a second start() replaces the app's own instance)
+    else if (got.injected) {
+      if (got.mode === 'alt') { await page.addStyleTag({ content: rd(`${got.dir}/look.css`) }); await page.addScriptTag({ content: rd(`${got.dir}/look.js`) }); }
+      else { await page.evaluate(() => document.querySelector('.m-shell').setAttribute('data-wasser', 'mobil')); await page.evaluate((o) => window.Wasser.start(o), start); }   // what the app does itself once the look is built in
+    }
+  };
+  await setTon(); await lookOn();
   await page.waitForTimeout(900);
   const go = async (hash, wait = 700) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(wait); };
   const shot = (file) => page.screenshot({ path: file });
@@ -279,8 +290,7 @@ export async function openApp(browser, engine, { look = 'auto', ton = '', reduce
   // the other workspace ('echt' = Meine Werkstatt, starts completely empty): the page reloads, look and tone are set again
   const bereich = async (ws) => {
     await page.evaluate((x) => { localStorage.setItem('3druckwerkbank:bereich', x); location.hash = '#/start'; }, ws); await load(() => page.reload({ waitUntil: 'networkidle' }));
-    if (got.builtIn) { if (await setTheme(page, ton)) await page.waitForSelector('.m-shell', { timeout: 15000 }); if (Object.keys(start).length) await page.evaluate((o) => window.Wasser.start(o), start); }
-    else if (got.injected) { if (ton !== 'auto') await page.evaluate((t) => { if (t === 'klar') document.documentElement.dataset.waTon = t; else delete document.documentElement.dataset.waTon; }, ton); if (got.mode === 'alt') { await page.addStyleTag({ content: rd(`${got.dir}/look.css`) }); await page.addScriptTag({ content: rd(`${got.dir}/look.js`) }); } else { await page.evaluate(() => document.querySelector('.m-shell').setAttribute('data-wasser', 'mobil')); await page.evaluate((o) => window.Wasser.start(o), start); } }
+    await setTon(); await lookOn();
     await page.waitForTimeout(900);
   };
   return { page, context, errors, scale, look: got, ton, go, shot, sheet, closeSheet, project, bereich, drops: (o) => dropBoxes(page, scale, o), close: async () => { const v = video ? page.video() : null; await context.close(); return v ? v.path() : null; } };

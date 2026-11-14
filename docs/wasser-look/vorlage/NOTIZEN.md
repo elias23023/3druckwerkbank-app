@@ -1168,7 +1168,10 @@ do now (all of it in `lib.mjs`, used by `app()` and by `openDesktop()`):
   `65b1e44` (phone built in, desktop not): 4 and 9 live drops, marker token and sleep time of the copy arrive.
 - **None** (`look: ''`, `--look ohne`): the look's rules are cut, the script is replaced by one that does nothing.
   This is "the app without the look" for `desktop.mjs pruefen` ("nothing has moved") and `desktop.mjs takt`.
-- **The tone** is the app's business where the look is built in (`settings.theme` and the hour). The tools write the
+- **The tone** is the app's business wherever its bundle carries a look (`settings.theme` and the hour) - also when a
+  tool has taken that look out and injected the earlier one (the reference of `vergleich.mjs`): the app's effect still
+  owns `data-wa-ton` there (until the evening of 14.11. the tools set the attribute in that case, and the sheet
+  "Einstellungen" showed "Automatisch" on one side and "Dunkel" on the other). The tools write the
   setting into the stored state (`3druckwerkbank:v1`, or `...:echt:v1`), freeze `Storage.setItem` for the moment
   (the app saves its state often) and reload - one more load of about a second - then read `data-wa-ton` back and
   throw when it is not what was asked. A partial state cannot be planted BEFORE the first load: the store's `merge`
