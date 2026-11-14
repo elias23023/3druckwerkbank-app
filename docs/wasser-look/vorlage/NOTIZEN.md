@@ -1154,8 +1154,9 @@ do now (all of it in `lib.mjs`, used by `app()` and by `openDesktop()`):
   `Wasser.start()` on top of the shell's own options.
 - **Replaced** (`look: 'vorlage'` / a folder / `git:<rev>` against a built-in look): BEFORE the page loads, a route on
   the app's stylesheet cuts the look out - it is the tail of the bundle, from the first `[data-wasser` on (the app's
-  own rules never name the attribute; `lookStart()` throws when rules of the app follow, i.e. when the build order is
-  wrong) - and appends the folder's three stylesheets in one piece; an init script defines the folder's `wasser.js`
+  own rules never name the attribute; `lookStart()` throws when ANY top-level rule of that tail names neither
+  `[data-wasser` nor `data-wa-ton` - keyframes aside, `@media` / `@supports` looked into -, i.e. when rules of the app
+  follow because the build order is wrong: cutting would take them away) - and appends the folder's three stylesheets in one piece; an init script defines the folder's `wasser.js`
   before the bundle runs, so the bundled copy steps back and THE APP'S OWN HOOK starts the folder's script with the
   folder's `Wasser.DESKTOP`. Checked with a copy that carried a marker token and another sleep time: both arrive,
   on the phone and on the desktop; `Wasser.info.state` is `gl`; the same number of live drops as built in.

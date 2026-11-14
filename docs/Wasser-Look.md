@@ -733,7 +733,7 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand: dieser Branch nach 
   Jedes Werkzeug nennt in seiner ersten Zeile, was es genommen hat („Look: built in …“, „Look: … IN PLACE OF the built-in copies“, „Look: none …“). Nie liegen zwei Looks auf einer Seite.
   - „Nichts ist verrückt“ in `desktop.mjs pruefen` vergleicht den eingebauten Look mit derselben App ohne Look und behält so seinen Sinn.
   - `vergleich.mjs` vergleicht **zwei Looks in einer App** (`--alt` gegen `--neu`); jede Seite nimmt in der App den Platz des eingebauten Looks ein. **Zwei Stände der App** – zwei Commits, zwei Adressen – vergleicht `sollist.mjs`.
-  - Ein unbekannter oder falsch geschriebener Schalter, ein fehlender Wert und ein Ordner, den es nicht gibt, beenden jedes Werkzeug mit einer Meldung (Ende mit Code 2).
+  - Ein unbekannter oder falsch geschriebener Schalter, ein fehlender Wert und ein Ordner, den es nicht gibt, beenden jedes Werkzeug mit einer Meldung (Ende mit Code 2). Bei `desktop.mjs` und `messen.mjs`, die mehrere Arten kennen, auch ein Schalter, den nur eine andere Art liest (`desktop.mjs pruefen --toene klar` prüfte sonst still „dunkel“: `pruefen` nimmt `--ton`, `kontrast` nimmt `--toene`).
 - **Der Ton in den Werkzeugen:** über die Einstellung der App, in beide Richtungen (Abschnitt 6).
 - **Der Prüfblock** nach jedem Schritt (Vorschau im zweiten Terminal: `npm run preview`):
 
@@ -751,7 +751,7 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand: dieser Branch nach 
   node -e "const fs=require('fs');const f=fs.readdirSync('dist/assets').find(n=>/^index-.*\.css$/.test(n));const c=fs.readFileSync('dist/assets/'+f,'utf8');const look=c.slice(c.indexOf('[data-wasser]'));console.log(c.indexOf('[data-wasser]')>c.lastIndexOf('.m-shell .btn--sm')?'Reihenfolge gut':'FALSCH: der Look steht vor mobile.css','| Weichzeichner im Look:',(look.match(/-webkit-backdrop-filter:/g)||[]).length,'mit -webkit-,',(look.match(/[^-]backdrop-filter:/g)||[]).length,'ohne')"
   ```
 
-  Es muss „Reihenfolge gut“ melden und zweimal dieselbe Zahl (heute: 16 und 16). Die Werkzeuge prüfen die Reihenfolge bei jedem Lauf mit, in dem sie einen Look ersetzen oder herausnehmen, und brechen sonst ab.
+  Es muss „Reihenfolge gut“ melden und zweimal dieselbe Zahl (heute: 16 und 16). Die Werkzeuge prüfen die Reihenfolge bei jedem Lauf mit, in dem sie einen Look ersetzen oder herausnehmen, und brechen sonst ab: Hinter der ersten Regel des Looks darf keine Regel stehen, die weder `[data-wasser` noch `data-wa-ton` nennt (`lookStart` und `strangers` in `lib.mjs`; Keyframes ausgenommen, `@media` und `@supports` durchsucht). Sonst schnitte das Ersetzen Regeln der App mit weg.
   Und der Beweis, dass sich sonst nichts geändert hat – gegen den Stand vor dem Schritt:
 
   ```

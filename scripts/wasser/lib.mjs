@@ -111,12 +111,21 @@ const APP_CSS = /\/assets\/[^/?]+\.css(\?.*)?$/;                   // the styles
 const NO_LOOK = 'window.Wasser = { start: function () { return this; }, stop: function () { return this; }, MOBIL: {}, DESKTOP: {}, info: { state: "ohne", frames: 0, drops: 0, level: 0, ms: 0 }, ohne: true };';
 // the look's rules inside a built stylesheet: its tail, from the rule that first names "[data-wasser" on (the app's own
 // rules never name the attribute). Returns the index where that rule begins - a top-level rule, also when the name stands
-// inside an @media block or after ":root[...] " -, -1 = this stylesheet carries no look. Throws when rules of the app
-// follow the look: then the order of the build is wrong (docs/Wasser-Look.md, pitfall 44) and no tool may go on.
+// inside an @media block or after ":root[...] " -, -1 = this stylesheet carries no look. Throws when ANY rule in that tail
+// does not belong to the look (names neither [data-wasser nor data-wa-ton; @keyframes and @property aside, @media and
+// @supports looked into): then rules of the app follow the look - the order of the build is wrong (docs/Wasser-Look.md,
+// pitfall 44) - and cutting the tail would take app rules away. No tool may go on.
+export function strangers(css) {
+  const out = []; const bare = css.replace(/\/\*[^]*?\*\//g, '');
+  const walk = (s) => { let i = 0; while (i < s.length) { const open = s.indexOf('{', i); if (open < 0) break; const head = s.slice(i, open).trim(); let d = 1, k = open + 1; for (; k < s.length && d; k++) { if (s[k] === '{') d++; else if (s[k] === '}') d--; }
+    if (/^@(media|supports|layer|container)\b/.test(head)) walk(s.slice(open + 1, k - 1)); else if (!/^@(-webkit-)?keyframes\b|^@property\b/.test(head) && !/data-wasser|data-wa-ton/.test(head)) out.push(head.replace(/\s+/g, ' ').slice(0, 80)); i = k; } };
+  walk(bare); return out;
+}
 export function lookStart(css) {
   const at = css.indexOf('[data-wasser'); if (at < 0) return -1;
   let depth = 0, i = 0; for (let k = 0; k < at; k++) { const c = css.charCodeAt(k); if (c === 123) depth++; else if (c === 125) { depth--; if (depth === 0) i = k + 1; } }   // the top-level rule that holds the first mention
-  if (/[{}]\s*(\.m-shell|\.stage|\.topbar|\.glass)[\s.{,>:[]|@font-face/.test(css.slice(i))) throw new Error('the look does not come LAST in the built stylesheet: rules of the app follow it and win over it (docs/Wasser-Look.md, pitfall 44; src/wasser/wasser.ts imports the app\'s stylesheets first to prevent this). Nothing was measured.');
+  const st = strangers(css.slice(i));
+  if (st.length) throw new Error(`the look does not come LAST in the built stylesheet: ${st.length} rule(s) of the app follow it and win over it (first: "${st[0]}"; docs/Wasser-Look.md, pitfall 44; src/wasser/wasser.ts imports the app's stylesheets first to prevent this). Nothing was measured.`);
   return i;
 }
 // are the copies in src/wasser the template? (They carry one head line more.) null = there is no src/wasser

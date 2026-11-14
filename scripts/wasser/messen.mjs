@@ -21,6 +21,8 @@
 import { session, rgb, args, outDir, lookArg, sayLook, fail, ENGINES, SZENEN } from './lib.mjs';
 const a = args({ ton: '', scene: 'start', engine: 'chromium', look: 'auto', seite: 'app', hash: '#/start', scale: '3', out: '', css: '', mal: '1' }, { choices: { engine: ENGINES, ton: ['dunkel', 'klar'], scene: SZENEN, seite: ['app', 'mobil'] } });
 const what = a._[0]; if (!['ruhe', 'takt'].includes(what) || a._.length > 1) fail('usage: node scripts/wasser/messen.mjs ruhe|takt [options]  (see the head of this file)', 1);
+{ const FOR = { ruhe: ['ton', 'scene', 'engine', 'look', 'out'], takt: ['ton', 'scene', 'engine', 'look', 'seite', 'hash', 'scale', 'css', 'mal'] };   // an option the other mode reads ends the tool too (it would be ignored without a word)
+  for (const k of process.argv.slice(2).filter((x) => x.startsWith('--')).map((x) => x.slice(2).split('=')[0])) if (!FOR[what].includes(k)) fail(`--${k} has no effect in "${what}". "${what}" takes: ${FOR[what].map((x) => '--' + x).join(' ')}`); }
 const onHarness = what === 'ruhe' || a.seite === 'mobil'; const look = lookArg(a.look, { harness: onHarness }); const s = await session({ engine: a.engine }); const od = outDir(a.out, 'messen'), out = od.dir;   // (--out <dir> keeps the stills of "ruhe")
 
 if (what === 'ruhe') {
