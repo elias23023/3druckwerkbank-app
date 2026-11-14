@@ -275,20 +275,22 @@ export async function openApp(browser, engine, { look = 'auto', ton = '', reduce
 /* ------------------------------------------------------------------ pictures */
 export async function rgb(file) { const { data, info } = await sharp(file).removeAlpha().raw().toBuffer({ resolveWithObject: true }); return { data, w: info.width, h: info.height }; }
 // two screenshots pixel by pixel; boxes = areas counted apart ("inside": the drop canvases). Largest difference of the three channels, 0..255.
+// box = [left, top, right, bottom] around every pixel that differs (px of the picture), null when none does
 export async function diff(fileA, fileB, boxes = [], out = null) {
   const a = await rgb(fileA), b = await rgb(fileB);
-  if (a.w !== b.w || a.h !== b.h) return { size: `${a.w}x${a.h} against ${b.w}x${b.h}`, outside: -1, inside: -1, maxOutside: 255, maxInside: 255, pixels: a.w * a.h };
+  if (a.w !== b.w || a.h !== b.h) return { size: `${a.w}x${a.h} against ${b.w}x${b.h}`, outside: -1, inside: -1, maxOutside: 255, maxInside: 255, pixels: a.w * a.h, box: [0, 0, a.w, a.h] };
   const inside = new Uint8Array(a.w * a.h);
   for (const [l, t, r, bt] of boxes) for (let y = Math.max(0, t); y < Math.min(a.h, bt); y++) inside.fill(1, y * a.w + Math.max(0, l), y * a.w + Math.min(a.w, r));
-  let nIn = 0, nOut = 0, mIn = 0, mOut = 0; const pic = out ? Buffer.alloc(a.w * a.h * 3) : null;
+  let nIn = 0, nOut = 0, mIn = 0, mOut = 0, x0 = a.w, y0 = a.h, x1 = -1, y1 = -1; const pic = out ? Buffer.alloc(a.w * a.h * 3) : null;
   for (let i = 0, p = 0; i < a.w * a.h; i++, p += 3) {
     const d = Math.max(Math.abs(a.data[p] - b.data[p]), Math.abs(a.data[p + 1] - b.data[p + 1]), Math.abs(a.data[p + 2] - b.data[p + 2]));
     if (pic) { const g = (a.data[p] + a.data[p + 1] + a.data[p + 2]) / 12; pic[p] = d ? 255 : g; pic[p + 1] = d ? (inside[i] ? 200 : 0) : g; pic[p + 2] = d ? 0 : g; }   // differences: red outside the drops, yellow inside
     if (!d) continue;
+    const x = i % a.w, y = (i - x) / a.w; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
     if (inside[i]) { nIn++; if (d > mIn) mIn = d; } else { nOut++; if (d > mOut) mOut = d; }
   }
   if (pic) await sharp(pic, { raw: { width: a.w, height: a.h, channels: 3 } }).png().toFile(out);
-  return { outside: nOut, maxOutside: mOut, inside: nIn, maxInside: mIn, pixels: a.w * a.h };
+  return { outside: nOut, maxOutside: mOut, inside: nIn, maxInside: mIn, pixels: a.w * a.h, box: x1 < 0 ? null : [x0, y0, x1 + 1, y1 + 1] };
 }
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 // Pictures side by side with a caption under each: a filmstrip, a comparison, a contact sheet.
