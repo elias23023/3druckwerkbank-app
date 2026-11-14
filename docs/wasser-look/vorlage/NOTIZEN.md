@@ -502,8 +502,16 @@ All on the work machine (software rendering; Chromium and Playwright's WebKit fo
    pills are flat also on `.wa-becken`, `.wa-wasser`, `.wa-wasser--dicht`; a `.badge` is styled in any drop (before:
    in `.m-ico` only).
 6. Not carried over: the toast's own small light, a rule that never applied (section 12).
+7. The corrections of 14.11., after the two checkers of the package (numbers below). "dunkel" at rest does not move by
+   one pixel; "klar" changes inside the drops on cards and nowhere else:
+   a. the pull of scrolling is bounded for every `--wa-leben` from 0 to 2 (pitfall 44);
+   b. the light of a new sheet arrives by the transition of the pull instead of a keyframe animation (pitfall 43);
+   c. "klar": the tone token `--wa-drop-veil` is .3 ("dunkel": 1, as it was);
+   d. the governor of the drops sets its wait back after a climb that held; start option `debug.cost`,
+      `Wasser.info.wait`.
 
-**Is it the same look?** `node scripts/wasser/vergleich.mjs` (machine otherwise idle), Chromium:
+**Is it the same look?** `node scripts/wasser/vergleich.mjs` (machine otherwise idle), Chromium. The table is the
+state of the package (13.11.); what the same comparisons say after the corrections of 14.11. follows below it.
 
 | Comparison | What | Result |
 |---|---|---|
@@ -529,12 +537,39 @@ On the way the comparison found, and the template or the tools now handle: the b
 approved look), the paint between two stylesheets of pitfall 39 (in the first version of `mobil.html`), late first
 pictures of drops (41), weather that comes and goes (38).
 
-**Does it work?** `node scripts/wasser/pruefen.mjs --app`: 55 checks pass in Chromium and 55 in WebKit: start;
+**After the corrections of 14.11.** the same comparisons, the deliberate changes on the tool's list (`KNOWN`, point 4):
+
+| Comparison | Result on 14.11. |
+|---|---|
+| `bilder` against the approved look, Chromium | "dunkel", 16 pairs: 0 pixels differ, outside and inside the drops. "klar", 16 pairs: 0 outside; inside the drops 84,000 (phone view) / 283,000 (close-up) pixels differ, largest 43 of 255 - the veil |
+| `app` against the approved look, Chromium | "dunkel", 16 screens: 0 pixels differ, outside and inside the drops. "klar": 0 outside the drops on 14 screens; inside the drops on the five screens with clear drops on cards (46,000 to 56,000 pixels, largest 40); on two screens the changed drops are seen through a blur and differ by 1 of 255 beyond their boxes (the form sheet over "Projekte": 6 pixels; the toast: 3,134) - the tool marks these `ok~` |
+| `film` against the approved look, Chromium | the same motion in all 12 strips (the arrival of the light named as transitions); 0 pixels differ outside the drops in the 58 stills of ruhe, tab, druck, bogen, haken - also in "tab", where the light arrives; scroll as before (real frame times) |
+| `stile` against the approved look, Chromium | REF_STILE |
+| `bilder`, `app` against the template as it was packed (`--alt <copy of commit f811b9d>`), Chromium | harness, 32 pairs: "dunkel" 0 pixels, outside and inside; "klar" 0 outside, inside the drops as above. App, 32 pairs: "dunkel" 0 pixels on all 16 screens; "klar" 0 outside the drops on 14 screens, inside the drops on the five screens with clear drops on cards; on two screens 6 and 3,134 pixels differ by 1 of 255 outside the drop boxes - the changed drops seen through a blur (behind the scrim of the form sheet; under the toast) |
+| the same in the WebKit test build | REST_WK |
+
+**The corrections of 14.11., in numbers** (Chromium unless said; "before" = the template as packed, commit `f811b9d`;
+the probes are the second checker's, run on both states):
+
+| What | Before | After |
+|---|---|---|
+| Full pull (`--wa-zug` 1 and -1), light OUTSIDE the basins: device px at 2x that the lights change by 3 of 255 or more / the largest change; harness "start", worst of four places in the loops | `--wa-leben` 1: 3,792 px / 25 - 1.5: 9,037 px / 200 - 2: 20,086 px / 224 | 1: 3,792 px / 25 (unchanged: the soft tail of the floor light below its card, a glint in a corner) - 1.5: 2,325 px / 12 - 2: 1,373 px / 16 |
+| the same in the real app ("Material", list scrolled) | 1: 21 px / 9 - 1.5: 5,099 px / 173 - 2: 8,059 px / 216 | 1: 21 px / 9 - 1.5: 34 px / 13 - 2: 44 px / 16 (both tones alike) |
+| nearest light of +12 and more to a corner of its card, top rim, at full pull | 1: 35 px - 1.5: 19.5 px - 2: 6.5 px | 1: 35 px - 1.5: 34 px - 2: 32.5 px |
+| computed at full pull, `--wa-leben` 1 / 1.5 / 2: lean of the lit rim (deeper, shallower); slide; lag of the floor light | 1.9, 0.1 / 2.35, -0.35 / 2.8, -0.8; 24 / 36 / 48 px; 28 / 42 / 56 px | 1.9, 0.1 / 2.35, 0.1 / 2.4, 0.1; 24 px; 28 / 18.7 / 14 px |
+| A list rolled 0.7 s after its screen was entered (1300 px a second for 0.4 s, stopped dead): lean of the lit rim after the stop | 1.26 at 83 ms, 0.98 at 150 ms, then still - no swing | 1.71 at 67 ms, 1.49 at 133 ms, 0.86 at 450 ms, 1.06 at 900 ms, at rest after 1.4 s (3.2 s after entering, before and after alike: 1.71, 1.62, 0.75 at 467 ms, 1.08, rest) |
+| The arrival itself: lean of the lit rim 0 / 0.2 / 0.4 / 0.9 / 1.6 s after its card appeared | 1.60 / 1.28 / 0.82 / 1.07 / 1.00 | 1.60 / 1.38 / 0.86 / 1.07 / 1.01 - the same curve, two frames later |
+| "klar", white labels on clear drops on a card, eight scenes, living drops: medians; the lowest worst-5-% value | "Bearbeiten" 5.7 to 8.2, "Foto" 5.5 to 9.2, "Verbrauch buchen" 7.5 to 10.2; lowest 4.4 (WebKit build without blur: 3.9) | 6.5 to 9.9, 6.2 to 11.2, 9.0 to 12.4; lowest 5.0 (WebKit: 4.5). Against the values before the page of "klar" was lightened: no median more than 0.3 lower; "Foto" and the round "+" up to 1.6 and 1.9 higher |
+| The governor after ONE failed climb: the wait of every later climb | 40 s (up to 5 min), until reload | 20 s again as soon as a climb has held for the wait. The walk of `pruefen.mjs --regler`: 5 s level 1 - 9 s level 2 - 35 s level 1 - 38 s level 2, wait 40 s (the climb failed) - 90 s level 1 - 135 s level 0, wait 20 s - 170 s level 1 (a later step down, no failed climb) - 193 s level 0 |
+
+**Does it work?** `node scripts/wasser/pruefen.mjs --app`: 60 checks pass in Chromium (both tones) and 60 in WebKit
+(14.11.; 55 at the package, the five of part 10 are new), and the nine of `--regler` in Chromium: start;
 marker (tap, class moved by script, second tap during a flight, a bar that was replaced); ring (tap, re-rendered card,
 held finger, drag, disabled button); every block on foreign elements by its class alone (17 checks); sleep and waking;
 reduced motion and the app's switch; `stop()` leaves nothing behind, `start()` twice gives one instance, options are
 honoured, one global; without WebGL; real app (a light per card, the page rests behind a sheet, the sheet's light
-is pulled by scrolling, the toast is centred, `stop()` cleans up).
+is pulled by scrolling, the toast is centred, `stop()` cleans up); pull and arrival of the light, the bounds of
+`--wa-leben`, the token lists of the two tones (55 and 55, one rule names the tone).
 
 **Can the text be read?** `node scripts/wasser/kontrast.mjs --app --szenen <all eight>`, Chromium; median (worst
 5 % of the glyph pixels), floor 4.5, placeholders 3:
@@ -553,15 +588,43 @@ is pulled by scrolling, the toast is centred, `stop()` cleans up).
 | Search hit, small text | 9.0 | 6.1 (5.6) |
 | Toast text / "Rückgängig" | 17.0 / 11.3 | 9.7 (6.5) / 7.0 |
 | Foot note directly on the page | 4.9 (4.2) - the app's own faint ink | 8.9 (5.0) |
+| Label on a clear drop on a card: short / small / long (the frozen drop) | 10.5 to 11.7 (8.9) / 10.0 to 11.6 (8.0) / 11.9 to 12.6 (9.2) | 8.1 to 11.0 (5.4) / 5.9 to 12.5 (4.6) / 8.9 to 13.1 (5.8) |
+| Label on the red drop / on the amber drop | 7.9 to 8.0 (7.6) / 7.9 to 8.0 (7.5) | 5.7 to 6.0 (5.5) / 7.9 to 8.5 (7.5) |
+| Label on a clear drop free over the scene | 5.1 to 13.4 (4.6) | 5.1 to 13.5 (4.6) |
 
-No median below the floor. These are the numbers of the approved look.
+No median below the floor (run on 14.11.). These are the numbers of the approved look; only the labels on clear
+drops on cards of "klar" are new (`--wa-drop-veil`), and they are the tool's own, with the frozen drop of reduced
+motion - a living drop moves them by about 0.2. Not in the tool: the icon of a round drop (the "+" in a card title;
+the checker's measure: 6.1 to 11.3 in "klar", worst 5 %: 5.3).
 
-**Alive but calm** (`node scripts/wasser/messen.mjs ruhe`, harness page, Chromium): of the pixels of the cards
-outside the drops 23 % (dunkel) / 18 % (klar) change within a second, 4 to 5 % by 4 of 255 or more, the mean change
-is 0.6 / 0.5; after four seconds 28 % have changed, 8 to 9 % by 4 or more; the tab bar 16 % / 25 %. The single large
-values (50 to 215) are the 2 px glint on a rim line where it passes. Glyph pixels of row title, card title, count,
-tile caption, inactive tab: 0 change. The small muted line in a row: 44 to 60 of 808 pixels change by 1 of 255 (its
-ink is see-through, the floor light passes under the row).
+**Alive but calm** (`node scripts/wasser/messen.mjs ruhe`, harness page, Chromium, 14.11.): of the pixels of the
+cards outside the drops 20 % (dunkel) / 20 % (klar) change within a second, 3 to 4 % by 4 of 255 or more, the mean
+change is 0.4 / 0.5; after four seconds 28 to 29 % have changed, 8 to 9 % by 4 or more; the tab bar 10 % / 16 %. The
+single large values (60 to 210) are the 2 px glint on a rim line where it passes. Text: in these stills no glyph
+pixel of row title, card title, count, tile caption and inactive tab changes, and 33 to 61 of the 800 to 900 pixels
+of the small muted line change by 1 of 255. That is NOT "text never changes": with a mask of ALL text the second
+checker found 3.0 % of the glyph pixels changed within one second and 6.5 % within four (up to 8 % of a card's in the
+real app) - by 1 to 3 of 255, never by 4 or more - and up to 30 of 255 right beside the label of the active tab (the
+bead breathes behind it). See-through ink over moving light is not still; the eye does not see it.
+
+**How much of it is SEEN** (`node scripts/wasser/leben.mjs`, the real app, recorded through the screencast and
+measured in the finished film `bilder/mobil/leben-vergleich.mp4`; left `--wa-leben` 1, right 1.5):
+
+| | Leben 1 | Leben 1.5 |
+|---|---|---|
+| "Start" at rest: card pixels that change within one second by 4 of 255 and more / by 8 and more | 3.3 % / 0.9 % | 4.4 % / 1.2 % |
+| the same over 5.4 s | 11.5 % / 4.1 % | 16.4 % / 6.2 % |
+| "Heute", 0.12 s after the list was stopped, against 1.8 s after: by 4 and more / by 16 and more | 16.4 % / 1.8 % | 16.8 % / 3.0 % |
+| the two phones against each other at the same moment | 11 to 16 % of the pixels differ by 4 and more, 2 to 3 % by 8 and more, the largest difference 29 to 55 | |
+
+(The film is true to the page: decoded, it differs from the recorded pictures by 1.4 of 255 on average, two frames
+at rest differ by 4 and more on 0.1 % of the pixels at most.) By eye, frame by frame: in both phones the glint on
+the top rims wanders (about 8 px a second - it is found when one looks for it) and the rims of the cards light up
+for half a second when the list stops; the light on the floor is seen in neither. Between the phones no difference
+can be told at phone size, in stills not at all, in motion a slightly brighter rim. A try for this page only, not
+built in: the same loops 2.5 times as fast at `--wa-leben` 1 change 5.5 % of the card pixels within a second by 4
+and more and 1.05 % by 16 and more - against 2.8 % and 0.19 % as built, and 3.6 % and 0.26 % at 1.5. The pace
+decides what the eye finds, not the strength.
 
 **The pace of the page** (`node scripts/wasser/messen.mjs takt --scale 3`, real app on "Start", frames a second
 coupled to the compositor; software rendering - only the relations count):
@@ -572,10 +635,12 @@ coupled to the compositor; software rendering - only the relations count):
 | WebKit, template | 11 | 45 | 14 | 51 |
 | WebKit, reference | 12 | | | |
 
-The template is as fast and as slow as the approved look; section 12 says what the WebKit numbers mean.
+The template is as fast and as slow as the approved look; section 12 says what the WebKit numbers mean. (14.11.,
+machine idle, three runs each: Chromium as it is 58 on "Start", 54 on "Heute", 53 on "Material"; WebKit 12 and 10.)
 
-**Not measured again in this step** (the numbers of the builders stand): the governor of the drops stepping down and
-up, taps on hit areas in pixels, contrast in WebKit, the L* of the drops' bodies over their card.
+**Not measured again** (the numbers of the builders stand): taps on hit areas in pixels, contrast in WebKit beyond
+the labels on drops, the L* of the drops' bodies over their card in "dunkel". The governor has only ever been walked
+with pretended costs or forced levels, never by a machine that really got slow and fast again.
 
 **The app is untouched:** `npm run build` passes; `git status` shows only `docs/wasser-look/vorlage`,
 `docs/wasser-look/bilder/mobil` and `scripts/wasser`.

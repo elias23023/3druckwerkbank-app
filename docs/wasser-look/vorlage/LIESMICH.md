@@ -83,5 +83,17 @@ Die Vorlage zeigt denselben Look wie der freigegebene Stand: in Chromium und im 
 abweichender Bildpunkt außerhalb der Tropfen und kein abweichender Stil (Zahlen in `NOTIZEN.md`, Abschnitt 9).
 Dabei gefunden und in der Vorlage behoben: Im WebKit-Testbrowser wurden die Tropfen der Kopfzeile nach einem
 Seitenwechsel gelegentlich schwarz (im freigegebenen Stand bei 8 von 48 Wechseln, in der Vorlage bei keinem).
+
+**Nachgebessert am 14.11.** (nach zwei unabhängigen Prüfungen des Pakets; Zahlen in Abschnitt 9):
+
+- Der Ton „dunkel“ ist in Ruhe unverändert – kein einziger Bildpunkt.
+- Im Ton „klar“ sind die klaren Tropfen auf Karten etwas weniger silbrig: ihre weiße Schrift ist wieder so gut
+  lesbar wie vor dem Aufhellen der Seite (ein einziger Wert, `--wa-drop-veil`).
+- Das Licht einer Karte schwingt jetzt auch dann aus, wenn man gleich nach dem Reiterwechsel rollt.
+- Der Regler „Leben“ (`--wa-leben`, 0 bis 2) kann nichts mehr aus einer Karte hinausschieben.
+- Zum Entscheiden liegt der Vergleich „Leben 1 gegen 1,5“ bei den Bildern (`leben-vergleich`). Ehrlich gesagt: Der
+  Unterschied ist auf Handygröße kaum zu sehen; mehr Leben käme vom Tempo des Lichts, nicht von seiner Stärke.
+
 **Noch nie auf einem echten Handy gelaufen** – alles wurde auf der Arbeitsmaschine geprüft; ob es am iPhone flüssig
-läuft, ist offen (`NOTIZEN.md`, Abschnitt 12).
+läuft, ist offen. Womit man am Handy anfängt und welche eine Zeile man jeweils ändert, steht in `NOTIZEN.md`,
+Abschnitt 13.

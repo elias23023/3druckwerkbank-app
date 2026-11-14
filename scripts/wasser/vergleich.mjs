@@ -17,6 +17,8 @@
 //            runs in real time). The strip "scroll" depends on real frame times: small differences there are no defect.
 //   alles    all four (default).
 // Prints one line per comparison and a summary; exit code 1 when something differs that is not listed in KNOWN below.
+// ok = no pixel differs; ok* = pixels differ INSIDE the drop canvases only (never a DIFF: the water lives; and see KNOWN,
+// point 4); ok~ = a difference that is known and explained (the strip "scroll"; changed drops of "klar" behind a blur).
 // Pictures of what differs: <out>/*-diff.png (red = outside the drops, yellow = inside). Default out: scratch folder in the OS temp dir.
 import fs from 'fs'; import os from 'os'; import path from 'path';
 import { session, diff, strip, args, mkdir, abs, lookDir, isTemplate, ALT, SZENEN } from './lib.mjs';
@@ -65,8 +67,9 @@ async function pair(name, open, steps) {                           // open(look)
       for (let i = 0; i < 2; i++) { await hs[i].page.waitForTimeout(2500); await hs[i].page.screenshot({ path: files[i] }); boxes[i] = await hs[i].drops(); }
       sameBoxes = JSON.stringify(boxes[0]) === JSON.stringify(boxes[1]); d = await diff(files[0], files[1], boxes[1], files[1].replace('-neu.png', '-diff.png')); again = '   (second look)';
     }
-    const ok = d.outside === 0 && sameBoxes; if (!ok) bad++; else if (!d.inside) fs.rmSync(files[1].replace('-neu.png', '-diff.png'), { force: true });
-    say(`${ok ? (d.inside ? 'ok*' : 'ok ') : 'DIFF'} ${(name + (label ? ' ' + label : '')).padEnd(34)} outside the drops ${String(d.outside).padStart(7)} px (largest ${String(d.maxOutside).padStart(3)})   inside ${String(d.inside).padStart(7)} px (largest ${String(d.maxInside).padStart(3)})   drops ${boxes[1].length}${sameBoxes ? '' : ' (BOXES DIFFER: ' + boxes[0].length + ' against ' + boxes[1].length + ')'}   of ${d.pixels}${again}`);
+    const veil = /(^|-)klar/.test(name) && d.inside > 0 && d.maxOutside <= 1;   // KNOWN, point 4: the drops on cards of "klar" differ on purpose - and seen THROUGH A BLUR (behind the scrim of a sheet, under a toast) they spread 1 of 255 beyond their boxes
+    const ok = (d.outside === 0 || veil) && sameBoxes; if (!ok) bad++; else if (!d.inside) fs.rmSync(files[1].replace('-neu.png', '-diff.png'), { force: true });
+    say(`${ok ? (d.outside ? 'ok~' : d.inside ? 'ok*' : 'ok ') : 'DIFF'} ${(name + (label ? ' ' + label : '')).padEnd(34)} outside the drops ${String(d.outside).padStart(7)} px (largest ${String(d.maxOutside).padStart(3)})   inside ${String(d.inside).padStart(7)} px (largest ${String(d.maxInside).padStart(3)})   drops ${boxes[1].length}${sameBoxes ? '' : ' (BOXES DIFFER: ' + boxes[0].length + ' against ' + boxes[1].length + ')'}   of ${d.pixels}${again}`);
     for (const h of hs) for (const e of h.errors.splice(0)) if (!/open-meteo|Failed to load resource|ERR_|net::/i.test(e)) say(`   page error (${h === hs[0] ? 'alt' : 'neu'}): ${e}`);
   }
   for (const h of hs) await h.close();
