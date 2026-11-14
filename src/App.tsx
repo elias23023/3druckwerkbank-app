@@ -61,8 +61,8 @@ export function App() {
   useEffect(() => { document.documentElement.dataset.motion = motionReduced ? 'reduziert' : 'voll'; }, [motionReduced]);
   // Panels sind für 1920×1080 gesetzt: auf flacheren oder kleineren Bildschirmen werden sie als Ganzes kleiner, statt Inhalte abzuschneiden
   useEffect(() => { const on = () => document.documentElement.style.setProperty('--ui-scale', Math.max(0.78, Math.min(1.2, window.innerWidth / 1920, window.innerHeight / 1080)).toFixed(3)); on(); window.addEventListener('resize', on); return () => window.removeEventListener('resize', on); }, []);
-  // Wasser-Look am Desktop (die Bühne trägt data-wasser="desktop"). Der Aufruf steht bewusst NACH dem Effekt für --ui-scale: Startet das Skript davor,
-  // misst es seine Tropfen im falschen Maßstab (auf „Start“ blieb dann die Beschriftung der Insel „Heute“ unscharf gerastert). Mobil startet Mobile() den Look.
+  // Wasser-Look am Desktop: Die Bühne (Stage) trägt data-wasser="desktop", das Skript läuft hier genau einmal mit den Desktop-Optionen.
+  // In der mobilen Ansicht ruht dieser Aufruf; dort startet Mobile() den Look. Es gibt immer nur eine Instanz.
   useWasser(window.Wasser.DESKTOP, !mobile);
   const today = todayDaily(weather?.data, now);
   const phase = dayPhase(now, today?.sunrise, today?.sunset);
