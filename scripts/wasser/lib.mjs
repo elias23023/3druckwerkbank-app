@@ -141,7 +141,9 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 //   frames  [{ file, label }]            scale   size of each picture in the strip (1 = as it is)      cols  pictures per row (0 = all in one)
 //   details [{ x, y, w, h, factor, label }]   one more row per entry: that part of every picture (px of the picture), enlarged
 //   diffGain  one more row: the difference of every picture to the first, amplified (black = unchanged)
-export async function strip(frames, out, { title = '', note = '', scale = 0.5, cols = 0, details = [], diffGain = 0, gap = 12 } = {}) {
+//   rowLabels  a line of text above each row of pictures (one entry per row)      captionSize  size of the captions (18)
+//   palette  true: a PNG of 256 colours (a third of the size; fine for a strip of small stills, not for judging soft light)
+export async function strip(frames, out, { title = '', note = '', scale = 0.5, cols = 0, details = [], diffGain = 0, gap = 12, palette = false, rowLabels = [], captionSize = 18 } = {}) {
   const pad = 20, INK = '#eef0f4', DIM = '#969aa2', layers = []; let y = pad; const text = [];
   const sized = async (input, box, s) => { let im = sharp(input); if (box) im = im.extract({ left: box.x, top: box.y, width: box.w, height: box.h }); const m = box ? { width: box.w, height: box.h } : await sharp(input).metadata(); const w = Math.max(1, Math.round(m.width * s)), h = Math.max(1, Math.round(m.height * s)); return { buf: await im.resize(w, h, { fit: 'fill' }).png().toBuffer(), w, h }; };
   const rows = [{ label: '', cells: await Promise.all(frames.map((f) => sized(f.file, null, scale))), captions: frames.map((f) => f.label || '') }];
@@ -157,14 +159,56 @@ export async function strip(frames, out, { title = '', note = '', scale = 0.5, c
   for (const r of rows) {
     if (r.label) { text.push(`<text x="${pad}" y="${y + 16}" font-size="16" fill="${DIM}">${esc(r.label)}</text>`); y += 26; }
     for (let i = 0; i < n; i += cols) {
+      if (r.captions && rowLabels[i / cols]) { text.push(`<text x="${pad}" y="${y + 20}" font-size="20" font-weight="600" fill="${INK}">${esc(rowLabels[i / cols])}</text>`); y += 32; }
       const line = r.cells.slice(i, i + cols), h = Math.max(...line.map((c) => c.h));
-      line.forEach((c, j) => { const x = pad + j * (cw + gap) + Math.floor((cw - c.w) / 2); layers.push({ input: c.buf, left: x, top: y }); if (r.captions) text.push(`<text x="${pad + j * (cw + gap) + cw / 2}" y="${y + h + 22}" font-size="18" font-weight="600" text-anchor="middle" fill="${INK}">${esc(r.captions[i + j])}</text>`); });
-      y += h + (r.captions ? 36 : 12);
+      line.forEach((c, j) => { const x = pad + j * (cw + gap) + Math.floor((cw - c.w) / 2); layers.push({ input: c.buf, left: x, top: y }); if (r.captions) text.push(`<text x="${pad + j * (cw + gap) + cw / 2}" y="${y + h + captionSize + 4}" font-size="${captionSize}" font-weight="600" text-anchor="middle" fill="${INK}">${esc(r.captions[i + j])}</text>`); });
+      y += h + (r.captions ? captionSize + 18 : 12);
     }
   }
   const H = y + pad - 8, svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" font-family="Inter, DejaVu Sans, Helvetica, Arial, sans-serif">${text.join('')}</svg>`;
-  await sharp({ create: { width: W, height: H, channels: 3, background: '#16171a' } }).composite([...layers, { input: Buffer.from(svg), left: 0, top: 0 }]).png().toFile(out);
+  await sharp({ create: { width: W, height: H, channels: 3, background: '#16171a' } }).composite([...layers, { input: Buffer.from(svg), left: 0, top: 0 }]).png(palette ? { palette: true, colours: 256, effort: 10, dither: 1 } : {}).toFile(out);
   return out;
+}
+/* ------------------------------------------------------------------ recording through the browser's screencast */
+// Playwright's video recorder (recordVideo) is a low-bitrate VP8 screencast: its codec noise is larger than the soft light of
+// the look (two pictures of a page AT REST differed by 4 of 255 or more on 47 % of their pixels; a light of +10 to +17 of 255
+// is swallowed). The browser's own screencast gives every picture it shows as a JPEG with its true time: consecutive
+// pictures at rest differ by 4 or more on about 2 % of the pixels - the living drops. Chromium only (DevTools protocol).
+//   const c = await cast(page, dir)         starts; frames are 390 x 844 (CSS px, whatever the device scale), about 20 a second here
+//   const frames = await c.stop()           [{ file, t }]  t = seconds, the clock of Date.now() / 1000
+//   encodeCast(tracks, out, options)        tracks = [{ frames, from, to, label }] - one recording, or several side by side, each cut
+//                                           from its own "from" (seconds, same clock) and laid on a common time line at the true times;
+//                                           options: fps (25), crf (17), captions [{ from, to, text }] (seconds from the start of the
+//                                           clip), title. Needs ffmpeg. Returns the size of the picture.
+export async function cast(page, dir, { quality = 95 } = {}) {
+  mkdir(dir); const cdp = await page.context().newCDPSession(page); const frames = []; let n = 0;
+  cdp.on('Page.screencastFrame', (f) => { const file = `${dir}/f${String(n++).padStart(5, '0')}.jpg`; fs.writeFileSync(file, Buffer.from(f.data, 'base64')); frames.push({ file, t: f.metadata.timestamp }); cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {}); });
+  await cdp.send('Page.startScreencast', { format: 'jpeg', quality, everyNthFrame: 1 });
+  return { frames, stop: async () => { await cdp.send('Page.stopScreencast').catch(() => {}); await page.waitForTimeout(250); await cdp.detach().catch(() => {}); return frames; } };
+}
+// the picture a recording shows at time t (the last frame at or before it)
+export const frameAt = (frames, t) => { let f = frames[0]; for (const x of frames) { if (x.t <= t) f = x; else break; } return f; };
+export async function encodeCast(tracks, out, { fps = 25, crf = 17, captions = [], title = '', preset = 'slow' } = {}) {
+  const dir = mkdir(out + '.d'); const m = await sharp(tracks[0].frames[0].file).metadata(); const w = m.width, h = m.height;
+  const labelled = tracks.some((t) => t.label) || !!title || captions.length, pad = labelled ? 20 : 0, top = (title ? 40 : 0) + (tracks.some((t) => t.label) ? 44 : 0) + pad, foot = captions.length ? 52 : pad;
+  const even = (v) => v + (v % 2); const W = even(pad + tracks.length * (w + pad)), H = even(top + h + foot), dur = Math.min(...tracks.map((t) => t.to - t.from)), INK = '#eef0f4', DIM = '#a6aab2', FONT = 'font-family="Inter, DejaVu Sans, Helvetica, Arial, sans-serif"';
+  // one list per track for ffmpeg's concat reader: each frame with the time it was on the screen
+  const lists = tracks.map((t, i) => { const fr = t.frames.filter((f) => f.t > t.from && f.t < t.from + dur), first = frameAt(t.frames, t.from); const seq = [{ file: first.file, t: t.from }, ...fr]; let txt = '';
+    seq.forEach((f, k) => { txt += `file '${f.file}'\nduration ${Math.max(0.001, (k + 1 < seq.length ? seq[k + 1].t : t.from + dur) - f.t).toFixed(4)}\n`; }); txt += `file '${seq[seq.length - 1].file}'\n`;   // (the reader needs the last picture once more, or its time is lost)
+    const file = `${dir}/track${i}.txt`; fs.writeFileSync(file, txt); return file; });
+  const svg = (inner) => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" ${FONT}>${inner}</svg>`);
+  const bg = `${dir}/bg.png`; await sharp({ create: { width: W, height: H, channels: 3, background: '#16171a' } }).composite(labelled ? [{ input: svg((title ? `<text x="${pad}" y="30" font-size="20" font-weight="600" fill="${INK}">${esc(title)}</text>` : '') + tracks.map((t, i) => (t.label ? `<text x="${pad + i * (w + pad) + w / 2}" y="${top - 14}" font-size="24" font-weight="600" text-anchor="middle" fill="${INK}">${esc(t.label)}</text>` : '')).join('')), left: 0, top: 0 }] : []).png().toFile(bg);
+  const caps = []; for (const [i, c] of captions.entries()) { const file = `${dir}/cap${i}.png`; await sharp({ create: { width: W, height: 40, channels: 4, background: { r: 22, g: 23, b: 26, alpha: 1 } } }).composite([{ input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="40" ${FONT}><text x="${W / 2}" y="27" font-size="20" text-anchor="middle" fill="${DIM}">${esc(c.text)}</text></svg>`), left: 0, top: 0 }]).png().toFile(file); caps.push(file); }
+  const inputs = ['-loop', '1', '-framerate', String(fps), '-i', bg]; for (const l of lists) inputs.push('-f', 'concat', '-safe', '0', '-i', l); for (const c of caps) inputs.push('-loop', '1', '-framerate', String(fps), '-i', c);
+  let graph = '', lastV = '0:v'; tracks.forEach((t, i) => { graph += `[${i + 1}:v]fps=${fps},setpts=PTS-STARTPTS[t${i}];[${lastV}][t${i}]overlay=${pad + i * (w + pad)}:${top}[o${i}];`; lastV = `o${i}`; });
+  captions.forEach((c, i) => { graph += `[${lastV}][${tracks.length + 1 + i}:v]overlay=0:${top + h + 8}:enable='between(t,${c.from},${c.to})'[c${i}];`; lastV = `c${i}`; });
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...inputs, '-filter_complex', graph.replace(/;$/, ''), '-map', `[${lastV}]`, '-t', dur.toFixed(3), '-r', String(fps), '-c:v', 'libx264', '-crf', String(crf), '-preset', preset, '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', out]);
+  fs.rmSync(dir, { recursive: true, force: true }); return { width: W, height: H, seconds: dur, x: tracks.map((t, i) => pad + i * (w + pad)), y: top, w, h };
+}
+// several pictures one under the other (strips made by strip()), left-aligned
+export async function stack(files, out, { palette = false } = {}) {
+  const ms = []; for (const f of files) ms.push(await sharp(f).metadata()); let y = 0; const layers = files.map((f, i) => { const l = { input: f, left: 0, top: y }; y += ms[i].height; return l; });
+  await sharp({ create: { width: Math.max(...ms.map((m) => m.width)), height: y, channels: 3, background: '#16171a' } }).composite(layers).png(palette ? { palette: true, colours: 256, effort: 10, dither: 1 } : {}).toFile(out); return out;
 }
 // "--name value" and "--flag" from the command line; everything else stays in ._
 export function args(defaults = {}) {

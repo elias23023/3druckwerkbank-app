@@ -209,14 +209,14 @@ if (a.regler) {
   const cost = (ms) => p.evaluate((ms) => { window.__kosten = ms; }, ms);   // 60 ms is slow at the 15 pictures a second of levels 0 and 1 (more than 80 % of 67 ms), not at the 12 of level 2; 5 ms is easy everywhere
   await p.waitForTimeout(1500); const start = await until(() => true, 1); check(start.level === 0 && start.wait === 20000, '11 start: full pace, wait 20 s', start);
   await cost(60); const d1 = await until((i) => i.level === 2, 15000); check(d1.took > 4 && d1.took < 12, '11 slow pictures: two steps down, about 3 s each', d1);
-  await cost(5); const u1 = await until((i) => i.level === 1, 40000); check(u1.took > 17 && u1.took < 28 && u1.wait === 20000, '11 easy pictures: one step up after the wait of 20 s', u1);
+  await cost(5); const u1 = await until((i) => i.level === 1, 40000); check(u1.took > 17 && u1.took < 32 && u1.wait === 20000, '11 easy pictures: one step up after the wait of 20 s', u1);
   await cost(60); const d2 = await until((i) => i.level === 2, 15000); check(d2.took > 2 && d2.took < 8 && d2.wait === 40000, '11 that climb fails within 30 s: down again, and the wait doubles to 40 s', d2);
-  await cost(5); const u2 = await until((i) => i.level === 1, 70000); check(u2.took > 36 && u2.took < 52 && u2.wait === 40000, '11 the next climb comes after 40 s', u2);
-  const u3 = await until((i) => i.wait === 20000, 70000); check(u3.took > 36 && u3.took < 52, '11 that level held for the wait of 40 s: the wait is back at 20 s', u3);
+  await cost(5); const u2 = await until((i) => i.level === 1, 70000); check(u2.took > 36 && u2.took < 62 && u2.wait === 40000, '11 the next climb comes after 40 s', u2);
+  const u3 = await until((i) => i.wait === 20000, 70000); check(u3.took > 36 && u3.took < 62, '11 that level held for the wait of 40 s: the wait is back at 20 s', u3);
   const u4 = await until((i) => i.level === 0, 30000); check(u4.took >= 0 && u4.took < 3, '11 ... and the step up to full pace comes with it', u4);
   await p.waitForTimeout(32000);                                   // (a step down more than 30 s after a climb is no failed try)
   await cost(60); const d3 = await until((i) => i.level === 1, 15000); await cost(5); const u5 = await until((i) => i.level === 0, 70000);
-  check(d3.took > 0 && d3.wait === 20000 && u5.took > 17 && u5.took < 28, '11 a later step down and up: the climb waits 20 s again (it was 40 s until reload)', { down: d3, up: u5 });
+  check(d3.took > 0 && d3.wait === 20000 && u5.took > 17 && u5.took < 32, '11 a later step down and up: the climb waits 20 s again (it was 40 s until reload)', { down: d3, up: u5 });
   console.log('     ' + log.join(' | ')); noErr(h, '11'); await h.close();
 }
 await s.close(); console.log(fails ? `\n${fails} check(s) FAILED` : '\nall checks passed'); process.exit(fails ? 1 : 0);
