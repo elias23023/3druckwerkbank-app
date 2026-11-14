@@ -22,19 +22,14 @@
    Where the look applies is decided by CSS: inside the element that carries the attribute data-wasser
    (data-wasser="mobil" on .m-shell, data-wasser="desktop" on the desktop root). The script only looks inside it.
 
-   In the React app (later): the four files go to src/wasser/, this script under the name wasser-skript.js, and beside
-   them a file src/wasser/wasser.ts:
-       import './kern.css'; import './mobil.css'; import './desktop.css';        // after the app's own stylesheets
-       import './wasser-skript.js';                                              // side effect: window.Wasser
-       import { useEffect } from 'react';
-       declare global { interface Window { Wasser: { start(o?: Record<string, unknown>): unknown; stop(): unknown } } }
-       export function useWasser(options?: Record<string, unknown>) {
-         useEffect(() => { window.Wasser.start(options); return () => { window.Wasser.stop(); }; }, []);
-       }
-   and the root gets the attribute: <div className="m-shell" data-wasser="mobil"> with useWasser() in Mobile().
+   In the React app: the four files are fetched into src/wasser/ by  node scripts/wasser/uebernehmen.mjs  (this script
+   under the name wasser-skript.js). Beside them lies src/wasser/wasser.ts: it imports the three stylesheets and the
+   script and exports the hook useWasser(options, on), which calls Wasser.start() in an effect and Wasser.stop() in its
+   clean-up. The whole file and the lines that use it (Mobile(), App(), Stage) are printed in docs/Wasser-Look.md,
+   section 8.2 - in that one place only, so that there is one copy to keep right.
    (Not wasser.js beside wasser.ts: an import of './wasser/wasser' without extension finds the .js first and the
-   build fails with "not exported". Tried with Vite 8: with the names above the build lowers the CSS nesting, keeps
-   both backdrop-filter properties, and start / stop work.)
+   build fails with "not exported". Tried with Vite 8: with these names the build lowers the CSS nesting, keeps both
+   backdrop-filter properties, and start / stop work.)
 
    Four parts, each a function that starts its listeners and returns its own stop:
      Teil 1  Tropfen            the drops and the water's clock (sleep)

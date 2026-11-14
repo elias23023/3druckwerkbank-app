@@ -3,6 +3,7 @@
 // Run it after EVERY change to the template that is not meant to change the look.
 //
 //   node scripts/wasser/vergleich.mjs [bilder|app|stile|film|alles] [--engine chromium|webkit] [--toene dunkel,klar] [--alt <folder>] [--neu <folder|vorlage>] [--out <dir>] [--nur <name part>]
+//   (--look <folder> is the same as --neu <folder>: the name every other tool has for "another copy of the template")
 //
 //   bilder   the harness page with reduced motion (frozen water): all eight scenes and their close-ups, both tones.
 //            Pixel by pixel; counted apart: inside the boxes of the drop canvases, and everywhere else.
@@ -23,7 +24,7 @@
 import fs from 'fs'; import os from 'os'; import path from 'path';
 import { session, diff, strip, args, mkdir, abs, lookDir, isTemplate, ALT, SZENEN } from './lib.mjs';
 import { film, STRIPS } from './film.mjs';
-const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', out: path.join(os.tmpdir(), 'wasser-vergleich'), nur: '' });
+const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', look: '', out: path.join(os.tmpdir(), 'wasser-vergleich'), nur: '' }); if (a.look) a.neu = a.look;
 const mode = a._[0] || 'alles'; const out = mkdir(abs(a.out)); const TONES = a.toene.split(','); const ZEIT = '2026-11-12T17:42:00+01:00';
 const only = (name) => !a.nur || name.includes(a.nur);
 const s = await session({ engine: a.engine }); let bad = 0; const lines = []; const say = (t) => { console.log(t); lines.push(t); };

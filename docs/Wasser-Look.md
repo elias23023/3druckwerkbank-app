@@ -75,6 +75,7 @@ node scripts/wasser/desktop.mjs zeigen
 ```
 
 Dann http://localhost:4320 öffnen. Das ist die gebaute App mit der Vorlage obendrauf. Strg+C beendet.
+`zeigen` liefert `dist/` selbst aus und braucht keine laufende Vorschau. `npm run build` kann entfallen, wenn `dist/` aktuell ist (seit dem letzten Build nichts in `src/` geändert).
 Gedacht für einen Stand, in dem der Look noch nicht eingebaut ist (dieser Branch; auf `main` der Desktop). Wo er eingebaut ist, zeigt ihn `npm run preview` von selbst – am Handy auch die Live-Seite.
 
 - Breites Fenster = Desktop-Vorlage. Schmales Fenster (unter 900 px) = Handy-Vorlage.
@@ -94,7 +95,7 @@ Dann im schmalen Fenster (oder Handy-Ansicht der Entwicklerwerkzeuge, 390 × 844
 - http://localhost:4311/scripts/wasser/mobil.html?ton=klar – Ton „klar“
 - `&scene=start|heute|projekte|material|druck|wetter|archiv|innen` – das Bild dahinter
 - `&alles=1` – ein Bogen mit allen kleinen Bausteinen. `&nah=1` – Knöpfe aus der Nähe (breites Fenster). `&fallback=1` – ohne WebGL. `&ohne=1` – die App wie heute.
-- `&vorlage=<Ordner>` – eine andere Kopie der Vorlage, z. B. eine, an der man gerade etwas ausprobiert.
+- `&vorlage=<Ordner>` – eine andere Kopie der Vorlage, z. B. eine, an der man gerade etwas ausprobiert (4.1). Der Ordner muss im Projektordner liegen; der Pfad zählt ab dort.
 
 ### Bilder und Filme selbst erzeugen
 
@@ -115,6 +116,8 @@ node scripts/wasser/desktop.mjs clip screenshots/wasser/desktop.mp4      # Deskt
 
 Schalter der Desktop-Bilder: `--format 1920` (sonst 2000 × 993), `--ton klar`, `--zeit tag` (sonst Nacht), `--nur heute,wetter`, `--look ohne` (die App wie heute).
 Bewegung nie aus einem Standbild beurteilen: dafür sind die Bildstreifen da.
+
+Wer kein Browserfenster hat, sieht die Vorlagen über diese Bilder an. Ein einzelnes Bild, in Sekunden: `node scripts/wasser/stelle.mjs screenshots/wasser/heute.png --welt heute` (Desktop; mit `--mobil` das Handy, mit `--ton klar` der helle Modus; mehr in 4.7).
 
 ---
 
@@ -142,6 +145,7 @@ Fünf Regeln für Weg B:
 3. **Eine Klasse, die beide Hüllen haben, gilt sonst für beide.** Nur für eine: mit einer Klasse dieser Hülle in `:where()` eingrenzen, z. B. `:where(.topbar) .brand`.
 4. **Optionen:** `MOBIL` gilt auch am Desktop – außer bei den acht Optionen, die `DESKTOP` (gleich darunter) ersetzt: `scene`, `shade`, `drops`, `ringOn`, `ringFrom`, `bar`, `light`, `scrollers`. Kommt das Element in beiden Hüllen vor, dort in beide eintragen.
 5. **Maße und Platz bleiben Sache der App** (Innenabstand, Breite, Höhe, `position`). Was eine Hülle an einem Baustein ändert, steht in `mobil.css` oder `desktop.css` – mit mindestens dem Gewicht der Liste (siehe 4.4).
+   Fehlt einem Element der App, was sein Baustein „braucht“ (meist der Innenabstand): Die Hülle darf es dort geben. Dann rückt sein Inhalt – das ist eine sichtbare Änderung am Platz und gehört dem Besitzer als Bild vorher/nachher gezeigt. Nie an Panels, Titeln, Kopfzeile oder Inseln: Deren Platz bleibt wie in der App (`desktop.mjs pruefen`, „nichts ist verrückt“). Die Vorlage selbst gleicht bisher nur aus (1 px mehr Innenabstand für den Rand, der wegfällt).
 
 Nach jedem Rezept:
 
@@ -151,7 +155,23 @@ node scripts/wasser/pruefen.mjs --app                     # 60 Prüfungen, etwa 
 node scripts/wasser/desktop.mjs pruefen                   # 24 Prüfungen, wenn der Desktop betroffen ist
 ```
 
-Zum Ausprobieren ohne die Vorlage zu ändern: den Ordner kopieren (`cp -r docs/wasser-look/vorlage screenshots/wasser/probe`), in der Kopie ändern, mit `mobil.html?vorlage=screenshots/wasser/probe` ansehen. Jedes Werkzeug nimmt die Kopie mit `--look screenshots/wasser/probe`.
+**Ausprobieren, ohne die Vorlage zu ändern: in einer Kopie.**
+
+```
+mkdir -p screenshots/wasser && cp -r docs/wasser-look/vorlage screenshots/wasser/probe    # screenshots/ ist nicht im Git
+```
+
+In der Kopie ändern. Jedes Werkzeug mit einem Look nimmt sie mit `--look screenshots/wasser/probe` (ein Ordner außerhalb des Projekts geht auch, mit ganzem Pfad). Die drei Befehle heißen dann:
+
+```
+node scripts/wasser/vergleich.mjs bilder --alt docs/wasser-look/vorlage --look screenshots/wasser/probe   # die Kopie gegen die Vorlage
+node scripts/wasser/pruefen.mjs --app --look screenshots/wasser/probe
+node scripts/wasser/desktop.mjs pruefen --look screenshots/wasser/probe
+```
+
+Im eigenen Browser: `mobil.html?vorlage=screenshots/wasser/probe` und `node scripts/wasser/desktop.mjs zeigen --look screenshots/wasser/probe`. Taugt der Versuch, kommen dieselben Zeilen in die Vorlage (`diff -r docs/wasser-look/vorlage screenshots/wasser/probe` zeigt sie).
+
+Ein zusätzliches Stylesheet statt der Kopie geht nicht: CSS kann die Liste eines Bausteins nicht aus einer anderen Datei erweitern. Eigene Regeln einer Hülle (4.4, 4.5) kommen ans Ende von `mobil.css` oder `desktop.css` der Kopie.
 
 ### 4.2 Das durchgehende Beispiel: ein „Merkzettel“
 
@@ -200,7 +220,7 @@ Suchwort = danach in `kern.css` suchen. Stufe = wie viel Wasser (Abschnitt 5). A
 - **Wo:** Suchwort `-- Tropfen (.wa-tropfen)`. Skript: Optionen `drops` und `ringFrom`. Neutrale Klasse `.wa-tropfen`, rund `.wa-tropfen--rund`.
 - **Braucht:** 14 px Platz ringsum, in dem nichts abschneidet (`overflow: hidden`).
 - **Rezept:** Zeile in die Liste. Runde Knöpfe zusätzlich in die zwei Zeilen im Block, die mit `&:where(.wa-tropfen--rund,` beginnen (die erste macht ihn rund, die zweite gibt jedem zweiten runden Tropfen einen anderen Umriss). Selektor an `drops` hängen. Soll er auf einem Becken einen Ring schicken: auch an `ringFrom`.
-- **Kein lebender Tropfen** (Knöpfe, die sich je Zeile wiederholen; viele auf einem Bildschirm): nur in die Liste, nicht in `drops`. Er bleibt schlichtes Glas.
+- **Kein lebender Tropfen** (Knöpfe, die sich je Zeile wiederholen; viele auf einem Bildschirm): nur in die Liste, nicht in `drops`. Er bleibt schlichtes Glas – das ist Stufe 1: Form und heller Rand, kein WebGL, kein Weichzeichner, keine Bewegung in Ruhe.
 - **Beispiel:**
 
   ```css
@@ -281,7 +301,7 @@ Suchwort = danach in `kern.css` suchen. Stufe = wie viel Wasser (Abschnitt 5). A
 
 - **Was:** eine weiche, etwas tiefere Stelle im Boden einer Fläche: Zeilen und Zahlenkacheln. Die antippbare Mulde hat eine feine Lichtlinie und leuchtet unter dem Finger auf.
 - **Wo:** Suchworte `-- Mulde (.wa-mulde)` und `-- Mulde zum Tippen (.wa-mulde--tipp)`. Keine Option. Neutrale Klassen `.wa-mulde`, antippbar zusätzlich `.wa-mulde--tipp`.
-- **Braucht:** liegt auf einer Fläche; eigenen Innenabstand.
+- **Braucht:** liegt auf einer Fläche; eigenen Innenabstand (hat das Element keinen: Regel 5 in 4.1).
 - **Beispiel:** `  .merk__zeile,                                 /* mobil: Merkzettel */` in beide Listen (antippbar) oder nur in die erste.
 
 #### Etikett und Etikett auf Wasser (Stufe 1) ![](wasser-look/bilder/anleitung/baustein-etikett.webp)
@@ -360,7 +380,7 @@ Die Regel einer Hülle muss mindestens so schwer sein wie die Liste des Baustein
 
 Am Merkzettel ausprobiert: `[data-wasser="mobil"] .merk { border-radius: var(--wa-r-becken-2); }` ändert **nichts** (die Liste von „Becken“ wiegt zwei Klassen). `[data-wasser="mobil"] .merk.merk { … }` wirkt. Dieselbe Klasse zweimal zu schreiben ist der einfachste Weg, Gewicht zu geben; `desktop.css` macht es bei den Pfeilen so (`.glass.carousel-nav.carousel-nav`).
 
-**Danach immer den berechneten Wert einmal ablesen** (Entwicklerwerkzeuge, „Berechnet“) – und drücken, was man drücken kann.
+**Danach immer den berechneten Wert einmal ablesen** (Entwicklerwerkzeuge, „Berechnet“; ohne Browserfenster: `stelle.mjs`, 4.7) – und drücken, was man drücken kann.
 
 ### 4.5 Eine Fläche, die keiner der Bausteine ist
 
