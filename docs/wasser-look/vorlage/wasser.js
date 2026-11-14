@@ -989,8 +989,8 @@
 
     /* ------------------------------------------------------------------ wiring */
     function mine(el) { var b = el && el.closest ? el.closest(SEL) : null; return b && recs.has(b) ? b : null; }
-    // a drop that rests behind a sheet wakes (the sheet went, or a pointer reaches it beside a drawer): it goes on from its
-    // last picture - its water time goes on from where it stood
+    // a drop that rests behind a sheet wakes (the sheet went, or a press reaches it): it goes on from its last picture - its
+    // water time goes on from where it stood
     function rouse(r) { if (r.quiet && r.tLast >= 0) r.lag = vt - r.tLast; r.quiet = false; if (r.behind) r.since = performance.now(); }
     function press(btn, cx, cy) {
       var r = recs.get(btn); if (!r || btn.disabled) return;
@@ -1007,8 +1007,7 @@
     }
     // a mouse comes to rest on a drop, or leaves it: the drop gives way a little under the pointer and comes back (no ring)
     function hover(btn, cx, cy, on) {
-      var r = recs.get(btn); if (!r || btn.disabled) return;
-      if (r.behind) rouse(r);
+      var r = recs.get(btn); if (!r || btn.disabled || r.behind) return;   // (behind a sheet no hover: the scrim covers the page, and the boundary events the browser sends when the page changes under a still mouse put the drop back into its hover pose instead of its rest)
       r.hov = on ? HOVER : 0;
       if (r.ptarget >= 1) return;                                  // pressed: the press decides
       if (on) { var b = r.cv.getBoundingClientRect(), zoom = b.width / (r.cw || 1) || 1; r.px = (cx - (b.left + b.width / 2)) / zoom; r.py = (cy - (b.top + b.height / 2)) / zoom; }

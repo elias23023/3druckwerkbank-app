@@ -332,8 +332,10 @@ open sheet finishes its answer first: the press springs back, a running ring fad
 any more, and costs nothing. Until 14.11. it was reset but never drawn again, so its canvas kept the picture of the
 moment: for the drop that opened the sheet always one in the middle of its answer (rings and all). Its water time stands
 still with it (`lag`): when the sheet goes, it goes on from its last picture instead of jumping to the page's water time.
-A pointer that reaches a resting drop beside a drawer (desktop) wakes it for its answer. `Wasser.info.resting` and
-`.settling` count them. The CSS side needed nothing: `--wa-lauf: paused` ("Ruhe hinter einem Bogen") holds only the
+A press that reaches a resting drop wakes it for its answer; a hover does not (behind a sheet hover is ignored: the
+scrim covers the page, and the boundary events Chromium sends when the page changes under a still mouse put the drop
+back into its hover pose - seen in two of five runs of `bogen.mjs desktop`). `Wasser.info.resting` and `.settling`
+count them. The CSS side needed nothing: `--wa-lauf: paused` ("Ruhe hinter einem Bogen") holds only the
 loops at rest; the one-time answers (ring on the floor, `:active` of plain glass and rows, the bead's flight - Web
 Animations - and the Schwappen transitions) never read it.
 
