@@ -472,3 +472,9 @@ p { margin: 0; }
 .toast__undo:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 .place-hit { width: 100%; text-align: left; border: 0; color: inherit; cursor: pointer; padding: 7px 10px; }
 .place-hit:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
+/* ---- Wasser-Look: Einbau ---- */
+/* Drei Stellen, die bisher inline gefärbt waren, tragen jetzt eine Klasse (so erreicht sie der Look ohne !important). Hier steht ihr Aussehen ohne Look. */
+.glass.col--aktuell { border: 1px solid #7cc6ff; }
+.alert.info > .ico { color: #7cc6ff; }
+.thumb.thumb--naechstes { background: rgba(124,198,255,.2); color: #7cc6ff; }

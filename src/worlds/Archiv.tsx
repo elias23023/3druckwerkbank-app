@@ -45,7 +45,7 @@ export function Archiv() {
       </Panel>
       </PanelColumn>
 
-      <Panel title="Galerie" icon={<IImage />} style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100}
+      <Panel title="Galerie" icon={<IImage />} className="panel--haupt" style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100}
         right={<div className="row" style={{ gap: 6 }}><input className="input" style={{ width: 150, padding: '4px 8px', fontSize: 12 }} placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} /><button className={`pill${fav ? ' pill--on' : ''}`} onClick={() => setFav(!fav)}><IStar width={12} height={12} /> Favoriten</button></div>}>
         {arch.length === 0 ? <p className="muted small">Nichts gefunden. Schließe ein Projekt bewusst ab, dann landet es hier mit Bericht.</p> : (
           <div className="gallery">

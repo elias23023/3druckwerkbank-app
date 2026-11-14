@@ -4,12 +4,15 @@
 import './kern.css';
 import './mobil.css';
 import './desktop.css';
+import './einbau.css';
 import './wasser-skript.js'; // Nebenwirkung: window.Wasser
 import { useEffect } from 'react';
 
-declare global { interface Window { Wasser: { start(o?: Record<string, unknown>): unknown; stop(): unknown } } }
+declare global { interface Window { Wasser: { start(o?: Record<string, unknown>): unknown; stop(): unknown; DESKTOP: Record<string, unknown> } } }
 
-/** Startet das Skript des Looks, solange die Komponente steht. Genau einmal je Wurzel verwenden. */
-export function useWasser(options?: Record<string, unknown>) {
-  useEffect(() => { window.Wasser.start(options); return () => { window.Wasser.stop(); }; }, []); // eslint-disable-line react-hooks/exhaustive-deps
+/** Startet das Skript des Looks, solange die Komponente steht. Genau einmal je Wurzel verwenden.
+ *  `on = false`: Die Wurzel dieses Aufrufs steht gerade nicht (App() ruft den Hook für die Bühne immer auf, auch wenn die
+ *  mobile Ansicht gezeigt wird); beim Wechsel stoppt das Aufräumen den einen Look, bevor der andere startet. */
+export function useWasser(options?: Record<string, unknown>, on = true) {
+  useEffect(() => { if (!on) return; window.Wasser.start(options); return () => { window.Wasser.stop(); }; }, [on]); // eslint-disable-line react-hooks/exhaustive-deps
 }
