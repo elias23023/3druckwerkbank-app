@@ -26,11 +26,13 @@
 //   node scripts/wasser/desktop.mjs takt [--nur heute,wetter] [--sekunden 5]
 //        What the look costs: pictures a second and work per picture for the app without the look, with it, and with it
 //        but without its lights / drops / blur.
-//   node scripts/wasser/desktop.mjs clip <out.mp4> [--ton klar] [--zeit nacht]
-//        A tour through the real app (about 80 s on the work machine), recorded through the browser's screencast; at its
-//        end the app's setting "Erscheinungsbild: Hell" switches the tone to "klar".
+//   node scripts/wasser/desktop.mjs clip <out.mp4> [--zeit nacht] [--crf 27]
+//        A tour through the real app (about 80 s on the work machine), recorded through the browser's screencast; it starts
+//        with the app's setting "Erscheinungsbild" as it is (Automatisch: the hour decides) and at its end switches it to
+//        "Hell" - the tone "klar". (So it takes no --ton.)
 // All take --look auto|eingebaut|vorlage|<folder>|ohne (default auto = the look the app has built in; ohne = the app with its
-// look taken out), --engine chromium|webkit|firefox, --format, --reduced. An option that is not known ends the tool.
+// look taken out); all but zeigen take --engine chromium|webkit|firefox and --format. An option that is not known ends the
+// tool, and so does one that the mode does not read (each mode's list: FOR below).
 import fs from 'fs'; import path from 'path'; import http from 'http';
 import { REPO, abs, mkdir, outDir, args, strip, sharp, lookDir, isTemplate, lookArg, lookStart, sayLook, fail, TOENE, ENGINES, ZEITEN } from './lib.mjs';
 import { openDesktop, WELTEN } from './desktop-lib.mjs';
@@ -39,6 +41,11 @@ const MODES = ['zeigen', 'bild', 'film', 'kontrast', 'pruefen', 'takt', 'clip'];
 const a = args({ look: 'auto', format: '2000', ton: '', zeit: 'nacht', engine: 'chromium', nur: '', port: '4320', toene: 'dunkel,klar', zeiten: 'nacht,tag', out: '', sekunden: '5', crf: '' },
   { flags: ['alles', 'reduced'], choices: { engine: ENGINES, ton: ['dunkel', 'klar', 'auto'], toene: TOENE, zeit: [...Object.keys(ZEITEN), '<iso>'], zeiten: Object.keys(ZEITEN), format: ['2000', '1920', '<WxH>'] } });
 const mode = a._[0]; if (mode && !MODES.includes(mode)) fail(`"${mode}": one of ${MODES.join(' | ')}`); if (a._.length > (['bild', 'film', 'clip'].includes(mode) ? 2 : 1)) fail(`too many words: ${a._.slice(1).join(' ')}`);
+// the options each mode really reads: one that belongs to another mode ends the tool too (else "pruefen --toene klar" would
+// check "dunkel" without a word - pruefen takes --ton; kontrast takes --toene and --zeiten; clip chooses its tone itself)
+const FOR = { zeigen: ['look', 'port'], bild: ['look', 'format', 'ton', 'zeit', 'engine', 'nur', 'alles', 'reduced'], film: ['look', 'format', 'ton', 'zeit', 'engine', 'nur', 'reduced'],
+  kontrast: ['look', 'format', 'toene', 'zeiten', 'engine', 'nur', 'out'], pruefen: ['look', 'format', 'ton', 'zeit', 'engine'], takt: ['look', 'format', 'ton', 'zeit', 'engine', 'nur', 'sekunden'], clip: ['look', 'format', 'zeit', 'engine', 'crf'] };
+if (mode) for (const k of process.argv.slice(2).filter((x) => x.startsWith('--')).map((x) => x.slice(2).split('=')[0])) if (!FOR[mode].includes(k)) fail(`--${k} has no effect in "${mode}"${MODES.some((m) => FOR[m].includes(k)) ? ` (it belongs to ${MODES.filter((m) => FOR[m].includes(k)).join(', ')})` : ''}. "${mode}" takes: ${FOR[mode].map((x) => '--' + x).join(' ')}`);
 const look = lookArg(a.look); const want = a.nur ? String(a.nur).split(',') : null; const only = (n) => !want || want.some((w) => n.includes(w));
 if (!look && ['film', 'kontrast', 'pruefen', 'clip'].includes(mode)) fail(`--look ohne: "${mode}" looks at the look`);
 const open = async (o = {}) => { const d = await openDesktop({ look, format: a.format, ton: a.ton, zeit: a.zeit, engine: a.engine, reduced: !!a.reduced, ...o }); sayLook(d); return d; };
