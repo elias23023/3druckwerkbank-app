@@ -3,6 +3,7 @@ import { useStore, archivedProjects, liveProjects } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { fmtDate, fmtGrams, fmtNum, fold } from '../lib/format';
 import { PanelColumn, Panel, Stat } from '../ui/Glass';
+import { Weltkopf, Spruchfeld } from '../ui/Felder';
 import { islandSrc } from '../scene/Island';
 import { ISparkle, IStar, IImage, IHistory, ICopy } from '../ui/Icons';
 import { navigate } from '../router';
@@ -26,11 +27,7 @@ export function Archiv() {
 
   return (
     <>
-      <div className="world-title"><h1>Archiv</h1><p>Deine Projekte. Deine Ideen. Für später. Und für immer.</p>
-        <div className="pills" style={{ marginTop: 12 }}>
-          {sel('Projektart', 'typ', opts(all.map((p) => p.type)))}{sel('Bereich', 'bereich', opts(all.flatMap((p) => p.areas)))}{sel('Material', 'material', opts(all.flatMap((p) => matOf(p.id))))}{sel('Drucker', 'drucker', opts(all.flatMap((p) => devOf(p.id))))}{sel('Jahr', 'jahr', opts(all.map((p) => p.archivedAt?.slice(0, 4) ?? '')))}
-        </div>
-      </div>
+      <Weltkopf title="Archiv" sub="Deine Projekte. Deine Ideen. Für später. Und für immer." />
 
       <PanelColumn side="left" top="38%" bottom="7%" width="22%">
       <Panel title="Zeitreise" icon={<IHistory />} delay={60}>
@@ -47,6 +44,7 @@ export function Archiv() {
 
       <Panel title="Galerie" icon={<IImage />} className="panel--haupt" style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100}
         right={<div className="row" style={{ gap: 6 }}><input className="input" style={{ width: 150, padding: '4px 8px', fontSize: 12 }} placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} /><button className={`pill${fav ? ' pill--on' : ''}`} onClick={() => setFav(!fav)}><IStar width={12} height={12} /> Favoriten</button></div>}>
+        <div className="pills archiv-filter">{sel('Projektart', 'typ', opts(all.map((p) => p.type)))}{sel('Bereich', 'bereich', opts(all.flatMap((p) => p.areas)))}{sel('Material', 'material', opts(all.flatMap((p) => matOf(p.id))))}{sel('Drucker', 'drucker', opts(all.flatMap((p) => devOf(p.id))))}{sel('Jahr', 'jahr', opts(all.map((p) => p.archivedAt?.slice(0, 4) ?? '')))}</div>
         {arch.length === 0 ? <p className="muted small">Nichts gefunden. Schließe ein Projekt bewusst ab, dann landet es hier mit Bericht.</p> : (
           <div className="gallery">
             {arch.map((p) => { const r = reports.find((x) => x.projectId === p.id); return (
@@ -68,7 +66,7 @@ export function Archiv() {
         {lessons.length === 0 ? <p className="muted small">Noch keine Erfahrungen festgehalten.</p> : lessons.map((x, i) => <div key={i} className="col" style={{ gap: 0 }}><span className="small">{x.l}</span><span className="xs faint">{x.p}</span></div>)}
       </Panel>
       </PanelColumn>
-      <div className="hand hand--bl" style={{ bottom: '4%' }}>{'Aus Ideen.\nWird morgen.'}</div>
+      <Spruchfeld />
     </>
   );
 }

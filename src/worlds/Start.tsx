@@ -5,10 +5,11 @@ import { useNow } from '../lib/time';
 import { bestPvWindow } from '../lib/weather';
 import { PanelColumn } from '../ui/Glass';
 import { Tageskarte } from '../ui/Tageskarte';
+import { Spruchfeld } from '../ui/Felder';
 import { navigate } from '../router';
 import { IDown } from '../ui/Icons';
 
-/** Start / Hero world: the card of the day (clock, date, greeting, weather, daylight, season, quote), the landscape and a subtle hint at the worlds below. No lists, no status cards. */
+/** Start / Hero world: the card of the day (clock, date, greeting, weather, daylight, season), the quote of the day at the right edge, the landscape and a subtle hint at the worlds below. No lists, no status cards. */
 export function Start() {
   const now = useNow(1000);
   const { settings, weather } = useStore(useShallow((s) => ({ settings: s.settings, weather: s.weather })));
@@ -25,8 +26,9 @@ export function Start() {
       <PanelColumn side="left" top="7.7%" bottom="66%" width="17cqw">
         <Tageskarte now={now} pvStart={pv?.start} variant="desktop" />
       </PanelColumn>
-      <button className="scroll-hint" onClick={() => navigate({ world: 'heute' })}><span>Scrollen zum Erkunden</span><IDown /></button>
-      <div className="hand hand--br">{'Mehr machen –\nmit Ideen, die bleiben.'}</div>
+      <button className="scroll-hint feld-etikett" onClick={() => navigate({ world: 'heute' })}><span>Scrollen zum Erkunden</span><IDown /></button>
+      {/* the quote of the day: its own field at the right edge (it replaced the handwritten note bottom right) */}
+      <Spruchfeld />
     </>
   );
 }

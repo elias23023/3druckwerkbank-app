@@ -1,7 +1,8 @@
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { useNow, hourOf } from '../lib/time';
-import { fmtTime, fmtDuration } from '../lib/format';
+import { fmtTime } from '../lib/format';
+import { sunTurn, sunTurnAt } from '../lib/sun';
 import { todayDaily } from '../lib/weather';
 
 /** Angle on the portal: 00:00 at the bottom, 06:00 left, 12:00 at the top, 18:00 right: the sun's path as seen through a window facing south (rises east = left, sets west = right). */
@@ -30,11 +31,8 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
   const h = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
   const isDay = h >= sr && h <= ss;
   const R = 87; const [bx, by] = pt(h, R);
-  const tomorrow = weather?.data.daily?.[1];
-  const at = (iso: string | undefined, fallbackHour: number) => fmtTime(iso ? new Date(iso) : new Date(new Date(now).setHours(fallbackHour, 0, 0, 0)));
-  const line = h < sr ? [`Sonnenaufgang ${at(today?.sunrise, 7)}`, `noch ${fmtDuration(Math.round((sr - h) * 60))}`]
-    : h <= ss ? [`Sonnenuntergang ${at(today?.sunset, 17)}`, `noch ${fmtDuration(Math.round((ss - h) * 60))}`]
-    : [`Sonnenaufgang ${at(tomorrow?.sunrise ?? today?.sunrise, 7)}`, 'Nacht'];
+  // the next change of light: the same helper as the weather panels and the card of the day (src/lib/sun.ts); without weather data from the 07:00–17:00 the ring draws
+  const change = sunTurn(weather?.data, now, { rise: 7, set: 17 });
   const glow = isDay ? 'rgba(255,190,110,.5)' : 'rgba(150,175,230,.35)';
   return (
     <div className={`portal${compact ? ' portal--compact' : ''}`} data-testid="portal" data-kind={isDay ? 'sonne' : 'mond'} data-day={isDay ? 'true' : 'false'}>
@@ -88,7 +86,7 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
           </g>
         </svg>
       </div>
-      <div className="portal__centre"><b>{fmtTime(now)}</b>{compact ? null : <><span>{line[0]}</span><span className="portal__sub">{line[1]}</span></>}</div>
+      <div className="portal__centre"><b>{fmtTime(now)}</b>{compact || !change ? null : <><span>{sunTurnAt(change)}</span><span className="portal__sub">{change.rest}</span></>}</div>
     </div>
   );
 }

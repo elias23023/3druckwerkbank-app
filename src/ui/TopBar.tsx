@@ -31,22 +31,23 @@ export function TopBar() {
   const shown = settings.notifications === 'aus' ? [] : settings.notifications === 'wichtig' ? hints.filter((h) => h.level !== 'info') : hints;
   const cur = weather?.data.hourly.length ? weather.data.current : undefined;
   // Start world: clock, date, greeting and weather stand in the card of the day (src/ui/Tageskarte.tsx), so the bar does not repeat them there
-  const onStart = useRoute().world === 'start';
+  // the loose greeting at the right end („Schön, dass du da bist!“ and the name) is gone: the name is in the greeting of Heute and of the card of the day
+  const world = useRoute().world; const onStart = world === 'start';
   return (
     <header className="topbar">
-      <button className="brand" onClick={() => navigate({ world: 'start' })} title="Zur Startwelt"><Logo /><div><b>3Druckwerkbank</b><span>Ideen. Machen. Erleben.</span></div></button>
+      <button className="brand feld-etikett" onClick={() => navigate({ world: 'start' })} title="Zur Startwelt"><Logo /><div><b>3Druckwerkbank</b><span>Ideen. Machen. Erleben.</span></div></button>
       <button className={`glass chip ws-chip ws-chip--${workspace}`} onClick={() => openSheet({ kind: 'bereich' })} title={WORKSPACE_META[workspace].hint} aria-label={`Bereich: ${WORKSPACE_META[workspace].label}`}><i className="dot" />{WORKSPACE_META[workspace].short}</button>
       <button className="glass chip topbar__search desktop-only" onClick={() => setCommand(true)} aria-label="Suche öffnen (Strg+K)">
         <ISearch /> <span className="muted">Befehl eingeben oder suchen …</span> <kbd className="pill xs" style={{ marginLeft: 'auto' }}>Strg K</kbd>
       </button>
-      {onStart ? null : <div className="topbar__clock"><b>{fmtTime(now)}</b><span>{fmtLongDate(now)}</span></div>}
+      {/* clock and date on a chip of their own (they stood loose on the sky); in Heute the ring of the island shows the clock, the chip only the date */}
+      {onStart ? null : <div className="glass chip topbar__clock">{world === 'heute' ? null : <b>{fmtTime(now)}</b>}<span>{fmtLongDate(now)}</span></div>}
       {onStart ? null : <div className="glass chip" title={weather ? `Open-Meteo, aktualisiert ${fmtTime(weather.fetchedAt)}` : 'Wetter wird geladen'}>
         {cur ? <><WeatherIcon code={cur.code} isDay={cur.isDay} /> <span>{fmtNum(cur.temp)} °C</span><span className="muted small desktop-only">{wmo(cur.code).label}</span></> : weather?.error ? <span className="muted small">Wetter nicht verfügbar</span> : <span className="muted small">Wetter …</span>}
       </div>}
       <button className="glass chip btn--icon" onClick={() => openSheet({ kind: 'hinweise' })} aria-label={`Hinweise (${shown.length})`} style={{ width: 40, height: 40, position: 'relative' }}><IBolt />{shown.length ? <span className="badge">{shown.length}</span> : null}</button>
       <button className="glass chip btn--icon topbar__konto" onClick={() => openSheet({ kind: 'konto' })} aria-label={session ? `Konto: ${session.email}` : 'Konto'} title={session ? session.email : auth.configured ? 'Anmelden' : 'Konto'} style={{ width: 40, height: 40 }}>{avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : session ? <span className="topbar__initial">{(session.name || session.email || 'K').slice(0, 1).toUpperCase()}</span> : <IUser />}</button>
       <button className="glass chip btn--icon" onClick={() => openSheet({ kind: 'einstellungen' })} aria-label="Einstellungen" style={{ width: 40, height: 40 }}><IGear /></button>
-      {onStart ? null : <div className="topbar__user desktop-only"><span className="xs muted">Schön, dass du da bist!</span><b className="small">{settings.userName || 'Werkstatt'}</b></div>}
     </header>
   );
 }

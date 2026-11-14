@@ -1,13 +1,15 @@
 import { useMemo } from 'react';
 import { useStore, printProgress, printRemainingMin, availableGrams } from '../store';
 import { useShallow } from 'zustand/react/shallow';
-import { useNow, greeting, quoteOfDay, sameDay, type DayPhase } from '../lib/time';
+import { useNow, greeting, sameDay, type DayPhase } from '../lib/time';
 import { fmtDuration, fmtNum, fmtTime, relTime, fmtGrams, fmtDate } from '../lib/format';
 import { bestPvWindow, todayDaily, wmo, dryWindow } from '../lib/weather';
 import { PanelColumn, Panel, Check, Progress } from '../ui/Glass';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import { ICal, ICheck, IEnergy, IPlay, IPrinter, ISun, IWind, IDrop, ISkip, ISpool, IWrench, IClock, ICube } from '../ui/Icons';
 import { navigate } from '../router';
+import { Weltkopf, Spruchfeld } from '../ui/Felder';
+import { sunTurn } from '../lib/sun';
 
 export function Heute({ phase }: { phase: DayPhase }) {
   const now = useNow(1000);
@@ -23,6 +25,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
   const pv = useMemo(() => (weather?.data.hourly.length ? bestPvWindow(weather.data.hourly, settings.pvKwp, 3, now) : null), [weather, settings.pvKwp, now]);
   const dry = useMemo(() => (weather?.data.hourly.length ? dryWindow(weather.data.hourly, 3, now) : null), [weather, now]);
   const cur = weather?.data.hourly.length ? weather.data.current : undefined;
+  const turn = sunTurn(weather?.data, now);   // "Sonnenuntergang in …": the same helper as the ring
   const nextHours = (weather?.data.hourly ?? []).filter((h) => new Date(h.time).getTime() >= now.getTime() - 3600_000).slice(0, 6);
   const rainSoon = nextHours.find((h) => h.precipProb >= 50);
   const upcoming = appointments.filter((a) => new Date(a.at).getTime() > now.getTime() - 3600_000).sort((a, b) => a.at.localeCompare(b.at)).slice(0, 2);
@@ -33,15 +36,14 @@ export function Heute({ phase }: { phase: DayPhase }) {
 
   return (
     <>
-      <div className="heute-greet">
-        <h1>{greeting(now)}</h1>
-        <p>{settings.showQuote ? `„${quoteOfDay(now)}“` : 'Heute ist ein guter Tag, etwas zu erschaffen.'}</p>
-        <p className="small faint" style={{ marginTop: 8 }}>{settings.location.name}</p>
-      </div>
+      {/* head of the world: the greeting (the quote of the day has its own field at the right edge, the place is in the weather panel) */}
+      <Weltkopf title={`${greeting(now)}${settings.userName ? `, ${settings.userName}` : ''}`} sub="Heute ist ein guter Tag, etwas zu erschaffen." className="feld-kopf--gruss" />
 
-      <div className="heute-time"><span>{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length === 0 ? 'kein Druck läuft' : running.length === 1 ? '1 Druck läuft' : `${running.length} Drucke laufen`}</span></div>
+      <div className="heute-time"><span className="feld-etikett">{phase === 'nacht' ? 'Nacht' : phase === 'tag' ? 'Tag' : phase === 'morgen' ? 'Morgen' : 'Abend'} · {open.length} offen · {running.length === 0 ? 'kein Druck läuft' : running.length === 1 ? '1 Druck läuft' : `${running.length} Drucke laufen`}</span></div>
 
-      <PanelColumn side="left" top="38%" bottom="27%" width="23%">
+      {/* both panels the same height (even); the column reaches from under the label of the small Projekte island to just above the bottom row,
+          and as wide as the Heute island allows (measured 14.11.: smallest gaps 2000x993 / 1920x1080 in docs/NACHSEHEN-FABLE-felder.md) */}
+      <PanelColumn side="left" top="36.5%" bottom="26%" width="24.5%" even>
       <Panel title="Aktive Drucke" icon={<IPrinter />} right={<span className="pill xs">{running.length}</span>} delay={60}
         foot={<>{printers.length === 0 ? <button className="btn btn--sm btn--primary" onClick={() => openSheet({ kind: 'geraetForm', deviceKind: 'drucker' })}>Drucker anlegen</button> : null}{printers.filter((d) => d.status === 'bereit' && queued.some((p) => p.printerId === d.id) && !prints.some((p) => p.printerId === d.id && p.status === 'läuft')).slice(0, 2).map((d) => <button key={d.id} className="btn btn--sm" title={`Nächsten Druck auf ${d.name} starten`} onClick={() => startNextPrint(d.id)}><IPlay width={12} height={12} /> {d.name}</button>)}<button className="btn btn--sm btn--ghost" style={{ marginLeft: 'auto' }} onClick={() => navigate({ world: 'druck' })}>Alle</button></>}>
         {running.length === 0 ? <p className="muted small">{printers.length === 0 ? 'Noch kein Drucker angelegt.' : `Kein Druck läuft gerade.${queued[0] ? ` Nächster: ${queued[0].name}.` : ''}`}</p> : running.map((p) => (
@@ -77,6 +79,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
           <>
             <div className="row"><WeatherIcon code={cur.code} isDay={cur.isDay} size={40} /><div className="col"><b style={{ fontSize: 28, lineHeight: 1 }}>{fmtNum(cur.temp)} °C</b><span className="small muted">{wmo(cur.code).label}</span></div>
               <div className="col xs muted" style={{ marginLeft: 'auto', gap: 3 }}><span className="row" style={{ gap: 4 }}><IDrop width={13} height={13} />Luftfeuchte {cur.humidity} %</span><span className="row" style={{ gap: 4 }}><IWind width={13} height={13} />Wind {fmtNum(cur.wind)} km/h</span>{today ? <span className="row" style={{ gap: 4 }}><ISun width={13} height={13} />{fmtTime(today.sunrise)}–{fmtTime(today.sunset)}</span> : null}</div></div>
+            {turn ? <p className="small feld-sonne"><ISun width={13} height={13} />{turn.text}</p> : null}
             <p className="small">{rainSoon ? `Regen wahrscheinlich ab ${fmtTime(rainSoon.time)} (${rainSoon.precipProb} %).` : nextHours.length ? 'In den nächsten Stunden voraussichtlich trocken.' : ''}</p>
           </>
         ) : <p className="muted small">{weather?.error ? 'Wetter nicht verfügbar.' : 'Wetter wird geladen …'}</p>}
@@ -104,7 +107,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
           <span className="pill pill--warn xs" style={{ alignSelf: 'flex-start' }}>Schätzung · {settings.pvKwp} kWp</span>
         </Panel>
       </div>
-      <div className="hand hand--tr">{'Kleine Dinge\nkönnen Großes\nbewirken.'}</div>
+      <Spruchfeld />
     </>
   );
 }

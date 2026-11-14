@@ -1,7 +1,9 @@
 // Does the template WORK? One pass of checks on the harness page (scripts/wasser/mobil.html), and - with --app - in the
 // real app. Each line: ok / FAIL, what was checked, what was found. Exit code 1 when a check fails.
 //
-//   node scripts/wasser/pruefen.mjs [--engine chromium|webkit] [--ton klar] [--app] [--bild <out.png>] [--regler]
+//   node scripts/wasser/pruefen.mjs [--look vorlage|<folder>] [--engine chromium|webkit] [--ton klar] [--app] [--bild <out.png>] [--regler]
+//
+//   --look <folder>   check another copy of the template (kern.css, mobil.css, desktop.css, wasser.js) instead of docs/wasser-look/vorlage
 //
 //   1 start        the script starts, draws the drops, reports no error
 //   2 Markierung   a tap on a tab starts the bead's flight; a class moved by script too; a second tap during a flight; a bar that was replaced
@@ -19,8 +21,10 @@
 //  11 Regler (--regler, about three minutes)  the governor of the drops, fed pretended slow pictures (start option debug.cost):
 //                  it steps down, climbs after the wait, a climb that fails doubles the wait, a climb that holds sets it back
 import fs from 'fs';
-import { session, args, abs, VORLAGE } from './lib.mjs';
-const a = args({ engine: 'chromium', ton: '' }); const s = await session({ engine: a.engine }); let fails = 0;
+import { session, args, abs, lookDir, isTemplate } from './lib.mjs';
+const a = args({ engine: 'chromium', ton: '', look: 'vorlage' }); if (!isTemplate(a.look)) { console.log(`--look ${a.look}: no copy of the template (kern.css is missing)`); process.exit(1); }
+const s0 = await session({ engine: a.engine }); let fails = 0; if (a.look !== 'vorlage') console.log('look: ' + lookDir(a.look));
+const s = { ...s0, harness: (o) => s0.harness({ look: a.look, ...o }), app: (o) => s0.app({ look: a.look, ...o }) };   // every page of this run gets the look that was asked for
 const check = (ok, name, found) => { if (!ok) fails++; console.log(`${ok ? 'ok  ' : 'FAIL'} ${name.padEnd(58)} ${typeof found === 'string' ? found : JSON.stringify(found)}`); };
 const noErr = (h, name) => { const e = h.errors.filter((x) => !/open-meteo|Failed to load resource|ERR_|net::/i.test(x)); check(!e.length, `${name}: no page error`, e.length ? e.slice(0, 3) : 'none'); };
 const centre = async (p, sel, i = 0) => { const r = await p.locator(sel).nth(i).boundingBox(); return [r.x + r.width / 2, r.y + r.height / 2]; };
@@ -193,7 +197,7 @@ if (a.app) {
   const badLim = lim.filter(([lv, , lit, far, slide, lag]) => lit < 0.1 - 1e-6 || far < 0.1 - 1e-6 || lit > 2.4 + 1e-6 || far > 2.4 + 1e-6 || slide > 24.01 || lag > 28.01 || (lv === 0 && (lit !== 1 || far !== 1 || slide || lag)));
   check(!badLim.length && lim.length === 10, '10 --wa-leben 0 .. 2 at full pull: lean within 0.1 .. 2.4, slide at most 24 px, lag at most 28 px', lim.map((r) => `${r[0]}/${r[1] > 0 ? '+' : '-'}: ${r[2]} ${r[3]} ${r[4]}px ${+r[5].toFixed(1)}px`).join('  '));
   noErr(h, '10'); await h.close();
-  const css = fs.readFileSync(abs(`${VORLAGE}/kern.css`), 'utf8'); const bare = css.replace(/\/\*[^]*?\*\//g, '');
+  const css = fs.readFileSync(`${lookDir(a.look)}/kern.css`, 'utf8'); const bare = css.replace(/\/\*[^]*?\*\//g, '');
   const block = (from) => { const i = bare.indexOf(from), j = bare.indexOf('\n}', i); return i < 0 ? [] : bare.slice(i, j).match(/--[a-z0-9-]+(?=\s*:)/g) || []; };
   const dunkel = block('[data-wasser] {\n  --wa-drop-red'), klar = block(':root[data-wa-ton="klar"] [data-wasser] {'), named = (bare.match(/data-wa-ton/g) || []).length;
   check(dunkel.length > 40 && JSON.stringify(dunkel) === JSON.stringify(klar) && named === 1, '10 the two tones: the same tokens in the same order, one rule names the tone', `${dunkel.length} and ${klar.length} tokens, data-wa-ton in ${named} rule(s)`);

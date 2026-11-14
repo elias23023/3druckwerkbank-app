@@ -40,6 +40,7 @@ export function Stat({ value, label }: { value: ReactNode; label: string }) {
 }
 
 /** A side column that lays its panels out in flow (flex) so they shrink and scroll instead of overlapping on short screens. */
-export function PanelColumn({ side, top, bottom, width, children }: { side: 'left' | 'right'; top: string; bottom: string; width: string; children: ReactNode }) {
-  return <div className={`panel-col panel-col--${side}`} style={{ [side]: '3.2%', top, bottom, width }}>{children}</div>;
+/** `even`: every panel gets the same height, however much it holds; a fuller one scrolls inside (only where asked, e.g. Heute left). */
+export function PanelColumn({ side, top, bottom, width, children, even }: { side: 'left' | 'right'; top: string; bottom: string; width: string; children: ReactNode; even?: boolean }) {
+  return <div className={`panel-col panel-col--${side}${even ? ' panel-col--gleich' : ''}`} style={{ [side]: '3.2%', top, bottom, width }}>{children}</div>;
 }

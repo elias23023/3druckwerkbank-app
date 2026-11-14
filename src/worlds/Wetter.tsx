@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { useNow, hourOf } from '../lib/time';
+import { sunTurn } from '../lib/sun';
 import { fmtDayShort, fmtDuration, fmtNum, fmtTime, relTime } from '../lib/format';
 import { bestPvWindow, bestHours, comfort, dryWindow, pvKw, todayDaily, weatherAlerts, wmo } from '../lib/weather';
 import { resolveSeason, SEASON_META, daysUntilNextSeason } from '../lib/season';
+import { Weltkopf, Spruchfeld } from '../ui/Felder';
 import { PanelColumn, Panel, Stat } from '../ui/Glass';
 import { WeatherIcon } from '../ui/WeatherIcon';
 import { ISun, IClock, ICal, IEnergy, IRefresh, IWind, IDrop, IThermo, IBolt, IInfo } from '../ui/Icons';
@@ -24,6 +26,7 @@ export function Wetter() {
   const best = useMemo(() => { const b = d?.hourly.length ? bestHours(d.hourly, settings.pvKwp, 8, now) : []; return sortBy === 'zeit' ? [...b].sort((a, c) => a.time.localeCompare(c.time)) : b; }, [d, settings.pvKwp, now, sortBy]);
   const alerts = d?.hourly.length ? weatherAlerts(d, now) : [];
   const refresh = () => { if (weather) setWeather({ ...weather, fetchedAt: new Date(0).toISOString() }); };
+  const turn = sunTurn(d, now);   // "Sonnenuntergang in …": the same helper as the ring of the Heute island and the card of the day
   const sunX = today ? ((now.getHours() + now.getMinutes() / 60 - hourOf(today.sunrise)) / Math.max(0.1, hourOf(today.sunset) - hourOf(today.sunrise))) : 0.5;
   const tmin = Math.min(...hours.map((h) => h.temp), 0), tmax = Math.max(...hours.map((h) => h.temp), 1);
   const curve = hours.map((h, i) => `${(i / Math.max(1, hours.length - 1)) * 200},${60 - ((h.temp - tmin) / Math.max(1, tmax - tmin)) * 50}`).join(' ');
@@ -31,7 +34,7 @@ export function Wetter() {
 
   return (
     <>
-      <div className="world-title"><h1>Wetter</h1><p>Aktuell. Präzise. Lokal.</p></div>
+      <Weltkopf title="Wetter" sub="Aktuell. Präzise. Lokal." />
 
       {cur ? (
         <>
@@ -64,6 +67,7 @@ export function Wetter() {
               {sunX >= 0 && sunX <= 1 ? <circle cx={10 + sunX * 180} cy={60 - 4 * (1 - (2 * sunX - 1) ** 2) * 22.5} r="5" fill="#ffe08a" style={{ filter: 'drop-shadow(0 0 6px rgba(255,220,120,.9))' }} /> : null}
               <text x="10" y="69" fontSize="8" fill="currentColor" opacity=".8">{fmtTime(today.sunrise)}</text><text x="190" y="69" fontSize="8" fill="currentColor" opacity=".8" textAnchor="end">{fmtTime(today.sunset)}</text>
             </svg>
+            {turn ? <p className="small feld-sonne"><ISun width={13} height={13} />{turn.text}</p> : null}
             <div className="grid2"><Stat value={fmtDuration(today.daylightSec / 60)} label="Tageslicht" /><Stat value={`${fmtNum(today.ghiSum, 1)} MJ/m²`} label="Einstrahlung heute" /></div>
           </>
         ) : <p className="muted small">–</p>}
@@ -105,7 +109,7 @@ export function Wetter() {
         <span className="pill pill--warn xs" style={{ alignSelf: 'flex-start' }}>PV = kWp × Einstrahlung / 1000 × 0,82 · Schätzung</span>
       </Panel>
       </PanelColumn>
-      <div className="hand hand--tr">{'Ideen wachsen\nbei jedem Wetter.'}</div>
+      <Spruchfeld />
     </>
   );
 }

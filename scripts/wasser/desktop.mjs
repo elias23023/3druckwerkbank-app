@@ -1,7 +1,7 @@
 // The desktop template, looked at: the REAL app at desktop size with the template injected (nothing is built in).
 // Needs the built app:  npm run build && npm run preview   (in a second terminal; "zeigen" only needs the build)
 //
-//   node scripts/wasser/desktop.mjs zeigen [--port 4320]
+//   node scripts/wasser/desktop.mjs zeigen [--port 4320] [--look <folder>]
 //        A small server with the built app and the template on top - open it in YOUR browser and use the app:
 //        http://localhost:4320 (wide window = desktop template, narrow = mobile template). The tone follows the app's own
 //        setting "Erscheinungsbild" (Dunkel -> "dunkel", Hell -> "klar", Automatisch -> the hour); ?ton=klar or ?ton=dunkel
@@ -28,7 +28,7 @@
 //        end the app's setting "Erscheinungsbild: Hell" switches the tone to "klar".
 // All take --look vorlage|ohne|<folder> (ohne = today's desktop), --engine chromium|webkit|firefox, --format, --reduced.
 import fs from 'fs'; import path from 'path'; import http from 'http';
-import { REPO, VORLAGE, abs, mkdir, args, strip, sharp } from './lib.mjs';
+import { REPO, abs, mkdir, args, strip, sharp, lookDir, isTemplate } from './lib.mjs';
 import { openDesktop, WELTEN } from './desktop-lib.mjs';
 
 const a = args({ look: 'vorlage', format: '2000', ton: '', zeit: 'nacht', engine: 'chromium', nur: '', port: '4320', toene: 'dunkel,klar', zeiten: 'nacht,tag' });
@@ -254,6 +254,7 @@ async function pruefen() {
     const out = await p.evaluate((w) => window.__rest.filter(([e]) => e.isConnected).map(([e, m]) => { const r = e.getBoundingClientRect(); return [Math.hypot(r.left + r.width / 2 - m[0], r.top + r.height / 2 - m[1]), m[2], (e.getAttribute('aria-label') || e.textContent || e.className).trim().slice(0, 22)]; }).filter(([dd, h]) => dd > Math.max(3, h * 0.12)).map(([dd, h, name]) => `${w}: „${name}“ ${dd.toFixed(0)} px`), w);
     await force([]); await p.waitForTimeout(300); return [k, out];
   };
+  await p.addStyleTag({ content: '.scroll-hint { animation: none !important; }' });   // (the app's own hint "Scrollen zum Erkunden" bobs 6 px by itself: not a hop under the pointer)
   let pressed = 0; const hopped = [];
   for (const w of WELTEN) { await d.welt(w); await p.waitForTimeout(900); const c = await census(); say(c.state === 'gl' && c.live >= 3 && c.live <= 12 && !c.over.length, `Welt ${w.padEnd(9)} Tropfen`, `${c.live} lebend (${c.onPanel} auf einem Panel), ${c.blurred} weichgezeichnete Flächen = ${c.pct} % des Bildschirms, ${c.lights} Lichter${c.over.length ? ', FREI ÜBER EINER INSEL: ' + c.over.join(' | ') : ''}`); const [k, h] = await hops(w); pressed += k; hopped.push(...h); }
   if (cdp) say(!hopped.length && pressed > 100, 'Gedrückt: nichts verlässt seinen Platz', `${pressed} klickbare Elemente in acht Welten${hopped.length ? ', VERSCHOBEN: ' + [...new Set(hopped)].slice(0, 6).join(' | ') : ''}`); else console.log('--   Gedrückt: nichts verlässt seinen Platz   (nicht geprüft: nur in Chromium möglich)');
@@ -360,7 +361,8 @@ async function clip(out) {
 const MIME = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8', json: 'application/json', webp: 'image/webp', avif: 'image/avif', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', woff2: 'font/woff2', woff: 'font/woff', ico: 'image/x-icon', webmanifest: 'application/manifest+json' };
 function zeigen() {
   const dist = abs('dist'); if (!fs.existsSync(`${dist}/index.html`)) { console.log('dist/ fehlt: zuerst "npm run build"'); process.exit(1); }
-  const own = { 'kern.css': `${VORLAGE}/kern.css`, 'mobil.css': `${VORLAGE}/mobil.css`, 'desktop.css': `${VORLAGE}/desktop.css`, 'wasser.js': `${VORLAGE}/wasser.js`, 'einspielen.js': 'scripts/wasser/einspielen.js' };
+  const dir = lookDir(look || 'vorlage'); if (!isTemplate(look || 'vorlage')) { console.log(`--look ${look}: keine Kopie der Vorlage (kern.css fehlt)`); process.exit(1); }   // (--look <folder>: another copy of the template; "ohne" is ?ohne=1 in the address)
+  const own = { 'kern.css': `${dir}/kern.css`, 'mobil.css': `${dir}/mobil.css`, 'desktop.css': `${dir}/desktop.css`, 'wasser.js': `${dir}/wasser.js`, 'einspielen.js': 'scripts/wasser/einspielen.js' };
   // the look goes in after the app's own stylesheets; "ohne" and "ton" are read from the address in the page itself
   const tags = `<script>(function(){var q=new URLSearchParams(location.search);if(q.has('ohne'))return;window.__wasserVorschau={ton:q.get('ton')||'auto'};
     document.write('<link rel="stylesheet" href="/__wasser/kern.css"><link rel="stylesheet" href="/__wasser/mobil.css"><link rel="stylesheet" href="/__wasser/desktop.css">'+(q.get('weich')==='aus'?'<style>[data-wasser] *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}</style>':'')+(q.get('leben')?'<style>[data-wasser]{--wa-leben:'+parseFloat(q.get('leben'))+'}</style>':'')+'<script src="/__wasser/wasser.js"><\\/script><script src="/__wasser/einspielen.js"><\\/script>');})();</script>`;

@@ -1,9 +1,16 @@
 # Wasser-Look: die Vorlage
 
+**Die Anleitung zum Ansehen, Anwenden und Einbauen ist [`docs/Wasser-Look.md`](../../Wasser-Look.md)** – Bausteine mit
+Rezepten, Dosierung, Töne, Bewegung, der Fahrplan für den Einbau in die App, Fallstricke, offene Punkte. Dort steht
+auch der aktuelle Stand (14.11.: am Handy eingebaut und live, der Desktop in Arbeit) und was der Besitzer seither
+entschieden hat. Dieses Blatt sagt nur, was in diesem Ordner liegt und was an der Vorlage zuletzt geprüft wurde.
+
 Stand 14.11. Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann – jetzt als
 **zwei Vorlagen zum Ansehen: Handy und Desktop**.
-**Nichts hier ist in die App eingebaut**: Build und Website laden diese Dateien nicht, `src/`, `public/`, `server/`
-sind unverändert. Die Vorlage wird von außen dazugeladen (Vorschauseite) oder in die laufende App eingespielt (Werkzeuge).
+**Dieser Ordner ist die Vorlage, nicht der Einbau**: Build und Website laden diese Dateien nicht. Die Vorlage wird von
+außen dazugeladen (Vorschauseite) oder in die laufende App eingespielt (Werkzeuge). In die App kommt sie über Kopien in
+`src/wasser/` (`node scripts/wasser/uebernehmen.mjs`): am Handy geschehen und seit 14.11. live, am Desktop in Arbeit –
+Stand und Fahrplan: `docs/Wasser-Look.md`, Abschnitt 8. Auf diesem Branch ist der App-Code noch der ohne Look.
 
 ## Was hier liegt
 
@@ -13,7 +20,7 @@ sind unverändert. Die Vorlage wird von außen dazugeladen (Vorschauseite) oder 
 | `mobil.css` | Was nur die mobile Ansicht braucht: Seitenabdunklung, Maße der Karten, Menüleiste, Bogen am unteren Rand. |
 | `desktop.css` | Was nur die Desktop-Ansicht braucht: flache Becken für die Panels, das Dock mit der fließenden Perle, die Schublade von rechts, Antwort auf den Mauszeiger. |
 | `wasser.js` | Das Skript: Wassertropfen (WebGL), Ring, fließende Markierung, Licht, Antwort aufs Scrollen, gemeinsames Ruhen. Zwei Befehle: `Wasser.start(optionen)` und `Wasser.stop()`; `Wasser.DESKTOP` sind die Angaben für den Desktop. |
-| `NOTIZEN.md` | Das Notizbuch für alle, die die Vorlage anwenden (englisch): Bausteine, Rezepte, Fallstricke, Prüfbefehle, offene Punkte. |
+| `NOTIZEN.md` | Das Notizbuch der Erbauer (englisch): alle Zahlen, Gründe und Messungen. Zum Anwenden zuerst die Anleitung `docs/Wasser-Look.md` lesen. |
 
 Die Werkzeuge: `scripts/wasser/`. Bilder der Desktop-Vorlage: `docs/wasser-look/bilder/desktop/` (siehe unten).
 Bilder der mobilen Vorlage: `docs/wasser-look/bilder/mobil/` –
@@ -92,6 +99,7 @@ node scripts/wasser/desktop.mjs pruefen                            # 24 Prüfung
 node scripts/wasser/desktop.mjs kontrast                           # Lesbarkeit: beide Töne, Nacht und Tag
 node scripts/wasser/desktop.mjs takt                               # Was der Look kostet (Bilder je Sekunde)
 node scripts/wasser/desktop.mjs clip /tmp/desktop.mp4              # der Rundgang als Film
+node scripts/wasser/stelle.mjs /tmp/stelle.png --welt heute --css '.glass.panel'   # eine einzelne Stelle: ein Bild und ihre berechneten Werte (--mobil: am Handy)
 ```
 
 ## Die Handy-Vorlage ansehen
@@ -199,7 +207,13 @@ vier mittlere Mängel gefunden (Tabelle in `NOTIZEN.md`, Abschnitt 11.4):
   Chromium): 64 Bildpaare mit 99 Millionen Bildpunkten – kein einziger weicht ab, auch nicht in den Tropfen; kein
   abweichender Stil; dieselbe Bewegung in 12 Bildstreifen.
 
-**Noch nie auf einem echten Handy und noch nie auf einer echten Grafikkarte gelaufen** – alles wurde auf der
-Arbeitsmaschine geprüft; ob es am iPhone und am eigenen Desktop flüssig läuft, ist offen (die Arbeitsmaschine zeichnet
-den Desktop von heute mit 9 bis 11 Bildern je Sekunde, die Vorlage mit 8). Womit man anfängt und welche eine Zeile
-man jeweils ändert, steht in `NOTIZEN.md`: Abschnitt 13 fürs Handy, Abschnitt 11.5 für den Desktop.
+**Nach dem Probelauf eines Neulings (14.11., mittags):** An der Vorlage selbst hat sich nur ein Kommentar im Kopf von
+`wasser.js` geändert (32 Bildpaare der Handy-Vorlage ohne einen abweichenden Bildpunkt; zwei Desktop-Welten angesehen).
+Geändert sind die Anleitung und die Werkzeuge: `--look <Ordner>` gilt jetzt überall, `stelle.mjs` zeigt und liest eine
+einzelne Stelle, `uebernehmen.mjs` liegt auch in diesem Branch (`docs/Wasser-Look.md`, Abschnitt 11).
+
+**Auf echten Geräten:** Der Handy-Einbau lief am 14.11. auf der Baustelle am Handy des Besitzers – flüssig, bis auf
+eine kurze Wartezeit beim Reiterwechsel (`docs/Wasser-Look.md`, Abschnitt 8, Schritt 8). Einzeln durchgemessen ist dort
+nichts. **Auf einer echten Grafikkarte lief der Desktop noch nie** (die Arbeitsmaschine zeichnet den Desktop von heute
+mit 9 bis 11 Bildern je Sekunde, die Vorlage mit 8). Womit man anfängt und welche eine Zeile man jeweils ändert, steht
+in `NOTIZEN.md`: Abschnitt 13 fürs Handy, Abschnitt 11.5 für den Desktop.
