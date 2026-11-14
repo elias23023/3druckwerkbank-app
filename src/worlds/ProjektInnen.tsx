@@ -56,7 +56,7 @@ export function ProjektInnen({ project: p }: { project: Project }) {
       <Panel title="Versionen" icon={<IGit />} right={<More t="versionen" />} style={{ left: '3.2%', top: '40%', width: '22%' }} delay={80}>
         {p.versions.length === 0 ? <p className="muted small">Noch keine Version.</p> : (
           <div className="row" style={{ gap: 6 }}>
-            {p.versions.slice(-3).map((v) => <button key={v.id} className={`col glass`} style={{ flex: 1, padding: 8, borderRadius: 10, alignItems: 'center', gap: 3, border: v.status === 'aktuell' ? '1px solid #7cc6ff' : undefined }} onClick={() => open('versionen')}><IGit width={18} height={18} /><b className="small">{v.label}</b><span className={`pill xs ${VSTAT[v.status]}`}>{v.status}</span></button>)}
+            {p.versions.slice(-3).map((v) => <button key={v.id} className={`col glass${v.status === 'aktuell' ? ' col--aktuell' : ''}`} style={{ flex: 1, padding: 8, borderRadius: 10, alignItems: 'center', gap: 3 }} onClick={() => open('versionen')}><IGit width={18} height={18} /><b className="small">{v.label}</b><span className={`pill xs ${VSTAT[v.status]}`}>{v.status}</span></button>)}
           </div>
         )}
         <button className="btn btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => open('versionen')}>Versionen vergleichen <IChevR width={12} height={12} /></button>

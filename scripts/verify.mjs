@@ -14,8 +14,9 @@ const wx = page.waitForResponse((r) => r.url().includes('api.open-meteo.com'), {
 await page.goto(`${base}/#/start`, { waitUntil: 'networkidle' });
 const res = await wx;
 check('Open-Meteo response', !!res && res.ok(), res ? String(res.status()) : 'none');
-await page.waitForFunction(() => /°C/.test(document.querySelector('.topbar')?.textContent ?? ''), null, { timeout: 15000 }).catch(() => {});
-check('Weather chip shows °C', /°C/.test(await page.locator('.topbar').textContent()));
+// on the start world the weather stands in the card of the day (.tk), the top bar shows its chip in the other worlds only
+await page.waitForFunction(() => /°C/.test(document.querySelector('.tk')?.textContent ?? ''), null, { timeout: 15000 }).catch(() => {});
+check('Weather chip shows °C', /°C/.test(await page.locator('.tk').textContent()));
 check('Scene ready', (await page.getAttribute('.stage', 'data-scene-ready')) === 'true');
 check('Start world shows 6 islands with titles', (await page.locator('.island__label--big b').count()) === 6);
 check('Start world has no status cards', (await page.locator('.minicard').count()) === 0);

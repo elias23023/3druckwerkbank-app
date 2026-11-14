@@ -1,20 +1,21 @@
 import { useMemo, useState } from 'react';
 import './mobile.css';
+import { useWasser } from '../wasser/wasser'; // nach mobile.css: die Stylesheets des Looks kommen zuletzt
 import { useStore, availableGrams, activeProjects, archivedProjects, printProgress, printRemainingMin, liveProjects } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { navigate, useRoute } from '../router';
-import { useNow, greeting, quoteOfDay, sameDay } from '../lib/time';
-import { fmtLongDate, fmtTime, fmtNum, fmtGrams, fmtDuration, relTime, fmtDate, fmtDayShort } from '../lib/format';
+import { useNow, sameDay } from '../lib/time';
+import { fmtTime, fmtNum, fmtGrams, fmtDuration, relTime, fmtDate, fmtDayShort } from '../lib/format';
 import { NotesField } from '../forms/ProjektDetail';
 import { STATUS_COLOR } from '../forms/GeraetForm';
 import { bestPvWindow, todayDaily, wmo, pvKw } from '../lib/weather';
 import { sceneLook, type Look } from '../scene/looks';
-import { resolveSeason, SEASON_META, daysUntilNextSeason } from '../lib/season';
 import { islandSrc } from '../scene/Island';
 import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { Logo } from '../ui/TopBar';
 import { Check, Progress, Stack } from '../ui/Glass';
 import { WeatherIcon } from '../ui/WeatherIcon';
+import { Tageskarte } from '../ui/Tageskarte';
 import { SheetHost } from '../ui/SheetHost';
 import { CommandBar } from '../ui/CommandBar';
 import { Toast } from '../ui/Toast';
@@ -40,6 +41,7 @@ export function Mobile() {
   const s = useStore(useShallow((st) => ({ settings: st.settings, weather: st.weather, sheet: st.ui.sheet, commandOpen: st.ui.commandOpen, projects: st.projects })));
   const openSheet = useStore((st) => st.openSheet); const setCommand = useStore((st) => st.setCommand);
   const hints = useHints();
+  useWasser();
   const today = todayDaily(s.weather?.data, now);
   const look: Look = sceneLook(now, today?.sunrise, today?.sunset, s.weather?.data.hourly.length ? s.weather.data.current.code : undefined);
   const tab: Tab = route.world === 'heute' ? 'heute' : route.world === 'projekte' ? 'projekte' : route.world === 'material' ? 'material' : route.world === 'start' ? 'start' : 'mehr';
@@ -50,7 +52,7 @@ export function Mobile() {
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
-    <div className="m-shell" data-look={look}>
+    <div className="m-shell" data-wasser="mobil" data-look={look}>
       <div className="m-bg" aria-hidden><img key={scene} src={`/img/szene-${scene}-1280.webp`} srcSet={`/img/szene-${scene}-640.webp 640w, /img/szene-${scene}-1280.webp 1280w`} sizes="100vw" alt="" /></div>
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
@@ -76,7 +78,6 @@ export function Mobile() {
 function MStart({ now }: { now: Date }) {
   const { settings, weather, prints, devices, appointments, tasks, projects } = useStore(useShallow((st) => ({ settings: st.settings, weather: st.weather, prints: st.prints, devices: st.devices, appointments: st.appointments, tasks: st.tasks, projects: st.projects })));
   const openSheet = useStore((st) => st.openSheet);
-  const cur = weather?.data.hourly.length ? weather.data.current : undefined;
   const running = prints.filter((p) => p.status === 'läuft');
   const pv = weather?.data.hourly.length ? bestPvWindow(weather.data.hourly, settings.pvKwp, 3, now) : null;
   const events = useMemo(() => {
@@ -89,10 +90,7 @@ function MStart({ now }: { now: Date }) {
   }, [running, appointments, devices, tasks, now]);
   return (
     <>
-      <div className="m-clock"><b>{fmtTime(now)}</b><span>{fmtLongDate(now)}</span><span className="xs" style={{ color: 'rgba(255,255,255,.8)' }}>{SEASON_META[resolveSeason(settings.season, now)].label} · noch {daysUntilNextSeason(now)} Tage bis {SEASON_META[resolveSeason(settings.season, now)].next}</span><span style={{ color: '#fff', fontSize: 16, marginTop: 8 }}>{greeting(now)}{settings.userName ? `, ${settings.userName}` : ''}</span>{settings.showQuote ? <p className="q">„{quoteOfDay(now)}“</p> : null}</div>
-      <Card>
-        {cur ? <div className="row" style={{ gap: 12 }}><WeatherIcon code={cur.code} isDay={cur.isDay} size={40} /><div className="col grow" style={{ gap: 1 }}><b className="m-big">{fmtNum(cur.temp)} °C</b><span className="small muted">{wmo(cur.code).label} · {settings.location.name.split(',')[0]}</span></div><div className="col xs muted" style={{ textAlign: 'right' }}><span>{pv ? `Solarfenster ${fmtTime(pv.start)}` : 'kein Solarfenster'}</span><span>Open-Meteo</span></div></div> : <span className="muted small">{weather?.error ? 'Wetter nicht verfügbar' : 'Wetter …'}</span>}
-      </Card>
+      <Tageskarte now={now} pvStart={pv?.start} variant="mobil" />
       <Card title="Läuft gerade" icon={<IPrinter />} count={running.length} onMore={() => navigate({ world: 'druck' })}>
         {running.length === 0 ? <span className="muted small">Kein Druck läuft.</span> : running.map((p) => (
           <div key={p.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'druck', printId: p.id })}>

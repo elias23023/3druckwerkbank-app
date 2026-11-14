@@ -19,10 +19,8 @@
 .m-card h3 .cnt { margin-left: auto; font-weight: 500; }
 .m-card h3 .btn--icon { color: var(--text-2); background: rgba(255,255,255,.08); padding: 0; width: 34px; height: 34px; }
 .m-card h3 .btn--icon svg { width: 18px; height: 18px; }
-.m-clock { padding: 18px 4px 8px; text-shadow: 0 2px 16px rgba(0,0,0,.6); }
-.m-clock b { font-size: 56px; font-weight: 600; letter-spacing: -.03em; line-height: 1; display: block; }
-.m-clock span { display: block; font-size: 14px; color: var(--text-2); margin-top: 4px; }
-.m-clock .q { font-size: 15px; color: #fff; margin-top: 10px; line-height: 1.3; }
+/* Start: the card of the day is the shared component src/ui/Tageskarte.tsx (rules .tk* in global.css, block „Tageskarte“). Here only what the phone's card needs as a .glass.m-card ("Becken" of the Wasser-Look; its two tiles are .m-row, "Mulde"). */
+.m-today { flex: none; margin-top: 6px; padding: 16px 16px 14px; gap: 14px; }
 .m-row { display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-radius: 12px; background: rgba(255,255,255,.06); min-height: 52px; }
 .m-row--click { cursor: pointer; }
 .m-row--click:active { background: rgba(255,255,255,.14); }

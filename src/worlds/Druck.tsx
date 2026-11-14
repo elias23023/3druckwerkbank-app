@@ -86,7 +86,7 @@ export function Druck() {
       </PanelColumn>
 
 
-      <Panel strong style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100}
+      <Panel strong className="panel--haupt" style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100}
         foot={main ? <><button className="btn btn--sm btn--primary" onClick={() => a.openSheet({ kind: 'druck', printId: main.id })}>Ergebnis buchen</button>{running.length > 1 ? running.filter((p) => p.id !== main.id).map((p) => <button key={p.id} className="btn btn--sm" onClick={() => setPick(p.id)}>{devices.find((d) => d.id === p.printerId)?.name ?? 'Drucker'} zeigen</button>) : null}{idle.map((d) => <button key={d.id} className="btn btn--sm" onClick={() => a.startNextPrint(d.id)}><IPlay width={12} height={12} /> {d.name} starten</button>)}<button className="btn btn--sm btn--ghost btn--danger" style={{ marginLeft: 'auto' }} onClick={() => { if (confirm(`Laufenden Druck „${main.name}“ abbrechen? Es wird kein Material gebucht.`)) a.cancelPrint(main.id); }}><IX width={12} height={12} /> Druck abbrechen</button></> : printers.length === 0 ? <button className="btn btn--sm btn--primary" onClick={() => a.openSheet({ kind: 'geraetForm', deviceKind: 'drucker' })}><IPlus width={12} height={12} /> Drucker anlegen</button> : <>{printers.map((d) => <button key={d.id} className="btn btn--sm btn--primary" disabled={!queue.some((q) => q.printerId === d.id && readiness(q).ok)} onClick={() => a.startNextPrint(d.id)}><IPlay width={12} height={12} /> {d.name} starten</button>)}</>}>
         {main ? (
           <div className="row" style={{ gap: 16 }}>

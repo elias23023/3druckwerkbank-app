@@ -73,7 +73,7 @@ export function Wetter() {
       </Panel>
       </PanelColumn>
 
-      <Panel title="Nächste 24 Stunden" icon={<IClock />} style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100} right={<span className="xs faint">Kurve: Temperatur · Balken: Solarstrom-Schätzung ({settings.pvKwp} kWp)</span>}>
+      <Panel title="Nächste 24 Stunden" icon={<IClock />} className="panel--haupt" style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100} right={<span className="xs faint">Kurve: Temperatur · Balken: Solarstrom-Schätzung ({settings.pvKwp} kWp)</span>}>
         {!hours.length ? <p className="muted small">{weather?.error ? 'Die Wetterdaten sind gerade nicht erreichbar. Ein neuer Versuch folgt automatisch in wenigen Minuten.' : 'Wetter wird geladen …'}</p> : null}
         {hours.length ? <svg className="tcurve" viewBox="0 0 200 70" preserveAspectRatio="none"><polyline points={curve} fill="none" stroke="#ffbd6b" strokeWidth="1.5" vectorEffect="non-scaling-stroke" /><circle cx="0" cy={60 - ((hours[0].temp - tmin) / Math.max(1, tmax - tmin)) * 50} r="2.5" fill="#fff" /></svg> : null}
         <div className="hours">
@@ -101,7 +101,7 @@ export function Wetter() {
         {best.length ? <div className="pills">{best.map((h) => <span key={h.time} className={`pill xs ${h.q === 'sehr gut' ? 'pill--ok' : h.q === 'gut' ? 'pill--acc' : ''}`} title={h.q}>{fmtDayShort(h.time)} {fmtTime(h.time)} · {fmtNum(h.kw, 1)} kW</span>)}</div> : <p className="small muted">Keine geeigneten Stunden (≥ 0,5 kW, ≤ 60 % Regen) in 48 h.</p>}
         {pv ? <div className="col" style={{ gap: 2 }}><b className="small">Druck mit Solarstrom</b><span className="small">{fmtTime(pv.start)}–{fmtTime(new Date(new Date(pv.end).getTime() + 3600_000))} Uhr ({fmtDayShort(pv.start)}), ≈ {fmtNum(pv.kwh, 1)} kWh</span><span className="xs muted">für {queued[0] ? `„${queued[0].name}“ (${fmtDuration(queued[0].estimatedMinutes)})` : `einen ${dur}-h-Druck`}, gesamte Druckdauer berücksichtigt</span></div> : null}
         {dry ? <div className="col" style={{ gap: 2 }}><b className="small">Trocken & windstill für Außenarbeit</b><span className="small">{fmtDayShort(dry.start)} {fmtTime(dry.start)}–{fmtTime(new Date(new Date(dry.end).getTime() + 3600_000))} Uhr</span></div> : null}
-        {alerts.map((al, i) => <div key={i} className={`alert ${al.level}`}>{al.level === 'warn' ? <IBolt width={16} height={16} style={{ color: '#ffb547', flex: 'none' }} /> : <IInfo width={16} height={16} style={{ color: '#7cc6ff', flex: 'none' }} />}<div className="col" style={{ gap: 0 }}><b className="small">{al.title}</b><span className="xs muted">{al.detail}</span></div></div>)}
+        {alerts.map((al, i) => <div key={i} className={`alert ${al.level}`}>{al.level === 'warn' ? <IBolt width={16} height={16} style={{ color: '#ffb547', flex: 'none' }} /> : <IInfo width={16} height={16} style={{ flex: 'none' }} />}<div className="col" style={{ gap: 0 }}><b className="small">{al.title}</b><span className="xs muted">{al.detail}</span></div></div>)}
         <span className="pill pill--warn xs" style={{ alignSelf: 'flex-start' }}>PV = kWp × Einstrahlung / 1000 × 0,82 · Schätzung</span>
       </Panel>
       </PanelColumn>

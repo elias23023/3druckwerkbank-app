@@ -21,6 +21,7 @@ import { Material } from './worlds/Material';
 import { Wetter } from './worlds/Wetter';
 import { Archiv } from './worlds/Archiv';
 import { Mobile } from './mobile/Mobile';
+import { useWasser } from './wasser/wasser'; // nach Mobile (dort nach mobile.css): die Stylesheets des Looks kommen zuletzt
 import { Tagesportal } from './ui/Tagesportal';
 import { useAuth, useCloudBoot, startSync, stopSync, confirmEmail, liveMode, useAuthUser } from './lib/cloud';
 import { resolveSeason } from './lib/season';
@@ -60,6 +61,9 @@ export function App() {
   useEffect(() => { document.documentElement.dataset.motion = motionReduced ? 'reduziert' : 'voll'; }, [motionReduced]);
   // Panels sind für 1920×1080 gesetzt: auf flacheren oder kleineren Bildschirmen werden sie als Ganzes kleiner, statt Inhalte abzuschneiden
   useEffect(() => { const on = () => document.documentElement.style.setProperty('--ui-scale', Math.max(0.78, Math.min(1.2, window.innerWidth / 1920, window.innerHeight / 1080)).toFixed(3)); on(); window.addEventListener('resize', on); return () => window.removeEventListener('resize', on); }, []);
+  // Wasser-Look am Desktop: Die Bühne (Stage) trägt data-wasser="desktop", das Skript läuft hier genau einmal mit den Desktop-Optionen.
+  // In der mobilen Ansicht ruht dieser Aufruf; dort startet Mobile() den Look. Es gibt immer nur eine Instanz.
+  useWasser(window.Wasser.DESKTOP, !mobile);
   const today = todayDaily(weather?.data, now);
   const phase = dayPhase(now, today?.sunrise, today?.sunset);
   const look = sceneLook(now, today?.sunrise, today?.sunset, weather?.data.hourly.length ? weather.data.current.code : undefined);
@@ -90,9 +94,12 @@ export function App() {
     handle(); window.addEventListener('hashchange', handle); return () => window.removeEventListener('hashchange', handle);
   }, []);
   useEffect(() => {
-    const theme = mobile ? 'dunkel' : settings.theme === 'auto' ? (DARK_LOOKS.has(look) ? 'dunkel' : 'hell') : settings.theme;
-    document.documentElement.dataset.theme = theme;
-  }, [settings.theme, look, mobile]);
+    // Wasser-Look (mobil und Desktop): Das Thema der App bleibt „dunkel“ (der Look hat in beiden Tönen helle Schrift; das alte helle Thema wird nicht mehr gesetzt).
+    // Die Einstellung „Erscheinungsbild“ wählt den Ton des Looks: Dunkel = kein Attribut, Hell = „klar“, Automatisch = nach der Tageszeit
+    document.documentElement.dataset.theme = 'dunkel';
+    const klar = settings.theme === 'auto' ? !DARK_LOOKS.has(look) : settings.theme === 'hell';
+    if (klar) document.documentElement.dataset.waTon = 'klar'; else delete document.documentElement.dataset.waTon;
+  }, [settings.theme, look]);
 
   // weather fetch with 30 min cache
   const [weatherTick, setWeatherTick] = useState(0);

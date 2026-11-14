@@ -52,7 +52,7 @@ export function Material() {
       </Panel>
       </PanelColumn>
 
-      <Panel title="Rollen" icon={<ISpool />} style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100}
+      <Panel title="Rollen" icon={<ISpool />} className="panel--haupt" style={{ left: '27%', top: '60%', bottom: '10.5%', width: '43.5%' }} delay={100}
         right={<div className="row" style={{ gap: 6 }}><input className="input" style={{ width: 130, padding: '4px 8px', fontSize: 12 }} placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} /><select className="select" style={{ width: 'auto', padding: '4px 6px', fontSize: 12 }} value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}><option value="material">nach Material</option><option value="avail">nach Verfügbarkeit</option><option value="label">nach Name / Lagerort</option></select></div>}
         foot={<><div className="pills"><button className={`pill xs${mat === 'alle' ? ' pill--on' : ''}`} onClick={() => setMat('alle')}>Alle</button>{mats.map((m) => <button key={m} className={`pill xs${mat === m ? ' pill--on' : ''}`} onClick={() => setMat(m)}>{m}</button>)}</div></>}>
         {spools.length === 0 ? <div className="col" style={{ gap: 8, alignItems: 'flex-start' }}><p className="small">Noch keine Rolle angelegt. Mit deinen Rollen siehst du Bestand, Reservierungen und Verbrauch auf einen Blick.</p><button className="btn btn--primary btn--sm" onClick={() => openSheet({ kind: 'spule' })}><IPlus width={12} height={12} /> Erste Rolle anlegen</button></div> : list.length === 0 ? <p className="muted small">Keine Rolle passt zur Suche.</p> : null}

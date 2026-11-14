@@ -35,7 +35,7 @@ export function Stage({ phase, look, world, parallax, islands, children, weather
     return () => { window.removeEventListener('pointermove', move); if (raf) cancelAnimationFrame(raf); };
   }, [parallax, parallaxStrength]);
   return (
-    <div className="stage" ref={ref} data-scene-ready={ready ? 'true' : 'false'} data-phase={phase} data-look={look} data-night={night ? 'true' : 'false'} data-season={season} style={{ ['--sx' as string]: m.sx, ['--sy' as string]: m.sy, ['--season-filter' as string]: SEASON_META[season].islandFilter }}>
+    <div className="stage" data-wasser="desktop" ref={ref} data-scene-ready={ready ? 'true' : 'false'} data-phase={phase} data-look={look} data-night={night ? 'true' : 'false'} data-season={season} style={{ ['--sx' as string]: m.sx, ['--sy' as string]: m.sy, ['--season-filter' as string]: SEASON_META[season].islandFilter }}>
       <div className="stage__bg">
         <Landscape look={look} season={season} onReady={onReady} />
         <Clouds look={look} />
