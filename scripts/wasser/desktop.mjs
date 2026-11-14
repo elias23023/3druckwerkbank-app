@@ -17,6 +17,7 @@
 //        of buttons, the drawer opening, the arrow beside the island pressed (pfeil), the running line of a print (fluss).
 //   node scripts/wasser/desktop.mjs kontrast [--toene dunkel,klar] [--zeiten nacht,tag] [--format 2000] [--nur <name part>]
 //        WCAG contrast of the texts against the pixels really behind the glyphs (as kontrast.mjs does for the phone).
+//        --zeiten also takes ISO times: 2027-01-15T12:40:00+01:00 is a winter day (snow in the landscape, the brightest ground).
 //        One element of your own, without editing this file:  node scripts/wasser/kontrast.mjs --css '<selector>' --desktop ...
 //   node scripts/wasser/desktop.mjs pruefen [--ton klar] [--format 1920]
 //        Checks: few live drops in every world and none free over an island, nothing leaves its place while it is pressed,
@@ -40,7 +41,7 @@ import { openDesktop, WELTEN } from './desktop-lib.mjs';
 
 const MODES = ['zeigen', 'bild', 'film', 'kontrast', 'pruefen', 'takt', 'clip'];
 const a = args({ look: 'auto', format: '2000', ton: '', zeit: 'nacht', engine: 'chromium', nur: '', port: '4320', toene: 'dunkel,klar', zeiten: 'nacht,tag', out: '', sekunden: '5', crf: '' },
-  { flags: ['alles', 'reduced'], choices: { engine: ENGINES, ton: ['dunkel', 'klar', 'auto'], toene: TOENE, zeit: [...Object.keys(ZEITEN), '<iso>'], zeiten: Object.keys(ZEITEN), format: ['2000', '1920', '<WxH>'] } });
+  { flags: ['alles', 'reduced'], choices: { engine: ENGINES, ton: ['dunkel', 'klar', 'auto'], toene: TOENE, zeit: [...Object.keys(ZEITEN), '<iso>'], zeiten: [...Object.keys(ZEITEN), '<iso>'], format: ['2000', '1920', '<WxH>'] } });
 const mode = a._[0]; if (mode && !MODES.includes(mode)) fail(`"${mode}": one of ${MODES.join(' | ')}`); if (a._.length > (['bild', 'film', 'clip'].includes(mode) ? 2 : 1)) fail(`too many words: ${a._.slice(1).join(' ')}`);
 // the options each mode really reads: one that belongs to another mode ends the tool too (else "pruefen --toene klar" would
 // check "dunkel" without a word - pruefen takes --ton; kontrast takes --toene and --zeiten; clip chooses its tone itself)

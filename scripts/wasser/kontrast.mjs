@@ -20,7 +20,8 @@
 //   --art      text (default) | platzhalter (the ::placeholder of a field) | wert (the text typed into a field or shown by a select)
 //   --grenze   the floor it must reach (default 4.5; platzhalter 3; a title on the desktop should reach 7)
 //   --desktop  on the desktop (2000 x 993, by night and by day) instead of the phone. --zeiten: the hours to measure at
-//              (morgen tag abend nacht; phone: default the real hour, with a name the clock stands still and there is no weather)
+//              (morgen tag abend nacht, or an ISO time - 2027-01-15T12:40:00+01:00 is a winter day with snow in the desktop's
+//              landscape; phone: default the real hour, with a name or a time the clock stands still and there is no weather)
 // Exit code 1 when a median falls below its floor, or when --css matched nothing. --out <dir> keeps the small pictures that were
 // measured and the table (kontrast-<engine>.txt); without it nothing is kept.
 // --look: head of lib.mjs. Default auto: the app is measured with the look it has BUILT IN, the harness page with the template.
@@ -28,7 +29,7 @@ import fs from 'fs'; import os from 'os'; import path from 'path';
 import { session, rgb, args, outDir, lookArg, sayLook, geheZu, fail, TOENE, ENGINES, SZENEN, ZEITEN } from './lib.mjs';
 import { openDesktop } from './desktop-lib.mjs';
 const a = args({ look: 'auto', toene: 'dunkel,klar', engine: 'chromium', szenen: 'start,wetter,innen', out: '', css: '', welt: '', bogen: '', klick: '', art: 'text', name: '', grenze: '', format: '2000', zeiten: '' },
-  { flags: ['app', 'desktop'], choices: { toene: TOENE, engine: ENGINES, szenen: SZENEN, art: ['text', 'platzhalter', 'wert'], zeiten: Object.keys(ZEITEN), format: ['2000', '1920', '<WxH>'] } });
+  { flags: ['app', 'desktop'], choices: { toene: TOENE, engine: ENGINES, szenen: SZENEN, art: ['text', 'platzhalter', 'wert'], zeiten: [...Object.keys(ZEITEN), '<iso>'], format: ['2000', '1920', '<WxH>'] } });
 if (a._.length) fail(`this tool takes no word without "--": ${a._.join(' ')}`); if (!a.css && (a.welt || a.bogen || a.klick || a.desktop || a.name || a.grenze)) fail('--welt, --bogen, --klick, --name, --grenze and --desktop belong to --css <selector> (one element of your own)');
 const appLook = lookArg(a.look), hLook = lookArg(a.look, { harness: true }); if (!appLook) fail('--look ohne: this tool measures the look');
 const od = outDir(a.out, 'kontrast'), out = od.dir; const s = await session({ engine: a.engine }); const table = {}; const cols = []; let low = []; let vw = 390, missing = 0;
