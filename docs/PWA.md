@@ -14,9 +14,9 @@ Die Werkbank lässt sich als App installieren (Desktop: „App installieren“, 
 | `index.html` | Manifest, Favicon als Datei, `apple-touch-icon`, Angaben fürs iPhone |
 
 ## App-Symbol
-- **Im Git liegt ein Platzhalter**: das Sechseck-Logo der App auf dunklem Grund, aus der eigenen Vektorzeichnung gerendert.
-- Das echte Symbol erzeugt der Nutzer mit seiner Bild-KI: `assets-src/app-symbol.png`, quadratisch, mindestens 1024 × 1024, Hintergrund bis zum Rand (keine Transparenz, keine runden Ecken, kein Text), Motiv in der Mitte mit Luft zum Rand.
-- Danach: `node scripts/optimize-appicon.mjs` → `icon-192.png`, `icon-512.png` („any“, runde Ecken), `icon-maskable-192.png`, `icon-maskable-512.png` („maskable“: Bild auf 80 % verkleinert, Rand in der Randfarbe des Bildes; hat das Bild selbst schon genug Rand: `--maskable-scale 1`), `apple-touch-icon.png` (180, ohne Transparenz), `favicon-32.png`, `favicon-16.png`. Das Skript druckt, was es geschrieben hat. `ASSET_VERSION` muss dafür nicht erhöht werden: Die Symbole stecken in der Kennung des Builds.
+- Das Symbol ist das Bild des Nutzers (schwebende Insel mit Werkbank und 3D-Drucker auf blauem Grund, seit 14.11.). Fehlt die Quelldatei, rendert das Skript als Ausweg das Sechseck-Logo der App auf dunklem Grund.
+- Quelle aus der Bild-KI des Nutzers: `assets-src/app-symbol.png`, quadratisch, mindestens 1024 × 1024, Hintergrund bis zum Rand (keine Transparenz, keine runden Ecken, kein Text), Motiv in der Mitte mit Luft zum Rand.
+- Danach: `node scripts/optimize-appicon.mjs` → `icon-192.png`, `icon-512.png` („any“, runde Ecken), `icon-maskable-192.png`, `icon-maskable-512.png` („maskable“: Bild auf 85 % verkleinert, der Rand setzt die Randpixel des Bildes fort; hat das Bild selbst schon genug Rand: `--maskable-scale 1`), `apple-touch-icon.png` (180, ohne Transparenz), `favicon-32.png`, `favicon-16.png`. Das Skript druckt, was es geschrieben hat. `ASSET_VERSION` muss dafür nicht erhöht werden: Die Symbole stecken in der Kennung des Builds.
 - Bildschirmfotos für den Installationsdialog neu aufnehmen (Beispiel-Werkstatt, feste Uhrzeit, braucht Open-Meteo): `npm run preview`, dann `node scripts/optimize-appicon.mjs --screenshots http://localhost:4173`.
 - Betriebssysteme merken sich Symbol und Namen beim Installieren. Nach einem neuen Symbol: App am Gerät entfernen und neu installieren (Chrome am Desktop und Android gleichen nach einiger Zeit selbst ab, das iPhone nie).
 

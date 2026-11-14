@@ -14,7 +14,7 @@ const opt = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1
 const INPUT = 'assets-src/app-symbol.png';
 const OUT = 'public/icons';
 const BG = '#0b1220'; // same as theme_color / background_color in public/manifest.webmanifest
-const MASKABLE_SCALE = Number(opt('--maskable-scale') ?? 0.8);
+const MASKABLE_SCALE = Number(opt('--maskable-scale') ?? 0.85); // share of the canvas the picture keeps in the maskable icons
 const S = 1024;
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -39,16 +39,12 @@ if (fs.existsSync(INPUT)) {
   source = `${INPUT} (${meta.width}×${meta.height})`;
   // transparent parts (if any) get the dark ground of the app
   base = await sharp(INPUT).resize(S, S, { fit: 'cover' }).flatten({ background: BG }).png().toBuffer();
-  // maskable: launchers cut a circle or a rounded square out of the image. Shrink the picture and fill the rim with the colour of its own edge.
+  // maskable: launchers cut a circle or a rounded square out of the image. Shrink the picture and continue its own edge pixels outwards (seamless on plain and gradient grounds).
   const inner = Math.round(S * MASKABLE_SCALE);
   if (inner >= S) maskable = base;
   else {
-    const rim = Math.max(2, Math.round(S * 0.02));
-    const strips = await Promise.all([{ left: 0, top: 0, width: S, height: rim }, { left: 0, top: S - rim, width: S, height: rim }, { left: 0, top: 0, width: rim, height: S }, { left: S - rim, top: 0, width: rim, height: S }]
-      .map((r) => sharp(base).extract(r).stats()));
-    const [r, g, b] = [0, 1, 2].map((c) => Math.round(strips.reduce((a, s) => a + s.channels[c].mean, 0) / strips.length));
-    maskable = await sharp({ create: { width: S, height: S, channels: 3, background: { r, g, b } } })
-      .composite([{ input: await sharp(base).resize(inner, inner).toBuffer(), left: Math.round((S - inner) / 2), top: Math.round((S - inner) / 2) }]).png().toBuffer();
+    const pad = Math.round((S - inner) / 2);
+    maskable = await sharp(await sharp(base).resize(inner, inner).toBuffer()).extend({ top: pad, bottom: S - inner - pad, left: pad, right: S - inner - pad, extendWith: 'copy' }).png().toBuffer();
   }
 } else {
   source = `PLATZHALTER (Sechseck-Logo der App, ${INPUT} fehlt)`;
