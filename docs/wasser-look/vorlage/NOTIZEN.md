@@ -7,9 +7,9 @@ kept (they are the names the owner knows). Read `LIESMICH.md` first for what is 
 owner's decisions are in `docs/wasser-look/entwurf/entscheidungen.md` and override everything here.
 
 **The guide for applying the template and building it into the app is `docs/Wasser-Look.md` (German).** It was written
-after this notebook and tested step by step in a scratch copy of the repository; where the two disagree about HOW to
-build the look in (section 10 here), the guide is right. This notebook stays the place for numbers, reasons and
-measurements.
+after this notebook, tested in scratch copies, and knows the owner's later decisions (7 to 11) and the state of the
+integration; where the two disagree about the state or about HOW to build the look in (section 10 here), the guide is
+right. This notebook stays the place for numbers, reasons and measurements.
 
 The template is not built into the app. It was made from the approved look (`docs/wasser-look/entwurf/nachgebessert`,
 a stylesheet and a script injected under `.m-shell`) by restructuring, plus the few corrections of 14.11.;
@@ -774,12 +774,17 @@ with pretended costs or forced levels, never by a machine that really got slow a
 
 ## 10. Building it into the app (not done; the owner decides when)
 
-> Superseded as a to-do list by `docs/Wasser-Look.md`, section 8 ("Fahrplan"), which was carried out once in a scratch
-> copy on 14.11. What that run changed against the points below: (2) the hook is called in `Mobile()` and in `Stage()`,
-> not in `App()` (which returns early for the mobile shell); `wasser.ts` must import the app's own stylesheets BEFORE
-> the look's, or the built CSS carries the look before `mobile.css` as soon as `Stage.tsx` imports the module;
-> (6) `scripts/verify.mjs` has now been run against such a build: 69 of 69; and after the tone follows the app's
-> setting, `openApp` in `scripts/wasser/lib.mjs` must set the tone both ways (one line, in the guide's step 3).
+> Superseded as a to-do list by `docs/Wasser-Look.md`, section 8 ("Fahrplan"). State 14.11., 11:10: the look IS built
+> into the mobile shell (commit `c7e8299`, on `main`, live); the desktop is being built in on `welt/wasser-desktop`
+> (`e6eb9ef`, an intermediate state). What is different from the points below: (1) the copies are fetched by
+> `node scripts/wasser/uebernehmen.mjs` (they carry one head line more than the template); (2) the hook is called in
+> `Mobile()` and - with a flag - in `App()` AFTER the effect that sets `--ui-scale` (started before it, the drops are
+> measured at the wrong scale); the cleaned-up inline styles are bridged by `src/wasser/einbau.css` for now;
+> (6) `scripts/verify.mjs` has been run against builds with the look: 69 of 69. Three small safeguards found while
+> the guide was tested are still open (its step 5): `wasser.ts` should import the app's own stylesheets before the
+> look's (a module imported before `Mobile.tsx` that imports `wasser.ts` puts the look BEFORE `mobile.css` in the built
+> CSS), `openApp` in `scripts/wasser/lib.mjs` must set the tone both ways now that the app sets it itself, and
+> `desktop.mjs pruefen` must not measure the app's own bobbing hint.
 
 1. Copy the four files to `src/wasser/` (the script as `wasser-skript.js`), add `wasser.ts` (head of `wasser.js`).
    Import order: after `mobile.css` and `global.css`. Tried in a scratch project with the app's Vite 8 and target

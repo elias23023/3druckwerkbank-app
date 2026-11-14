@@ -1,8 +1,10 @@
 # Wasser-Look: die Vorlage
 
 **Die Anleitung zum Ansehen, Anwenden und Einbauen ist [`docs/Wasser-Look.md`](../../Wasser-Look.md)** – Bausteine mit
-Rezepten, Dosierung, Töne, Bewegung, der Fahrplan für den Einbau in die App, Fallstricke, offene Punkte. Dieses Blatt
-sagt nur, was in diesem Ordner liegt und was zuletzt geprüft wurde.
+Rezepten, Dosierung, Töne, Bewegung, der Fahrplan für den Einbau in die App, Fallstricke, offene Punkte. Dort steht
+auch der aktuelle Stand (14.11.: am Handy eingebaut und live, der Desktop in Arbeit) und was der Besitzer seither
+entschieden hat. Dieses Blatt sagt nur, was in diesem Ordner liegt und was an der Vorlage zuletzt geprüft wurde; wo es
+„nichts ist eingebaut“ sagt, gilt die Anleitung.
 
 Stand 14.11. Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann – jetzt als
 **zwei Vorlagen zum Ansehen: Handy und Desktop**.
