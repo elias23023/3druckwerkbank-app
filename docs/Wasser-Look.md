@@ -71,7 +71,7 @@ npm run build
 node scripts/wasser/desktop.mjs zeigen
 ```
 
-Dann http://localhost:4320 öffnen. Das ist die gebaute App mit der Vorlage obendrauf. Strg+C beendet.
+Dann http://localhost:4320 öffnen. Das ist die gebaute App mit der Vorlage obendrauf. Strg+C beendet. (Nur solange der Look nicht eingebaut ist. Danach zeigt `npm run preview` ihn von selbst.)
 
 - Breites Fenster = Desktop-Vorlage. Schmales Fenster (unter 900 px) = Handy-Vorlage.
 - Am Desktop folgt der Ton der Einstellung „Erscheinungsbild“. Fest wählen: `?ton=klar` oder `?ton=dunkel` vor das `#` hängen, z. B. `http://localhost:4320/?ton=klar#/heute`.
@@ -195,7 +195,7 @@ Suchwort = danach in `kern.css` suchen. Stufe = wie viel Wasser (Abschnitt 5). A
 - **Was:** ein Knopf als Tropfen aus klarem Wasser. Ohne Skript ein schlichtes Glas; mit Skript ein lebender, lichtbrechender Tropfen (WebGL). Bernstein: Klasse `btn--primary`. Rot: `btn--danger`. Nah: [dunkel-nah](wasser-look/bilder/mobil/dunkel-nah.webp).
 - **Wo:** Suchwort `-- Tropfen (.wa-tropfen)`. Skript: Optionen `drops` und `ringFrom`. Neutrale Klasse `.wa-tropfen`, rund `.wa-tropfen--rund`.
 - **Braucht:** 14 px Platz ringsum, in dem nichts abschneidet (`overflow: hidden`).
-- **Rezept:** Zeile in die Liste. Runde Knöpfe zusätzlich in die zwei Zeilen darunter, die `round drops` nennen. Selektor an `drops` hängen. Soll er auf einem Becken einen Ring schicken: auch an `ringFrom`.
+- **Rezept:** Zeile in die Liste. Runde Knöpfe zusätzlich in die zwei Zeilen im Block, die mit `&:where(.wa-tropfen--rund,` beginnen (die erste macht ihn rund, die zweite gibt jedem zweiten runden Tropfen einen anderen Umriss). Selektor an `drops` hängen. Soll er auf einem Becken einen Ring schicken: auch an `ringFrom`.
 - **Kein lebender Tropfen** (Knöpfe, die sich je Zeile wiederholen; viele auf einem Bildschirm): nur in die Liste, nicht in `drops`. Er bleibt schlichtes Glas.
 - **Beispiel:**
 
@@ -271,7 +271,7 @@ Suchwort = danach in `kern.css` suchen. Stufe = wie viel Wasser (Abschnitt 5). A
 
 - **Was:** eine Fläche, die erscheint, kommt wie Wasser zur Ruhe: steigt ein wenig, läuft einen Hauch darüber hinaus, sinkt zurück.
 - **Wo:** Suchwort `-- Setzen (.wa-setzt)`. Nur die Klasse `.wa-setzt`, keine Liste.
-- **Rezept:** Klasse `wa-setzt` auf Flächen, die keinen eigenen Auftritt haben. Mehrere zugleich: `animation-delay: calc(var(--wa-t-step) * n)`. Nicht auf Elemente, die die App selbst hereinbewegt (Karten, Panels).
+- **Rezept:** Klasse `wa-setzt` auf Flächen, die keinen eigenen Auftritt haben (im Bild [bausteine](wasser-look/bilder/mobil/bausteine.webp) die Fläche „dichtes Wasser“). Mehrere zugleich: `animation-delay: calc(var(--wa-t-step) * n)`. Nicht auf Elemente, die die App selbst hereinbewegt (Karten, Panels).
 
 #### Mulde und Mulde zum Tippen (Stufe 1) ![](wasser-look/bilder/anleitung/baustein-mulde.webp)
 
@@ -338,7 +338,7 @@ Suchwort = danach in `kern.css` suchen. Stufe = wie viel Wasser (Abschnitt 5). A
 
 #### Licht, Bodenlicht, Lichtlauf (Leben in Ruhe)
 
-- **Was:** Licht, das in Ruhe an den Rändern einer Fläche wandert (Licht), ein sehr weicher Fleck auf dem Boden eines Beckens (Bodenlicht), und dasselbe Randlicht für kleine oder dichte Flächen ohne Helfer (Lichtlauf). Beim Scrollen neigt sich das Licht (Zug), bei einer neuen Fläche schwingt es ein (Schwappen).
+- **Was:** Licht, das in Ruhe an den Rändern einer Fläche wandert (Licht), ein sehr weicher Fleck auf dem Boden eines Beckens (Bodenlicht), und dasselbe Randlicht für kleine oder dichte Flächen ohne Helfer (Lichtlauf). Beim Scrollen neigt sich das Licht (Zug), bei einer neuen Fläche schwingt es ein (Schwappen). In einem Standbild ist es der helle Strich auf der Oberkante jeder Karte; in Bewegung: [leben-vergleich](wasser-look/bilder/mobil/leben-vergleich.png), [film-tab](wasser-look/bilder/mobil/film-tab.webp).
 - **Wo:** Suchworte `-- Licht (.wa-licht)` und `-- Lichtlauf (.wa-lichtlauf)`. Skript: `light` (Flächen mit Helfer), `scrollers` (Listen, deren Scrollen das Licht zieht). Neutrale Klasse für den Lichtlauf: `.wa-lichtlauf`.
 - **Braucht:** die Fläche: `position` und `isolation: isolate`. Lichtlauf: ihr `::after` muss frei sein.
 - **Rezept:** große Fläche → `light` (Becken und Bogen bekommen es so). Kleine oder dichte Fläche → Liste „Lichtlauf“. Kein Bodenlicht auf einer Fläche: `.meine-flaeche > .wa-licht > .wa-boden { display: none; animation: none; }`.
@@ -641,7 +641,7 @@ Erst wenn der Besitzer es sagt. Reihenfolge einhalten; nach jedem Schritt prüfe
 Noch nie lief der Look auf einem echten Handy. Darum kommt dieser Test **vor** dem Desktop und **vor** live.
 
 - **Tun:** Auf die Baustelle https://antiquewhite-falcon-428175.hostingersite.com einspielen, wie in `CLAUDE.md` beschrieben (`VITE_API=node npm run build`, `dist/` nach `server/public/`, Archiv, `hosting_nodejs_start-build`; vorher `npm audit` in `server/`). Nie auf die Hauptadresse.
-- **Content-Security-Policy (`server/index.js`, Konstante `CSP`): nichts zu ändern.** Geprüft: Der Look lädt keine fremde Adresse, kein `eval`, keinen Worker, kein Stylesheet zur Laufzeit. Er benutzt zwei eingebettete SVG-Bilder im CSS (`data:` – erlaubt durch `img-src 'self' data:`), WebGL und Canvas (von der CSP nicht geregelt) und setzt Stile über das DOM. Das Szenenbild, das die Tropfen brechen, kommt von derselben Adresse wie die App – das muss so bleiben: Ein Bild von einer fremden Adresse dürfte nicht in WebGL geladen werden, die Tropfen blieben dann schlichtes Glas.
+- **Content-Security-Policy (`server/index.js`, Konstante `CSP`): nichts zu ändern.** Geprüft am Code: Der Look lädt keine fremde Adresse, kein `eval`, keinen Worker, kein Stylesheet zur Laufzeit. Er benutzt zwei eingebettete SVG-Bilder im CSS (`data:` – erlaubt durch `img-src 'self' data:`), WebGL und Canvas (von der CSP nicht geregelt) und setzt Stile über das DOM. Nachgestellt: die gebaute App mit eingebautem Look, ausgeliefert mit genau dieser CSP-Zeile – Tropfen laufen, Perle und Pfeil der Auswahl sind da, keine Meldung in der Konsole (Handy- und Desktop-Format, Chromium). Das Szenenbild, das die Tropfen brechen, kommt von derselben Adresse wie die App – das muss so bleiben: Ein Bild von einer fremden Adresse dürfte nicht in WebGL geladen werden, die Tropfen blieben dann schlichtes Glas.
 - **Messen, auf einem iPhone und einem Android-Handy** (Reihenfolge und „die eine Zeile“ je Befund: `NOTIZEN.md`, Abschnitt 13). Werte probiert man am schnellsten in der Konsole des angeschlossenen Handys (Safari: Menü „Entwickler“; Chrome: `chrome://inspect`), z. B. `document.querySelector('[data-wasser]').style.setProperty('--wa-lauf', 'paused')`.
 
   | # | Ansehen | Schlecht, wenn | Was es ausschaltet |
@@ -662,10 +662,13 @@ Noch nie lief der Look auf einem echten Handy. Darum kommt dieser Test **vor** d
 - **Dateien:** `src/scene/Stage.tsx` (drei Zeilen), `src/App.tsx` (zwei Zeilen im Effekt aus Schritt 3).
 - **Tun:**
   1. `Stage.tsx`: `import { useWasser } from '../wasser/wasser';`, in `Stage()` als erste Zeile `useWasser('desktop');`, am Wurzelelement `<div className="stage" data-wasser="desktop" ref={ref} …>`.
-  2. `App.tsx`: Das alte helle Thema bleibt jetzt überall aus:
+  2. `App.tsx`: Das alte helle Thema bleibt jetzt überall aus. Der Effekt aus Schritt 3 wird zu:
 
      ```ts
-     document.documentElement.dataset.theme = 'dunkel'; // the look has light text in both tones: the app's old light theme stays off
+     useEffect(() => {
+       const light = settings.theme === 'auto' ? !DARK_LOOKS.has(look) : settings.theme === 'hell';
+       setWaterTone(light); // Wasser-Look: Hell = Ton "klar", Dunkel = Ton "dunkel"
+       document.documentElement.dataset.theme = 'dunkel'; // the look has light text in both tones: the app's old light theme stays off
      }, [settings.theme, look]);
      ```
 
