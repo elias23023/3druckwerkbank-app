@@ -401,10 +401,47 @@ Die Regel muss unter `[data-wasser]` stehen, sonst gibt es die Werte nicht.
 ### 4.6 Am Desktop ein weiteres Element
 
 1. Baustein wählen (4.3). Zeile in seine Liste, Vermerk `desktop`. Hat auch das Handy die Klasse: mit `:where()` eingrenzen.
+   **Bögen, Suche und Hinweis sind auf Handy und Desktop derselbe Code** (`src/ui/`, `src/forms/`) und liegen in beiden Hüllen im Look: Ein Eintrag für etwas in einem Bogen (`.sheet …`) gilt immer für beide – beide ansehen.
+   **Hat das Element keine eigene Klasse** (ein schlichtes `.field` in einem einzigen Bogen): Sauber ist eine Klasse in der App – die neutrale (Weg A) oder eine eigene, wie `panel--haupt` in 8.2. Das ändert die App und braucht das Ja des Besitzers. Zum Ausprobieren davor: ein Selektor nach dem Aufbau, in `:where()`, etwa `.sheet .field:where(:has(> span.small))` – und nachzählen, was er trifft, in jedem Bogen, der so gebaut sein könnte, auf Handy und Desktop (4.7).
 2. Nennt der Baustein Optionen: denselben Selektor in `DESKTOP` in `wasser.js` eintragen (bei den acht ersetzten Optionen), sonst in `MOBIL`.
 3. Was es darüber hinaus braucht (Platz, Größe, Mauszeiger), kommt in `desktop.css` – mit dem Gewicht der Liste.
 4. Liegt es frei über der Bühne und trägt Text: `background: var(--wa-frei)`, kein Weichzeichner. Kann eine Insel dahinter liegen: nie ein lebender Tropfen.
-5. Prüfen: `node scripts/wasser/desktop.mjs pruefen`, Bilder in beiden Formaten und beiden Tönen (`desktop.mjs bild … --nur <welt>`), `node scripts/wasser/desktop.mjs kontrast`, und `node scripts/wasser/vergleich.mjs --alt git:HEAD` (das Handy darf sich nicht ändern; 32 Minuten – der Teil `bilder` allein braucht vier).
+5. Prüfen: `node scripts/wasser/desktop.mjs pruefen`, Bilder in beiden Formaten und beiden Tönen (`desktop.mjs bild … --nur <welt>`; eine Stelle in einem Bogen: 4.7), `node scripts/wasser/desktop.mjs kontrast` (trägt das Element Schrift: Abschnitt 6, Punkt 5), und `node scripts/wasser/vergleich.mjs --alt git:HEAD` (das Handy darf sich nicht ändern; 32 Minuten – der Teil `bilder` allein braucht vier).
+
+### 4.7 Eine einzelne Stelle ansehen und ablesen
+
+Für alles, was die anderen Werkzeuge nicht kennen (ein Bogen, der nicht in ihren Listen steht; ein neues Element), und für jeden ohne Browserfenster. Die Vorschau der App muss laufen.
+
+```
+node scripts/wasser/stelle.mjs screenshots/wasser/ueber.png --welt heute --bogen einstellungen --klick 'Über diesen Entwurf' --css '.sheet .field'
+```
+
+Das öffnet die gebaute App mit der Vorlage, geht zur Welt, öffnet den Bogen, klickt den Knopf mit diesem Text, macht **ein** Bild und druckt, was der Selektor dort trifft: wie viele Elemente, in welcher Hülle, und von den ersten drei Hintergrund, Schatten, Weichzeichner, Radius, Innenabstand, Position, Schriftfarbe und ob ein lebender Tropfen darauf liegt.
+
+- `--mobil` – dasselbe am Handy (390 × 844). Sonst Desktop, 2000 × 993.
+- `--ton klar`, `--zeit tag`, `--format 1920`, `--look <Kopie>` oder `--look ohne` – wie bei den anderen Werkzeugen.
+- `--nah` – nur das erste getroffene Element im Bild. `--wert transform,water-under` – weitere Werte (eine eigene Eigenschaft ohne ihre zwei Striche).
+- Mehrere Klicks: `--klick 'Einstellungen >> Über diesen Entwurf'`. Ein Selektor statt eines Texts beginnt mit `.`, `#` oder `[`.
+- Welche Bögen `--bogen` beim Namen kennt, steht im Kopf der Datei. Jeder andere ist ein Klick mehr.
+
+### 4.8 Ein Element in einen anderen Baustein setzen, oder herausnehmen
+
+So ändert man die Stufe eines Elements (Abschnitt 5). Ein Element steht an mehreren Stellen; alle finden:
+
+```
+grep -n 'm-ico' docs/wasser-look/vorlage/*.css docs/wasser-look/vorlage/wasser.js
+```
+
+1. **Liste des alten Bausteins** (`kern.css`): die Zeile löschen. Bei „Tropfen“ auch aus den zwei runden Zeilen (`&:where(.wa-tropfen--rund, …`).
+2. **Optionen in `wasser.js`** (`MOBIL`; am Desktop auch `DESKTOP`): aus denen des alten Bausteins löschen, in die des neuen eintragen. Welche das sind, steht bei jedem Baustein unter „Wo“.
+3. **Liste des neuen Bausteins:** Zeile eintragen (4.1, fünf Regeln). Nur herausnehmen: diesen Punkt auslassen.
+4. **Wasserlinie:** zwei Listen – weit um Tropfen und Etiketten, eng um alles andere. In die passende umziehen.
+5. **Regeln der Hülle für dieses Element** (`mobil.css`, `desktop.css`): Passt ihr Gewicht zur neuen Liste (4.4)? Werden sie noch gebraucht?
+6. **Das Register** im Kopf von `mobil.css` und `desktop.css` („For orientation“) nachziehen. Es ist nur Text, aber der nächste Leser glaubt ihm.
+7. **Ablesen und ansehen** (4.7, mit `--css` und `--nah`). Was der alte Baustein von der App abgestellt hat, stellt der neue vielleicht nicht ab. Dann in der Hülle abstellen, mit dem Gewicht der neuen Liste.
+8. Die drei Befehle aus 4.1. `vergleich.mjs bilder` meldet jetzt gewollt Abweichungen – aber nur dort, wo das Element steht.
+
+Ausprobiert mit den runden Knöpfen der Kopfzeile am Handy (`.m-ico`), von Tropfen (Stufe 3) zu Perle (Stufe 1): vier Zeilen in `kern.css`, eine Option in `wasser.js`, zwei Zeilen im Register. Punkt 7 fand zwei Reste: Die Knöpfe tragen in der App auch `.glass`, und dessen Rand und Weichzeichner hatte nur der Tropfen abgestellt. Abhilfe am Ende von `mobil.css`: `[data-wasser="mobil"] .m-ico.m-ico.m-ico { border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }` (die Liste von „Perle“ wiegt drei Klassen).
 
 ---
 
@@ -416,8 +453,10 @@ Die Regel muss unter `[data-wasser]` stehen, sonst gibt es die Werte nicht.
 |---|---|---|---|
 | 3 | lebendes Wasser, das bricht, was dahinter liegt (WebGL) | Tropfen | Hauptknöpfe, die runden Knöpfe der Kopfzeile. Wenige je Bildschirm |
 | 2 | stille Wasserflächen: Material und Rand, in Ruhe durch wanderndes Licht belebt | Becken, stilles Wasser, dichtes Wasser, Bogen, Tropfen-Hinweis | Karten, Panels, Leiste, Dock, Bogen, Hinweis, Suche |
-| 1 | ein Hauch: Form und heller Rand, still in Ruhe, jede Änderung bewegt sich wie Wasser | Mulde, Etikett, Feld, Wahl, Haken, Pegel, Perle, Film | Zeilen, Schilder, Formulare, kleine Knöpfe |
+| 1 | ein Hauch: Form und heller Rand, still in Ruhe, jede Änderung bewegt sich wie Wasser | Mulde, Etikett, Feld, Wahl, Haken, Pegel, Perle, Film; schlichtes Glas (ein Tropfen, der nicht in `drops` steht) | Zeilen, Schilder, Formulare, kleine Knöpfe, Knöpfe je Zeile |
 | 0 | nichts | – | Text, Zeichen, Fotos, Diagramme; am Desktop Inseln, ihre Namen, der Tagesring, lose Schrift, handgeschriebene Zeilen |
+
+Die Stufe eines Elements ist sein Baustein. Eine andere Stufe geben heißt: in einen anderen Baustein setzen – Rezept in 4.8.
 
 **Die Grenzen:**
 
@@ -443,14 +482,14 @@ Was ein Ton festlegt:
 | die Ränder | `--wa-meniscus`, `--wa-shallow`, `--wa-far`, `--wa-lift`, `--wa-whisper`, `--wa-dense-*` |
 | Mulden | `--wa-trough`, `--wa-trough-walls`, `--wa-trough-line`, `--wa-trough-press` |
 | Schrift | `--wa-ink-2`, `--wa-ink-3`, `--wa-ink-2-trough`, `--wa-ink-3-trough`, `--wa-shade`, `--wa-shade-pill` |
-| Etiketten, Leiste, Perle | `--wa-pill-*`, `--wa-tab-*`, `--wa-bead-*` |
+| Etiketten; die Leiste: ihre Schrift und ihre Perle (Baustein „Markierung“) | `--wa-pill-*`, `--wa-tab-*`, `--wa-bead-*` |
 | Weichheit | `--wa-sat`, `--wa-blur`, `--wa-blur-dense` |
 | die Seite (Handy) | `--wa-page-1` bis `-4`, `--wa-page-ink-3` |
 | Leben in Ruhe | `--wa-glanz`, `--wa-glanz-linie`, `--wa-glanz-fern`, `--wa-glanz-fern-linie`, `--wa-boden` |
 | die Tropfen | `--wa-drop-red`, `--wa-drop-veil` |
 | die weite Bühne (nur Desktop) | `--wa-weit-tiefe`, `--wa-weit-grund` |
 
-Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in Teil 3.
+Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in Teil 3. Auch der Baustein „Perle“ (der kleine runde Knopf) hat nur Formwerte: `--wa-perle-*`, gebaut aus `--wa-core`.
 
 **Wie die App den Ton wählt** (am Handy eingebaut und live; am Desktop im Einbau – Abschnitt 8.2):
 
@@ -484,6 +523,19 @@ Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in
    ```
 
    Jede Zeile: Median (schlechteste 5 % in Klammern). Grenzen: Text 4,5, Platzhalter 3, am Desktop Titel 7. Unter der Grenze endet das Werkzeug mit Fehler.
+   **Gemessen wird nur, was als Probe im Werkzeug steht.** Ein neues Element mit Schrift braucht dort eine Zeile, an der Stelle, an der sein Bildschirm oder Bogen offen ist. Am Desktop in `desktop.mjs`, Funktion `kontrast`, z. B. nach `await d.go('heute');`:
+
+   ```js
+   await probe('Merkzettel: Zeile', '.merk__zeile b');
+   ```
+
+   Am Handy in `kontrast.mjs`, im Teil `if (a.app)`, z. B. nach `await h.go('#/heute'); await p.waitForTimeout(800);`:
+
+   ```js
+   await probe(p, col, 'Merkzettel: Zeile', S('.merk__zeile b'));
+   ```
+
+   Nur diese Zeile messen (Desktop): `node scripts/wasser/desktop.mjs kontrast --nur Merkzettel`.
 6. `node scripts/wasser/pruefen.mjs` – Prüfung 10 vergleicht die Listen der zwei Töne (57 und 57).
 7. Ansehen: `node scripts/wasser/bild.mjs screenshots/wasser/farbe` und `node scripts/wasser/desktop.mjs bild screenshots/wasser/farbe-desktop --ton klar --zeit tag`.
 
