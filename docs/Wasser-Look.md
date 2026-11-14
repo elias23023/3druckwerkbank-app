@@ -57,8 +57,8 @@ Quelle: `docs/wasser-look/entwurf/entscheidungen.md`. Bei Widerspruch gilt die E
 4. **Beide Töne bleiben, als die zwei Modi der App.** Dunkler Modus = Ton „dunkel“. Heller Modus = Ton „klar“. Die Einstellung „Erscheinungsbild“ wählt ihn, auf Handy und Desktop: Dunkel → „dunkel“, Hell → „klar“, Automatisch → nach dem Look der Stunde (`DARK_LOOKS` in `src/scene/looks.ts`). Das alte helle Thema der App (helle Flächen, dunkle Schrift, `:root[data-theme="hell"]`) ist **nicht** der helle Modus.
 5. **Alles ist bewegt, aber ruhig:** lebt in Ruhe, antwortet auf Berührung und Scrollen. Aus bei reduzierter Bewegung.
 6. **Erst die Vorlage.** Zwei Vorlagen zum Ansehen (Handy, Desktop) mit Anleitung; die App wird erst geändert, wenn er es sagt. (Fürs Handy hat er es gesagt: Nummer 9.)
-7. **Leben in Ruhe: Die Stärke bleibt 1, das Tempo wird ein wenig schneller** (14.11.). Ein wenig schneller als gebaut (24 / 34 / 40 / 46 s je Runde), deutlich weniger als der gezeigte 2,5-fache Versuch. Bauen und ihm zeigen, bevor es live geht.
-8. **Der helle Modus („klar“) wird ein wenig durchsichtiger** (14.11.). „Heller“ heißt: mehr von der Szene durch das Wasser, nicht eine hellere Farbe. Vorerst nur „klar“; „dunkel“ bleibt. Am Desktop, wahrscheinlich auch am Handy. Innerhalb der Grenzen der Lesbarkeit (Titel 7, Text 4,5, Platzhalter 3). Bauen und ihm zeigen.
+7. **Leben in Ruhe: Die Stärke bleibt 1, das Tempo wird ein wenig schneller** (14.11.). Ein wenig schneller als gebaut (24 / 34 / 40 / 46 s je Runde), deutlich weniger als der gezeigte 2,5-fache Versuch. Bauen und ihm zeigen, bevor es live geht. **Gebaut am 14.11. abends:** 17 / 24 / 29 / 33 s (etwa 1,4-mal so schnell; Schritt 9) – er hat es noch nicht gesehen.
+8. **Der helle Modus („klar“) wird ein wenig durchsichtiger** (14.11.). „Heller“ heißt: mehr von der Szene durch das Wasser, nicht eine hellere Farbe. Vorerst nur „klar“; „dunkel“ bleibt. Am Desktop, wahrscheinlich auch am Handy. Innerhalb der Grenzen der Lesbarkeit (Titel 7, Text 4,5, Platzhalter 3). Bauen und ihm zeigen. **Gebaut am 14.11. abends**, am Handy und am Desktop (Schritt 10) – er hat es noch nicht gesehen.
 9. **Die Handy-Version ist live** (14.11.). Der Desktop bleibt unverändert, bis er den Desktop-Einbau an seinem eigenen Bildschirm gesehen hat.
 10. **Weiches Gehen** (14.11.): Bögen und Schubladen sollen weich schließen, abgehakte oder entfernte Zeilen weich verschwinden. Das braucht kleine Änderungen in der App und wird nach den Einbauten gebaut, für Handy und Desktop.
 11. **Erster Lauf am echten Handy** (14.11., Baustelle): „läuft … alles sehr schön flüssig“. Offen: Nach dem Tipp auf einen Reiter dauert es einen Moment, bis der Bildschirm wechselt – ansehen und kürzen, oder wenigstens sofort unter dem Finger beantworten.
@@ -498,7 +498,7 @@ Die Stufe eines Elements ist sein Baustein. Eine andere Stufe geben heißt: in e
 
 ## 6. Töne und Modi
 
-**Ein Ton ist ein Block von 57 Werten** in `kern.css`, Teil 1 – und nichts sonst. „dunkel“ steht auf `[data-wasser]` (Standard, kein Attribut). „klar“ steht auf `:root[data-wa-ton="klar"] [data-wasser]`. Beide Blöcke nennen dieselben Werte in derselben Reihenfolge. Keine andere Regel nennt `data-wa-ton`; das Skript hat keine Ton-Logik.
+**Ein Ton ist ein Block von 59 Werten** in `kern.css`, Teil 1 – und nichts sonst. „dunkel“ steht auf `[data-wasser]` (Standard, kein Attribut). „klar“ steht auf `:root[data-wa-ton="klar"] [data-wasser]`. Beide Blöcke nennen dieselben Werte in derselben Reihenfolge. Keine andere Regel nennt `data-wa-ton`; das Skript hat keine Ton-Logik.
 
 Was ein Ton festlegt:
 
@@ -514,7 +514,7 @@ Was ein Ton festlegt:
 | die Seite (Handy) | `--wa-page-1` bis `-4`, `--wa-page-ink-3` |
 | Leben in Ruhe | `--wa-glanz`, `--wa-glanz-linie`, `--wa-glanz-fern`, `--wa-glanz-fern-linie`, `--wa-boden` |
 | die Tropfen | `--wa-drop-red`, `--wa-drop-veil` |
-| die weite Bühne (nur Desktop) | `--wa-weit-tiefe`, `--wa-weit-grund` |
+| die weite Bühne (nur Desktop) | `--wa-weit-tiefe`, `--wa-weit-grund`, `--wa-weit-grund-panel`, `--wa-weit-kopf` |
 
 Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in Teil 3. Auch der Baustein „Perle“ (der kleine runde Knopf) hat nur Formwerte: `--wa-perle-*`, gebaut aus `--wa-core`.
 
@@ -527,7 +527,7 @@ Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in
 | Automatisch (Tageszeit) | nach dem Look der Stunde: dunkler Look (`DARK_LOOKS`) → „dunkel“, sonst „klar“ | |
 
 `data-theme` bleibt überall „dunkel“, wo der Look an ist. Ein Wechsel wirkt sofort; die Tropfen folgen binnen einer Sekunde.
-**Die Werkzeuge wählen den Ton über genau diese Einstellung:** `--ton klar` (oder `--toene`) schreibt „Hell“ in den gespeicherten Stand der App und lädt neu, `dunkel` schreibt „Dunkel“. So ist „dunkel“ auch bei Tag dunkel und „klar“ auch bei Nacht klar. Zeigt die App danach einen anderen Ton als verlangt, bricht das Werkzeug ab. `--ton auto` (wo ein Werkzeug es kennt) lässt die Einstellung in Ruhe. „klar“ soll noch etwas durchsichtiger werden (Entscheidung 8): Schritt 10 im Fahrplan nennt die Stellschrauben.
+**Die Werkzeuge wählen den Ton über genau diese Einstellung:** `--ton klar` (oder `--toene`) schreibt „Hell“ in den gespeicherten Stand der App und lädt neu, `dunkel` schreibt „Dunkel“. So ist „dunkel“ auch bei Tag dunkel und „klar“ auch bei Nacht klar. Zeigt die App danach einen anderen Ton als verlangt, bricht das Werkzeug ab. `--ton auto` (wo ein Werkzeug es kennt) lässt die Einstellung in Ruhe. „klar“ ist seit 14.11. abends durchsichtiger (Entscheidung 8): Schritt 10 im Fahrplan nennt die Werte und wie man sie zurückdreht.
 
 **Eine Farbe sicher ändern:**
 
@@ -560,12 +560,12 @@ Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in
    ```
 
    `--art platzhalter` oder `--art wert` für den Platzhalter oder den Text eines Felds; `--grenze 7` für einen Titel am Desktop. Trifft der Selektor nichts, endet das Werkzeug mit Fehler. Soll die Probe bleiben, kommt sie als Zeile in die feste Liste: am Desktop in `desktop.mjs`, Funktion `kontrast` (`await probe('Name', '<Selektor>');`), am Handy in `kontrast.mjs`, Teil `if (a.app)`.
-6. `node scripts/wasser/pruefen.mjs` – Prüfung 10 vergleicht die Listen der zwei Töne (57 und 57).
+6. `node scripts/wasser/pruefen.mjs` – Prüfung 10 vergleicht die Listen der zwei Töne (59 und 59).
 7. Ansehen: `node scripts/wasser/bild.mjs screenshots/wasser/farbe` und `node scripts/wasser/desktop.mjs bild screenshots/wasser/farbe-desktop --ton klar --zeit tag`.
 
 Ein Etikett auf einem klaren Tropfen, das schwer zu lesen ist, heilt man mit `--wa-drop-veil` (0 bis 1; weniger = weniger Licht im Tropfen), nicht mit einer dunkleren Fläche.
 
-**Ein dritter Ton, oder einen streichen:** Ein Ton ist der Block `:root[data-wa-ton="<name>"] [data-wasser] { … }` mit allen 57 Werten. Sonst ist nichts zu tun.
+**Ein dritter Ton, oder einen streichen:** Ein Ton ist der Block `:root[data-wa-ton="<name>"] [data-wasser] { … }` mit allen 59 Werten. Sonst ist nichts zu tun.
 
 ---
 
@@ -583,7 +583,7 @@ Ein Etikett auf einem klaren Tropfen, das schwer zu lesen ist, heilt man mit `--
 | `--wa-t-wave` | 1,1 s | Licht läuft über eine Fläche | Ring, Kamm des Bogens |
 | `--wa-t-swing` | 1,6 s | bewegtes Wasser schwingt aus | Licht nach dem Scrollen, Licht einer neuen Fläche |
 | `--wa-t-step` | 40 ms | was zusammen ankommt, kommt kurz nacheinander | Karten eines neuen Bildschirms |
-| `--wa-t-ruhe-1` bis `-4`, `--wa-t-atem` | 24 / 34 / 40 / 46 s, 9 s | Schleifen in Ruhe: Randlicht, fernes Randlicht, Leisten und Bögen, Boden; Atem der Perle | mit `--wa-gang-*` |
+| `--wa-t-ruhe-1` bis `-4`, `--wa-t-atem` | 17 / 24 / 29 / 33 s, 9 s (bis 14.11.: 24 / 34 / 40 / 46 s) | Schleifen in Ruhe: Randlicht, fernes Randlicht, Leisten und Bögen, Boden; Atem der Perle | mit `--wa-gang-*` |
 | `--wa-ease-flow` / `-settle` / `-drain` / `-wave` / `-swing` | Kurven | läuft los und kommt weich an / ein wenig darüber hinaus / lässt langsam los / ein Ring breitet sich aus / schwingt gedämpft aus | |
 
 Was wann lebt: Tabelle in `NOTIZEN.md`, Abschnitt 6.
@@ -594,7 +594,7 @@ Was wann lebt: Tabelle in `NOTIZEN.md`, Abschnitt 6.
 node scripts/wasser/leben.mjs screenshots/wasser/leben --werte 1,1.5
 ```
 
-Der Unterschied zwischen 1 und 1,5 ist auf Handygröße kaum zu sehen ([leben-vergleich](wasser-look/bilder/mobil/leben-vergleich.png)). Entschieden ist darum (Nummer 7): Die Stärke bleibt 1, das Tempo wird ein wenig schneller – die vier Längen `--wa-t-ruhe-*` mit ihren Gangarten `--wa-gang-*`. Rezept: Fahrplan, Schritt 9.
+Der Unterschied zwischen 1 und 1,5 ist auf Handygröße kaum zu sehen ([leben-vergleich](wasser-look/bilder/mobil/leben-vergleich.png)). Entschieden ist darum (Nummer 7): Die Stärke bleibt 1, das Tempo wird ein wenig schneller – die vier Längen `--wa-t-ruhe-*` mit ihren Gangarten `--wa-gang-*`. Gebaut am 14.11. abends: Fahrplan, Schritt 9. Zwei Stände nebeneinander als Film: `leben.mjs … --looks 'Tempo bisher=git:<Stand>,Tempo neu=vorlage' --weg ruhe` (Kopf von `leben.mjs`).
 
 **Der Schalter zum Sparen ist ein anderer: `--wa-lauf`.** `[data-wasser] { --wa-lauf: paused; }` hält jede Schleife in Ruhe an, alles andere lebt weiter. `--wa-leben: 0` spart nichts: Die Schleifen laufen unsichtbar weiter.
 
@@ -633,8 +633,8 @@ git log --oneline -5 origin/main                     # wie weit main ist
 | 6 | Den Desktop einschalten | erledigt; `einbau.css` ist aufgelöst. Offen bleiben die Inline-Innenabstände kleiner Auswahlfelder |
 | 7 | Den Desktop abnehmen, Baustelle, eigener Bildschirm, live | live seit 14.11. (Entscheidung 13); die Abnahme Welt für Welt gehört zum Feinschliff |
 | 8 | Die Wartezeit beim Reiterwechsel (Entscheidung 11) | gebaut (14.11. abends, `wasser-look`); am echten Handy noch nicht gesehen |
-| 9 | Das Tempo der Lichter (Entscheidung 7) | offen – Rezept ausprobiert |
-| 10 | „klar“ durchsichtiger (Entscheidung 8) | offen – Rezept ausprobiert |
+| 9 | Das Tempo der Lichter (Entscheidung 7) | gebaut (14.11. abends, `wasser-look`); er hat es noch nicht gesehen |
+| 10 | „klar“ durchsichtiger (Entscheidung 8) | gebaut (14.11. abends, `wasser-look`), mit einer Reparatur am Desktop; er hat es noch nicht gesehen |
 | 11 | Weiches Gehen (Entscheidung 10) | offen – nichts gebaut |
 | 12 | Das alte helle Thema | offen – der Desktop ist jetzt live, die Regeln können gehen |
 | 13 | Eine Quelle | später |
@@ -916,50 +916,50 @@ Der Besitzer am Handy: Nach dem Tipp auf einen Reiter dauert es einen Moment, da
 - **Was nur das echte Handy sagt:** Ist die Wartezeit dort weg? Auf der Baustelle zwischen den fünf Reitern tippen, erst alle einmal, dann noch einmal. Die Arbeitsmaschine rechnet WebGL ohne Grafikchip; ihre Zahlen sagen nur „vorher gegen nachher“. In der Konsole des angeschlossenen Handys: `Wasser.info.uploads` (Szenen gemacht), `.reused` (aus dem Vorrat), `.warmed` (vorab gemacht). Bleibt eine Wartezeit, ist der nächste Verdächtige das CSS des Looks (mit gestopptem Skript – `Wasser.stop()` – nachsehen) oder der erste Bildaufbau der neuen Karten (Weichzeichner, Entscheidung 14).
 - **Darf nicht passieren:** Tropfen, die nach einem Wechsel sichtbar „aufpoppen“ oder die alte Szene zeigen (beim ersten Besuch eines Unterbildschirms wie „Wetter“, „Archiv“ oder der Innenwelt eines Projekts zeigen die Tropfen der Kopfzeile noch einige Bilder lang die alte Szene – diese Szenen werden nicht vorgeladen). Ein schwarzer Tropfen (Fallstrick 47).
 
-### Schritt 9 – Das Tempo der Lichter (Entscheidung 7; offen)
+### Schritt 9 – Das Tempo der Lichter (Entscheidung 7; gebaut am 14.11. abends, Branch `wasser-look`)
 
-Die Stärke bleibt 1 (`--wa-leben`). Das Tempo wird ein wenig schneller als gebaut, deutlich weniger als der gezeigte 2,5-fache Versuch.
+Die Stärke bleibt 1 (`--wa-leben`). Das Tempo ist ein wenig schneller als zuerst gebaut, deutlich weniger als der gezeigte 2,5-fache Versuch. **Der Besitzer hat es noch nicht gesehen.**
 
-- **Dateien:** `docs/wasser-look/vorlage/kern.css`, Teil 3 – vier Zeilen.
-- **Tun:** die vier Längen ändern und zu jeder die Gangart: `steps(N)` mit N = Sekunden der Länge (so bleibt es bei acht Bildern je Sekunde). Die Längen sollen keinen gemeinsamen Takt haben. Die Keyframes bleiben, der WebKit-Block (`linear`) bleibt.
+- **Gebaut** (`docs/wasser-look/vorlage/kern.css`, Teil 3 – vier Zeilen): die vier Längen etwa 1,4-mal so schnell, im selben Verhältnis zueinander, jede mit ihrer Gangart (`steps(N)` mit N = Sekunden: acht Bilder je Sekunde, wie bisher). Die Keyframes, der WebKit-Block (`linear`), der Atem der Perle (9 s) und die kurze Schleife (12 s) bleiben. `desktop.css` und `mobil.css` nennen keine eigene Länge (sie benutzen die vier, `mobil.css` verschiebt nur den Anfang um Bruchteile davon).
 
-  ```css
-  --wa-t-ruhe-1: 24s;  --wa-gang-1: steps(24);        /* heute */
-  --wa-t-ruhe-1: 17s;  --wa-gang-1: steps(17);        /* ein Versuch: etwa 1,4-mal so schnell */
-  ```
-
-- **Ausprobiert** mit 17 / 24 / 29 / 33 s statt 24 / 34 / 40 / 46 s: `pruefen.mjs` 54 von 54. `messen.mjs ruhe`: Von den Bildpunkten der Karten ändern sich binnen einer Sekunde 4,5 % um 4 von 255 oder mehr (wie gebaut: 3,2 %), binnen vier Sekunden 12,4 % (8,4 %); kein Buchstabe ändert sich um 4 oder mehr. Der Wert selbst ist seine Entscheidung – dieser Versuch wurde ihm nicht gezeigt.
-- **Prüfen und zeigen:** `node scripts/wasser/pruefen.mjs`, `node scripts/wasser/messen.mjs ruhe`, `node scripts/wasser/messen.mjs takt`, dann ein Film zum Zeigen: `node scripts/wasser/clip.mjs screenshots/wasser/tempo.mp4 --cast`. `vergleich.mjs` meldet danach im Teil `film` gewollt Abweichungen.
-- **Darf nicht passieren:** Text, der sich bewegt. Eine Länge ohne passende Gangart (dann wird das Licht öfter oder seltener gezeichnet als achtmal je Sekunde). Live, bevor er es gesehen hat.
-
-### Schritt 10 – „klar“ durchsichtiger (Entscheidung 8; offen)
-
-Nur der Ton „klar“, vorerst. Durchsichtiger heißt: mehr von der Szene durch das Wasser – nicht eine hellere Farbe. Am Desktop, wahrscheinlich auch am Handy. Die Grenzen bleiben: Titel 7, Text 4,5, Platzhalter 3.
-
-- **Dateien:** `docs/wasser-look/vorlage/kern.css`, Teil 1, Block „klar“.
-- **Die Stellschrauben:**
-
-  | Wo | Wert | Heute | Wirkt auf |
+  | Wert | wirkt auf | zuerst gebaut | jetzt |
   |---|---|---|---|
-  | Handy und Desktop | `--wa-shelf`, `--wa-deep` (die letzte Zahl: wie deckend) | .21, .25 | die Tiefe in der Mitte eines Beckens |
-  | Handy und Desktop | `--wa-under` | .56 | was den Tropfen gesagt wird, worauf sie liegen. Mitziehen: 1 − (1 − .28) × (1 − Stufe) × (1 − Tiefe) |
-  | Handy und Desktop | `--wa-still`, `--wa-dense`, `--wa-sheet` | .5, .66, .82 | kleine Flächen; Leiste, Hinweis, Suche; Bogen. Vorsicht: Ohne Weichzeichner scheinen hier Wörter der Seite durch (Schritt 4, Punkt 3) |
-  | nur Handy | `--wa-page-3`, `--wa-page-4` | .34, .52 | wie stark die Seite die Szene in der unteren Hälfte abdunkelt |
-  | nur Desktop | `--wa-weit-grund` | `brightness(.7)` | wie stark ein Panel die Szene dahinter abdunkelt |
+  | `--wa-t-ruhe-1` / `--wa-gang-1` | Licht am hellen Rand | 24 s / `steps(24)` | **17 s / `steps(17)`** |
+  | `--wa-t-ruhe-2` / `--wa-gang-2` | Licht am fernen Rand | 34 s / `steps(34)` | **24 s / `steps(24)`** |
+  | `--wa-t-ruhe-3` / `--wa-gang-3` | Leiste, Bogen, Hinweis, Suche | 40 s / `steps(40)` | **29 s / `steps(29)`** |
+  | `--wa-t-ruhe-4` / `--wa-gang-4` | Licht auf dem Boden eines Beckens | 46 s / `steps(46)` | **33 s / `steps(33)`** |
 
-- **Ausprobiert** (ein erster Versuch, ihm nicht gezeigt): `--wa-shelf` .16, `--wa-deep` .19, `--wa-under` .51, `--wa-weit-grund: brightness(.8)`. Kein Median unter einer Grenze. Handy, Kartentitel über acht Szenen: 7,8 bis 13,1 (wie gebaut 8,9 bis 13,8). Desktop, Paneltitel bei Tag: 7,9 bis 12,9 (9,6 bis 14,1). Die niedrigsten Einzelwerte sind die Etiketten kleiner klarer Tropfen auf Karten (schlechteste 5 %: 4,1 statt 4,6) – das heilt `--wa-drop-veil`, nicht die Fläche.
-- **Prüfen und zeigen:**
+- **Zurückdrehen oder weiter drehen:** dieselben vier Zeilen. Immer Länge und Gangart zusammen ändern (eine Länge ohne ihre Gangart zeichnet das Licht öfter oder seltener als achtmal je Sekunde). Ein anderes Tempo: die vier Längen durch denselben Faktor teilen und auf ganze Sekunden runden.
+- **Gemessen** (`node scripts/wasser/messen.mjs ruhe`, Vorschauseite, Ton „dunkel“, je drei Läufe abwechselnd mit dem Stand davor – `--look git:52dfff3`): Von den Bildpunkten der Karten ändern sich binnen einer Sekunde 3,8 / 4,6 / 4,0 % um 4 von 255 oder mehr (vorher 3,1 / 2,6 / 2,2 %), binnen vier Sekunden 14,6 / 15,5 / 14,7 % (vorher 9,3 / 8,4 / 9,0 %); in der Leiste binnen einer Sekunde 5,3 bis 6,4 % (vorher 3,3 bis 5,0 %). Kein Buchstabe ändert sich um mehr als 2 von 255 (Grenze: 4) – Text bewegt sich nicht. Bei reduzierter Bewegung gibt es die Lichter gar nicht (unverändert). Die Zahlen streuen von Lauf zu Lauf um etwa einen Prozentpunkt.
+- **Der Film für ihn:** `node scripts/wasser/leben.mjs <Ausgabe> --looks 'Tempo bisher=git:52dfff3,Tempo neu=vorlage' --weg ruhe --welt heute --sekunden 20` – zwei Handys nebeneinander, 20 s „Heute“ in Ruhe, Ton „dunkel“; jede Beschriftung trägt die vier Längen, die die Seite wirklich hat (aus ihrem berechneten Stil gelesen). Abgelegt: `docs/wasser-look/entwurf/tempo-und-ton/tempo.mp4` (und `tempo.webp` als Bildstreifen). Geprüft: Das Werkzeug las auf der linken Seite 24 / 34 / 40 / 46 s, auf der rechten 17 / 24 / 29 / 33 s. Auf der Arbeitsmaschine aufgenommen: Die Tropfen ruckeln dort, die Lichter nicht.
+- **Prüfen:** `node scripts/wasser/pruefen.mjs --app`, `node scripts/wasser/messen.mjs ruhe`, `node scripts/wasser/desktop.mjs pruefen`. `vergleich.mjs` meldet im Teil `film` gewollt Abweichungen (die Lichter stehen nach derselben Zeit woanders).
+- **Darf nicht passieren:** Text, der sich bewegt. Eine Länge ohne passende Gangart. Live, bevor er es gesehen hat.
 
-  ```
-  node scripts/wasser/kontrast.mjs --toene klar --szenen start,heute,projekte,material,druck,wetter,archiv,innen
-  node scripts/wasser/desktop.mjs kontrast --toene klar
-  node scripts/wasser/vergleich.mjs bilder --alt git:HEAD --toene dunkel
-  node scripts/wasser/bild.mjs screenshots/wasser/klarer --toene klar
-  node scripts/wasser/desktop.mjs bild screenshots/wasser/klarer-desktop --ton klar --zeit tag
-  ```
+### Schritt 10 – „klar“ durchsichtiger (Entscheidung 8; gebaut am 14.11. abends, Branch `wasser-look`)
 
-  „dunkel“ muss ohne Abweichung bleiben.
-- **Darf nicht passieren:** Ein Median unter der Grenze. Ein geänderter Wert im Block „dunkel“. Live, bevor er es gesehen hat.
+Nur der Ton „klar“. Durchsichtiger heißt: mehr von der Szene durch das Wasser – nicht eine hellere Farbe. Am Handy und am Desktop. Die Grenzen bleiben: Titel 7, Text 4,5, Platzhalter 3. **Der Besitzer hat es noch nicht gesehen.**
+
+- **Gebaut** (`docs/wasser-look/vorlage/kern.css`, Teil 1, Block „klar“; am Desktop dazu `desktop.css`, Teil 2):
+
+  | Wo | Wert | vorher | jetzt | wirkt auf |
+  |---|---|---|---|---|
+  | Handy und Desktop | `--wa-shelf`, `--wa-deep` (die letzte Zahl: wie deckend) | .21, .25 | **.16, .19** | die Tiefe in der Mitte eines Beckens (Karten, Panels) |
+  | Handy und Desktop | `--wa-under` | .56 | **.51** | was den Tropfen gesagt wird, worauf sie liegen: 1 − (1 − .28) × (1 − .16) × (1 − .19). Die Farbe (31, 35, 37) blieb; genau gemischt wäre sie (37, 43, 48) – ausprobiert, die Etiketten der Tropfen ändern sich damit um höchstens 0,1 |
+  | nur Desktop | `--wa-weit-grund-panel` (neu) | – (es war `--wa-weit-grund`, .7) | **`brightness(.8)`** | wie stark ein **Panel** die Szene dahinter abdunkelt |
+  | nur Desktop | `--wa-weit-grund` | `brightness(.7)` | `brightness(.7)` (bleibt) | Dock, Wetterzeichen auf der Insel, Suche |
+  | nur Desktop | `--wa-weit-kopf` (neu) | – | **`rgba(var(--wa-dark), .3)`** | ein weicher Schatten über dem Kopf eines Panels, wo sein Titel steht (`desktop.css`, Teil 2: `inset 0 64px 40px -36px`; auf der Tageskarte höher: `inset 0 150px 80px -64px`, unter Gruß, Uhr und Datum) |
+
+  Im Block „dunkel“ stehen die zwei neuen Werte mit dem, was dort schon galt (`--wa-weit-grund-panel: brightness(.88)` wie `--wa-weit-grund`, `--wa-weit-kopf: transparent`): „dunkel“ ist Bildpunkt für Bildpunkt gleich (unten). Ein Ton hat damit 59 Werte statt 57.
+- **Warum die Reparatur am Desktop** (Auftrag: keine Grenze unterschreiten, und wenn doch, die Stelle reparieren statt den Ton wieder abzudunkeln): Der erste Versuch (`--wa-weit-grund` für alles auf `brightness(.8)`) hielt bei Tag im November alle Grenzen, an einem **Wintertag** (Schnee in der Landschaft: `desktop.mjs kontrast --zeiten 2027-01-15T12:40:00+01:00`) nicht: Paneltitel unten 6,4 (vorher 8,1), Paneltitel „Projekte“ 7,0 (8,8), Wetterzeichen klein 4,4 (4,8); auf der Tageskarte fiel die Uhr bei Tag von 7,1 auf 5,1 und das Datum im Winter auf 4,5. Repariert sind genau diese Stellen: Die Köpfe der Panels behalten ihren Grund (der Schatten), kleine Flächen mit kleiner Schrift (Wetterzeichen) und das Dock behalten ihre alte Abdunkelung. Die Mitte jedes Panels ist durchsichtiger.
+- **Gemessen** (Arbeitsmaschine, Chromium, reduzierte Bewegung; Median über die Bildpunkte der Buchstaben, vorher → nachher; der niedrigste Wert über alle Szenen):
+  - **Handy** (`kontrast.mjs --app --toene klar`, acht Szenen und die App): kein Median unter der Grenze. Kartentitel 10,6 → 9,6 (niedrigster), Zeile: Titel 11,2 → 10,2, Zähler 6,6 → 5,8, Tropfen auf Karte 7,4 → 6,7, Tropfen klein 6,8 → 6,1. Bögen, Felder, Suche, Hinweis: gleich (±0,2). Von Hand dazu (Start bei Tag – Schnee und Wolken hinter der Tageskarte): Uhr 10,2 → 9,1, Gruß 6,1 → 5,4, Datum 9,5 → 8,7; Einstellungen über „Start“: Titel 10,8 → 10,7; Platzhalter eines Felds auf einer Karte („Material“, „Projekt“) 6,8 → 6,6 und 6,7 → 6,5; kleine Schrift in Mulden 6,7 → 6,0.
+  - **Desktop** (`desktop.mjs kontrast --toene klar`, 2000 × 993; dazu ein Wintertag und 1920 × 1080 bei Tag): §DESKTOP§
+- **Ein Mangel, der schon vorher da war** (nicht von diesem Schritt, nicht repariert): Der Platzhalter des Suchfelds („Projekte, Versionen, …“) hat im Ton „klar“ 2,3 bis 2,6, am Desktop bei Tag 1,9 – unter 3, vorher wie nachher. Das Suchfeld trägt keine Klasse des Looks; sein Platzhalter hat die Farbe des Browsers. Eine Reparatur bräuchte einen eigenen Wert je Ton (in „dunkel“ hält er mit 4,0 die Grenze und darf sich nicht ändern).
+- **Zurückdrehen:** im Block „klar“ `--wa-shelf` .21, `--wa-deep` .25, `--wa-under` .56, `--wa-weit-grund-panel: brightness(.7)`, `--wa-weit-kopf: transparent` – dann ist „klar“ wieder, wie es war. Weiter drehen: dieselben Werte; danach `kontrast.mjs --app --toene klar --szenen start,heute,projekte,material,druck,wetter,archiv,innen` und `desktop.mjs kontrast --toene klar --zeiten nacht,tag,2027-01-15T12:40:00+01:00`.
+- **Bilder für ihn** (vorher = der Stand `feinschliff-basis`, der live ist; nachher = dieser Stand; Ton „klar“, Mittag 12:40 und Nacht 21:30, deviceScaleFactor 2, reduzierte Bewegung, damit nur das Wasser verglichen wird): `docs/wasser-look/entwurf/tempo-und-ton/` – je Bildschirm ein Bild „vorher | nachher“ (Handy: Start, Heute, Projekte, Bogen „Neues Projekt“; Desktop 2000 × 993: Start, Heute, Projekte) und die Einzelbilder im Unterordner `einzeln/`.
+- **„dunkel“ bleibt:** `node scripts/wasser/sollist.mjs --soll git:52dfff3 --toene dunkel` (Handy, Desktop in beiden Formaten, bei Nacht und bei Tag): §SOLLIST§
+- **Prüfen:** die Befehle unter „Zurückdrehen“, dazu `desktop.mjs pruefen`, `pruefen.mjs --app` (Prüfung 10: die zwei Töne haben dieselben 59 Werte) und `sollist.mjs --toene dunkel`.
+- **Darf nicht passieren:** Ein Median unter der Grenze – auch an einem Wintertag. Eine Abweichung in „dunkel“. Live, bevor er es gesehen hat.
 
 ### Schritt 11 – Weiches Gehen (Entscheidung 10; offen, nach den Einbauten)
 
@@ -1003,7 +1003,7 @@ Die Vorschau der App muss laufen (`npm run build && npm run preview`), außer f�
 | `node scripts/wasser/vergleich.mjs` | Ist es noch der freigegebene Look? Vorschauseite, App, jeder berechnete Stil, Bewegung – die Vorlage gegen den am 13.11. freigegebenen Stand | 35 min (nur `bilder`: 5 min) |
 | `node scripts/wasser/kontrast.mjs --app` | Lesbarkeit am Handy, beide Töne | 3 min (alle acht Szenen: 5,5 min) |
 | `node scripts/wasser/kontrast.mjs --css '.tk__date b' --welt start` | Lesbarkeit **eines** Elements, über seinen Selektor (Abschnitt 6, Punkt 5); mit `--desktop` am Desktop | 15 s (Desktop: 40 s) |
-| `node scripts/wasser/desktop.mjs kontrast` | Lesbarkeit am Desktop, beide Töne, Nacht und Tag | 5 min |
+| `node scripts/wasser/desktop.mjs kontrast` | Lesbarkeit am Desktop, beide Töne, Nacht und Tag; der hellste Grund ist ein Wintertag: `--zeiten 2027-01-15T12:40:00+01:00` (Schnee) | 5 min |
 | `node scripts/wasser/messen.mjs ruhe` | lebt es in Ruhe, und bleibt es ruhig? (Vorschauseite) | 10 s |
 | `node scripts/wasser/messen.mjs takt` | Bilder je Sekunde in der App: wie es ist, Lichter angehalten, ohne Tropfen | 20 s |
 | `node scripts/wasser/desktop.mjs takt` | was der Look am Desktop kostet (gegen dieselbe App ohne Look) | 2 min |
@@ -1138,8 +1138,8 @@ Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau �
 
 **Vom Besitzer entschieden, noch nicht gebaut:**
 
-- Das Tempo der Lichter ein wenig schneller (Entscheidung 7; Schritt 9). Ein Versuch ist ausprobiert, ihm aber nicht gezeigt.
-- „klar“ ein wenig durchsichtiger (Entscheidung 8; Schritt 10). Ebenso.
+- Das Tempo der Lichter ein wenig schneller (Entscheidung 7; Schritt 9): **gebaut am 14.11. abends**; er hat es noch nicht gesehen (Film und Zahlen: Schritt 9).
+- „klar“ ein wenig durchsichtiger (Entscheidung 8; Schritt 10): **gebaut am 14.11. abends**; er hat es noch nicht gesehen (Bilder vorher/nachher: Schritt 10).
 - Weiches Gehen von Bögen, Schubladen und Zeilen (Entscheidung 10; Schritt 11). Nichts gebaut; offen ist, was mit den nachrückenden Zeilen geschieht.
 - Die Wartezeit beim Reiterwechsel (Entscheidung 11; Schritt 8): **gebaut am 14.11. abends**, auf der Arbeitsmaschine gemessen; ob sie am Handy des Besitzers weg ist, sagt nur sein Handy.
 
@@ -1212,8 +1212,8 @@ Am 14.11., auf der Arbeitsmaschine (Chromium, ohne Grafikkarte), in Kopien auße
 | ein Komma weglassen (Fallstrick 1) | die Zeile verliert ihre Mulde, keine Meldung |
 | eine Kopie der Vorlage ausprobieren (`mobil.html?vorlage=…`, `--look <Ordner>`) | ein geänderter Wert (`--wa-drop-amber`) erscheint auf der Seite und in den Bildern |
 | eine Farbe ändern (Abschnitt 6, in einem Wegwerf-Klon mit Git) | „dunkel“ ohne Abweichung, „klar“ acht Bilder mit DIFF; Kontrast über acht Szenen: kein Median unter der Grenze |
-| das Tempo der Lichter ändern (Schritt 9) | `pruefen.mjs` 54 von 54; Zahlen in Schritt 9 |
-| „klar“ durchsichtiger (Schritt 10) | kein Median unter einer Grenze, Handy und Desktop; Zahlen in Schritt 10 |
+| das Tempo der Lichter ändern (Schritt 9) | der Versuch: `pruefen.mjs` 54 von 54. Gebaut am 14.11. abends: §PRUEFEN§; Zahlen in Schritt 9 |
+| „klar“ durchsichtiger (Schritt 10) | der Versuch: kein Median unter einer Grenze im November – an einem Wintertag am Desktop doch (darum die Reparatur). Gebaut am 14.11. abends: kein Median unter einer Grenze, Handy und Desktop, auch im Winter; „dunkel“ unverändert. Zahlen in Schritt 10 |
 
 Aus dieser Probeseite stammen die Bilder in `docs/wasser-look/bilder/anleitung/`.
 

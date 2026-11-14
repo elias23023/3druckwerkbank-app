@@ -23,7 +23,7 @@ a stylesheet and a script injected under `.m-shell`) by restructuring, plus the 
 |---|---|
 | Files | `kern.css` (the look), `mobil.css` (what only the mobile shell needs), `desktop.css` (what only the desktop shell needs), `wasser.js` (the script). Load order: the app's own stylesheets, then these three, then the script. |
 | Switch | The attribute `data-wasser` on a root element: `data-wasser="mobil"` on `.m-shell`, `data-wasser="desktop"` on `.stage`. Every rule of `kern.css` starts with `[data-wasser]`, every rule of `mobil.css` with `[data-wasser="mobil"]`, every rule of `desktop.css` with `[data-wasser="desktop"]`. The script looks only inside the root (option `root`, default `[data-wasser]`). No attribute: the app as it is. |
-| Tones | `dunkel` (default) = dark mode, `klar` (`<html data-wa-ton="klar">`) = light mode. One block of 57 tokens each in `kern.css`, part 1, same tokens in the same order (the last two, `--wa-weit-*`, are read by the desktop shell only). No other rule mentions `data-wa-ton`; the script has no tone logic. Text is light in BOTH tones. |
+| Tones | `dunkel` (default) = dark mode, `klar` (`<html data-wa-ton="klar">`) = light mode. One block of 59 tokens each in `kern.css`, part 1, same tokens in the same order (the last four, `--wa-weit-*`, are read by the desktop shell only; 57 until 14.11. evening). No other rule mentions `data-wa-ton`; the script has no tone logic. Text is light in BOTH tones. |
 | Tokens | Every colour, radius, gradient, shadow, duration and easing is a `--wa-*` custom property on `[data-wasser]` (`kern.css` parts 1 to 3; the mobile shell's own in `mobil.css` part 1). One more name is read by the drops: `--water-under` (set by sheets). |
 | Blocks | Each building block is ONE nested rule with ONE selector list (`kern.css` part 4). Apply a block by adding a selector to its list, or by giving an element the block's neutral class `.wa-...`. |
 | Script | `Wasser.start(options)` / `Wasser.stop()`; `Wasser.MOBIL` = the default options (the mobile shell), `Wasser.DESKTOP` = the options of the desktop shell; `Wasser.info` = state of the drops. One global, one instance. |
@@ -363,12 +363,17 @@ Animations - and the Schwappen transitions) never read it.
   rest), free labels (`--wa-frei`, `--wa-frei-ink-2`, `--wa-frei-feld`, `--wa-r-chip`), the dock (`--wa-r-dock`,
   `--wa-r-tab`, `--wa-tab-lens`), the drawer (the Bogen tokens re-declared, `--wa-bogen-zug`, `--wa-scrim`,
   `--wa-scrim-blur: none`), the pointer (`--wa-zeiger`, `--wa-zeiger-film`, `--wa-zeiger-licht`, `--wa-haken-hit`).
-- **The two tone tokens of a wide stage** (`kern.css` part 1, last two of each tone; read by `desktop.css` only):
-  `--wa-weit-tiefe` (how much of a basin's depth is left where the painted scene is the star: dunkel .7, klar 1) and
+- **The four tone tokens of a wide stage** (`kern.css` part 1, last four of each tone; read by `desktop.css` only):
+  `--wa-weit-tiefe` (how much of a basin's depth is left where the painted scene is the star: dunkel .7, klar 1),
   `--wa-weit-grund` (what a sheet does to the scene seen THROUGH it, a filter function added to its blur: dunkel
-  `brightness(.88)`, klar `brightness(.8)`; `.7` until the owner's decision 8, 14.11.). The second one is the desktop's stand-in for the page's darkening
+  `brightness(.88)`, klar `brightness(.7)`; used by the dock, the weather signs and the search panel),
+  `--wa-weit-grund-panel` (the same for the panels: dunkel `brightness(.88)`, klar `brightness(.8)` since the owner's
+  decision 8, 14.11. evening - it was `--wa-weit-grund`) and `--wa-weit-kopf` (the colour of a soft shade over the head
+  of a panel, where its title sits: dunkel `transparent`, klar `rgba(var(--wa-dark), .3)`; geometry in `desktop.css`
+  part 2, a taller one for the card of the day). The dimming is the desktop's stand-in for the page's darkening
   (`--wa-page-*`): without it light text has no ground by day in the tone "klar". Turn them with
-  `node scripts/wasser/desktop.mjs kontrast` open: lighter water costs contrast at once (numbers in section 11).
+  `node scripts/wasser/desktop.mjs kontrast` open (also on a winter day: `--zeiten 2027-01-15T12:40:00+01:00`):
+  lighter water costs contrast at once (numbers in sections 11 and 15).
 
 The motion language:
 
@@ -1260,3 +1265,44 @@ do now (all of it in `lib.mjs`, used by `app()` and by `openDesktop()`):
   loads of ONE build). With `.island { transition: none !important; will-change: auto !important; }` on both sides
   the same build is equal to itself on all screens (`sollist.mjs`, its constant `STILL`).
 
+
+## 15. The pace and the tone "klar" (14.11., evening; owner's decisions 7 and 8 - he has seen neither)
+
+**The pace** (`kern.css` part 3): `--wa-t-ruhe-1..4` 24 / 34 / 40 / 46 s -> **17 / 24 / 29 / 33 s** (about 1.4 times; the
+proportions kept, the lengths share no common beat), gaits `steps(17)` / `steps(24)` / `steps(29)` / `steps(33)` (eight
+pictures a second, as before). `--wa-leben` stays 1; the breath of the bead (9 s), the short loop (12 s), the keyframes
+and the WebKit gait (`linear`) are unchanged. `desktop.css` and `mobil.css` declare no length of their own (`mobil.css`
+only offsets a start by fractions of `--wa-t-ruhe-3`).
+- `messen.mjs ruhe` (harness, "dunkel", three runs each, before = `--look git:52dfff3`, in turn): cards, share of pixels
+  that change by 4 or more within 1 s: 3.1 / 2.6 / 2.2 % -> 3.8 / 4.6 / 4.0 %; within 4 s: 9.3 / 8.4 / 9.0 % -> 14.6 /
+  15.5 / 14.7 %. Tab bar within 1 s: 3.3 to 5.0 % -> 5.3 to 6.4 %. "klar", one run each: cards 2.8 -> 5.2 % (1 s),
+  8.2 -> 12.8 % (4 s). No glyph pixel changes by more than 2 of 255 (floor 4).
+- Film for the owner: `leben.mjs` got `--looks 'Name=<look>,...'` (one recording per copy of the template, each label
+  carrying the four lengths READ FROM THE PAGE, so a label cannot silently name the wrong folder), `--weg ruhe`
+  (one screen at rest, the water woken once by a synthetic scroll event just before recording), `--welt`, `--sekunden`,
+  `--titel`. `docs/wasser-look/entwurf/tempo-und-ton/tempo.mp4` / `.webp`: "Heute", tone "dunkel", 20 s, left
+  `git:52dfff3` (read: 24 / 34 / 40 / 46 s), right the template (read: 17 / 24 / 29 / 33 s).
+
+**The tone "klar" more see-through** (`kern.css` part 1, block "klar"; `desktop.css` part 2):
+- Both shells: `--wa-shelf` alpha .21 -> .16, `--wa-deep` .25 -> .19, `--wa-under` .56 -> .51 (= 1 - .72 x .84 x .81;
+  its rgb 31, 35, 37 kept - the exact mix of the three layers would be 37, 43, 48: tried on the harness, the labels on
+  drops change by at most 0.1 with it, so it was left as the candidate had it).
+- Desktop: the candidate `--wa-weit-grund: brightness(.8)` for every sheet held all floors by a November day but NOT on
+  a winter day (`desktop.mjs kontrast --zeiten 2027-01-15T12:40:00+01:00`; that option takes ISO times since this step):
+  panel title of the bottom row 8.1 -> 6.4, panel title "Projekte" 8.8 -> 7.0, small text of a weather sign 4.8 -> 4.4;
+  and the clock of the day card fell from 7.1 to 5.1 by a November day. The places were repaired, not the tone darkened:
+  - `--wa-weit-grund` stays `brightness(.7)` in "klar" (dock, weather signs, search panel: unchanged);
+  - NEW `--wa-weit-grund-panel` (dunkel `brightness(.88)` = as before, klar `brightness(.8)`): the panels only;
+  - NEW `--wa-weit-kopf` (dunkel `transparent`, klar `rgba(var(--wa-dark), .3)`): the colour of an inset shadow over
+    the head of every panel (`inset 0 64px 40px -36px`) and, taller, of the card of the day (`inset 0 150px 80px -64px`,
+    under greeting, clock and date). The title keeps its ground; the middle of the panel is more see-through.
+  A tone now has 59 tokens (57 before); both blocks list the same ones (`pruefen.mjs`, check 10).
+- Contrast, phone (`kontrast.mjs --app --toene klar`, eight scenes + app): no median below its floor. Lowest card title
+  10.6 -> 9.6, row title 11.2 -> 10.2, count 6.6 -> 5.8, drop on a card 7.4 -> 6.7, small drop 6.8 -> 6.1 (worst 5 %:
+  5.1 -> 4.5); sheets, fields, search, toast within 0.2. By hand (Start, the start scene's snow and clouds behind the day
+  card): clock 10.2 -> 9.1, greeting 6.1 -> 5.4, date 9.5 -> 8.7; a placeholder in a field ON a card 6.8 -> 6.6.
+- Contrast, desktop: DESKTOP_NUMBERS
+- Found, not caused by this step and not repaired: the placeholder of the search field has 2.3 to 2.6 in "klar" (1.9
+  on the desktop by day), below 3, before and after. The field carries no class of the look; its placeholder has the
+  browser's colour. In "dunkel" it has 4.0 and may not change, so a repair needs a tone token of its own.
+- "dunkel": SOLLIST_NUMBERS

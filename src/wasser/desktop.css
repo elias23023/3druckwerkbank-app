@@ -109,8 +109,9 @@
   &:nth-of-type(3n) { border-radius: var(--wa-r-panel-3); }
   /* the stage is the star: the depth is thinner than on the phone, and what the phone's page does to the scene (it darkens
      it) the panel does to the scene seen through it - both are values of the tone (kern.css, --wa-weit-*) */
-  -webkit-backdrop-filter: var(--wa-blur) var(--wa-weit-grund);
-  backdrop-filter: var(--wa-blur) var(--wa-weit-grund);
+  -webkit-backdrop-filter: var(--wa-blur) var(--wa-weit-grund-panel);
+  backdrop-filter: var(--wa-blur) var(--wa-weit-grund-panel);
+  box-shadow: var(--wa-meniscus), var(--wa-shallow), inset 0 64px 40px -36px var(--wa-weit-kopf), var(--wa-far), var(--wa-lift);   /* the shade over its head (--wa-weit-kopf: none in "dunkel") */
   &::before, &::after { opacity: var(--wa-weit-tiefe); }
   /* its light: only the one on the lit rim, at part strength (a wall of panels must not shimmer); under the pointer the
      water wakes. No light on the far rim, none on the floor - those are for the one large basin of a world (below) */
@@ -122,6 +123,7 @@
   :root[data-motion="reduziert"] & { animation: none !important; }
 }
 [data-wasser="desktop"] .panel-col > .glass.panel { position: relative; padding: 13px 15px; }   /* (a basin needs a position; in a column the app's panels have none) */
+[data-wasser="desktop"] .glass.panel.tk { box-shadow: var(--wa-meniscus), var(--wa-shallow), inset 0 150px 80px -64px var(--wa-weit-kopf), var(--wa-far), var(--wa-lift); }   /* the card of the day: its head carries greeting, clock and date - a deeper shade */
 /* the one large panel in the middle of a world (druck, material, wetter, archiv: the app marks it with the class
    panel--haupt; the first project card): the full depth of a basin and the light on its floor. */
 [data-wasser="desktop"] :is(.glass.panel.panel--haupt, .glass.panel.project-card) {
