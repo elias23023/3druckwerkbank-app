@@ -1,0 +1,1453 @@
+/* Kopie – nicht von Hand ändern. Quelle: docs/wasser-look/vorlage. Neu holen: node scripts/wasser/uebernehmen.mjs */
+/* ---- Wasser-Look: Kern ----
+   The look itself: its switch, its two tones, its form, its motion language and its building blocks. Nothing in this
+   file belongs to one screen size. What only the mobile shell needs is in mobil.css, what only the desktop needs in
+   desktop.css; wasser.js adds what CSS cannot do (the water drops, the ring, the flowing marker, light helpers, sleep).
+   Load order: the app's own stylesheets, then kern.css, mobil.css, desktop.css. The look wins over the app's rules by
+   coming LATER with at least the same weight - never load it before them.
+
+   THE SWITCH   The look applies inside the element that carries the attribute data-wasser, and nowhere else:
+                <div class="m-shell" data-wasser="mobil">   (mobile shell)    data-wasser="desktop" on the desktop root.
+                Every rule here starts with [data-wasser]; mobil.css with [data-wasser="mobil"]. Remove the attribute
+                and the app is as it was.
+   THE TONES    "dunkel" (default, the dark mode) and "klar" (<html data-wa-ton="klar">, the light mode). A tone is one
+                block of token values (part 1) and nothing else.
+   THE TOKENS   Every colour, radius, gradient, shadow, duration and easing is a custom property --wa-* declared on
+                [data-wasser] (parts 1 to 3). Rules only combine them. A token that is built from other tokens is
+                resolved where it is DECLARED: to change the light of one sheet only, re-declare the built token there.
+
+   BUILDING BLOCKS (part 4). Each block is ONE rule with ONE selector list; everything that belongs to it - its
+   pseudo-elements, its pressed state, its behaviour without motion - is nested inside (CSS nesting, "&" = the list).
+   The list names, in this order: the neutral class of the block (.wa-...), the classes both shells share (.btn,
+   .sheet, .input ...), and the elements of one shell (marked "mobil" / "desktop").
+     TO APPLY A BLOCK TO ANOTHER ELEMENT: add its selector to the list of the block (look for
+     "apply this block to further elements here"), or give the element the neutral class.
+     Where a block also needs the script, its comment names the option of Wasser.start() that takes the same selector.
+     A list has the weight of its heaviest entry (:is()). A rule that changes one member of a block afterwards needs at
+     least that weight, or it loses without a word - write it nested in the block, or with as many classes.
+     CSS cannot add to a selector list from another file. So the lists live HERE, also for elements that only one shell
+     has; mobil.css and desktop.css hold what a shell needs beyond the blocks (sizes, places, its own tokens).
+
+   Dosage - the more often something appears on a screen and the more text it carries, the less water:
+     Stufe 3  Tropfen                 live water that bends what is behind it (WebGL, wasser.js). Few per screen.
+     Stufe 2  Becken, stilles Wasser, dichtes Wasser, Bogen, Tropfen-Hinweis
+                                      sheets of still water: material and rim, alive at rest through wandering light.
+     Stufe 1  Mulde, Etikett, Feld, Wahl, Haken, Pegel, Perle
+                                      a breath of water: shape and a light edge, still at rest, every change moves like water.
+     Stufe 0  text, icons, photos, charts: untouched.
+   Answers and life: Ring (a tap), Markierung (the active one of a bar), Wasserlinie (keyboard focus), Licht,
+   Bodenlicht, Lichtlauf, Atmen (life at rest), Zug (scrolling), Schwappen (arrival), Ruhe (sleep).
+   Light comes from the upper left, everywhere.
+
+   Rules for everything made of this material:
+   - NEVER put a blur on a child layer (pseudo-element, helper) of a sheet: an ancestor with opacity, filter, mask
+     or clip-path becomes the backdrop of that child and the blur shows nothing. The backdrop-filter stays on the sheet
+     element itself. Write -webkit-backdrop-filter BEFORE backdrop-filter (the app's build keeps only the last of two
+     equal values).
+   - Never animate the sheet element itself at rest. What moves on a blurred sheet is a small layer of its own, moved by
+     transform and opacity only, and it stops with the water's sleep.
+   - Nothing closer than 14 px to a drop may clip (no overflow: hidden): the drop's bulge and shadow live there.
+   - A block never sets "position" on an element that already has one (a panel that is absolutely placed); the hooks
+     that need a positioned box say so. */
+
+/* == 0. Der Schalter ============================================================================================== */
+[data-wasser] {
+  -webkit-tap-highlight-color: transparent;     /* the browser's own flash under the finger (pale blue on Android, grey on an iPhone) is off in the whole look - the property is inherited. Everything that can be tapped answers the touch itself */
+}
+
+/* == 1. Töne ====================================================================================================== */
+/* A tone is one block of values. Both blocks list the SAME 55 tokens in the SAME order (also those with the same value),
+   so either tone can be read, changed or removed without looking at the other. No other rule in the look mentions
+   data-wa-ton, and wasser.js has no tone logic: a drop reads what it needs from the sheet it lies on. */
+
+/* -- Ton "dunkel" (default, no attribute; the dark mode): a mountain lake at night. Neutral graphite, no blue. Clear
+      at the rim, where the scene shows through softly and with little colour; one step in, the water is deep and dark,
+      and the text sits there. All light is white; only the light gathered on the far side carries a breath of warmth. -- */
+[data-wasser] {
+  --wa-drop-red: 150, 28, 38, .7;               /* danger ("Löschen"): r, g, b, amount of tint - read by the drops (wasser.js, PROP.red). Owner's decision 13.11.: the deeper, quieter red on this tone, the clear red on "klar" */
+  --wa-drop-veil: 1;                            /* how much of a sheet's light a clear drop lying on it gathers into its body, 0 .. 1 - read by the drops (wasser.js, PROP.veil). 1 = the silver drops on the dark cards. A sheet may say otherwise for its own drops (the bottom sheet does: --wa-bogen-veil) */
+  /* the light in this water: r, g, b triplets (used as rgba(var(--wa-light), a)) */
+  --wa-light: 232, 236, 241;                    /* soft light: ring, glints, and the light a drop gathers on a sheet (wasser.js) */
+  --wa-core: 255, 255, 255;                     /* its hot core: meniscus, highlights */
+  --wa-warm: 255, 250, 244;                     /* light gathered on the far side of a sheet: a breath warm */
+  --wa-dark: 0, 0, 0;                           /* shade: lift shadows, the near wall of a trough */
+  /* the water, from the rim to the deep */
+  --wa-clear: rgba(8, 12, 20, .27);             /* shallow, clear water: the band at the rim (a breath cool: it balances the warm scenes) */
+  --wa-shelf: rgba(20, 21, 24, .72);            /* first step down */
+  --wa-deep: rgba(18, 19, 22, .55);             /* the deep middle, on top of the shelf */
+  --wa-under: rgba(18, 19, 23, .91);            /* all three together where buttons lie: what a drop is told it lies on */
+  --wa-still: rgba(18, 19, 23, .84);            /* plain still water without depth steps: small free-standing surfaces */
+  --wa-dense: rgba(18, 19, 23, .93);            /* the deep end: surfaces that content scrolls under. The floor's graphite, so it is a slab of water against the black around it, not a hole */
+  --wa-sheet: rgba(18, 19, 23, .95);            /* a bottom sheet: the deep end once more, a touch denser - it covers a page full of text and carries forms */
+  --wa-abyss: 4, 5, 7;                          /* r, g, b of the dark the page sinks into (under the mobile bar; the scrim behind a sheet) */
+  --wa-page-1: .35;  --wa-page-2: .15;  --wa-page-3: .55;  --wa-page-4: .85;   /* how much the page darkens the painted scene: at the top of the screen, at 30 %, at 70 %, at its foot (mobil.css, "Seite"; these are the app's own four) */
+  --wa-page-ink-3: rgba(244, 246, 251, .5);     /* faint text directly on the page (the app's own value) */
+  /* softness: always on the sheet element itself */
+  --wa-sat: .55;                                /* how much colour the water leaves the scene behind it (also read by the drops): low, so warm wood never turns the rim brown. Not above about .6 */
+  --wa-blur: blur(16px) saturate(var(--wa-sat));
+  --wa-blur-dense: blur(18px) saturate(var(--wa-sat));
+  /* the rim of a sheet (four box-shadows, always used together) */
+  --wa-meniscus: inset 0 1px 0 rgba(var(--wa-core), .55), inset 1px 0 0 rgba(var(--wa-core), .24), inset 0 0 0 1px rgba(var(--wa-core), .1),   /* the bright line on the lit side */
+    inset 2px 3px 4px -2px rgba(var(--wa-dark), .4);                         /* ... and its dark side just inside: the edge has a thickness */
+  --wa-shallow: inset 0 0 12px 3px rgba(var(--wa-light), .11);               /* light caught by the shallow band: a pool, not a plate, also over dark ground */
+  --wa-far: inset -1px -1px 0 rgba(var(--wa-warm), .34), inset -10px -14px 22px -14px rgba(var(--wa-warm), .6);   /* light gathers inside the side away from the light, as in a drop */
+  --wa-lift: 3px 14px 30px -14px rgba(var(--wa-dark), .75), 1px 2px 5px rgba(var(--wa-dark), .25);              /* the shadow under the sheet */
+  --wa-whisper: radial-gradient(64% 46% at 88% 104%, rgba(var(--wa-warm), .07) 0%, rgba(var(--wa-warm), 0) 70%),   /* a whisper of light on the floor, */
+    radial-gradient(52% 40% at 6% -4%, rgba(var(--wa-core), .05) 0%, rgba(var(--wa-core), 0) 70%);              /* near the rim only */
+  --wa-glanz: .3;                               /* the light that wanders along the lit rim of a sheet at rest ("Licht"): strength of its soft glow at the rim ... */
+  --wa-glanz-linie: 1;                          /* ... and of the glint on the rim line itself */
+  --wa-glanz-fern: .34;                         /* the same for the light gathered on the far side: glow ... */
+  --wa-glanz-fern-linie: .9;                    /* ... and glint */
+  --wa-boden: .26;                              /* the light that wanders over the floor of a basin ("Bodenlicht"): its strength in the middle of the patch, before the deep water above it takes its share */
+  /* the rim of a dense sheet */
+  --wa-dense-far: inset -10px -12px 16px -13px rgba(var(--wa-warm), .3);
+  --wa-dense-shallow: inset 0 0 12px 1px rgba(var(--wa-core), .07);          /* shallower, clearer towards the rim */
+  --wa-dense-lift: 0 5px 14px rgba(var(--wa-dark), .55);
+  /* Mulde: a deeper place in the floor (rows, number tiles, input fields) */
+  --wa-trough: rgba(0, 0, 0, .38);
+  --wa-trough-walls: 0 0 4px 1px rgba(var(--wa-dark), .3), inset 0 7px 8px -6px rgba(var(--wa-dark), .6), inset 0 -7px 7px -6px rgba(var(--wa-core), .13);   /* soft edge, near wall in shade, far wall lit */
+  --wa-trough-line: inset 0 -1px 0 rgba(var(--wa-core), .1);                 /* one faint line of light on the far edge of a trough that can be tapped */
+  --wa-trough-press: rgba(var(--wa-core), .12);                              /* ... and its water while it is pressed */
+  /* text on the water */
+  --wa-ink-2: rgba(244, 246, 251, .82);         /* muted text on open water (counts, loose lines) */
+  --wa-ink-3: rgba(244, 246, 251, .5);          /* faint text on open water */
+  --wa-ink-2-trough: rgba(244, 246, 251, .74);  /* muted text in a trough */
+  --wa-ink-3-trough: rgba(244, 246, 251, .5);   /* faint text in a trough */
+  --wa-shade: none;                             /* the shade loose text carries on open water (text-shadow) */
+  --wa-shade-pill: none;                        /* ... and the label of a pill */
+  /* pills lying on the water: flat labels */
+  --wa-pill-line: rgba(var(--wa-core), .14);
+  --wa-pill-on-bg: rgba(var(--wa-core), .12);   /* the selected pill is lit */
+  --wa-pill-on-edge: rgba(var(--wa-core), .4);
+  /* a bar with a marker: labels and the marker (a bead of clear water) */
+  --wa-tab-ink: rgba(244, 246, 251, .76);       /* label of an inactive tab */
+  --wa-tab-ink-on: #fff;                        /* label of the active tab */
+  --wa-tab-halo: 0 0 1px rgba(var(--wa-abyss), .9), 0 1px 2px rgba(var(--wa-abyss), .6);   /* its shade (the bead's light passes behind it) */
+  --wa-tab-fallback: rgba(var(--wa-core), .12); /* tint of the active tab where the bead cannot be placed (no :has()) */
+  --wa-bead-lens: radial-gradient(90% 42% at 60% 110%, rgba(var(--wa-light), .46) 0%, rgba(var(--wa-light), .2) 44%, rgba(var(--wa-light), 0) 82%);   /* the far side glows: a lens */
+  --wa-bead-body: linear-gradient(170deg, rgba(var(--wa-core), .01), rgba(var(--wa-core), .06));
+  --wa-bead-rim:
+    inset 0 1px .5px rgba(var(--wa-core), .5),
+    inset 0 0 0 1px rgba(var(--wa-core), .16),
+    inset -1px -1.5px 1px rgba(var(--wa-core), .4),                /* the rim catches light on the far side */
+    inset -6px -8px 9px -6px rgba(var(--wa-core), .85),            /* crescent of gathered light inside the far side */
+    inset 5px 6px 9px -6px rgba(var(--wa-dark), .75),              /* the lit side stays dark */
+    4px 8px 9px -6px rgba(var(--wa-light), .42),                   /* glint on the floor below */
+    2px 6px 11px -2px rgba(var(--wa-dark), .85);
+}
+
+/* -- Ton "klar" (<html data-wa-ton="klar">; the light mode): clear water. No colour of its own - the scene stays
+      visible through a sheet, softened and a little quieter in colour; depth is neutral smoke in gentle steps, the
+      troughs are the calm, readable places, and loose text on the open water carries its own soft shade. All light is
+      plain white; text stays light (the app's old light theme with dark text is NOT this mode). -- */
+:root[data-wa-ton="klar"] [data-wasser] {
+  --wa-drop-red: 189, 31, 41, .72;             /* danger: the clear red (owner's decision for this tone, 13.11.) */
+  --wa-drop-veil: .3;                           /* the page under the cards is lighter here, so a drop gathers less light into its body: its white label keeps the ground it had before the page was lightened (with 1 the labels lost 0.7 to 1.5 of contrast; measured on eight scenes). Rim, highlight and far-side glow are untouched: it stays a drop of clear water. Not above about .35 */
+  --wa-light: 236, 244, 248;
+  --wa-core: 255, 255, 255;
+  --wa-warm: 255, 255, 255;
+  --wa-dark: 0, 0, 0;
+  --wa-clear: rgba(84, 94, 103, .28);           /* a veil of mid-grey: it lifts dark ground, lowers bright ground and takes the mottle out of foliage - calm, still see-through. A breath cool, against the brown of timber */
+  --wa-shelf: rgba(10, 14, 16, .21);            /* depth is neutral smoke in gentle steps */
+  --wa-deep: rgba(8, 12, 14, .25);
+  --wa-under: rgba(31, 35, 37, .56);
+  --wa-still: rgba(16, 20, 23, .5);
+  --wa-dense: rgba(62, 66, 70, .66);            /* the light mode: bar, toast and search are smoke-grey water you can see through, not black */
+  --wa-sheet: rgba(56, 60, 64, .82);            /* smoked-clear where text needs it: the page behind stays a soft presence, its words do not come through */
+  --wa-abyss: 33, 36, 40;                       /* the page sinks into haze, not into the dark */
+  --wa-page-1: .35;  --wa-page-2: .15;  --wa-page-3: .34;  --wa-page-4: .52;   /* the lower half of the screen stays light */
+  --wa-page-ink-3: rgba(244, 246, 251, .82);    /* (the page is lighter here: faint text needs more ink to stay above 4.5 : 1) */
+  --wa-sat: .52;                                /* (more colour let warm timber and foliage come through as brown and olive) */
+  --wa-blur: blur(12px) saturate(var(--wa-sat));   /* softened, not hidden: large forms (sky, hills, the sundial ring) stay, leaves do not */
+  --wa-blur-dense: blur(18px) saturate(var(--wa-sat));
+  --wa-meniscus: inset 0 1px 0 rgba(var(--wa-core), .75), inset 1px 0 0 rgba(var(--wa-core), .36), inset 0 0 0 1px rgba(var(--wa-core), .2);
+  --wa-shallow: inset 0 0 14px 0 rgba(var(--wa-core), .12),
+    inset 0 44px 34px -28px rgba(var(--wa-dark), .4);                        /* the near wall throws a soft shade into the water: the title of a card sits there */
+  --wa-far: inset -8px -12px 16px -12px rgba(var(--wa-warm), .5), inset -1.5px -2px 2px -1px rgba(var(--wa-warm), .4);   /* soft glow and one crisp line: the thickness of the edge */
+  --wa-lift: 3px 14px 30px -14px rgba(var(--wa-dark), .6), 1px 2px 5px rgba(var(--wa-dark), .2);
+  --wa-whisper: radial-gradient(64% 46% at 88% 104%, rgba(var(--wa-warm), .1) 0%, rgba(var(--wa-warm), 0) 70%),
+    radial-gradient(52% 40% at 6% -4%, rgba(var(--wa-core), 0) 0%, rgba(var(--wa-core), 0) 70%);   /* no light at the upper left: the card's title sits there on open water */
+  --wa-glanz: .32;
+  --wa-glanz-linie: 1;
+  --wa-glanz-fern: .34;
+  --wa-glanz-fern-linie: .9;
+  --wa-boden: .11;                              /* (clear water is shallow: less deep water above the floor, so less light is needed) */
+  --wa-dense-far: inset -10px -12px 16px -13px rgba(var(--wa-warm), .4);
+  --wa-dense-shallow: inset 0 0 12px 1px rgba(var(--wa-core), .1);
+  --wa-dense-lift: 0 5px 14px rgba(var(--wa-dark), .5);
+  --wa-trough: rgba(6, 9, 11, .28);
+  --wa-trough-walls: 0 0 9px 2px rgba(8, 11, 13, .26), inset 0 7px 8px -6px rgba(var(--wa-dark), .34), inset 0 -7px 7px -6px rgba(var(--wa-core), .13);
+  --wa-trough-line: inset 0 -1px 0 rgba(var(--wa-core), .12);
+  --wa-trough-press: rgba(var(--wa-core), .16);
+  --wa-ink-2: rgba(244, 246, 251, .92);
+  --wa-ink-3: rgba(244, 246, 251, .78);
+  --wa-ink-2-trough: rgba(244, 246, 251, .8);
+  --wa-ink-3-trough: rgba(244, 246, 251, .64);
+  --wa-shade: 0 1px 2px rgba(4, 7, 9, .5), 0 0 10px rgba(4, 7, 9, .42);
+  --wa-shade-pill: 0 1px 2px rgba(4, 7, 9, .45);
+  --wa-pill-line: rgba(var(--wa-core), .14);
+  --wa-pill-on-bg: rgba(var(--wa-core), .14);
+  --wa-pill-on-edge: rgba(var(--wa-core), .42);
+  --wa-tab-ink: rgba(244, 246, 251, .76);
+  --wa-tab-ink-on: #fff;
+  --wa-tab-halo: 0 0 1px rgba(var(--wa-abyss), .9), 0 1px 2px rgba(var(--wa-abyss), .6);
+  --wa-tab-fallback: rgba(var(--wa-core), .14);
+  --wa-bead-lens: radial-gradient(90% 42% at 60% 110%, rgba(var(--wa-light), .55) 0%, rgba(var(--wa-light), .24) 44%, rgba(var(--wa-light), 0) 82%);
+  --wa-bead-body: linear-gradient(170deg, rgba(var(--wa-core), .02), rgba(var(--wa-core), .08));
+  --wa-bead-rim:
+    inset 0 1px .5px rgba(var(--wa-core), .55),
+    inset 0 0 0 1px rgba(var(--wa-core), .2),
+    inset -1px -1.5px 1px rgba(var(--wa-core), .4),
+    inset -6px -8px 9px -6px rgba(var(--wa-core), .75),
+    inset 5px 6px 9px -6px rgba(var(--wa-dark), .6),
+    4px 8px 9px -6px rgba(var(--wa-light), .4),
+    2px 6px 11px -2px rgba(var(--wa-dark), .7);
+}
+
+/* == 2. Form (the same in every tone; colours here are either neutral or built from the tone tokens) ============== */
+[data-wasser] {
+  /* -- Tropfen: the drop and its plain glass (what a button is without WebGL) -- */
+  --wa-drop-pad: 14px;                          /* how far the drop canvas reaches beyond the button (must match PAD in wasser.js) */
+  --wa-drop-hit: -5px;                          /* the hit area reaches this far beyond the button box: the visible drop swells a few px, taps there count too */
+  --wa-drop-ink: #fff;                          /* label of a clear drop ... */
+  --wa-drop-halo: 0 0 1px rgba(4,5,7,.9), 0 1px 2px rgba(4,5,7,.7), 0 0 7px rgba(4,5,7,.5);   /* ... and the shade it carries: neutral, no navy */
+  /* tinted water, read by wasser.js (measure): r, g, b (0..255), amount of tint in the middle of the drop (0..1).
+     Amber is the same in every tone; the red of "Löschen" differs per tone (--wa-drop-red, part 1) */
+  --wa-drop-amber: 255, 184, 97, .7;            /* primary */
+  /* how much of the shader's own blue-white sky light a drop that lies FREE over the scene keeps (wasser.js, lightOf):
+     1 = all of it (3 to 7 b* bluer than the scene behind it), 0 = none (the same neutral light as a drop on a sheet,
+     --wa-light; over a pale sky the label zone then turns smoke-grey). .3 = a breath: the drop shows the sky as blue
+     as it is, and still reads as water over a pale sky. */
+  --wa-sky: .3;
+  /* the plain glass: neutral smoke, white light */
+  --wa-glass: linear-gradient(rgba(44,46,52,.5), rgba(24,25,29,.58));
+  --wa-glass-top: radial-gradient(52% 34% at 26% 0%, rgba(255,255,255,.4) 0%, rgba(255,255,255,0) 100%);   /* light on its upper left shoulder */
+  --wa-glass-sheen: radial-gradient(110% 80% at 64% 130%, rgba(255,255,255,.34) 0%, rgba(255,255,255,.08) 45%, rgba(255,255,255,0) 68%);
+  --wa-glass-line: rgba(255,255,255,.36);       /* its outline */
+  --wa-glass-rim: inset 0 1px 1px rgba(255,255,255,.5), inset 0 -1px 1px rgba(255,255,255,.2), inset -4px -7px 11px -7px rgba(255,255,255,.5), 2px 6px 14px -6px rgba(0,0,0,.6), 0 1px 3px rgba(0,0,0,.25);
+  --wa-glass-press: scale(1.04, .95);           /* pressed: the pane is squeezed ... */
+  --wa-glass-press-light: brightness(1.15);     /* ... and lights up */
+  --wa-ico-shade: drop-shadow(0 1px 1.5px rgba(0,0,0,.65));   /* under the icon inside a drop */
+  /* organic outlines: four different elliptical corners (a pebble of water), never tight enough to touch the label */
+  --wa-r-tropfen-1: 22px 42px 20px 36px / 62% 40% 68% 32%;
+  --wa-r-tropfen-2: 40px 22px 37px 20px / 38% 64% 34% 66%;
+  --wa-r-tropfen-3: 30px 36px 25px 44px / 52% 34% 74% 42%;
+  --wa-r-tropfen-rund-1: 62% 38% 55% 45% / 44% 60% 40% 56%;   /* round drops (icon buttons) */
+  --wa-r-tropfen-rund-2: 44% 56% 40% 60% / 58% 42% 60% 40%;
+  --wa-r-tropfen-an: 999px;                     /* while the live drop is drawn the box is a plain pill (hit area and focus line follow it) */
+  /* amber glass: the primary action keeps its warm identity */
+  --wa-amber-ink: #2a1606;
+  --wa-amber-halo: 0 1px 0 rgba(255,240,210,.5);
+  --wa-amber-line: rgba(255,244,214,.7);
+  --wa-amber-glass:
+    radial-gradient(52% 34% at 26% 0%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 100%),
+    radial-gradient(110% 80% at 64% 130%, rgba(255,244,196,.55) 0%, rgba(255,232,160,.14) 45%, rgba(255,232,160,0) 68%),
+    linear-gradient(170deg, rgba(255,204,124,.9) 0%, rgba(255,150,74,.88) 100%);
+  --wa-amber-rim:
+    inset 0 1px 1px rgba(255,255,255,.75),
+    inset 0 -1px 1px rgba(255,246,214,.45),
+    inset -4px -7px 11px -7px rgba(255,248,205,.8),
+    2px 6px 16px -6px rgba(255,140,48,.55),
+    0 1px 3px rgba(60,24,0,.3);
+  /* red glass: danger, deep red water with a light label */
+  --wa-red-ink: #ffeceb;
+  --wa-red-line: rgba(255,170,170,.5);
+  --wa-red-glass:
+    radial-gradient(52% 34% at 26% 0%, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 100%),
+    radial-gradient(110% 80% at 64% 130%, rgba(255,150,150,.4) 0%, rgba(255,150,150,.1) 45%, rgba(255,150,150,0) 68%),
+    linear-gradient(rgba(0,0,0,.14), rgba(0,0,0,.32)),                /* deeper towards the bottom */
+    rgba(var(--wa-drop-red));                                        /* the same red as the water drop (the token has four numbers: r, g, b, amount) */
+  /* a ghost button: a film of water under the finger */
+  --wa-film: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.08));
+  --wa-film-rim: inset 0 1px 1px rgba(255,255,255,.45), inset 0 -1px 1px rgba(255,255,255,.2);
+  /* the badge on a drop */
+  --wa-badge-line: rgba(255,255,255,.75);
+  --wa-badge-lift: 0 2px 6px rgba(120,10,10,.45);
+  /* -- Wasserlinie: the focus line, a line of light outside the outline -- */
+  --wa-focus: 2px solid rgba(255,255,255,.92);
+  --wa-focus-gap: 5px;                          /* around a drop or a pill: outside the flowing outline */
+  --wa-focus-gap-nah: 2px;                      /* around everything else */
+  /* -- Etikett (pill) free over the scene: a small glass bead; the selected one is lit, not blue -- */
+  --wa-r-pill: 12px 15px 11px 14px / 52% 46% 54% 48%;
+  --wa-pill-frei-line: rgba(255,255,255,.22);
+  --wa-pill-frei-rim: inset 0 1px .5px rgba(255,255,255,.4), inset -2px -4px 6px -4px rgba(255,255,255,.35), 0 2px 6px -2px rgba(0,0,0,.45);
+  --wa-pill-on-ink: #fff;
+  --wa-pill-on-fill: rgba(255,255,255,.16);
+  --wa-pill-on-line: rgba(255,255,255,.62);
+  --wa-pill-on-glow: inset 0 1px .5px rgba(255,255,255,.5), inset -2px -4px 6px -4px rgba(255,255,255,.6), 0 2px 8px -2px rgba(255,255,255,.28);
+  --wa-pill-frei-ok-line: rgba(120,230,160,.45);
+  --wa-pill-frei-ok-rim: inset 0 1px .5px rgba(255,255,255,.4), inset -2px -4px 6px -4px rgba(120,240,170,.6), 0 2px 8px -2px rgba(30,160,80,.45);
+  --wa-pill-frei-warn-line: rgba(255,205,120,.5);
+  --wa-pill-frei-bad-line: rgba(255,150,150,.5);
+  --wa-pill-frei-acc-line: rgba(255,210,150,.5);
+  /* ... and on the water: its status colours as thin, flat tints */
+  --wa-pill-ok-bg: rgba(76, 207, 122, .14);
+  --wa-pill-ok-edge: rgba(120, 230, 160, .3);
+  --wa-pill-warn-edge: rgba(255, 205, 120, .32);
+  --wa-pill-bad-edge: rgba(255, 150, 150, .32);
+  --wa-pill-acc-edge: rgba(255, 210, 150, .32);
+  /* -- Becken: a pool that has settled, not a box - four different corners, four variants -- */
+  --wa-r-becken-1: 26px 41px 30px 46px / 34px 26px 41px 30px;
+  --wa-r-becken-2: 42px 27px 46px 30px / 27px 37px 30px 41px;
+  --wa-r-becken-3: 30px 36px 26px 44px / 30px 34px 28px 40px;
+  --wa-r-becken-4: 38px 30px 44px 27px / 30px 28px 38px 36px;
+  --wa-shelf-inset: 22px;                       /* where the first step down begins, measured from the rim */
+  --wa-shelf-soft: 14px;                        /* ... and how softly (blur = spread of its shadow: no visible seam where the box ends) */
+  --wa-r-shelf: 9px 14px 11px 16px / 12px 8px 15px 10px;
+  --wa-deep-inset: 46px 44px 50px 40px;         /* where the deep middle begins */
+  --wa-deep-soft: 34px;
+  --wa-r-deep: 22px 30px 26px 34px / 28px 22px 32px 24px;
+  --wa-r-wasser: 21px 27px 22px 25px / 25px 21px 27px 22px;   /* small still sheet */
+  --wa-r-mulde: 15px 19px 14px 18px / 18px 14px 19px 15px;    /* trough */
+  /* a trough under the finger */
+  --wa-press-in: var(--wa-t-touch);             /* lights up at once ... */
+  --wa-press-out: var(--wa-t-settle);           /* ... and settles slowly */
+  /* -- Ring: the answer to a tap -- */
+  --wa-ring-size: 260px;                        /* its width when it fades out */
+  --wa-ring-time: var(--wa-t-wave);
+  --wa-ring-ease: var(--wa-ease-wave);
+  --wa-ring-amber: 255, 206, 134;               /* light under amber water (r, g, b) ... */
+  --wa-ring-amber-core: 255, 240, 206;          /* ... and its core */
+  --wa-ring-red: 255, 160, 160;                 /* light under red water */
+  --wa-ring-red-core: 255, 214, 214;
+  --wa-ring-ok: 150, 236, 182;                  /* light under green water: the ring a ticked check sends over the floor of its card */
+  --wa-ring-ok-core: 220, 255, 232;
+  /* -- Markierung: the bead that marks one child of a bar -- */
+  --wa-bar-pad: 5px;                            /* water around the children of the bar */
+  --wa-bar-tabs: 5;                             /* number of children (the marker is one child wide) */
+  --wa-r-bead: 25px 29px 24px 28px / 27px 24px 29px 25px;
+  --wa-bead-time: calc(var(--wa-t-flow) + .1s); /* the marker's way to the next child: a flow over a longer distance (wasser.js reads this for the flight; without the script it is the glide) */
+  --wa-bead-ease: var(--wa-ease-settle);        /* ... with a small overshoot */
+  /* -- Bogen: a sheet of dense water that rises from the bottom edge -- */
+  --wa-r-bogen: 30px 36px 0 0 / 26px 32px 0 0;  /* a soft, slightly uneven shoulder; square at the bottom edge of the screen */
+  --wa-bogen-rim: inset 0 1px 0 rgba(var(--wa-core), .5), inset 0 18px 22px -18px rgba(var(--wa-light), .2);   /* meniscus on the top edge, and the shallow water just below it catches light */
+  --wa-bogen-lift: 0 -14px 36px -6px rgba(var(--wa-dark), .6);
+  --wa-bogen-rise: 68px;                        /* how far below its place the wave starts */
+  --wa-bogen-swing: 5px;                        /* how far it runs past before it settles */
+  --wa-scrim: rgba(var(--wa-abyss), .55);       /* the page behind a sheet sinks into the dark ... */
+  --wa-scrim-blur: blur(5px);                   /* ... and out of focus, as under water: its words can no longer be read, its shapes stay. (Over a page that never rests - the desktop stage - set this to none) */
+  --wa-shore: inset 0 1px 0 rgba(var(--wa-core), .09);   /* a faint line where the foot of a sheet begins */
+  --wa-kamm: radial-gradient(58% 100% at 50% 0%, rgba(var(--wa-light), .3) 0%, rgba(var(--wa-light), 0) 72%);   /* the crest of the rising wave: light on its top edge */
+  --wa-kamm-h: 46px;                            /* ... how far down that light reaches */
+  --wa-kamm-t: var(--wa-t-wave);                /* ... and how long it takes to spread and fade: it outlasts the rise, the light is the last thing to come to rest */
+  --wa-linie: rgba(var(--wa-core), .1);         /* a faint dividing line on dense water (rule in a sheet, under the search field) */
+  --wa-bogen-veil: .35;                         /* how much of the sheet's light a clear drop on a bottom sheet gathers into its body (handed to the drops as --wa-drop-veil; 1 = the silver drops of the cards). A form carries up to eight buttons: there they are clear drops with a soft glow, not beads of light */
+  /* -- Setzen: a sheet that appears comes to rest -- */
+  --wa-setzt-rise: 16px;                        /* it rises this far ... */
+  --wa-setzt-swing: 2px;                        /* ... runs this far past its place and sinks back */
+  /* -- Tropfen-Hinweis: the toast -- */
+  --wa-r-hinweis: 19px 24px 18px 22px / 22px 18px 24px 19px;
+  --wa-hinweis-fall: 14px;                      /* it falls this far */
+  --wa-hinweis-rose: 255, 150, 158;             /* an error is told by the rim line (and by the icon the app puts into the text), never by a red surface */
+  /* -- Feld: a trough you can type into -- */
+  --wa-feld-line: linear-gradient(90deg, rgba(var(--wa-core), 0) 0%, rgba(var(--wa-core), .95) 8%, rgba(var(--wa-core), .95) 92%, rgba(var(--wa-core), 0) 100%);   /* the waterline of a focused field */
+  --wa-feld-line-h: 3px;
+  --wa-feld-on: inset 0 -14px 14px -9px rgba(var(--wa-light), .46),          /* with focus: light pooled at the far wall, */
+    inset 0 0 0 1.5px rgba(var(--wa-core), .72),                             /* a line of light all around - this is what finds the field at arm's length - */
+    0 0 0 3px rgba(var(--wa-core), .1), 0 0 16px rgba(var(--wa-light), .3);  /* and a soft halo around it */
+  --wa-feld-on-bg: rgba(var(--wa-core), .07);   /* ... and its water clears: the focused field is the one lit trough among dark ones */
+  --wa-feld-hint: var(--wa-ink-3-trough);       /* placeholder */
+  --wa-feld-pfeil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23f4f6fb' stroke-opacity='.82' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5'/%3E%3C/svg%3E");   /* the arrow of a select (data: image, allowed by the app's CSP like the bead's highlight) */
+  --wa-feld-rest: inset 0 -1px 0 rgba(var(--wa-core), .17), inset 0 0 0 1px rgba(var(--wa-core), .05);   /* at rest: the far wall catches a little light, so an empty field is found at a glance */
+  /* -- Wahl: labels of which one is chosen -- */
+  --wa-r-wahl: 11px 14px 10px 13px / 13px 10px 14px 11px;
+  --wa-wahl-bg: rgba(var(--wa-core), .055);     /* a label that can be chosen: flat tinted water, no rim - it steps back */
+  --wa-wahl-ink: var(--wa-ink-2);
+  --wa-wahl-on-ink: #fff;
+  --wa-wahl-on-shade: 0 1px 2px rgba(var(--wa-dark), .55);   /* the chosen label's own shade, on its lit bead */
+  --wa-wahl-on: linear-gradient(168deg, rgba(var(--wa-core), .1), rgba(var(--wa-core), .22));      /* the bead of the chosen one: its fill stays low (the label keeps its contrast), */
+  --wa-wahl-on-rim: inset 0 0 0 1.5px rgba(var(--wa-core), .8),              /* its rim is a full line of light - that is what tells it from the others at arm's length - */
+    inset 0 1px .5px rgba(var(--wa-core), .9), inset -3px -4px 5px -3px rgba(var(--wa-core), .48),  /* with the crescent of gathered light inside the far side (kept low: the label lies over it), */
+    0 0 9px rgba(var(--wa-light), .36), 0 2px 5px -2px rgba(var(--wa-dark), .7);                    /* a soft glow around it and its shadow */
+  /* -- Haken: a check circle -- */
+  --wa-haken-ring: rgba(var(--wa-core), .46);   /* rim of the empty hollow */
+  --wa-haken-hollow: inset 0 2px 3px rgba(var(--wa-dark), .6), inset 0 -1px 0 rgba(var(--wa-core), .16);
+  --wa-haken-water: radial-gradient(62% 52% at 34% 24%, rgba(255, 255, 255, .78) 0%, rgba(255, 255, 255, 0) 100%), linear-gradient(165deg, #7de9a6, #2aa85d);   /* green water with one highlight */
+  --wa-haken-rim: inset 0 0 0 1px rgba(255, 255, 255, .3), inset -2px -3px 4px -2px rgba(214, 255, 228, .75), 0 2px 6px -2px rgba(8, 50, 26, .8);
+  --wa-haken-ink: #06301a;                      /* the tick on green water (the app's colour) */
+  --wa-haken-hit: -9px;                         /* the hit area reaches this far beyond the circle (26 px -> 44 px) */
+  /* -- Pegel: water in a thin glass tube -- */
+  --wa-pegel-tube: rgba(var(--wa-dark), .36);
+  --wa-pegel-glass: inset 0 1px 1.5px rgba(var(--wa-dark), .75), 0 1px 0 rgba(var(--wa-core), .12);   /* shaded inside at the top, a light line below: a tube */
+  --wa-pegel-water: linear-gradient(90deg, rgba(var(--wa-light), .46), rgba(var(--wa-core), .92));     /* brighter towards its end */
+  --wa-pegel-amber: linear-gradient(90deg, rgba(255, 189, 107, .6), rgba(255, 208, 138, .98));
+  --wa-pegel-meniscus: radial-gradient(circle at 62% 42%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 72%);
+  --wa-pegel-voll: rgba(var(--wa-light), .8);   /* a filled piece of a level in pieces (the step line of a form) */
+  /* -- Perle: the small round icon button -- */
+  --wa-perle-bg: rgba(var(--wa-core), .07);
+  --wa-perle-rim: inset 0 1px .5px rgba(var(--wa-core), .34), inset 0 0 0 1px rgba(var(--wa-core), .09), inset -2px -3px 4px -3px rgba(var(--wa-core), .42);
+  --wa-perle-press: rgba(var(--wa-core), .22);
+  --wa-perle-line: rgba(var(--wa-core), .2);    /* outline of a text button that is kept as a bead (buttons that repeat per list row) */
+  /* -- Stufe 0 -- */
+  --wa-jetzt: rgba(var(--wa-core), .14);        /* the hours strip: the current hour is lit instead of blue */
+  --wa-akzent: var(--accent);                   /* accent of the two native controls (slider, checkbox): the app's amber */
+}
+
+/* == 3. Bewegung: die Sprache - every duration and easing of the look, declared once ============================= */
+/* Everything is alive, as ONE calm language of motion.
+   What moves when:
+     Stufe 3 (drops)      always alive: wasser.js draws them (flowing outline, ripples; the glint under a drop on a
+                          sheet breathes with the swelling of its drop).
+     Stufe 2 (sheets)     gently alive at rest: Licht, Bodenlicht, Lichtlauf, Atmen. Touch: flare and Ring. Scrolling:
+                          Zug. Change: the marker flows, a Bogen rises, a Hinweis lands, the light of a new sheet swings
+                          into place (Schwappen).
+     Stufe 1              still at rest; every change of state moves like water.
+     Stufe 0              nothing.
+   Rules that keep it calm and cheap:
+   - Only transform (also its single parts scale and translate) and opacity are animated, on layers of their own.
+     Never a blur, filter, mask, gradient stop, box-shadow or anything that needs layout. (The one exception: the
+     waterline of a focused field, a background-size on one small box.)
+   - Crisp light (the glints) moves only in a strip along the rim, where no text is. The light on the floor is so soft
+     that it has no edge anywhere, lies UNDER the deep middle, the rows and the text of a basin and keeps below its
+     title row. Text itself never moves.
+   - Loops at rest take 9 to 46 s. Where the browser's compositor can do it (Chromium) they are drawn at a steady
+     beat of eight pictures a second (steps() as "gait"): every picture of a resting light makes the browser redo the
+     backdrop blur of its sheet, and at these speeds no eye can tell eight pictures from sixty. Answers to a touch, to
+     scrolling and to a change run at the full rate - they are short.
+   - Every moving layer of a sheet lies INSIDE that sheet: a second layer in a sheet that already has one costs next
+     to nothing (the sheet's blur is redone once per picture), a light in a sheet that had none costs one more blur.
+   - Asleep together, awake together ("Ruhe" below). Short answers to a change of state are never paused (a toast must
+     be able to land while the water sleeps).
+   - No motion wanted (system setting, or the app's own switch data-motion="reduziert" on <html>): the lights are not
+     there at all, nothing eases, swings or breathes; states change at once. Every block carries these two rules
+     itself, nested at its end. */
+[data-wasser] {
+  /* durations, from the fingertip to the slow breath of resting water */
+  --wa-t-touch: 60ms;                           /* under the finger, at once: a trough lights up, a tab gives way */
+  --wa-t-fast: .14s;                            /* a touch is answered: something lights up, gives way or sinks away */
+  --wa-t-leave: .26s;                           /* something leaves, or springs back after a touch */
+  --wa-t-flow: .36s;                            /* something flows from one state or place to the next: bead, drop in a check, waterline */
+  --wa-t-settle: .62s;                          /* something larger arrives and comes to rest: sheet, toast, a new level */
+  --wa-t-wave: 1.1s;                            /* light travels over a sheet: ring, crest of a rising sheet */
+  --wa-t-swing: 1.6s;                           /* water that was moved and is let go swings out: the light after scrolling, the light of a sheet that has just arrived */
+  --wa-t-step: 40ms;                            /* things that arrive together come one shortly after the other */
+  /* loops at rest: length, and "gait" (the timing function between two keyframes). The keyframes have eight equal
+     intervals; with the gait steps(N) for a loop of N seconds resting light is redrawn at a steady beat of eight
+     pictures a second, and lights that started together are redrawn together. The lengths share no rhythm: the lights
+     never fall into step. (WebKit gets another gait, see below.) */
+  --wa-t-ruhe-1: 24s;  --wa-gang-1: steps(24);        /* the light on the lit rim of a sheet */
+  --wa-t-ruhe-2: 34s;  --wa-gang-2: steps(34);        /* the light on its far side */
+  --wa-t-ruhe-3: 40s;  --wa-gang-3: steps(40);        /* the light along a bar or a bottom sheet */
+  --wa-t-ruhe-4: 46s;  --wa-gang-4: steps(46);        /* the light on the floor of a basin */
+  --wa-t-ruhe-kurz: 12s;  --wa-gang-kurz: steps(12);  /* for a light on something that stays only a moment (ready, not used: see the note in "Tropfen-Hinweis") */
+  --wa-t-atem: 9s;  --wa-gang-atem: steps(9);         /* one breath of the bead that marks the active one of a bar */
+  /* easings */
+  --wa-ease-flow: cubic-bezier(.3, .7, .2, 1);        /* runs off at once, arrives softly */
+  --wa-ease-settle: cubic-bezier(.3, 1.45, .5, 1);    /* arrives, swings a little past, comes to rest - water */
+  --wa-ease-drain: cubic-bezier(.55, 0, .85, .45);    /* lets go slowly, then it is gone */
+  --wa-ease-wave: cubic-bezier(.3, .5, .6, 1);        /* a ring that spreads: fast at first, ever slower */
+  --wa-ease-swing: var(--wa-ease-settle);             /* water that was moved and is let go: swings past its rest, back, and is still (the damped swing just below, where the browser knows linear()) */
+
+  /* Ruhe: asleep together, awake together. Every loop at rest has animation-play-state: var(--wa-lauf). wasser.js (the
+     water's clock, Teil 1) sets data-wa-ruht on the root after 30 s without touch, scroll or key and removes it at the
+     next one. To freeze all life at rest by hand: [data-wasser] { --wa-lauf: paused; } */
+  --wa-lauf: running;
+
+  /* HOW MUCH LIFE the still sheets have, a number from 0 to 2: 0 = none is seen, 1 = as built, about 1.5 = the most that
+     still reads as calm. One number for the strength of every wandering light, the breath of the bead and the answer to
+     scrolling - never a speed. A control of TASTE, not of speed: at 0 every loop still runs, unseen, and costs what it
+     costs at 1 (to save work, pause them: --wa-lauf above). The shader of the drops does not read it; but the light on
+     the floor is seen through a clear drop, so a label on such a drop has a slightly lighter ground while the patch passes.
+     Set it HERE (on the root): the lights below are built from it where they are declared.
+     Bounded where it moves something (all checked from 0 to 2, at full pull): the lean never falls below a tenth of the
+     light's depth and never grows past 2.4 times it, the glints never slide further than at 1 and the light on the floor
+     never lags further than at 1 - at 1 they already use all the room a basin has. Above 1 it is the strength of the
+     lights and their lean that grow. */
+  --wa-leben: 1;
+  /* (the strengths of the tones - --wa-glanz ... --wa-boden, part 1 - times --wa-leben) */
+  --wa-l-oben: calc(var(--wa-glanz) * var(--wa-leben));
+  --wa-l-oben-linie: calc(var(--wa-glanz-linie) * var(--wa-leben));
+  --wa-l-fern: calc(var(--wa-glanz-fern) * var(--wa-leben));
+  --wa-l-fern-linie: calc(var(--wa-glanz-fern-linie) * var(--wa-leben));
+  --wa-l-boden: calc(var(--wa-boden) * var(--wa-leben));
+  /* Licht: the two lights at the rim of a sheet */
+  --wa-licht-linie: 2px;                        /* thickness of the glint on the rim line: twice the meniscus line it lies on, so it is seen */
+  --wa-licht-oben:                              /* lit side: a glint on the rim line that fades out towards both ends, */
+    linear-gradient(90deg, rgba(var(--wa-core), 0) 6%, rgba(var(--wa-core), var(--wa-l-oben-linie)) 36%, rgba(var(--wa-core), var(--wa-l-oben-linie)) 64%, rgba(var(--wa-core), 0) 94%) 0 0 / 100% var(--wa-licht-linie) no-repeat,
+    radial-gradient(40% 44% at 50% 0%, rgba(var(--wa-core), calc(var(--wa-l-oben) * 1.6)) 0%, rgba(var(--wa-core), 0) 100%),   /* its bloom, close to it, */
+    radial-gradient(50% 100% at 50% 0%, rgba(var(--wa-core), var(--wa-l-oben)) 0%, rgba(var(--wa-core), calc(var(--wa-l-oben) * .42)) 42%, rgba(var(--wa-core), 0) 100%);   /* and a soft glow below: brightest at the rim, gone 100 % of its depth further in */
+  --wa-licht-unten:                             /* far side: the same, standing on the bottom rim */
+    linear-gradient(90deg, rgba(var(--wa-warm), 0) 6%, rgba(var(--wa-warm), var(--wa-l-fern-linie)) 36%, rgba(var(--wa-warm), var(--wa-l-fern-linie)) 64%, rgba(var(--wa-warm), 0) 94%) 0 100% / 100% var(--wa-licht-linie) no-repeat,
+    radial-gradient(40% 44% at 50% 100%, rgba(var(--wa-warm), calc(var(--wa-l-fern) * 1.6)) 0%, rgba(var(--wa-warm), 0) 100%),
+    radial-gradient(50% 100% at 50% 100%, rgba(var(--wa-warm), var(--wa-l-fern)) 0%, rgba(var(--wa-warm), calc(var(--wa-l-fern) * .42)) 42%, rgba(var(--wa-warm), 0) 100%);
+  --wa-licht-links: 12%;                        /* lit side: where the light starts (clear of the shoulder of the outline, also when it is pulled further) ... */
+  --wa-licht-breit: 50%;                        /* ... how long it is (its way along the rim is 52 % of this, see the keyframes) ... */
+  --wa-licht-tief: min(24px, 16%);              /* ... and how far it reaches into the water (never more than 16 % of the height of the sheet: a sheet of one line keeps its text clear of it) */
+  --wa-licht-rechts: 13%;                       /* far side: the same, measured from the right; it wanders 40 % of its length to the left and back */
+  --wa-licht-breit-fern: 54%;
+  --wa-licht-tief-fern: min(30px, 20%);
+  /* Bodenlicht: the light on the floor of a basin - one large, very soft patch (its box is given here; its loop doubles it) */
+  --wa-boden-oben: 44%;  --wa-boden-links: 26%;  --wa-boden-breit: 30%;  --wa-boden-hoch: 32%;   /* where the box of the patch lies and how large it is, in % of the basin: it keeps below the title row and, doubled and at both ends of its way, inside the basin */
+  --wa-boden-licht: radial-gradient(closest-side, rgba(var(--wa-light), var(--wa-l-boden)) 0%, rgba(var(--wa-light), calc(var(--wa-l-boden) * .5)) 46%, rgba(var(--wa-light), 0) 100%);   /* no edge anywhere */
+  /* Zug: how far the light leans when the water is pulled (--wa-zug = 1: scrolled as fast as FULL in wasser.js) */
+  --wa-zug-oben: calc(.9 * var(--wa-leben));    /* the light on the lit rim reaches up to 90 % deeper (or, pulled the other way, 90 % less deep) ... */
+  --wa-zug-unten: calc(.7 * var(--wa-leben));   /* ... while the light on the far side draws back by 70 % - the water tilts ... */
+  --wa-zug-min: .1;  --wa-zug-max: 2.4;         /* ... but a light never leans below a tenth of its depth (below 0 it would flip over its rim line and lie OUTSIDE the sheet, which --wa-leben above 1.11 did) nor past 2.4 times it ... */
+  --wa-zug-weit: min(calc(24px * var(--wa-leben)), 24px);   /* ... both glints slide this far along their rim, in opposite directions: 24 px and never more - at rest they end 12 px before the corners of a basin, pulled further they would run out over a corner ... */
+  --wa-zug-boden: min(calc(28px * var(--wa-leben)), calc(28px / max(var(--wa-leben), .01)));   /* ... and the light on the floor stays this far behind the sheet that is carried away under it: 28 px at 1. Above 1 the patch is brighter and lags LESS (28 px / --wa-leben), so the faint tail that passes the far edge of its basin at full pull stays as faint as at 1. Let go, all of it swings out (--wa-t-swing, --wa-ease-swing) */
+  /* Schwappen: where the light of a sheet that has just arrived starts from (it swings into place with --wa-t-swing, --wa-ease-swing) */
+  --wa-schwappt-oben: 1 1.6;                    /* scale of the lit rim's light: 60 % deeper than at rest ... */
+  --wa-schwappt-unten: 1 .4;                    /* ... the far side 60 % less deep - as if the sheet had just been set down ... */
+  --wa-schwappt-boden: 0 30px;                  /* ... and the light on the floor still on its way (translate) */
+  /* Lichtlauf: the light along the top rim of a dense sheet or a small one */
+  --wa-lauf-links: 34px;                        /* clear of the shoulder of the outline */
+  --wa-lauf-breit: 30%;                         /* its way along the rim is 170 % of this (keyframes): left + 2.7 x width must end before the far corner */
+  --wa-lauf-tief: 13px;
+  --wa-lauf-linie: calc(var(--wa-l-oben-linie) * .7);   /* (a dense sheet lies against the dark: its glint a little softer) */
+  --wa-licht-lauf:
+    linear-gradient(90deg, rgba(var(--wa-core), 0) 6%, rgba(var(--wa-core), var(--wa-lauf-linie)) 36%, rgba(var(--wa-core), var(--wa-lauf-linie)) 64%, rgba(var(--wa-core), 0) 94%) 0 0 / 100% var(--wa-licht-linie) no-repeat,
+    radial-gradient(40% 44% at 50% 0%, rgba(var(--wa-core), calc(var(--wa-l-oben) * 1.6)) 0%, rgba(var(--wa-core), 0) 100%),
+    radial-gradient(50% 100% at 50% 0%, rgba(var(--wa-core), var(--wa-l-oben)) 0%, rgba(var(--wa-core), calc(var(--wa-l-oben) * .42)) 42%, rgba(var(--wa-core), 0) 100%);
+  /* Atmen: the breath of the bead that marks the active one of a bar */
+  --wa-atmet: .06;                              /* it swells this much in height (6 % of 52 px: 1.5 px above and below) ... */
+  --wa-atmet-licht: .2;                         /* ... while its light dims by this much, and back */
+}
+/* The gait of the loops at rest, per engine - each gets the one that costs it least:
+   - Chromium (Android) runs a stepped loop in its compositor and draws only when a step comes. Hence steps(N) above.
+   - WebKit (every browser on an iPhone) cannot hand a stepped loop to its compositor: it runs it on the page's own
+     thread, the one the drops and the app need. A loop that glides ("linear") it hands over completely. Hence: */
+@supports (-webkit-nbsp-mode: space) {             /* (a property only WebKit knows) */
+  [data-wasser] { --wa-gang-1: linear; --wa-gang-2: linear; --wa-gang-3: linear; --wa-gang-4: linear; --wa-gang-kurz: linear; --wa-gang-atem: linear; }
+}
+@supports (transition-timing-function: linear(0, 1)) {
+  /* a damped swing (damping .32, two full swings): 35 % past the rest after a quarter of the time, 12 % short of it on the
+     way back, 4 % past once more, still. */
+  [data-wasser] { --wa-ease-swing: linear(0, .133, .444, .801, 1.102, 1.288, 1.346, 1.3, 1.193, 1.069, .965, .9, .88, .896, .933, .976, 1.012, 1.034, 1.041, 1.036, 1.023, 1.008, .996, .988, 1); }
+}
+[data-wasser][data-wa-ruht] { --wa-lauf: paused; }               /* the water rests (set by wasser.js) */
+
+/* == 4. Bausteine ================================================================================================= */
+
+/* ---------------------------------------------------------------------------------------------------- Stufe 3 --- */
+
+/* -- Tropfen (.wa-tropfen): a button as a drop of clear water. Two layers, nothing in between:
+      1. these rules alone = the plain glass (no script, no WebGL): a still, water-shaped pane of see-through glass. No
+         filter, no backdrop-filter, no animation - it costs nothing and stays readable.
+      2. wasser.js draws a refracting drop (WebGL) into a small canvas helper (.w3-drop) inside the button and marks the
+         button with data-w3="on"; only then the glass steps aside for that button.
+      A drop free over the scene bends the scene; a drop on a sheet shows the sheet's water (the sheet says what it is
+      made of: --water-under, --wa-light, --wa-sat, --wa-drop-veil - see "Becken", "Bogen").
+      Amber water: class btn--primary. Red water: class btn--danger (wasser.js, options primary / danger).
+      Script: the same selector list is the option "drops" of Wasser.start(). An element that is here but not there
+      (the buttons that repeat per list row) keeps the plain glass. -- */
+[data-wasser] :is(
+  .wa-tropfen,
+  .btn:not(.btn--ghost),                        /* both shells: every button that is not a ghost */
+  .m-ico                                        /* mobil: the round buttons of the header */
+  /* apply this block to further elements here (and in wasser.js, option "drops") */
+) {
+  position: relative;
+  isolation: isolate;
+  color: var(--wa-drop-ink);
+  text-shadow: var(--wa-drop-halo);
+  -webkit-tap-highlight-color: transparent;
+  border: 1px solid var(--wa-glass-line);
+  border-radius: var(--wa-r-tropfen-1);
+  background: var(--wa-glass-top), var(--wa-glass-sheen), var(--wa-glass);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--wa-glass-rim);
+  transition: transform var(--wa-t-fast), filter var(--wa-t-fast);
+
+  /* the outline: three variants for long drops, two for round ones. (:where() keeps these at the weight of the block:
+     among them the order decides, and "the drop is drawn" below wins over all of them) */
+  &:where(:nth-of-type(2n)) { border-radius: var(--wa-r-tropfen-2); }
+  &:where(:nth-of-type(3n)) { border-radius: var(--wa-r-tropfen-3); }
+  &:where(.wa-tropfen--rund, .btn--icon, .m-ico /* round drops: add further round elements here */) { border-radius: var(--wa-r-tropfen-rund-1); }
+  &:where(.wa-tropfen--rund, .m-ico):where(:nth-of-type(2n)) { border-radius: var(--wa-r-tropfen-rund-2); }
+
+  /* the visible drop may swell a few px beyond the button box: taps there count too (touch targets only grow) */
+  &::before { content: ""; position: absolute; inset: var(--wa-drop-hit); border-radius: inherit; }
+
+  /* icons inside a drop take the label colour (a card heading would paint them amber) */
+  & .ico { color: inherit; filter: var(--wa-ico-shade); }
+  & .badge { border-color: var(--wa-badge-line); box-shadow: var(--wa-badge-lift); text-shadow: none; z-index: 1; }
+
+  /* amber: the primary action keeps its warm identity */
+  &.btn--primary {
+    color: var(--wa-amber-ink);
+    font-weight: 600;
+    text-shadow: var(--wa-amber-halo);
+    border-color: var(--wa-amber-line);
+    background: var(--wa-amber-glass);
+    box-shadow: var(--wa-amber-rim);
+  }
+  &.btn--primary .ico { filter: none; }
+  /* danger: deep red water, light label */
+  &.btn--danger {
+    color: var(--wa-red-ink);
+    border-color: var(--wa-red-line);
+    background: var(--wa-red-glass);
+  }
+
+  /* pressed: the pane is squeezed and lights up */
+  &:active { transform: var(--wa-glass-press); filter: var(--wa-glass-press-light); }
+
+  /* the drop is drawn on this button (wasser.js): the glass steps aside */
+  &[data-w3="on"] {
+    background: none;
+    border-color: transparent;
+    box-shadow: none;
+    border-radius: var(--wa-r-tropfen-an);
+    transition: none;
+  }
+  &[data-w3="on"]:active { transform: none; filter: none; }
+
+  /* no motion wanted: nothing eases, the still looks the same */
+  @media (prefers-reduced-motion: reduce) { & { transition: none !important; } }
+  :root[data-motion="reduziert"] & { transition: none !important; }
+}
+/* the canvas helper of a drop (made by wasser.js; not part of the list above) */
+[data-wasser] .w3-drop {
+  position: absolute;
+  left: calc(-1 * var(--wa-drop-pad)); top: calc(-1 * var(--wa-drop-pad));
+  width: calc(100% + 2 * var(--wa-drop-pad)); height: calc(100% + 2 * var(--wa-drop-pad));
+  max-width: none; max-height: none;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  display: block;
+  visibility: hidden;
+  /* own layer: a new picture of the water never makes the browser repaint the label or the sheet */
+  will-change: transform;
+  contain: layout paint style;
+}
+[data-wasser] [data-w3="on"] > .w3-drop { visibility: visible; }
+
+/* -- Film: a ghost button stays chrome-free; a film of water only appears under the finger -- */
+[data-wasser] .btn.btn--ghost {
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--wa-t-fast), box-shadow var(--wa-t-fast);
+  &:active { background: var(--wa-film); box-shadow: var(--wa-film-rim); }
+  @media (prefers-reduced-motion: reduce) { & { transition: none !important; } }
+  :root[data-motion="reduziert"] & { transition: none !important; }
+}
+
+/* ---------------------------------------------------------------------------------------------------- Stufe 1 --- */
+
+/* -- Etikett (.pill): a pill free over the scene is a small glass bead (CSS only). On a sheet of water it is a flat
+      label instead: "Etikett auf Wasser" below. -- */
+[data-wasser] .pill {
+  border: 1px solid var(--wa-pill-frei-line);
+  border-radius: var(--wa-r-pill);
+  box-shadow: var(--wa-pill-frei-rim);
+  &.pill--on { color: var(--wa-pill-on-ink); background: var(--wa-pill-on-fill); border-color: var(--wa-pill-on-line); box-shadow: var(--wa-pill-on-glow); }
+  &.pill--ok { border-color: var(--wa-pill-frei-ok-line); box-shadow: var(--wa-pill-frei-ok-rim); }
+  &.pill--warn { border-color: var(--wa-pill-frei-warn-line); }
+  &.pill--bad { border-color: var(--wa-pill-frei-bad-line); }
+  &.pill--acc { border-color: var(--wa-pill-frei-acc-line); }
+}
+
+/* ---------------------------------------------------------------------------------------------------- Stufe 2 --- */
+
+/* -- Becken (.wa-becken): "flaches Becken mit Licht" - a sheet as a shallow basin of still water seen from above. No
+      texture: depth and light do the work.
+      - The sheet itself is the shallow water at the rim: the softly blurred scene shows through it, one thin bright
+        line (meniscus) on the lit side, a soft glow where light gathers on the far side.
+      - ::before and ::after are the depth: two soft bodies of darker water that follow the outline and fade out towards
+        the rim (a box plus a blurred box-shadow of the same colour; painted once, never animated).
+      - The drops lie ON this water: they show the sheet, not the scene (--water-under tells them what they lie on).
+      Needs room for the two depth steps: at least about 100 px in both directions, otherwise use "stilles Wasser"
+      (a 150 px panel in the tone "dunkel" is filled black by them). Its direct content lies above the depth by itself.
+      It sets position: relative - do NOT put an element in this list that is placed absolutely; give that one
+      "stilles Wasser" or write the three depth rules for it by hand.
+      Script: options "ringOn" (its floor shows the ring) and "light" (it gets the light helper). -- */
+[data-wasser] :is(
+  .wa-becken,
+  .glass.m-card                                 /* mobil: the cards */
+  /* apply this block to further elements here (and in wasser.js, options "ringOn" and "light") */
+) {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  border-radius: var(--wa-r-becken-1);
+  background: var(--wa-whisper) var(--wa-clear);
+  -webkit-backdrop-filter: var(--wa-blur);
+  backdrop-filter: var(--wa-blur);
+  box-shadow: var(--wa-meniscus), var(--wa-shallow), var(--wa-far), var(--wa-lift);
+  --water-under: var(--wa-under);               /* read by the drops (wasser.js, underOf) */
+  --text-2: var(--wa-ink-2);                    /* the app's muted and faint text colours, on this water */
+  --text-3: var(--wa-ink-3);
+  text-shadow: var(--wa-shade);
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    min-width: 2px; min-height: 2px;            /* small sheets: the box must not collapse (Safari paints no shadow for an empty box) */
+  }
+  &::before {
+    inset: var(--wa-shelf-inset);
+    border-radius: var(--wa-r-shelf);
+    background: var(--wa-shelf);
+    box-shadow: 0 0 var(--wa-shelf-soft) var(--wa-shelf-soft) var(--wa-shelf);
+  }
+  &::after {
+    inset: var(--wa-deep-inset);
+    border-radius: var(--wa-r-deep);
+    background: var(--wa-deep);
+    box-shadow: 0 0 var(--wa-deep-soft) var(--wa-deep-soft) var(--wa-deep);
+  }
+}
+
+/* -- stilles Wasser (.wa-wasser): a plain sheet without depth steps, for surfaces too small for a basin (free-standing
+      number tiles; suits hint cards and side panels). It sets no position.
+      The same by hand, for a sheet that is none of the blocks:
+        border: 0; background: var(--wa-still); -webkit-backdrop-filter: var(--wa-blur); backdrop-filter: var(--wa-blur);
+        box-shadow: var(--wa-meniscus), var(--wa-shallow), var(--wa-far), var(--wa-lift);
+        --water-under: var(--wa-still); --text-2: var(--wa-ink-2); --text-3: var(--wa-ink-3); text-shadow: var(--wa-shade); -- */
+[data-wasser] :is(
+  .wa-wasser,
+  .glass.m-stat                                 /* mobil: the free-standing number tiles */
+  /* apply this block to further elements here */
+) {
+  border: 0;
+  border-radius: var(--wa-r-wasser);
+  background: var(--wa-still);
+  -webkit-backdrop-filter: var(--wa-blur);
+  backdrop-filter: var(--wa-blur);
+  box-shadow: var(--wa-meniscus), var(--wa-shallow), var(--wa-far), var(--wa-lift);
+  --water-under: var(--wa-still);
+  --text-2: var(--wa-ink-2);
+  --text-3: var(--wa-ink-3);
+  text-shadow: var(--wa-shade);
+}
+
+/* ---------------------------------------------------------------------------------------------------- Stufe 1 --- */
+
+/* -- Mulde (.wa-mulde): a smooth, slightly deeper trough in the floor of a sheet - rows and number tiles. No hard edge:
+      the near wall lies in shade, the far wall catches a little light. So the only crisp shapes on a sheet are the text
+      and the drops. It lies on a sheet; its padding is its own. -- */
+[data-wasser] :is(
+  .wa-mulde,
+  .sheet .item, .sheet .konto-side, .sheet .bereich-card, .sheet .tabs, .sheet .sim-item,   /* both shells: rows inside a sheet */
+  .m-card .m-row, .m-card .m-stat               /* mobil: rows and number tiles of a card */
+  /* apply this block to further elements here */
+) {
+  border: 0;
+  border-radius: var(--wa-r-mulde);
+  background: var(--wa-trough);
+  box-shadow: var(--wa-trough-walls);
+  --text-2: var(--wa-ink-2-trough);
+  --text-3: var(--wa-ink-3-trough);
+  @media (prefers-reduced-motion: reduce) { & { transition: none !important; } }
+  :root[data-motion="reduziert"] & { transition: none !important; }
+}
+/* -- Mulde zum Tippen (.wa-mulde--tipp): a trough that can be tapped gets one faint line of light on its far edge and
+      lights up under the finger. One answer per touch: a press on a button, check or link INSIDE the trough is
+      answered by that one alone. (Needs :has(); without it the trough does not light up.) -- */
+[data-wasser] :is(
+  .wa-mulde--tipp,
+  .sheet .item--click, .sheet .sim-item,        /* both shells */
+  .m-card .m-row--click                         /* mobil */
+  /* apply this block to further elements here */
+) {
+  box-shadow: var(--wa-trough-walls), var(--wa-trough-line);
+  transition: background-color var(--wa-press-out);
+  &:active:not(:has(:is(button, a, .check, .wa-haken):active)) { background-color: var(--wa-trough-press); transition-duration: var(--wa-press-in); }
+  @media (prefers-reduced-motion: reduce) { & { transition: none !important; } }
+  :root[data-motion="reduziert"] & { transition: none !important; }
+}
+
+/* ------------------------------------------------------------------------------------------- Antwort: Ring ----- */
+
+/* -- Ring (.wa-floor > .wa-ring): the answer to a tap. One thin ring of light runs across the floor of a sheet, from
+      where the finger was. It starts when the finger lets go (only then the tap is certain: a finger that rests on a
+      button and then scrolls the list never shows a ring). wasser.js (Teil 2, options "ringOn" and "ringFrom") adds
+      <i class="wa-floor"><i class="wa-ring"></i></i> to the sheet for the time of the ring; the sheet needs position:
+      relative and isolation: isolate (Becken has both). The floor helper lies under the deep middle (::after) and under
+      rows, text and drops: light on the floor of the basin, seen through the water. Transform and opacity only. -- */
+[data-wasser] .wa-floor {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;                             /* clips the ring to the pool; the drops are not inside this helper */
+  z-index: -1;
+  pointer-events: none;
+  @media (prefers-reduced-motion: reduce) { & { display: none; } }
+  :root[data-motion="reduziert"] & { display: none; }
+}
+[data-wasser] .wa-ring {
+  position: absolute;
+  left: 0; top: 0;                              /* wasser.js sets both to the touch point */
+  width: var(--wa-ring-size); height: var(--wa-ring-size);
+  margin: calc(var(--wa-ring-size) / -2) 0 0 calc(var(--wa-ring-size) / -2);
+  border-radius: 50%;
+  /* a thin line of light at 92 % of the radius, with a soft halo on its inner side */
+  background: radial-gradient(closest-side, rgba(var(--wa-light), 0) 70%, rgba(var(--wa-light), .45) 85%, rgba(var(--wa-core), .95) 92%, rgba(var(--wa-light), 0) 100%);
+  /* a little brighter on the side away from the light (the mask's alpha: .45 on the lit side, 1 on the far side) */
+  -webkit-mask-image: linear-gradient(160deg, rgba(0, 0, 0, .45) 20%, #000 75%);
+  mask-image: linear-gradient(160deg, rgba(0, 0, 0, .45) 20%, #000 75%);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: wa-ring var(--wa-ring-time) var(--wa-ring-ease) both;
+}
+[data-wasser] .wa-ring--primary { --wa-light: var(--wa-ring-amber); --wa-core: var(--wa-ring-amber-core); }   /* from amber water */
+[data-wasser] .wa-ring--danger { --wa-light: var(--wa-ring-red); --wa-core: var(--wa-ring-red-core); }        /* from red water */
+[data-wasser] .wa-ring--ok { --wa-light: var(--wa-ring-ok); --wa-core: var(--wa-ring-ok-core); }              /* from a check that is ticked */
+@keyframes wa-ring {
+  0%   { transform: scale(.05); opacity: 0; }
+  10%  { opacity: 1; }                          /* there within a tenth of a second after the finger has let go: it comes out from under the drop */
+  60%  { opacity: .7; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* ---------------------------------------------------------------------------------------------------- Stufe 1 --- */
+
+/* -- Etikett auf Wasser: pills on a sheet of water are labels, not drops - flat tinted water, so the drops stay the
+      only raised, glossy things. The list names the SHEETS on which a pill is flat. -- */
+[data-wasser] :is(
+  .wa-becken, .wa-wasser, .wa-wasser--dicht,
+  .sheet, .cmd, .toast,                         /* both shells */
+  .m-card                                       /* mobil */
+  /* add further sheets here */
+) .pill {
+  box-shadow: none; border-color: var(--wa-pill-line); text-shadow: var(--wa-shade-pill);
+  &.pill--on { background: var(--wa-pill-on-bg); border-color: var(--wa-pill-on-edge); }
+  &.pill--ok { background: var(--wa-pill-ok-bg); border-color: var(--wa-pill-ok-edge); }
+  &.pill--warn { border-color: var(--wa-pill-warn-edge); }
+  &.pill--bad { border-color: var(--wa-pill-bad-edge); }
+  &.pill--acc { border-color: var(--wa-pill-acc-edge); }
+}
+
+/* ---------------------------------------------------------------------------------------------------- Stufe 2 --- */
+
+/* -- dichtes Wasser (.wa-wasser--dicht): the deep end of the same water, for sheets that content scrolls under or that
+      cover a page - nearly opaque, with the same meniscus line and the same far-side glow as a basin. The element
+      brings its own border-radius and place. -- */
+[data-wasser] :is(
+  .wa-wasser--dicht,
+  .sheet, .toast, .cmd,                         /* both shells: sheet, toast, search panel */
+  .m-tabs                                       /* mobil: the tab bar */
+  /* apply this block to further elements here */
+) {
+  border: 0;
+  isolation: isolate;
+  background: var(--wa-dense);
+  -webkit-backdrop-filter: var(--wa-blur-dense);
+  backdrop-filter: var(--wa-blur-dense);
+  box-shadow: var(--wa-meniscus), var(--wa-dense-far), var(--wa-dense-shallow), var(--wa-dense-lift);
+  --water-under: var(--wa-dense);
+}
+
+/* ------------------------------------------------------------------------------------- Antwort: Markierung ----- */
+
+/* -- Markierung (.wa-markierung): a bead of clear water (CSS only: lens glow, rim, highlight, shadow, glint) that marks
+      one of --wa-bar-tabs equal children of a bar and flows to the next one. Which child: the one that carries class
+      "on" (:has + :nth-child sets --wa-tab, 0 = first), nothing else. The bead is the bar's ::before, so the bar needs
+      a position and isolation: isolate ("dichtes Wasser" has the second). When the active child changes the bead
+      glides (transition); wasser.js (Teil 2, option "bar") turns the glide into a flow (stretch, overshoot). At rest
+      the bead breathes ("Atmen": it swells a little in height while its light dims, once in --wa-t-atem - only in
+      HEIGHT: the bead is moved sideways by its transform, and the single property "scale" works from the place of the
+      first child, a wider bead would drift).
+      More than five children: one more :has() line each, and --wa-bar-tabs on the bar. -- */
+[data-wasser] :is(
+  .wa-markierung,
+  .m-tabs                                       /* mobil: the tab bar */
+  /* apply this block to further elements here (and in wasser.js, option "bar") */
+) {
+  --wa-tab: 0;
+  &:has(> :nth-child(2).on) { --wa-tab: 1; }
+  &:has(> :nth-child(3).on) { --wa-tab: 2; }
+  &:has(> :nth-child(4).on) { --wa-tab: 3; }
+  &:has(> :nth-child(5).on) { --wa-tab: 4; }   /* five children; a sixth needs one more line and --wa-bar-tabs: 6 */
+  &::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: var(--wa-bar-pad); top: var(--wa-bar-pad); bottom: var(--wa-bar-pad);
+    width: calc((100% - 2 * var(--wa-bar-pad)) / var(--wa-bar-tabs));
+    pointer-events: none;
+    border-radius: var(--wa-r-bead);
+    background:
+      /* the highlight: a white comma on the lit side (data: image, the app's CSP allows img-src data:) */
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 12'%3E%3Cpath d='M2 10C2.6 5.2 7.5 2 15.5 2.2 17 2.3 17 3.6 15.6 3.9 10 5 6.2 6.8 4.2 10.4 3.4 11.6 1.8 11.4 2 10Z' fill='%23fff'/%3E%3C/svg%3E") 15% 14% / 17px 10px no-repeat,
+      var(--wa-bead-lens),
+      var(--wa-bead-body);
+    box-shadow: var(--wa-bead-rim);
+    transform: translateX(calc(var(--wa-tab, 0) * 100%));
+    transition: transform var(--wa-bead-time) var(--wa-bead-ease);
+    will-change: transform, opacity;
+    animation: wa-atmet var(--wa-t-atem) var(--wa-gang-atem) infinite;   /* Atmen. (The flight to another child animates "transform"; "scale" and "opacity" stay free for the breath) */
+    animation-play-state: var(--wa-lauf);
+  }
+  /* a browser without :has() cannot place the bead: no bead (the active child gets a tint instead, see the shells) */
+  @supports not selector(:has(a)) { &::before { content: none; } }
+  /* no motion wanted: the bead jumps and does not breathe */
+  @media (prefers-reduced-motion: reduce) { &::before { transition: none !important; animation: none !important; } }
+  :root[data-motion="reduziert"] &::before { transition: none !important; animation: none !important; }
+}
+/* the bare hook on an element that has no layout of its own: a row of equal children */
+[data-wasser] .wa-markierung {
+  position: relative; isolation: isolate; display: flex; padding: var(--wa-bar-pad);
+  & > * { flex: 1; }
+  @supports not selector(:has(a)) { & > .on { background: var(--wa-tab-fallback); } }
+}
+@keyframes wa-atmet {
+  0%    { scale: 1 1; opacity: 1; }
+  12.5% { scale: 1 calc(1 + .146 * var(--wa-atmet) * var(--wa-leben)); opacity: calc(1 - .146 * var(--wa-atmet-licht) * var(--wa-leben)); }
+  25%   { scale: 1 calc(1 + .5 * var(--wa-atmet) * var(--wa-leben)); opacity: calc(1 - .5 * var(--wa-atmet-licht) * var(--wa-leben)); }
+  37.5% { scale: 1 calc(1 + .854 * var(--wa-atmet) * var(--wa-leben)); opacity: calc(1 - .854 * var(--wa-atmet-licht) * var(--wa-leben)); }
+  50%   { scale: 1 calc(1 + var(--wa-atmet) * var(--wa-leben)); opacity: calc(1 - var(--wa-atmet-licht) * var(--wa-leben)); }
+  62.5% { scale: 1 calc(1 + .854 * var(--wa-atmet) * var(--wa-leben)); opacity: calc(1 - .854 * var(--wa-atmet-licht) * var(--wa-leben)); }
+  75%   { scale: 1 calc(1 + .5 * var(--wa-atmet) * var(--wa-leben)); opacity: calc(1 - .5 * var(--wa-atmet-licht) * var(--wa-leben)); }
+  87.5% { scale: 1 calc(1 + .146 * var(--wa-atmet) * var(--wa-leben)); opacity: calc(1 - .146 * var(--wa-atmet-licht) * var(--wa-leben)); }
+  100%  { scale: 1 1; opacity: 1; }
+}
+
+/* ---------------------------------------------------------------------------------------------------- Stufe 2 --- */
+
+/* -- Bogen (.wa-bogen): a sheet of dense water that rises from the bottom edge like a soft wave and settles. Material:
+      "dichtes Wasser" (the element is in that list too; a foreign element takes both classes: .wa-wasser--dicht.wa-bogen).
+      Here: its own density (--wa-sheet, a tone token), the shoulder, the rim on the top edge only, the wave, and its
+      light: only the one on its top rim - its foot is the edge of the screen, and it carries forms, so no light on its
+      floor; its rise already has its own light (the crest), so nothing swings in addition.
+      The page behind it sinks out of focus: the SCRIM carries the blur, not the sheet (see "Bogen: was dazugehört").
+      Its own blur would be redone with every picture of the drops that lie on it.
+      It needs: its own place at the bottom edge, overflow: hidden, padding.
+      Another shape (a drawer that comes in from the side): re-declare --wa-r-bogen, --wa-bogen-rim, --wa-bogen-lift for
+      that shell and give the element another animation-name.
+      Script: options "ringOn" and "light"; "modal" (the drops behind it rest); "scrollers" for its scrolling body. -- */
+[data-wasser] :is(
+  .wa-bogen,
+  .sheet                                        /* both shells share the class; this is its shape on the phone */
+  /* apply this block to further elements here (and in wasser.js, options "ringOn", "light", "modal") */
+) {
+  border-radius: var(--wa-r-bogen);
+  background: var(--wa-sheet);
+  box-shadow: var(--wa-bogen-rim), var(--wa-bogen-lift),
+    0 30px 0 0 var(--wa-sheet);                 /* water below the bottom edge: no gap while the wave runs past its place */
+  --water-under: var(--wa-sheet);               /* read by the drops (wasser.js, underOf) */
+  --wa-drop-veil: var(--wa-bogen-veil);         /* ... and how much light they gather (wasser.js, PROP.veil) */
+  --text-2: var(--wa-ink-2);
+  --text-3: var(--wa-ink-3);
+  animation: wa-steigt var(--wa-t-settle) var(--wa-ease-flow) both;
+
+  &::before {                                   /* the crest: light on the top edge that spreads and fades while the sheet settles; invisible at rest */
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: var(--wa-kamm-h);
+    z-index: -1;
+    pointer-events: none;
+    background: var(--wa-kamm);
+    opacity: 0;
+    transform-origin: 50% 0;
+    animation: wa-kamm var(--wa-kamm-t) var(--wa-ease-flow) both;
+  }
+  /* Leaving - READY BUT NOT USED: the app removes a sheet from one moment to the next, and the look does not hold it
+     back (a copy of a whole form would be fragile). When the app itself delays the removal by --wa-t-leave, it only has
+     to add the class wa-geht to the sheet: it sinks back like the wave it came as. */
+  &.wa-geht { animation: wa-sinkt var(--wa-t-leave) var(--wa-ease-drain) both; pointer-events: none; }
+  &.wa-geht::before { animation: none; }
+
+  /* its light (the helper comes from wasser.js, option "light"): the softer glint of dense sheets, on the top rim */
+  & > .wa-licht { --wa-schwappt-oben: 1 1; }    /* (it does not arrive too deep: the crest is the light of its rise) */
+  & > .wa-licht::before {
+    left: 9%; width: 40%; height: 14px;
+    background: var(--wa-licht-lauf);
+    animation: wa-licht-oben var(--wa-t-ruhe-3) var(--wa-gang-3) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-3)) infinite;
+    animation-play-state: var(--wa-lauf);
+  }
+  & > .wa-licht::after { content: none; animation: none; }   /* (animation: none as well - WebKit keeps the loop of a pseudo-element that is not generated) */
+  & > .wa-licht > .wa-boden { display: none; animation: none; }
+
+  /* no motion wanted: it is there at once */
+  @media (prefers-reduced-motion: reduce) { &, &::before { animation: none !important; } }
+  :root[data-motion="reduziert"] &, :root[data-motion="reduziert"] &::before { animation: none !important; }
+}
+@keyframes wa-steigt {                          /* rises fast, runs a little past its place, sinks back, rests */
+  0%   { transform: translateY(var(--wa-bogen-rise)); opacity: 0; }
+  40%  { opacity: 1; }
+  58%  { transform: translateY(calc(-1 * var(--wa-bogen-swing))); }
+  80%  { transform: translateY(calc(var(--wa-bogen-swing) * .3)); }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes wa-kamm {                            /* starts as a narrow gleam in the middle of the top edge, spreads over its whole width and fades */
+  0%   { opacity: 0; transform: scaleX(.25); }
+  30%  { opacity: 1; }
+  100% { opacity: 0; transform: scaleX(1.3); }
+}
+@keyframes wa-sinkt {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(var(--wa-bogen-rise)); opacity: 0; }
+}
+
+/* -- Setzen (.wa-setzt): a sheet that appears comes to rest like water - it rises a little, runs a breath past its place
+      and sinks back. Opacity and transform on the sheet itself; the drops follow their buttons by themselves (wasser.js
+      listens for animationstart). Several at once: give them rising animation-delays in steps of --wa-t-step.
+      For a sheet that has no entrance of its own. (NOT used where the app animates the element itself: there its own
+      entrance stays and the WATER comes to rest instead - the light swings into place, "Schwappen".) -- */
+[data-wasser] .wa-setzt {
+  animation: wa-setzt var(--wa-t-settle) var(--wa-ease-flow) both;
+  @media (prefers-reduced-motion: reduce) { & { animation: none !important; } }
+  :root[data-motion="reduziert"] & { animation: none !important; }
+}
+@keyframes wa-setzt {
+  0%   { opacity: 0; transform: translateY(var(--wa-setzt-rise)); }
+  45%  { opacity: 1; }
+  60%  { transform: translateY(calc(-1 * var(--wa-setzt-swing))); }
+  82%  { transform: translateY(calc(var(--wa-setzt-swing) * .3)); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* -- Tropfen-Hinweis (.wa-hinweis): the toast - a small piece of dense water that lands like a drop (falls, flattens,
+      rounds off) and leaves like one (wasser.js, option "toasts", keeps a copy for the time of wa-geht). Material:
+      "dichtes Wasser"; light: "Lichtlauf" (the element is in those lists too). An error: .wa-hinweis--fehler.
+      It is centred by its margins, not by a transform (an entrance animation that ends with a transform overrides a
+      centring transform - the app's toast stood with its left edge in the middle). The shell says how high it sits.
+      NOT ACTIVE, as in the state the owner approved: a smaller, quicker light of its own for the toast -
+        &::after { left: 18px; width: 28%; height: 8px; animation-duration: var(--wa-t-ruhe-kurz); animation-timing-function: var(--wa-gang-kurz); }
+      (written in the motion step, then outweighed by the Lichtlauf list; see NOTIZEN.md, "Offen"). To switch it on it
+      must be written AFTER the block "Lichtlauf" and with its weight: [data-wasser] .glass.toast::after. -- */
+[data-wasser] :is(
+  .wa-hinweis,
+  .toast                                        /* both shells */
+  /* apply this block to further elements here (and in wasser.js, option "toasts") */
+) {
+  border-radius: var(--wa-r-hinweis);
+  transform: none;
+  transform-origin: 50% 100%;
+  animation: wa-landet var(--wa-t-settle) var(--wa-ease-flow) both;
+  &.wa-geht { animation: wa-geht var(--wa-t-leave) var(--wa-ease-drain) both; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { & { animation: none !important; } }
+  :root[data-motion="reduziert"] & { animation: none !important; }
+}
+[data-wasser] :is(.wa-hinweis--fehler, .toast--bad) {   /* (the app has no error toast yet; .toast--bad is the class it would get) */
+  box-shadow: inset 0 1px 0 rgba(var(--wa-hinweis-rose), .9), inset 1px 0 0 rgba(var(--wa-hinweis-rose), .4), inset 0 0 0 1px rgba(var(--wa-hinweis-rose), .22), var(--wa-dense-far), var(--wa-dense-lift);
+}
+@keyframes wa-landet {                          /* falls a little stretched, flattens as it lands (a touch wider and lower), rounds off again */
+  0%   { transform: translateY(calc(-1 * var(--wa-hinweis-fall))) scale(.9, 1.08); opacity: 0; }
+  42%  { transform: translateY(1.5px) scale(1.035, .93); opacity: 1; }
+  70%  { transform: translateY(0) scale(.99, 1.02); }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes wa-geht {                            /* sinks 12 px and draws together towards its foot while it fades */
+  0%   { transform: none; opacity: 1; }
+  100% { transform: translateY(12px) scale(.86, .7); opacity: 0; }
+}
+/* whatever leaves (a copy the script keeps, a sheet the app lets sink): with no motion wanted it is simply gone */
+@media (prefers-reduced-motion: reduce) { [data-wasser] .wa-geht { display: none !important; } }
+:root[data-motion="reduziert"] [data-wasser] .wa-geht { display: none !important; }
+
+/* ---------------------------------------------------------------------------------------------------- Stufe 1 --- */
+
+/* -- Feld (.wa-feld): a Mulde you can type into - text field, textarea, select. With focus the waterline runs in along
+      its far wall, light pools above it and a line of light runs all around; it replaces the focus ring. Typing never
+      causes any effect. A field cannot carry a pseudo-element, so the waterline is a background layer whose WIDTH is
+      animated (the one paint animation of the look: one small box, .36 s, only on focus).
+      It needs: padding, font size 16 px (iOS zooms below that). Do not give it a border; its 1 px transparent border is
+      the app's space. -- */
+[data-wasser] :is(
+  .wa-feld,
+  .input, .select, .textarea                    /* both shells */
+  /* apply this block to further elements here */
+) {
+  border: 1px solid transparent;
+  border-radius: var(--wa-r-mulde);
+  background: var(--wa-feld-line) 0 100% / 0% var(--wa-feld-line-h) no-repeat border-box var(--wa-trough);
+  box-shadow: var(--wa-trough-walls), var(--wa-feld-rest);
+  color: var(--text);
+  transition: background-size var(--wa-t-flow) var(--wa-ease-flow);
+  -webkit-tap-highlight-color: transparent;
+  &::placeholder { color: var(--wa-feld-hint); opacity: 1; }
+  &:focus {
+    outline: none;
+    border-color: transparent;
+    background-size: 100% var(--wa-feld-line-h);
+    background-color: var(--wa-feld-on-bg);
+    box-shadow: var(--wa-trough-walls), var(--wa-feld-on);
+  }
+  /* a select draws its own trough and arrow in every browser (some paint a white system box over an author's
+     background). A second background layer needs its own size on focus, so both rules name both layers. */
+  &:is(.wa-feld--auswahl, .select /* selects: add further ones here */) {
+    -webkit-appearance: none; appearance: none;
+    padding-right: 34px;                        /* room for the arrow: 13 px from the edge + 12 px wide + 9 px before the text */
+    background-image: var(--wa-feld-line), var(--wa-feld-pfeil);
+    background-position: 0 100%, right 13px center;
+    background-size: 0% var(--wa-feld-line-h), 12px 8px;   /* the waterline (0 % wide at rest), the arrow (12 x 8 px) */
+    background-repeat: no-repeat;
+  }
+  &:is(.wa-feld--auswahl, .select):focus { background-size: 100% var(--wa-feld-line-h), 12px 8px; }
+  @media (prefers-reduced-motion: reduce) { & { transition: none !important; } }
+  :root[data-motion="reduziert"] & { transition: none !important; }
+}
+
+/* -- Wahl (.wa-wahl > *): labels of which one (or some) is chosen - pill groups, option groups, tabs inside sheets,
+      tiles. Flat tinted water; the chosen one (class "on", for pills "pill--on") is a small bead, drawn by its ::before
+      so that wasser.js (Teil 3, options "groups" and "chosen") can let it FLOW over from the one chosen before. The
+      list names the LABELS (children of the group). They need their own padding; the group may wrap. -- */
+[data-wasser] :is(
+  .wa-wahl > *,
+  .pills > .pill, .seg > button, .tabs > button, .tile, .island-lib > button   /* both shells */
+  /* apply this block to further elements here (and name their group in wasser.js, option "groups") */
+) {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid transparent;
+  border-radius: var(--wa-r-wahl);
+  background: var(--wa-wahl-bg);
+  box-shadow: none;
+  color: var(--wa-wahl-ink);
+  -webkit-tap-highlight-color: transparent;
+  &:active { background: var(--wa-trough-press); }
+  &:is(.on, .pill--on) {
+    background: var(--wa-wahl-bg);              /* (its flat tint stays under the bead: while the bead is still flowing over from the old choice, the new label is not left bare) */
+    border-color: transparent;
+    box-shadow: none;
+    color: var(--wa-wahl-on-ink);
+    text-shadow: var(--wa-wahl-on-shade);
+  }
+  &:is(.on, .pill--on)::before {
+    content: "";
+    position: absolute;
+    inset: -1px;                                /* covers the transparent border */
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background: var(--wa-wahl-on);
+    box-shadow: var(--wa-wahl-on-rim);
+    will-change: transform;
+  }
+}
+/* -- Wahl in Mulden: large labels and picture tiles are troughs to choose from (the chosen one is the bead of "Wahl").
+      Written after "Wahl" and with its weight (three classes). -- */
+[data-wasser] :is(
+  .tiles > .tile, .island-lib > button          /* both shells: the tiles of the project form */
+  /* apply this block to further elements here */
+) {
+  border-radius: var(--wa-r-mulde); background: var(--wa-trough); box-shadow: var(--wa-trough-walls), var(--wa-trough-line); color: var(--text);
+  &:active { background: var(--wa-trough-press); }
+  &.on { background: none; box-shadow: none; }
+}
+/* options and tabs are small: taps count a little beyond them */
+[data-wasser] :is(.seg > button, .tabs > button)::after { content: ""; position: absolute; inset: -5px -2px; }
+
+/* -- Haken (.wa-haken): a check circle. Empty: a small hollow. Ticked (class "check--on" or "on"): a drop of green water
+      fills it from the middle and swings into place; unticked again, it drains. The drop is the ::before; ::after is
+      the hit area. Skipped (.wa-haken--aus): a dashed, flat circle - nothing will fill it.
+      It needs: width, height, border-radius: 50 %; the tick is the app's own SVG.
+      On a Becken a tick also sends one ring in the green of its water (wasser.js, options "ringFrom" and "tick"). -- */
+[data-wasser] :is(
+  .wa-haken,
+  .check                                        /* both shells */
+  /* apply this block to further elements here */
+) {
+  position: relative;
+  isolation: isolate;
+  border: 1.5px solid var(--wa-haken-ring);
+  background: none;
+  box-shadow: var(--wa-haken-hollow);
+  transition: none;
+  -webkit-tap-highlight-color: transparent;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -1.5px;                              /* covers the 1.5 px rim of the hollow */
+    z-index: -1;
+    border-radius: 50%;
+    background: var(--wa-haken-water);
+    box-shadow: var(--wa-haken-rim);
+    opacity: 0;
+    transform: scale(.2);                       /* empty: the drop has drawn together to a point in the middle */
+    transition: transform var(--wa-t-flow) var(--wa-ease-drain), opacity var(--wa-t-flow) var(--wa-ease-drain);   /* draining */
+  }
+  &::after { content: ""; position: absolute; inset: var(--wa-haken-hit); border-radius: 50%; }
+  &:is(.wa-haken--aus, .check--skip):not(.check--on, .on) { border-style: dashed; box-shadow: none; }
+  &:is(.check--on, .on) { border-color: transparent; background: none; box-shadow: none; color: var(--wa-haken-ink); }
+  &:is(.check--on, .on)::before {
+    opacity: 1;
+    transform: none;
+    transition: transform var(--wa-t-flow) var(--wa-ease-settle), opacity var(--wa-t-fast) linear;               /* filling */
+  }
+  @media (prefers-reduced-motion: reduce) { &::before { transition: none !important; } }
+  :root[data-motion="reduziert"] &::before { transition: none !important; }
+}
+
+/* -- Pegel (.wa-pegel > i): a progress bar - water standing in a thin glass tube. The level is the width of the <i>
+      (inline style, in %). The width itself never eases (the app moves a running print's level a hair every second);
+      wasser.js (Teil 3, option "levels") sees a real change of level and lets the water run there with a small swing,
+      as a transform. The end of the water catches the light (meniscus, ::after). At 0 % the tube is empty.
+      It needs: height, radius, overflow: hidden; the <i>: display: block; height: 100 %. Amber: .wa-pegel--amber. -- */
+[data-wasser] :is(
+  .wa-pegel,
+  .progress                                     /* both shells */
+  /* apply this block to further elements here (and in wasser.js, option "levels") */
+) {
+  background: var(--wa-pegel-tube);
+  box-shadow: var(--wa-pegel-glass);
+  & > i {
+    position: relative;
+    background: var(--wa-pegel-water);
+    transform-origin: 0 50%;
+    transition: none;
+  }
+  & > i::after {
+    content: "";
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: min(8px, 100%);                      /* the last 8 px of the water: a small bright cap (never wider than the water itself) */
+    border-radius: inherit;
+    background: var(--wa-pegel-meniscus);
+  }
+  &:is(.wa-pegel--amber, .progress--acc) > i { background: var(--wa-pegel-amber); }
+}
+/* the step line of a form is a Pegel in pieces */
+[data-wasser] .steps span { background: var(--wa-pegel-tube); box-shadow: var(--wa-pegel-glass); }
+[data-wasser] .steps span.on { background: var(--wa-pegel-voll); box-shadow: none; }
+
+/* -- Perle (.wa-perle): a small round icon button (close, skip, remove, "more") as a glass bead - no bending, no
+      script. It gives way under the finger and springs back. It needs: width and height (28 px and more). -- */
+[data-wasser] :is(
+  .wa-perle,
+  .btn.btn--icon.btn--ghost                     /* both shells: ghost icon buttons */
+  /* apply this block to further elements here */
+) {
+  padding: 0;                                   /* (the mobile shell's own .btn padding squeezed these icons to a dot) */
+  border-radius: 50%;
+  background: var(--wa-perle-bg);
+  box-shadow: var(--wa-perle-rim);
+  transition: transform var(--wa-t-flow) var(--wa-ease-settle), background-color var(--wa-press-out);
+  &:active {
+    background: var(--wa-perle-press);
+    box-shadow: var(--wa-perle-rim);
+    transform: scale(.92);                      /* gives way under the finger, springs back with --wa-ease-settle */
+    transition-duration: var(--wa-press-in);
+  }
+  @media (prefers-reduced-motion: reduce) { & { transition: none !important; } }
+  :root[data-motion="reduziert"] & { transition: none !important; }
+}
+/* -- Perle mit Schrift: buttons that repeat per list row are no drops (wasser.js, option "drops", leaves them out):
+      they keep the plain glass, a touch lighter and without the heavy shadow. The list names the ROWS. -- */
+[data-wasser] :is(
+  .item,                                        /* both shells */
+  .m-row                                        /* mobil */
+  /* add further kinds of rows here (and leave their buttons out of the options "drops" and "ringFrom") */
+) .btn:not(.btn--ghost):not(.btn--primary):not(.btn--danger) { background: var(--wa-glass-sheen), var(--wa-perle-bg); box-shadow: var(--wa-perle-rim); border-color: var(--wa-perle-line); }
+
+/* -- Bogen, Suche, Hinweis: was dazugehört (classes both shells share) ------------------------------------------- */
+/* the sheet */
+[data-wasser] .sheet:focus { outline: none; }   /* the app moves the focus onto the sheet when it opens: no ring around the whole sheet */
+[data-wasser] .sheet__foot { border-top: 0; box-shadow: var(--wa-shore); }
+/* The page behind a sheet sinks out of focus: the SCRIM carries the blur, not the sheet. Its backdrop is the resting page,
+   so it is blurred once - a blur on the sheet itself would be redone with every picture of the drops that lie on it. */
+[data-wasser] :is(.sheet-back, .cmd-back) { background: var(--wa-scrim); -webkit-backdrop-filter: var(--wa-scrim-blur); backdrop-filter: var(--wa-scrim-blur); }
+[data-wasser] :is(.sheet, .cmd) { -webkit-backdrop-filter: none; backdrop-filter: none; }
+[data-wasser] .sheet .hr { background: var(--wa-linie); }
+/* the toast: centred by its margins, one line where it fits (how high it sits: the shell) */
+[data-wasser] .toast {
+  left: 14px; right: 14px;
+  width: -webkit-fit-content; width: fit-content;
+  max-width: calc(100% - 28px);
+  margin: 0 auto;
+  --text-2: var(--wa-ink-2);
+}
+/* the search panel: the same dense water, the outline of a basin; the chosen hit is a lit trough */
+[data-wasser] .cmd { border-radius: var(--wa-r-becken-3); --text-2: var(--wa-ink-2); --text-3: var(--wa-ink-2); }
+[data-wasser] .cmd__input { border-bottom: 0; box-shadow: inset 0 -1px 0 var(--wa-linie); }
+[data-wasser] .cmd__item { border-radius: var(--wa-r-mulde); }
+[data-wasser] .cmd__item.on { background: var(--wa-trough-press); }
+/* rows inside sheets are troughs ("Mulde"); here only what they need on top */
+[data-wasser] .sheet .item--on { background: var(--wa-trough-press); }
+[data-wasser] .sheet .bereich-card--on { box-shadow: var(--wa-trough-walls), inset 3px 0 0 var(--c); }   /* the workspace in use keeps its coloured mark (--c is set by the app) */
+[data-wasser] .sheet .tabs { border-radius: var(--wa-r-mulde); padding: 4px; }   /* the tabs of a sheet lie in one trough (the app's pill of 999 px bulges when they wrap) */
+
+/* native controls: tint only. The browser draws them for a dark page (an empty checkbox is a dark box with a light rim, not
+   a white square; the calendar sign of a date field is light; the list of a select and the date picker open dark). */
+[data-wasser] .range, [data-wasser] input[type="checkbox"], [data-wasser] input[type="radio"] { accent-color: var(--wa-akzent); }
+[data-wasser] :is(input, select, textarea) { color-scheme: dark; }
+
+/* Stufe 0, only the last blue is taken out */
+[data-wasser] .hour.now { background: var(--wa-jetzt); }
+
+/* what had no answer to a touch besides the browser's own flash: a search hit lights up like its chosen neighbour, a text link dims */
+[data-wasser] .cmd__item:active { background: var(--wa-trough-press); }
+[data-wasser] :is(.link, .toast__undo):active { opacity: .6; }
+
+/* ------------------------------------------------------------------------------------ Antwort: Wasserlinie ----- */
+
+/* -- Wasserlinie: the keyboard focus is a line of light, outside the outline. Two lists: around drops and pills it keeps
+      more distance (their outline flows), around everything else less. Fields have their own (see "Feld"). -- */
+[data-wasser] :is(
+  .wa-tropfen, .btn, .pill,
+  .m-ico                                        /* mobil */
+  /* add further drops and pills here */
+):focus-visible { outline: var(--wa-focus); outline-offset: var(--wa-focus-gap); }
+[data-wasser] :is(
+  .check, .seg > button, .tabs > button, .tile, .island-lib > button, .item--click, .toast__undo, .place-hit, .ms__btn, .dev-row, .sim-item, .link, .cmd__item,
+  .m-row--click, .m-back                        /* mobil */
+  /* add everything else that can take the keyboard focus here */
+):focus-visible { outline: var(--wa-focus); outline-offset: var(--wa-focus-gap-nah); }
+
+/* --------------------------------------------------------------------------------------------- Leben in Ruhe --- */
+
+/* -- Licht (.wa-licht): the light at the rim of a sheet of water. A helper element, put into every sheet of the option
+      "light" by wasser.js (aria-hidden, takes no clicks; nothing depends on it, React may throw it away at any time):
+      a basin has no pseudo-element left, and the helper is the one small element that receives the pull of scrolling.
+      ::before is the light on the lit side: it hugs the straight part of the top rim, wanders along it and back, swells
+      and breathes. ::after is the light gathered on the far side, along the bottom rim, wandering the other way at
+      another pace. Both are half ellipses whose flat side lies ON the rim line and which only ever slide along that
+      line or grow from it (transform-origin on the rim) - so nothing has to clip them and no light leaves the pool.
+      (An outline with larger shoulders than the basins' 46 px needs a larger --wa-licht-links.)
+      --wa-phase (0 .. 1, set per helper by wasser.js) is where in its loop a light starts: no two sheets in step.
+      The sheet needs a position and isolation: isolate (Becken and "dichtes Wasser" have both).
+   -- Bodenlicht (.wa-licht > .wa-boden): light on the floor of a basin. ONE large, very soft patch (a child of the light
+      helper, made with it) that wanders slowly across the open floor and back, bobbing, turning a little, growing and
+      shrinking, breathing. It lies with the helper under the deep middle of the basin, under its rows, its text and its
+      drops: on the open floor it is a soft brightening that comes and goes, in a row only a breath. It has no edge, and
+      its box stays inside the basin at every moment of the loop, so nothing clips it. A small box, doubled by its
+      transform: the layer is a quarter of what is seen. No floor light on a sheet:
+        .my-sheet > .wa-licht > .wa-boden { display: none; animation: none; }
+   -- Zug: while a list of the option "scrollers" is being scrolled (wasser.js sets data-wa-zieht and --wa-zug on the
+      helper) the light follows the pull softly - the rim lights lean (scale, from the rim) and their glints slide along
+      the rim, the light on the floor stays behind (translate); when the scrolling stops the transition lets all of it
+      swing out. scale and translate are the single parts of a transform: they add to the transform of the loop at rest
+      instead of replacing it.
+   -- Schwappen: a sheet has just arrived (its helper is new) - its light starts where the pull of the way has left it
+      and swings into place. It is the same thing as a pull that is let go, and it is built that way: wasser.js gives a
+      new helper the attribute data-wa-kommt for its first two pictures, and the rules below hold its lights at the
+      places of --wa-schwappt-*; the attribute goes, and the transition of "Zug" lets them swing out. (Not a keyframe
+      animation on scale / translate: while one runs, a transition on the same property does not start - a list scrolled
+      within the first 1.6 s on a new screen was followed in steps and did not swing out.) No arrival for one sheet:
+      re-declare the three tokens for its helper as the values at rest (see "Bogen"). -- */
+[data-wasser] .wa-licht {
+  position: absolute;
+  inset: 0;
+  z-index: -1;                                  /* under rows, text and drops; above the first depth step, under the deep middle */
+  pointer-events: none;
+  --wa-zug: 0;                                  /* the pull of scrolling, -1 .. 1, set by wasser.js on this element only (a property set on the root would restyle every element of the page with every picture) */
+
+  &::before,
+  &::after,
+  & > .wa-boden {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    will-change: transform, opacity;
+    transition: scale var(--wa-t-swing) var(--wa-ease-swing), translate var(--wa-t-swing) var(--wa-ease-swing);   /* let go, the light swings out (Zug) */
+  }
+  &::before {
+    left: var(--wa-licht-links); top: 0;
+    width: var(--wa-licht-breit); height: var(--wa-licht-tief);
+    background: var(--wa-licht-oben);
+    transform-origin: 50% 0;
+    scale: 1 clamp(var(--wa-zug-min), calc(1 + var(--wa-zug) * var(--wa-zug-oben)), var(--wa-zug-max));
+    translate: calc(var(--wa-zug) * var(--wa-zug-weit)) 0;
+    animation: wa-licht-oben var(--wa-t-ruhe-1) var(--wa-gang-1) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-1)) infinite;
+    animation-play-state: var(--wa-lauf);
+  }
+  &::after {
+    right: var(--wa-licht-rechts); bottom: 0;
+    width: var(--wa-licht-breit-fern); height: var(--wa-licht-tief-fern);
+    background: var(--wa-licht-unten);
+    transform-origin: 50% 100%;
+    scale: 1 clamp(var(--wa-zug-min), calc(1 - var(--wa-zug) * var(--wa-zug-unten)), var(--wa-zug-max));
+    translate: calc(var(--wa-zug) * var(--wa-zug-weit) * -1) 0;
+    animation: wa-licht-unten var(--wa-t-ruhe-2) var(--wa-gang-2) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-2)) infinite;
+    animation-play-state: var(--wa-lauf);
+  }
+  & > .wa-boden {
+    left: var(--wa-boden-links); top: var(--wa-boden-oben);
+    width: var(--wa-boden-breit); height: var(--wa-boden-hoch);
+    background: var(--wa-boden-licht);
+    translate: 0 calc(var(--wa-zug) * var(--wa-zug-boden));
+    animation: wa-boden var(--wa-t-ruhe-4) var(--wa-gang-4) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-4)) infinite;
+    animation-play-state: var(--wa-lauf);
+  }
+  /* Zug: while the list runs the light follows quickly; let go, the slow transition above takes over */
+  &[data-wa-zieht]::before,
+  &[data-wa-zieht]::after,
+  &[data-wa-zieht] > .wa-boden { transition: scale var(--wa-t-flow) var(--wa-ease-flow), translate var(--wa-t-flow) var(--wa-ease-flow); }
+  /* Schwappen: the helper is new (wasser.js, for its first two pictures) - its lights stand where the way has left them; then the same slow transition lets them swing into place */
+  &[data-wa-kommt]::before { scale: var(--wa-schwappt-oben); }
+  &[data-wa-kommt]::after { scale: var(--wa-schwappt-unten); }
+  &[data-wa-kommt] > .wa-boden { translate: var(--wa-schwappt-boden); }
+
+  /* no motion wanted: the lights are not there */
+  @media (prefers-reduced-motion: reduce) {
+    & { display: none !important; animation: none !important; }
+    &::before, &::after, & > .wa-boden { animation: none !important; }
+  }
+  :root[data-motion="reduziert"] & { display: none !important; animation: none !important; }
+  :root[data-motion="reduziert"] &::before, :root[data-motion="reduziert"] &::after, :root[data-motion="reduziert"] & > .wa-boden { animation: none !important; }
+}
+/* The loops at rest (printed by scripts/wasser/keyframes.mjs: eight samples of slow sine waves - a rim light drifts along
+   the rim and back, slow at both ends, swells twice on the way and breathes once; the light on the floor crosses it and
+   back, bobs twice, turns, grows and breathes). Eight equal intervals: with the gait steps(N) a loop of N seconds is
+   drawn eight times a second. */
+@keyframes wa-licht-oben {
+  0%    { transform: translateX(0%) scaleY(1.176); opacity: .99; }
+  12.5% { transform: translateX(7.6%) scaleY(1.243); opacity: .89; }
+  25%   { transform: translateX(26%) scaleY(.824); opacity: .74; }
+  37.5% { transform: translateX(44.4%) scaleY(.757); opacity: .62; }
+  50%   { transform: translateX(52%) scaleY(1.176); opacity: .61; }
+  62.5% { transform: translateX(44.4%) scaleY(1.243); opacity: .71; }
+  75%   { transform: translateX(26%) scaleY(.824); opacity: .86; }
+  87.5% { transform: translateX(7.6%) scaleY(.757); opacity: .98; }
+  100%  { transform: translateX(0%) scaleY(1.176); opacity: .99; }
+}
+@keyframes wa-licht-unten {
+  0%    { transform: translateX(0%) scaleY(.907); opacity: .84; }
+  12.5% { transform: translateX(-5.9%) scaleY(.715); opacity: .98; }
+  25%   { transform: translateX(-20%) scaleY(1.093); opacity: .99; }
+  37.5% { transform: translateX(-34.1%) scaleY(1.285); opacity: .88; }
+  50%   { transform: translateX(-40%) scaleY(.907); opacity: .71; }
+  62.5% { transform: translateX(-34.1%) scaleY(.715); opacity: .57; }
+  75%   { transform: translateX(-20%) scaleY(1.093); opacity: .56; }
+  87.5% { transform: translateX(-5.9%) scaleY(1.285); opacity: .67; }
+  100%  { transform: translateX(0%) scaleY(.907); opacity: .84; }
+}
+@keyframes wa-boden {
+  0%    { transform: translate(0%, 4.9%) rotate(9deg) scale(1.989, 2.135); opacity: .88; }
+  12.5% { transform: translate(8.8%, 15.2%) rotate(6.4deg) scale(1.898, 2.137); opacity: .65; }
+  25%   { transform: translate(30%, -4.9%) rotate(0deg) scale(1.654, 1.823); opacity: .46; }
+  37.5% { transform: translate(51.2%, -15.2%) rotate(-6.4deg) scale(1.766, 1.799); opacity: .4; }
+  50%   { transform: translate(60%, 4.9%) rotate(-9deg) scale(2.135, 1.989); opacity: .52; }
+  62.5% { transform: translate(51.2%, 15.2%) rotate(-6.4deg) scale(2.137, 1.898); opacity: .75; }
+  75%   { transform: translate(30%, -4.9%) rotate(0deg) scale(1.823, 1.654); opacity: .94; }
+  87.5% { transform: translate(8.8%, -15.2%) rotate(6.4deg) scale(1.799, 1.766); opacity: 1; }
+  100%  { transform: translate(0%, 4.9%) rotate(9deg) scale(1.989, 2.135); opacity: .88; }
+}
+
+/* -- Lichtlauf (.wa-lichtlauf): the same light for a sheet that has a pseudo-element to spare (its ::after) and is never
+      scrolled along with the page, or is too small for a helper: one light that wanders along the straight part of its
+      top rim. The sheet needs a position and isolation: isolate ("dichtes Wasser" has the second).
+      A shorter rim: set left, width and height of the ::after for that element (left + 2.7 x width must end 30 px
+      before the far corner) - AFTER this block and with its weight. -- */
+[data-wasser] :is(
+  .wa-lichtlauf,
+  .toast, .cmd,                                 /* both shells */
+  .m-tabs, .glass.m-stat                        /* mobil: the tab bar, the free-standing number tiles */
+  /* apply this block to further elements here */
+) {
+  &::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    left: var(--wa-lauf-links); top: 0;
+    width: var(--wa-lauf-breit); height: var(--wa-lauf-tief);
+    background: var(--wa-licht-lauf);
+    transform-origin: 50% 0;
+    will-change: transform, opacity;
+    animation: wa-licht-lauf var(--wa-t-ruhe-3) var(--wa-gang-3) infinite;
+    animation-play-state: var(--wa-lauf);
+  }
+  @media (prefers-reduced-motion: reduce) { &::after { display: none !important; animation: none !important; } }   /* (animation: none as well - WebKit keeps the loop of a pseudo-element that is not shown) */
+  :root[data-motion="reduziert"] &::after { display: none !important; animation: none !important; }
+}
+[data-wasser] .cmd { position: relative; }      /* (so that its Lichtlauf stays inside) */
+@keyframes wa-licht-lauf {
+  0%    { transform: translateX(0%) scaleY(1.228); opacity: .95; }
+  12.5% { transform: translateX(24.9%) scaleY(1.214); opacity: .79; }
+  25%   { transform: translateX(85%) scaleY(1.074); opacity: .6; }
+  37.5% { transform: translateX(145.1%) scaleY(.891); opacity: .5; }
+  50%   { transform: translateX(170%) scaleY(.772); opacity: .55; }
+  62.5% { transform: translateX(145.1%) scaleY(.786); opacity: .71; }
+  75%   { transform: translateX(85%) scaleY(.926); opacity: .9; }
+  87.5% { transform: translateX(24.9%) scaleY(1.109); opacity: 1; }
+  100%  { transform: translateX(0%) scaleY(1.228); opacity: .95; }
+}
