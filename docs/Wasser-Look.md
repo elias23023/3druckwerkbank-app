@@ -380,7 +380,7 @@ Die Regel muss unter `[data-wasser]` stehen, sonst gibt es die Werte nicht.
 2. Nennt der Baustein Optionen: denselben Selektor in `DESKTOP` in `wasser.js` eintragen (bei den acht ersetzten Optionen), sonst in `MOBIL`.
 3. Was es darüber hinaus braucht (Platz, Größe, Mauszeiger), kommt in `desktop.css` – mit dem Gewicht der Liste.
 4. Liegt es frei über der Bühne und trägt Text: `background: var(--wa-frei)`, kein Weichzeichner. Kann eine Insel dahinter liegen: nie ein lebender Tropfen.
-5. Prüfen: `node scripts/wasser/desktop.mjs pruefen`, Bilder in beiden Formaten und beiden Tönen (`desktop.mjs bild … --nur <welt>`), `node scripts/wasser/desktop.mjs kontrast`, und `node scripts/wasser/vergleich.mjs --alt git:HEAD` (das Handy darf sich nicht ändern).
+5. Prüfen: `node scripts/wasser/desktop.mjs pruefen`, Bilder in beiden Formaten und beiden Tönen (`desktop.mjs bild … --nur <welt>`), `node scripts/wasser/desktop.mjs kontrast`, und `node scripts/wasser/vergleich.mjs --alt git:HEAD` (das Handy darf sich nicht ändern; 32 Minuten – der Teil `bilder` allein braucht vier).
 
 ---
 
@@ -641,7 +641,7 @@ Erst wenn der Besitzer es sagt. Reihenfolge einhalten; nach jedem Schritt prüfe
   Mit der Hand im schmalen Fenster: beide Töne; der Bereich „Meine Werkstatt“ (leer, ohne Drucker); ein Formular ausfüllen und speichern; einen Einkauf in „Material“ entfernen (Hinweis mit „Rückgängig“); die Einstellung „Bewegung: Reduziert“ (alles steht); das Fenster über 900 px ziehen und zurück (der Look startet neu, keine Fehler).
 - **Darf nicht passieren:** Text unter 4,5 : 1. Etwas, das sich in Ruhe bewegt, obwohl Bewegung reduziert ist. Ein Tipp, der nicht ankommt.
 
-### Schritt 5 – Baustelle und echte Handys, vor allem anderen (Hauptchat)
+### Schritt 5 – Baustelle und echte Handys, bevor es weitergeht (Hauptchat)
 
 Noch nie lief der Look auf einem echten Handy. Darum kommt dieser Test **vor** dem Desktop und **vor** live.
 
@@ -653,7 +653,7 @@ Noch nie lief der Look auf einem echten Handy. Darum kommt dieser Test **vor** d
   |---|---|---|---|
   | 1 | **Bildrate mit Tropfen und Randlichtern zusammen – das bekannte offene Risiko.** Die lange Liste in „Material“ langsam und schnell rollen, zwei Minuten | die Liste ruckelt oder das Handy wird warm | Lichter anhalten: `--wa-lauf: paused` am Wurzelelement. Dauerhaft: `[data-wasser] { --wa-lauf: paused; }` in `kern.css`, Teil 3. Nur das iPhone ruckelt: zuerst den Block `@supports (-webkit-nbsp-mode: space) { … }` in Teil 3 löschen (die Lichter laufen dann in Schritten) |
   | 2 | Tropfen allein: in der Konsole `Wasser.info.level` und `Wasser.info.ms` | die Stufe steigt auf 2 und mehr, oder es ruckelt nur dort, wo Tropfen stehen | weniger lebende Tropfen: in `wasser.js`, `MOBIL`, `drops: '.btn--primary, .m-ico'`. Gar keine: `drops: ''` (schlichtes Glas) |
-  | 3 | Einen Bildschirm betreten: durch die fünf Reiter tippen | eine Pause von einer Fünftelsekunde, bevor sich der neue Bildschirm bewegt | weichere Tiefe kleiner: `--wa-deep-soft: 20px; --wa-shelf-soft: 8px;` (Teil 2, „Becken“); dann `--wa-t-step: 0ms` |
+  | 3 | Einen Bildschirm betreten: durch die fünf Reiter tippen | eine Pause von einer Fünftelsekunde, bevor sich der neue Bildschirm bewegt | die weichen Schatten der Tiefe kleiner: `--wa-deep-soft: 20px; --wa-shelf-soft: 8px;` (Teil 2, „Becken“); dann `--wa-t-step: 0ms` (Teil 3) |
   | 4 | Ton „klar“: Suche und ein Formular über „Start“ und „Heute“ | Wörter der Seite sind zwischen den Treffern oder hinter den Feldern zu lesen | dichter: `--wa-dense: rgba(62, 66, 70, .9);` und `--wa-sheet: rgba(56, 60, 64, .9);` (Teil 1, Ton „klar“) |
   | 5 | Bodenlicht auf einem OLED-Handy im Dunkeln, Ton „dunkel“ | langsame Ringe oder Stufen auf dem Boden einer Karte | `--wa-boden: .15;` oder `0` (Teil 1, Ton „dunkel“) |
   | 6 | Der Ring beim Loslassen | er wirkt wie ein spätes Echo | schneller: `--wa-ring-time: .8s;` (Teil 2). Ganz aus: `ringOn: ''` |
@@ -683,7 +683,7 @@ Noch nie lief der Look auf einem echten Handy. Darum kommt dieser Test **vor** d
      await p.addStyleTag({ content: '.scroll-hint { animation: none !important; }' });   // (the app's own hint "Scrollen zum Erkunden" bobs 6 px by itself: not a hop under the pointer)
      ```
 
-     Ohne diese Zeile meldet die Prüfung „Gedrückt: nichts verlässt seinen Platz“ je nach Augenblick `start: „Scrollen zum Erkunden“ 6 px`. Das ist das eigene Wippen dieses Hinweises (die Animation `bob` der App), kein Sprung: Mit angehaltener Animation bewegt er sich beim Drücken um 0 px. Gegen die App ohne Look fiel es dreimal nicht auf, gegen die App mit eingebautem Look beim ersten Lauf.
+     Ohne diese Zeile meldet die Prüfung „Gedrückt: nichts verlässt seinen Platz“ je nach Augenblick `start: „Scrollen zum Erkunden“ 6 px`. Das ist das eigene Wippen dieses Hinweises (die Animation `bob` der App), kein Sprung: Mit angehaltener Animation bewegt er sich beim Drücken um 0 px. Beim Einspielen in die App ohne Look fiel es in keinem Lauf auf, gegen die App mit eingebautem Look gleich im ersten.
 - **Prüfen:** der Prüfblock, dazu die Reihenfolge im CSS wie in Schritt 2 (jetzt lädt der Desktop das Modul zuerst – hier würde ein fehlender Schutz aus Schritt 1 auffallen) und
 
   ```
@@ -782,7 +782,7 @@ Alle Werkzeuge nehmen `--engine webkit` (braucht Playwrights WebKit; auf der Arb
 
 ## 9. Fallstricke
 
-Jede Zeile ist eine Falle, in die die Erbauer getreten sind. Nummern in Klammern: `NOTIZEN.md`, Abschnitt 7.
+Jede Zeile ist eine Falle, in die die Erbauer getreten sind – einige (1, 44 und 63 bis 67) erst beim Probelauf dieser Anleitung. Nummern in Klammern: `NOTIZEN.md`, Abschnitt 7.
 
 **Listen und Gewicht**
 
@@ -863,7 +863,8 @@ Jede Zeile ist eine Falle, in die die Erbauer getreten sind. Nummern in Klammern
 63. Wenn der Look eingebaut ist und die App den Ton selbst wählt, dann zeigen die Handy-Werkzeuge bei Tag unter dem Namen „dunkel“ den Ton „klar“ – bis `openApp` den Ton in beide Richtungen sagt (Schritt 3).
 64. Wenn `desktop.mjs pruefen` meldet, „Scrollen zum Erkunden“ habe sich 6 px bewegt, dann ist das das Wippen der App, kein Sprung beim Drücken (Schritt 6).
 65. Wenn `vergleich.mjs film` eine einzelne Abweichung meldet, während die Maschine anderes rechnet, dann zuerst allein wiederholen.
-66. Wenn mit `npm run dev` am Skript gearbeitet wird, dann die Seite neu laden: Das Skript legt `window.Wasser` nur einmal an und ersetzt sich nicht selbst. (Stylesheets wechseln sofort. `npm run dev` mit eingebautem Look läuft; React startet den Look im Entwicklungsmodus zweimal, das ist vorgesehen.)
+66. Wenn `pruefen.mjs --app --engine webkit` bei Prüfung 9 „scrolling the sheet pulls its light“ ausfällt, dann wiederholen: Im WebKit-Testbrowser fiel genau diese Prüfung in 4 von 10 Läufen aus und bestand im nächsten (in Chromium in keinem Lauf). Der langsame Testbrowser liefert das Rollen manchmal zu spät.
+67. Wenn mit `npm run dev` am Skript gearbeitet wird, dann die Seite neu laden: Das Skript legt `window.Wasser` nur einmal an und ersetzt sich nicht selbst. (Stylesheets wechseln sofort. `npm run dev` mit eingebautem Look läuft; React startet den Look im Entwicklungsmodus zweimal, das ist vorgesehen.)
 
 ---
 
@@ -893,10 +894,51 @@ Jede Zeile ist eine Falle, in die die Erbauer getreten sind. Nummern in Klammern
 - Der eigene kleine Lichtlauf des Hinweises ist nicht übernommen (`NOTIZEN.md`, Abschnitt 12).
 - Die Perle kennt neun Kinder; ein zehntes braucht eine Zeile mehr.
 - Lose weiße Schrift über der Landschaft (der Spruch auf „Start“) hat einzelne Stellen bei 2,6 : 1 – in beiden Tönen und in der App von heute.
-- Schritt 8 (Bewegung der App), Schritt 9 (altes helles Thema löschen) und Schritt 11 (Aufräumen) sind nicht ausprobiert. Der Weg mit `--engine webkit` wurde für diese Anleitung nicht neu durchlaufen.
+- Vom Fahrplan sind die Schritte 1, 2, 3 und 6 in einer Kopie durchgeführt (Abschnitt 11). Nicht ausprobiert: Schritt 5 und 10 (Baustelle, echte Geräte), das Aufräumen der Inline-Stile in Schritt 7, Schritt 8 (Bewegung der App), Schritt 9 (altes helles Thema löschen), Schritt 11 (eine Quelle).
 
 ---
 
 ## 11. Was an dieser Anleitung geprüft wurde
 
-GEPRUEFT_PLATZHALTER
+Am 14.11., auf der Arbeitsmaschine (Chromium, ohne Grafikkarte), in Kopien außerhalb des Projekts. `src/`, `public/`, `server/` und die bestehenden Skripte wurden dabei nicht angefasst.
+
+**Rezepte, wörtlich befolgt** – in einer Kopie der Vorlage, auf einer Probeseite mit dem „Merkzettel“ aus 4.2:
+
+| Rezept | Ergebnis |
+|---|---|
+| Tropfen, lang und rund (Liste, zwei runde Zeilen, `drops`, `ringFrom`) | beide Knöpfe sind lebende Tropfen (`data-w3="on"`, zwei Canvas); ein Tipp schickt einen Ring über das Becken |
+| Becken (Liste, `ringOn`, `light`) | Weichzeichner, Tiefe und Lichthelfer sind da, `--water-under` ist gesetzt |
+| stilles Wasser | Fläche mit Weichzeichner, ohne Tiefe |
+| dichtes Wasser + Markierung + Lichtlauf (`bar`, `--wa-bar-tabs: 3`) | Perle ein Kind breit (117 px), fließt beim Tipp zum dritten Kind |
+| Mulde und Mulde zum Tippen, Etikett auf Wasser, Perle | Zeile ist eine Mulde, das Schild flach, der kleine Knopf rund |
+| Feld, Wahl (`groups`), Haken (`tick`), Pegel (`levels`) | Fokus: Wasserlinie läuft auf 100 %; die Perle der Wahl wandert; Abhaken schickt einen grünen Ring |
+| Wasserlinie (beide Listen) | weiße Linie, 2 px, bei Tastaturfokus |
+| Bogen nur über die neutralen Klassen (Weg A) | steht da wie der Bogen der App |
+| derselbe Stand im Ton „klar“ | ohne eine weitere Zeile; keine Fehler in der Konsole |
+| Gewicht (4.4): leichte Regel, dann dieselbe mit doppelter Klasse | leicht: der Radius bleibt 26 px 34 px; doppelt: 42 px 27 px |
+| ein Komma weglassen (Fallstrick 1) | die Zeile verliert ihre Mulde, keine Meldung |
+| eine Kopie der Vorlage ausprobieren (`mobil.html?vorlage=…`, `--look <Ordner>`) | ein geänderter Wert (`--wa-drop-amber`) erscheint auf der Seite und in den Bildern |
+| eine Farbe ändern (Abschnitt 6, in einem Wegwerf-Klon mit Git) | „dunkel“ ohne Abweichung, „klar“ acht Bilder mit DIFF; Kontrast über acht Szenen: kein Median unter der Grenze |
+
+Aus dieser Probeseite stammen die Bilder in `docs/wasser-look/bilder/anleitung/`.
+
+**Fahrplan, Schritte 1, 2, 3 und 6** – in einer Kopie des Projekts durchgeführt, genau mit den Zeilen dieser Anleitung:
+
+- `npm run build` und `VITE_API=node npm run build` laufen durch. Das gebaute CSS wächst von 45 auf 108 KB (22 KB gepackt), das Skript um 40 KB.
+- Die Reihenfolge im gebauten CSS stimmt (Befehl aus Schritt 2: „Reihenfolge gut“, 16 und 16). Ohne die drei Schutz-Zeilen in `wasser.ts` stimmt sie nach Schritt 6 nicht mehr (nachgestellt).
+- Der eingebaute Look läuft im Handy- und im Desktop-Format. „Erscheinungsbild“ schaltet den Ton (Hell → `data-wa-ton="klar"`, Dunkel → kein Attribut, Automatisch → nach der Stunde), `data-theme` bleibt „dunkel“. Beim Wechsel über 900 px und zurück läuft immer genau eine Hülle, ohne Fehler. Auch unter `npm run dev`.
+- `node scripts/verify.mjs`: 69 von 69 gegen den Build mit dem Look auf beiden Hüllen. (Nach Schritt 3, nur Handy: 65 von 69 – die vier fehlenden waren Open-Meteo, das in diesem Lauf mit „429“ antwortete.) Die App ohne Look zum Vergleich: 69 von 69.
+- Unter der CSP des Node-Servers: keine Meldung (Schritt 5).
+- Die Werkzeuge gegen die App mit eingebautem Look: `pruefen.mjs --app` 60 von 60; `kontrast.mjs --app` ohne Wert unter der Grenze und mit denselben niedrigsten Werten wie vorher; `film.mjs` mit denselben Bewegungen; `bild.mjs … --look ohne` und `desktop.mjs bild … --look ohne`; `desktop.mjs pruefen` zuerst 23 von 24 (der wippende Hinweis), mit der Zeile aus Schritt 6 zweimal 24 von 24 (2000 „dunkel“, 1920 „klar“).
+- Die Zeile für `lib.mjs` aus Schritt 3: Davor waren die „dunklen“ Bilder des eingebauten Looks bei Tag in Wahrheit „klar“, danach dunkel.
+- Die Klasse `wa-geht` auf einem offenen Bogen (Schritt 8): Er sinkt in 0,26 s um 68 px und wird durchsichtig; am Desktop sinkt die Schublade ebenso nach unten.
+
+**Befehle, wörtlich ausgeführt** (alle ohne Fehler beendet, wo nichts anderes steht):
+
+- Abschnitt 3: `npm run build`; `node scripts/wasser/desktop.mjs zeigen` mit `?ton=klar`, `?ton=dunkel`, `?ohne=1`, `?weich=aus`, `?leben=1.5`, breit und schmal; `python3 -m http.server 4311` mit `mobil.html` und `?ton=klar`, `&scene=wetter`, `?alles=1`, `?nah=1`, `?fallback=1`, `?ohne=1`, `?vorlage=…`; die sechs Befehle für Bilder und Filme.
+- Abschnitt 4 und 6: `vergleich.mjs bilder --alt git:HEAD` mit `--toene dunkel` und `--toene klar`; `pruefen.mjs`; `pruefen.mjs --app`; `desktop.mjs pruefen`; `kontrast.mjs --app` (auch mit allen acht Szenen); `desktop.mjs kontrast`; `desktop.mjs bild … --nur heute` mit `--zeit tag`, `--ton klar`, `--format 1920`, und `--nur innen`.
+- Abschnitt 7 und 8: `leben.mjs … --werte 1,1.5`; `keyframes.mjs`; die `cmp`-Zeile (meldet „gleich“; nach einer Änderung an einer Kopie nennt sie die Datei); die Kopier-Zeile; der Befehl für die Reihenfolge im CSS; `verify.mjs`; `messen.mjs ruhe`; `messen.mjs takt`; `desktop.mjs takt`; `pruefen.mjs --regler`; `desktop.mjs pruefen --format 1920 --ton klar`.
+- `node scripts/wasser/vergleich.mjs` (alles, 32 Minuten): keine Abweichung in Bildern, App und Stilen. Im Teil `film` eine Abweichung („klar“, Reiterwechsel), während andere Läufe die Maschine belasteten; allein wiederholt: keine.
+- `pruefen.mjs --app --engine webkit`: zehn Läufe, sechsmal 60 von 60, viermal fiel Prüfung 9 aus (Fallstrick 66).
+
+**Nicht ausgeführt:** `npm run preview` selbst (der Port war von der laufenden Vorschau des Projekts belegt, gestartet mit demselben Befehl; die Kopie lief unter einem anderen Port mit `WASSER_APP`). `vergleich.mjs --alt git:HEAD` in voller Länge (nur der Teil `bilder`). Die Handarbeit aus Schritt 4. Schritt 5. Von Schritt 7 nur die Bildbefehle, nicht das Aufräumen. Die Schritte 8 bis 11 (von Schritt 8 nur die Klasse `wa-geht`). Alles auf echten Geräten.
