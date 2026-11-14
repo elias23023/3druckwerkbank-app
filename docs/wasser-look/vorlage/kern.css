@@ -55,7 +55,7 @@
 }
 
 /* == 1. Töne ====================================================================================================== */
-/* A tone is one block of values. Both blocks list the SAME tokens in the SAME order (also those with the same value),
+/* A tone is one block of values. Both blocks list the SAME 55 tokens in the SAME order (also those with the same value),
    so either tone can be read, changed or removed without looking at the other. No other rule in the look mentions
    data-wa-ton, and wasser.js has no tone logic: a drop reads what it needs from the sheet it lies on. */
 
@@ -64,6 +64,7 @@
       and the text sits there. All light is white; only the light gathered on the far side carries a breath of warmth. -- */
 [data-wasser] {
   --wa-drop-red: 150, 28, 38, .7;               /* danger ("Löschen"): r, g, b, amount of tint - read by the drops (wasser.js, PROP.red). Owner's decision 13.11.: the deeper, quieter red on this tone, the clear red on "klar" */
+  --wa-drop-veil: 1;                            /* how much of a sheet's light a clear drop lying on it gathers into its body, 0 .. 1 - read by the drops (wasser.js, PROP.veil). 1 = the silver drops on the dark cards. A sheet may say otherwise for its own drops (the bottom sheet does: --wa-bogen-veil) */
   /* the light in this water: r, g, b triplets (used as rgba(var(--wa-light), a)) */
   --wa-light: 232, 236, 241;                    /* soft light: ring, glints, and the light a drop gathers on a sheet (wasser.js) */
   --wa-core: 255, 255, 255;                     /* its hot core: meniscus, highlights */
@@ -140,6 +141,7 @@
       plain white; text stays light (the app's old light theme with dark text is NOT this mode). -- */
 :root[data-wa-ton="klar"] [data-wasser] {
   --wa-drop-red: 189, 31, 41, .72;             /* danger: the clear red (owner's decision for this tone, 13.11.) */
+  --wa-drop-veil: .3;                           /* the page under the cards is lighter here, so a drop gathers less light into its body: its white label keeps the ground it had before the page was lightened (with 1 the labels lost 0.7 to 1.5 of contrast; measured on eight scenes). Rim, highlight and far-side glow are untouched: it stays a drop of clear water. Not above about .35 */
   --wa-light: 236, 244, 248;
   --wa-core: 255, 255, 255;
   --wa-warm: 255, 255, 255;
@@ -440,10 +442,16 @@
      next one. To freeze all life at rest by hand: [data-wasser] { --wa-lauf: paused; } */
   --wa-lauf: running;
 
-  /* HOW MUCH LIFE the still sheets have: 0 = none (they stand still), 1 = as built, about 1.5 = the most that still reads
-     as calm. One number for the strength of every wandering light, the breath of the bead and the answer to scrolling -
-     never a speed. The drops are not touched by it. Set it HERE (on the root): the lights below are built from it
-     where they are declared. */
+  /* HOW MUCH LIFE the still sheets have, a number from 0 to 2: 0 = none is seen, 1 = as built, about 1.5 = the most that
+     still reads as calm. One number for the strength of every wandering light, the breath of the bead and the answer to
+     scrolling - never a speed. A control of TASTE, not of speed: at 0 every loop still runs, unseen, and costs what it
+     costs at 1 (to save work, pause them: --wa-lauf above). The shader of the drops does not read it; but the light on
+     the floor is seen through a clear drop, so a label on such a drop has a slightly lighter ground while the patch passes.
+     Set it HERE (on the root): the lights below are built from it where they are declared.
+     Bounded where it moves something (all checked from 0 to 2, at full pull): the lean never falls below a tenth of the
+     light's depth and never grows past 2.4 times it, the glints never slide further than at 1 and the light on the floor
+     never lags further than at 1 - at 1 they already use all the room a basin has. Above 1 it is the strength of the
+     lights and their lean that grow. */
   --wa-leben: 1;
   /* (the strengths of the tones - --wa-glanz ... --wa-boden, part 1 - times --wa-leben) */
   --wa-l-oben: calc(var(--wa-glanz) * var(--wa-leben));
@@ -473,9 +481,10 @@
   /* Zug: how far the light leans when the water is pulled (--wa-zug = 1: scrolled as fast as FULL in wasser.js) */
   --wa-zug-oben: calc(.9 * var(--wa-leben));    /* the light on the lit rim reaches up to 90 % deeper (or, pulled the other way, 90 % less deep) ... */
   --wa-zug-unten: calc(.7 * var(--wa-leben));   /* ... while the light on the far side draws back by 70 % - the water tilts ... */
-  --wa-zug-weit: calc(24px * var(--wa-leben));  /* ... both glints slide this far along their rim, in opposite directions ... */
-  --wa-zug-boden: calc(28px * var(--wa-leben)); /* ... and the light on the floor stays this far behind the sheet that is carried away under it. Let go, all of it swings out (--wa-t-swing, --wa-ease-swing) */
-  /* Schwappen: where the light of a sheet that has just arrived starts from */
+  --wa-zug-min: .1;  --wa-zug-max: 2.4;         /* ... but a light never leans below a tenth of its depth (below 0 it would flip over its rim line and lie OUTSIDE the sheet, which --wa-leben above 1.11 did) nor past 2.4 times it ... */
+  --wa-zug-weit: min(calc(24px * var(--wa-leben)), 24px);   /* ... both glints slide this far along their rim, in opposite directions: 24 px and never more - at rest they end 12 px before the corners of a basin, pulled further they would run out over a corner ... */
+  --wa-zug-boden: min(calc(28px * var(--wa-leben)), calc(28px / max(var(--wa-leben), .01)));   /* ... and the light on the floor stays this far behind the sheet that is carried away under it: 28 px at 1. Above 1 the patch is brighter and lags LESS (28 px / --wa-leben), so the faint tail that passes the far edge of its basin at full pull stays as faint as at 1. Let go, all of it swings out (--wa-t-swing, --wa-ease-swing) */
+  /* Schwappen: where the light of a sheet that has just arrived starts from (it swings into place with --wa-t-swing, --wa-ease-swing) */
   --wa-schwappt-oben: 1 1.6;                    /* scale of the lit rim's light: 60 % deeper than at rest ... */
   --wa-schwappt-unten: 1 .4;                    /* ... the far side 60 % less deep - as if the sheet had just been set down ... */
   --wa-schwappt-boden: 0 30px;                  /* ... and the light on the floor still on its way (translate) */
@@ -935,6 +944,7 @@
   &.wa-geht::before { animation: none; }
 
   /* its light (the helper comes from wasser.js, option "light"): the softer glint of dense sheets, on the top rim */
+  & > .wa-licht { --wa-schwappt-oben: 1 1; }    /* (it does not arrive too deep: the crest is the light of its rise) */
   & > .wa-licht::before {
     left: 9%; width: 40%; height: 14px;
     background: var(--wa-licht-lauf);
@@ -1296,7 +1306,12 @@
       swing out. scale and translate are the single parts of a transform: they add to the transform of the loop at rest
       instead of replacing it.
    -- Schwappen: a sheet has just arrived (its helper is new) - its light starts where the pull of the way has left it
-      and swings into place. Runs once; "backwards" only, so that afterwards the pull is in charge again. -- */
+      and swings into place. It is the same thing as a pull that is let go, and it is built that way: wasser.js gives a
+      new helper the attribute data-wa-kommt for its first two pictures, and the rules below hold its lights at the
+      places of --wa-schwappt-*; the attribute goes, and the transition of "Zug" lets them swing out. (Not a keyframe
+      animation on scale / translate: while one runs, a transition on the same property does not start - a list scrolled
+      within the first 1.6 s on a new screen was followed in steps and did not swing out.) No arrival for one sheet:
+      re-declare the three tokens for its helper as the values at rest (see "Bogen"). -- */
 [data-wasser] .wa-licht {
   position: absolute;
   inset: 0;
@@ -1318,33 +1333,37 @@
     width: var(--wa-licht-breit); height: var(--wa-licht-tief);
     background: var(--wa-licht-oben);
     transform-origin: 50% 0;
-    scale: 1 calc(1 + var(--wa-zug) * var(--wa-zug-oben));
+    scale: 1 clamp(var(--wa-zug-min), calc(1 + var(--wa-zug) * var(--wa-zug-oben)), var(--wa-zug-max));
     translate: calc(var(--wa-zug) * var(--wa-zug-weit)) 0;
-    animation: wa-licht-oben var(--wa-t-ruhe-1) var(--wa-gang-1) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-1)) infinite, wa-schwappt-oben var(--wa-t-swing) var(--wa-ease-swing) backwards;
-    animation-play-state: var(--wa-lauf), running;
+    animation: wa-licht-oben var(--wa-t-ruhe-1) var(--wa-gang-1) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-1)) infinite;
+    animation-play-state: var(--wa-lauf);
   }
   &::after {
     right: var(--wa-licht-rechts); bottom: 0;
     width: var(--wa-licht-breit-fern); height: var(--wa-licht-tief-fern);
     background: var(--wa-licht-unten);
     transform-origin: 50% 100%;
-    scale: 1 calc(1 - var(--wa-zug) * var(--wa-zug-unten));
+    scale: 1 clamp(var(--wa-zug-min), calc(1 - var(--wa-zug) * var(--wa-zug-unten)), var(--wa-zug-max));
     translate: calc(var(--wa-zug) * var(--wa-zug-weit) * -1) 0;
-    animation: wa-licht-unten var(--wa-t-ruhe-2) var(--wa-gang-2) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-2)) infinite, wa-schwappt-unten var(--wa-t-swing) var(--wa-ease-swing) backwards;
-    animation-play-state: var(--wa-lauf), running;
+    animation: wa-licht-unten var(--wa-t-ruhe-2) var(--wa-gang-2) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-2)) infinite;
+    animation-play-state: var(--wa-lauf);
   }
   & > .wa-boden {
     left: var(--wa-boden-links); top: var(--wa-boden-oben);
     width: var(--wa-boden-breit); height: var(--wa-boden-hoch);
     background: var(--wa-boden-licht);
     translate: 0 calc(var(--wa-zug) * var(--wa-zug-boden));
-    animation: wa-boden var(--wa-t-ruhe-4) var(--wa-gang-4) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-4)) infinite, wa-schwappt-boden var(--wa-t-swing) var(--wa-ease-swing) backwards;
-    animation-play-state: var(--wa-lauf), running;
+    animation: wa-boden var(--wa-t-ruhe-4) var(--wa-gang-4) calc(var(--wa-phase, 0) * -1 * var(--wa-t-ruhe-4)) infinite;
+    animation-play-state: var(--wa-lauf);
   }
   /* Zug: while the list runs the light follows quickly; let go, the slow transition above takes over */
   &[data-wa-zieht]::before,
   &[data-wa-zieht]::after,
   &[data-wa-zieht] > .wa-boden { transition: scale var(--wa-t-flow) var(--wa-ease-flow), translate var(--wa-t-flow) var(--wa-ease-flow); }
+  /* Schwappen: the helper is new (wasser.js, for its first two pictures) - its lights stand where the way has left them; then the same slow transition lets them swing into place */
+  &[data-wa-kommt]::before { scale: var(--wa-schwappt-oben); }
+  &[data-wa-kommt]::after { scale: var(--wa-schwappt-unten); }
+  &[data-wa-kommt] > .wa-boden { translate: var(--wa-schwappt-boden); }
 
   /* no motion wanted: the lights are not there */
   @media (prefers-reduced-motion: reduce) {
@@ -1354,9 +1373,6 @@
   :root[data-motion="reduziert"] & { display: none !important; animation: none !important; }
   :root[data-motion="reduziert"] &::before, :root[data-motion="reduziert"] &::after, :root[data-motion="reduziert"] & > .wa-boden { animation: none !important; }
 }
-@keyframes wa-schwappt-oben { from { scale: var(--wa-schwappt-oben); } }
-@keyframes wa-schwappt-unten { from { scale: var(--wa-schwappt-unten); } }
-@keyframes wa-schwappt-boden { from { translate: var(--wa-schwappt-boden); } }
 /* The loops at rest (printed by scripts/wasser/keyframes.mjs: eight samples of slow sine waves - a rim light drifts along
    the rim and back, slow at both ends, swells twice on the way and breathes once; the light on the floor crosses it and
    back, bobs twice, turns, grows and breathes). Eight equal intervals: with the gait steps(N) a loop of N seconds is

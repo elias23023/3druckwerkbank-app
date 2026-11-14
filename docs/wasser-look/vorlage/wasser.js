@@ -13,8 +13,9 @@
      Wasser.MOBIL            the default options: the mobile shell of this app. The base for another shell:
                              Wasser.start(Object.assign({}, Wasser.MOBIL, { scene: '...', shade: '', bar: '...' }))
      Wasser.info             what the drops are doing, for tests: state ('init', 'gl', 'fallback (reason)', 'context lost',
-                             'stopped'), level (governor: 0 = full pace), drops, px, atlas, frames, ms, prof, blank (how
-                             often a scene image could not be drawn yet)
+                             'stopped'), level (governor: 0 = full pace), wait (governor: ms of easy pictures before its
+                             next step up), drops, px, atlas, frames, ms, prof, blank (how often a scene image could not be
+                             drawn yet)
 
    Where the look applies is decided by CSS: inside the element that carries the attribute data-wasser
    (data-wasser="mobil" on .m-shell, data-wasser="desktop" on the desktop root). The script only looks inside it.
@@ -73,7 +74,7 @@
     scrollers: '.m-main, .sheet__body',   // lists whose scrolling pulls the light
     /* test aids */
     webgl: true,                      // false: behave like a browser without WebGL (the plain glass of kern.css stays, the clock still runs)
-    debug: { flat: false, prof: false, noDeriv: false }   // flat: plain copy of the scene inside the drops (to check the alignment); prof: frame cost in Wasser.info.prof; noDeriv: shader path without OES_standard_derivatives
+    debug: { flat: false, prof: false, noDeriv: false, cost: null }   // flat: plain copy of the scene inside the drops (to check the alignment); prof: frame cost in Wasser.info.prof; noDeriv: shader path without OES_standard_derivatives; cost: a function (ms) -> ms through which the governor of the drops sees what each water picture cost - to pretend a slow phone and watch it step down and up (scripts/wasser/pruefen.mjs --regler)
   };
   var SELECTORS = ['scene', 'shade', 'drops', 'modal', 'ringOn', 'ringFrom', 'tick', 'bar', 'groups', 'levels', 'toasts', 'light', 'scrollers'];
   var NOTHING = ':not(*)';            // what an empty selector option becomes: matches no element
@@ -126,7 +127,7 @@
       { fps: 12, idle: 12, q: 0.5 },    // this level is left downwards only when one picture takes longer than 100 ms
       { fps: 0, idle: 0, q: 0.5 }       // at last a still drop that only follows scrolling and presses
     ];
-    var UP_AFTER = 20000, UP_MAX = 300000;   // ... and UP again one level after UP_AFTER ms of easy pictures (less than 40 % of their slot; from the still level: after that time). A try that fails within 30 s doubles the wait, up to UP_MAX - a phone that was hot for a moment recovers, a slow one is not asked every few seconds
+    var UP_AFTER = 20000, UP_MAX = 300000;   // ... and UP again one level after UP_AFTER ms of easy pictures (less than 40 % of their slot; from the still level: after that time). A try that fails within 30 s doubles the wait, up to UP_MAX - a phone that was hot for a moment recovers, a slow one is not asked every few seconds. The wait is set back to UP_AFTER when a level reached by a climb has held for the wait (so one failed try does not slow every later climb until reload)
     var TINT = [[1, 1, 1, 0], [1, 0.72, 0.38, 0.7], [0.74, 0.12, 0.16, 0.72]];   // clear, amber (primary), red (danger): used when the properties below are missing
     var PROP = {                        // custom properties a drop reads from its own computed style (all inherited, so a sheet can set them for its buttons)
       under: '--water-under',           // colour + opacity of everything between the button and the landscape (else: computed backgrounds, see underOf)
@@ -138,6 +139,7 @@
       red: '--wa-drop-red'              // "r, g, b, amount": tint of the danger drop
     };
     var FLAT = !!cfg.debug.flat, PROF = !!cfg.debug.prof;   // test aids: plain copy of the landscape (to check the alignment), frame cost in Wasser.info.prof
+    var COST = cfg.debug.cost;          // test aid: a function (ms) -> ms through which the governor sees what every water picture cost (pretend a slow phone)
     var STILL_T = 2.4;                  // frozen water time for reduced motion
 
     var reduced = still, alive = true;
@@ -151,7 +153,8 @@
     var grad = { col: [0, 0, 0], stops: NO_SHADE, key: '' };   // the page's darkening of the scene (colour, four stops); read from the page (readGradient) before the first picture
     var raf = 0, timer = 0, lastFrame = 0, lastTick = 0, vt = 0, speed = 1, dirty = true, restyle = false, needOne = true;
     var followUntil = 0, nextStyle = 0, lastInput = performance.now(), slow = 0, nap = 0;
-    var calm = 0, patience = UP_AFTER, upAt = -1e9, downAt = 0;      // governor, the way up
+    var calm = 0, patience = UP_AFTER, upAt = -1e9, downAt = 0, held = 0;   // governor, the way up (held: ms of pictures drawn since the last climb)
+    W3.wait = patience;
     var io = null, ro = null, mo = null, offs = [];
     var bgCache = new Map(), rng = document.createRange(), probe = null, texCv = null;
 
@@ -680,7 +683,7 @@
       if (dirty) scan();
       if (lost || !gl || !recs.size) return;
       if (now > nextStyle) measureAll();                          // cards may have changed their paint
-      if (!LEVELS[W3.level].fps && now - downAt > patience) { W3.level--; upAt = now; calm = slow = 0; }   // governor: the still level is left after the wait (the loop only comes here on a touch or scroll)
+      if (!LEVELS[W3.level].fps && now - downAt > patience) { W3.level--; upAt = now; calm = slow = held = 0; }   // governor: the still level is left after the wait (the loop only comes here on a touch or scroll)
       var lv = LEVELS[W3.level], still = reduced() || !lv.fps;
       var tick = Math.min(0.1, Math.max(0, (now - lastTick) / 1000)); lastTick = now;
       // the water comes to rest when nobody has touched the screen for a while and wakes with the next touch
@@ -703,18 +706,20 @@
         any = res !== 0;
         if (res === 2) {                                          // a picture was drawn
           var cost = performance.now() - t1;
+          if (COST) cost = COST(cost);
           W3.ms = W3.ms ? W3.ms * 0.9 + cost * 0.1 : cost;
           // governor: three seconds of pictures that eat more than 80 % of their time slot (or, while a drop is
           // touched, a screen that manages fewer than 20 pictures a second) -> one level down; a calm stretch of easy
           // pictures (UP_AFTER) -> one level up again
           if (timeDue && flowing) {
+            if (patience > UP_AFTER && upAt > downAt && (held += Math.min(dt * 1000, 250)) > patience) W3.wait = patience = UP_AFTER;   // the level reached by the last climb has held for the wait: the next climb waits the short time again
             var last = W3.level >= LEVELS.length - 2;
             if (cost > (last ? 100 : 800 / fps) || (active && !last && tick > 0.05)) {
               slow += Math.min(dt * 1000, 250); calm = 0;
-              if (slow > 3000 && W3.level < LEVELS.length - 1) { W3.level++; slow = 0; downAt = now; if (now - upAt < 30000) patience = Math.min(patience * 2, UP_MAX); }   // (a try to go up that failed: wait longer before the next one)
+              if (slow > 3000 && W3.level < LEVELS.length - 1) { W3.level++; slow = 0; downAt = now; if (now - upAt < 30000) W3.wait = patience = Math.min(patience * 2, UP_MAX); }   // (a try to go up that failed: wait longer before the next one)
             } else {
               slow = Math.max(0, slow - 2 * dt * 1000);
-              if (W3.level) { calm = cost < 400 / fps ? calm + Math.min(dt * 1000, 250) : Math.max(0, calm - 2 * dt * 1000); if (calm > patience) { W3.level--; upAt = now; calm = slow = 0; } }
+              if (W3.level) { calm = cost < 400 / fps ? calm + Math.min(dt * 1000, 250) : Math.max(0, calm - 2 * dt * 1000); if (calm > patience) { W3.level--; upAt = now; calm = slow = held = 0; } }
             }
           }
         }
@@ -1167,8 +1172,10 @@
         <i class="wa-licht"><i class="wa-boden"></i></i> as its last child (aria-hidden, takes no clicks; its ::before and
         ::after are the lights at the rim, its child is the light on the floor; nothing depends on it, React may throw it
         away at any time - it is put back with the next change of the page).
-        Each helper gets its own place in the loop (--wa-phase), so no two sheets move in step. A new helper swings
-        into place by itself (CSS, "Schwappen"): that is how the cards of a new screen come to rest.
+        Each helper gets its own place in the loop (--wa-phase), so no two sheets move in step. A new helper carries
+        the attribute data-wa-kommt for its first two pictures: CSS holds its lights where the way has left them
+        ("Schwappen") and, when the attribute goes, lets them swing into place with the same transition that ends a
+        pull - that is how the cards of a new screen come to rest, and why a list can be scrolled at once.
      2. Zug: while a list in option "scrollers" is scrolled, its speed is read once per animation frame and handed to the
         helpers inside it (and to the helper of the sheet around it) as --wa-zug, -1 .. 1; CSS lets the light lean by that
         much. When the scrolling stops the property goes back to 0 and CSS lets the light swing out. The property is set
@@ -1180,6 +1187,7 @@
     var LIGHT_ON = cfg.light;                                        // sheets that get the light helper (they need a position and isolation: isolate; Becken and "dichtes Wasser" have both)
     var LIGHT = 'wa-licht', FLOOR = 'wa-boden';                      // class of the helper (kern.css, "Licht") and of its one child, the light on the floor ("Bodenlicht")
     var PHASE = '--wa-phase';                                        // where in its loop the light of a helper starts, 0 .. 1 in eighths (the loops are 8 x n beats long, so lights that start together stay on one beat)
+    var NEW = 'data-wa-kommt';                                       // attribute of a helper for its first two pictures: its lights stand where they arrive from (kern.css, "Schwappen")
     var SCROLLER = cfg.scrollers;                                    // lists whose scrolling pulls the water
     var PULL = '--wa-zug', PULLED = 'data-wa-zieht';                 // the pull on a helper (-1 .. 1), and its attribute while the list is being scrolled (an attribute, not a class: Teil 1 re-reads every drop when a class changes)
     var FULL = 1100;                                                 // px per second of scrolling that pull the water all the way (--wa-zug = 1 or -1); an ordinary swipe of the thumb reaches about half of it
@@ -1188,17 +1196,23 @@
     var EVEN = 0.5;                                                  // how much of the speed of the frame before is kept (0 .. 1): uneven frames do not make the light twitch
 
     /* -- 1. the light helper -- */
-    var count = 0;
+    var count = 0, fresh = [], settle = 0;
     function sow() {
-      var r = rootEl(), hosts = r && LIGHT_ON ? r.querySelectorAll(LIGHT_ON) : [], i, h, l;
+      var r = rootEl(), hosts = r && LIGHT_ON ? r.querySelectorAll(LIGHT_ON) : [], i, h, l, made = false;
       for (i = 0; i < hosts.length; i++) {
         h = hosts[i]; l = h.lastElementChild;
         if ((l && l.classList.contains(LIGHT)) || h.querySelector(':scope > .' + LIGHT)) continue;   // it has one (never moved: moving an element starts its animations again)
         l = document.createElement('i'); l.className = LIGHT; l.setAttribute('aria-hidden', 'true');
         l.style.setProperty(PHASE, String((count++ * 5 % 8) / 8));
+        l.setAttribute(NEW, ''); fresh.push(l); made = true;
         l.appendChild(document.createElement('i')).className = FLOOR;
         h.appendChild(l);
       }
+      // Schwappen: the new helpers have been painted once where their light arrives from (the first frame styles them, the
+      // second finds them styled) - now let go: the transition of the pull swings the light into place
+      if (!made) return;
+      if (settle) cancelAnimationFrame(settle);                      // (more helpers came before the first ones were let go: all of them wait the two frames from now)
+      settle = requestAnimationFrame(function () { settle = requestAnimationFrame(function () { settle = 0; var f = fresh; fresh = []; for (var k = 0; k < f.length; k++) f[k].removeAttribute(NEW); }); });
     }
     var mo = new MutationObserver(function (ms) {
       for (var i = 0, a; i < ms.length; i++) {
@@ -1246,7 +1260,7 @@
     mo.observe(document.body, { subtree: true, childList: true });
     sow();
     return function () {
-      window.removeEventListener('scroll', onScroll, cap); mo.disconnect(); if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', onScroll, cap); mo.disconnect(); if (raf) cancelAnimationFrame(raf); if (settle) cancelAnimationFrame(settle);
       var l = document.querySelectorAll('.' + LIGHT); for (var i = 0; i < l.length; i++) l[i].parentNode.removeChild(l[i]);
     };
   }
@@ -1257,7 +1271,7 @@
     var o = {}, k, i;
     for (k in MOBIL) o[k] = MOBIL[k];
     for (k in options || {}) if (options[k] !== undefined && options[k] !== null) o[k] = options[k];
-    o.debug = { flat: !!o.debug.flat, prof: !!o.debug.prof, noDeriv: !!o.debug.noDeriv };
+    o.debug = { flat: !!o.debug.flat, prof: !!o.debug.prof, noDeriv: !!o.debug.noDeriv, cost: typeof o.debug.cost === 'function' ? o.debug.cost : null };
     for (i = 0; i < SELECTORS.length; i++) if (!o[SELECTORS[i]]) o[SELECTORS[i]] = NOTHING;
     for (k in info) delete info[k];
     cur = o;

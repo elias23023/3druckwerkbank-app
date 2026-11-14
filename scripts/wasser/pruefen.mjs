@@ -1,7 +1,7 @@
 // Does the template WORK? One pass of checks on the harness page (scripts/wasser/mobil.html), and - with --app - in the
 // real app. Each line: ok / FAIL, what was checked, what was found. Exit code 1 when a check fails.
 //
-//   node scripts/wasser/pruefen.mjs [--engine chromium|webkit] [--ton klar] [--app] [--bild <out.png>]
+//   node scripts/wasser/pruefen.mjs [--engine chromium|webkit] [--ton klar] [--app] [--bild <out.png>] [--regler]
 //
 //   1 start        the script starts, draws the drops, reports no error
 //   2 Markierung   a tap on a tab starts the bead's flight; a class moved by script too; a second tap during a flight; a bar that was replaced
@@ -14,7 +14,12 @@
 //   7 stop/start   Wasser.stop() leaves no helper, attribute or listener behind; the bead still moves by CSS; start() brings all back; options are honoured
 //   8 ohne WebGL   the plain glass stays, the clock still runs
 //   9 App (--app)  a light per card, the page rests behind a sheet, a toast leaves like a drop, stop() cleans up (needs npm run preview)
-import { session, args, abs } from './lib.mjs';
+//  10 Zug, Töne    a new sheet's light arrives and swings into place, also when it is pulled at once; --wa-leben from 0 to 2 at
+//                  full pull: no light flips over its rim, slides or lags further than at 1; both tones list the same tokens
+//  11 Regler (--regler, about three minutes)  the governor of the drops, fed pretended slow pictures (start option debug.cost):
+//                  it steps down, climbs after the wait, a climb that fails doubles the wait, a climb that holds sets it back
+import fs from 'fs';
+import { session, args, abs, VORLAGE } from './lib.mjs';
 const a = args({ engine: 'chromium', ton: '' }); const s = await session({ engine: a.engine }); let fails = 0;
 const check = (ok, name, found) => { if (!ok) fails++; console.log(`${ok ? 'ok  ' : 'FAIL'} ${name.padEnd(58)} ${typeof found === 'string' ? found : JSON.stringify(found)}`); };
 const noErr = (h, name) => { const e = h.errors.filter((x) => !/open-meteo|Failed to load resource|ERR_|net::/i.test(x)); check(!e.length, `${name}: no page error`, e.length ? e.slice(0, 3) : 'none'); };
@@ -158,5 +163,60 @@ if (a.app) {
   await p.locator('.toast__undo').click(); await p.waitForTimeout(700);
   await p.evaluate(() => window.Wasser.stop()); const l = await p.evaluate(() => document.querySelectorAll('.w3-drop, .wa-licht, .wa-floor, [data-w3], [data-wa-ruht], .wa-geht').length);
   check(l === 0, '9 app: stop() leaves nothing behind', l); noErr(h, '9'); await h.close();
+}
+/* 10: pull and arrival of the light, the bounds of the master token, the two tones */
+{
+  const h = await s.harness({ ton: a.ton, query: 'schlaf=0' }); const p = h.page;
+  // a sheet that appears now: its helper is held where its light arrives from for two pictures, then three transitions swing
+  const arr = await p.evaluate(() => new Promise((ok) => { const main = document.querySelector('.m-main'); main.insertAdjacentHTML('afterbegin', '<section class="wa-becken" id="neu" style="height:200px; padding:16px"><b>neu</b></section>');
+    const out = { held: 0, first: '', trans: 0 }; let n = 0; const num = (v) => parseFloat(String(v).split(' ')[1] || 1);
+    const f = () => { const l = document.querySelector('#neu > .wa-licht'); n++;
+      if (l && l.hasAttribute('data-wa-kommt')) { out.held++; out.first = getComputedStyle(l, '::before').scale + ' | ' + getComputedStyle(l, '::after').scale + ' | ' + getComputedStyle(l.querySelector('.wa-boden')).translate; }
+      else if (l && !out.trans) { out.trans = l.getAnimations({ subtree: true }).filter((an) => an instanceof CSSTransition && /^(scale|translate)$/.test(an.transitionProperty)).length; out.after = num(getComputedStyle(l, '::before').scale); }
+      if (n < 40 && !(out.trans && n > 6)) requestAnimationFrame(f); else ok(out); }; requestAnimationFrame(f); }));
+  check(arr.held >= 1 && arr.first === '1 1.6 | 1 0.4 | 0px 30px' && arr.trans === 3, '10 a new sheet: its light arrives deep and three transitions swing it into place', arr);
+  // ... and a pull handed over while it arrives (as wasser.js hands it): let go, the lean passes below its rest - it swings
+  const sw = await p.evaluate(() => new Promise((ok) => { const l = document.querySelector('#neu > .wa-licht'), t0 = performance.now(); let low = 9, top = 0, state = 0; const num = (v) => parseFloat(String(v).split(' ')[1] || 1);
+    const f = (now) => { const t = now - t0, v = num(getComputedStyle(l, '::before').scale);
+      if (state === 0) { l.setAttribute('data-wa-zieht', ''); l.style.setProperty('--wa-zug', '1.00'); state = 1; }
+      if (state === 1) top = Math.max(top, v);
+      if (state === 1 && t >= 450) { l.removeAttribute('data-wa-zieht'); l.style.removeProperty('--wa-zug'); state = 2; }
+      if (state === 2) low = Math.min(low, v);
+      if (t < 2400) requestAnimationFrame(f); else ok({ top: +top.toFixed(2), low: +low.toFixed(2), end: +v.toFixed(3) }); }; requestAnimationFrame(f); }));
+  check(sw.top > 1.7 && sw.low < 0.9 && Math.abs(sw.end - 1) < 0.01, '10 pulled while it arrives, then let go: the lean swings out (below 1 and back)', sw);
+  // the master token from 0 to 2, at full pull in both directions: nothing flips, nothing slides or lags further than at 1
+  const lim = await p.evaluate(() => { const root = document.querySelector('[data-wasser]'), l = document.querySelector('#neu > .wa-licht'); const st = document.createElement('style'); st.textContent = '.wa-licht::before, .wa-licht::after, .wa-boden { transition: none !important; }'; document.head.appendChild(st);
+    const num = (v) => parseFloat(String(v).split(' ')[1] || 1), px = (v, i) => parseFloat(String(v).split(' ')[i] || 0); const out = []; l.setAttribute('data-wa-zieht', '');
+    for (const lv of ['0', '0.5', '1', '1.5', '2']) { root.style.setProperty('--wa-leben', lv); for (const z of ['1', '-1']) { l.style.setProperty('--wa-zug', z); const A = getComputedStyle(l, '::before'), B = getComputedStyle(l, '::after'), F = getComputedStyle(l.querySelector('.wa-boden'));
+      out.push([+lv, +z, num(A.scale), num(B.scale), Math.abs(px(A.translate, 0)), Math.abs(px(F.translate, 1))]); } }
+    root.style.removeProperty('--wa-leben'); l.removeAttribute('data-wa-zieht'); l.style.removeProperty('--wa-zug'); st.remove(); return out; });
+  const badLim = lim.filter(([lv, , lit, far, slide, lag]) => lit < 0.1 - 1e-6 || far < 0.1 - 1e-6 || lit > 2.4 + 1e-6 || far > 2.4 + 1e-6 || slide > 24.01 || lag > 28.01 || (lv === 0 && (lit !== 1 || far !== 1 || slide || lag)));
+  check(!badLim.length && lim.length === 10, '10 --wa-leben 0 .. 2 at full pull: lean within 0.1 .. 2.4, slide at most 24 px, lag at most 28 px', lim.map((r) => `${r[0]}/${r[1] > 0 ? '+' : '-'}: ${r[2]} ${r[3]} ${r[4]}px ${+r[5].toFixed(1)}px`).join('  '));
+  noErr(h, '10'); await h.close();
+  const css = fs.readFileSync(abs(`${VORLAGE}/kern.css`), 'utf8'); const bare = css.replace(/\/\*[^]*?\*\//g, '');
+  const block = (from) => { const i = bare.indexOf(from), j = bare.indexOf('\n}', i); return i < 0 ? [] : bare.slice(i, j).match(/--[a-z0-9-]+(?=\s*:)/g) || []; };
+  const dunkel = block('[data-wasser] {\n  --wa-drop-red'), klar = block(':root[data-wa-ton="klar"] [data-wasser] {'), named = (bare.match(/data-wa-ton/g) || []).length;
+  check(dunkel.length > 40 && JSON.stringify(dunkel) === JSON.stringify(klar) && named === 1, '10 the two tones: the same tokens in the same order, one rule names the tone', `${dunkel.length} and ${klar.length} tokens, data-wa-ton in ${named} rule(s)`);
+}
+
+/* 11: the governor of the drops, with pretended picture costs (the start option debug.cost; the real cost of this machine plays no part) */
+if (a.regler) {
+  const h = await s.harness({ ton: a.ton, settle: 600 }); const p = h.page;
+  await p.evaluate(() => { window.__kosten = 5; window.Wasser.start({ sleep: 0, debug: { cost: () => window.__kosten } }); });
+  const t0 = Date.now(); const log = []; let last = '';
+  const until = async (cond, max) => { const from = Date.now(); for (;;) { const i = await p.evaluate(() => ({ level: window.Wasser.info.level, wait: window.Wasser.info.wait })); const key = i.level + '/' + i.wait; if (key !== last) { last = key; log.push(`${((Date.now() - t0) / 1000).toFixed(0)} s: level ${i.level}, wait ${i.wait / 1000} s`); }
+    if (cond(i)) return { ...i, took: +((Date.now() - from) / 1000).toFixed(1) }; if (Date.now() - from > max) return { ...i, took: -1 }; await p.waitForTimeout(250); } };
+  const cost = (ms) => p.evaluate((ms) => { window.__kosten = ms; }, ms);   // 60 ms is slow at the 15 pictures a second of levels 0 and 1 (more than 80 % of 67 ms), not at the 12 of level 2; 5 ms is easy everywhere
+  await p.waitForTimeout(1500); const start = await until(() => true, 1); check(start.level === 0 && start.wait === 20000, '11 start: full pace, wait 20 s', start);
+  await cost(60); const d1 = await until((i) => i.level === 2, 15000); check(d1.took > 4 && d1.took < 12, '11 slow pictures: two steps down, about 3 s each', d1);
+  await cost(5); const u1 = await until((i) => i.level === 1, 40000); check(u1.took > 17 && u1.took < 28 && u1.wait === 20000, '11 easy pictures: one step up after the wait of 20 s', u1);
+  await cost(60); const d2 = await until((i) => i.level === 2, 15000); check(d2.took > 2 && d2.took < 8 && d2.wait === 40000, '11 that climb fails within 30 s: down again, and the wait doubles to 40 s', d2);
+  await cost(5); const u2 = await until((i) => i.level === 1, 70000); check(u2.took > 36 && u2.took < 52 && u2.wait === 40000, '11 the next climb comes after 40 s', u2);
+  const u3 = await until((i) => i.wait === 20000, 70000); check(u3.took > 36 && u3.took < 52, '11 that level held for the wait of 40 s: the wait is back at 20 s', u3);
+  const u4 = await until((i) => i.level === 0, 30000); check(u4.took >= 0 && u4.took < 3, '11 ... and the step up to full pace comes with it', u4);
+  await p.waitForTimeout(32000);                                   // (a step down more than 30 s after a climb is no failed try)
+  await cost(60); const d3 = await until((i) => i.level === 1, 15000); await cost(5); const u5 = await until((i) => i.level === 0, 70000);
+  check(d3.took > 0 && d3.wait === 20000 && u5.took > 17 && u5.took < 28, '11 a later step down and up: the climb waits 20 s again (it was 40 s until reload)', { down: d3, up: u5 });
+  console.log('     ' + log.join(' | ')); noErr(h, '11'); await h.close();
 }
 await s.close(); console.log(fails ? `\n${fails} check(s) FAILED` : '\nall checks passed'); process.exit(fails ? 1 : 0);
