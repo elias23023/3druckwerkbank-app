@@ -270,16 +270,7 @@ p { margin: 0; }
 .ms > span:first-of-type { line-height: 1.2; }
 
 /* start world */
-.start-clock { position: absolute; left: 3.2%; top: 11%; max-width: 17cqw; animation: rise var(--t-mid) var(--ease) both; color: #f4f6fb; text-shadow: 0 2px 20px rgba(0,0,0,.5); }
-.start-clock b { font-size: clamp(44px, 5.2cqw, 84px); font-weight: 600; letter-spacing: -.03em; line-height: 1; display: block; }
-.start-clock span { font-size: clamp(13px, 1.15cqw, 18px); color: rgba(244,246,251,.85); display: block; margin-top: 6px; }
-.start-clock .quote { margin-top: 14px; font-size: clamp(13px, 1.1cqw, 17px); color: rgba(244,246,251,.9); max-width: 17cqw; line-height: 1.35; }
-.start-weather { position: absolute; right: 3.2%; top: 12%; max-width: 17cqw; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 10px 14px; text-align: right; animation: rise var(--t-mid) var(--ease) both; color: #f4f6fb; text-shadow: 0 2px 16px rgba(0,0,0,.5); }
-.start-weather b { font-size: clamp(22px, 2.2cqw, 34px); font-weight: 600; line-height: 1; display: block; }
-.start-weather span { font-size: 13px; color: rgba(244,246,251,.85); display: block; }
-.start-weather .sep { width: 1px; height: 44px; background: rgba(255,255,255,.35); }
-.start-weather .motto { font-size: 14px; max-width: 17cqw; line-height: 1.3; }
-.start-weather .sep { display: none; }
+/* Start: the card of the day (block „Tageskarte“ below) stands in a PanelColumn top left; it replaced the loose blocks .start-clock and .start-weather. */
 .minicard { position: absolute; padding: 9px 11px; display: flex; flex-direction: column; gap: 5px; font-size: 12px; min-width: 150px; max-width: 220px; animation: rise var(--t-mid) var(--ease) both; animation-delay: var(--delay, 0ms); }
 .minicard .row { gap: 7px; }
 .minicard .pv { display: flex; align-items: flex-end; gap: 2px; height: 22px; }
@@ -383,7 +374,6 @@ p { margin: 0; }
 @keyframes season-tumble { 0% { transform: translate3d(0, 0, 0) rotate(var(--rot)); } 25% { transform: translate3d(var(--dx), 28vh, 0) rotate(calc(var(--rot) + 160deg)); } 50% { transform: translate3d(calc(var(--dx) * -1), 56vh, 0) rotate(calc(var(--rot) + 380deg)); } 75% { transform: translate3d(var(--dx), 84vh, 0) rotate(calc(var(--rot) + 540deg)); } 100% { transform: translate3d(0, 112vh, 0) rotate(calc(var(--rot) + 720deg)); } }
 @keyframes season-glow { 0%, 100% { opacity: 0; transform: translate3d(0, 0, 0); } 30% { opacity: 1; transform: translate3d(calc(var(--dx) * .3), -10px, 0); } 60% { opacity: .35; transform: translate3d(calc(var(--dx) * .55), -22px, 0); } 80% { opacity: .9; transform: translate3d(calc(var(--dx) * .4), -30px, 0); } }
 .season-fx--still i, :root[data-motion="reduziert"] .season-fx i { animation: none !important; opacity: .35; top: calc(10% + var(--delay, 0s) * 0); }
-.start-season { display: block; margin-top: 4px; font-size: clamp(11px, .9cqw, 14px); color: rgba(255,255,255,.85); line-height: 1.35; }
 .stage[data-season="winter"] .ground-mist { opacity: 1.15; }
 
 /* ---------- flow columns for side panels ---------- */
@@ -472,6 +462,51 @@ p { margin: 0; }
 .toast__undo:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 .place-hit { width: 100%; text-align: left; border: 0; color: inherit; cursor: pointer; padding: 7px 10px; }
 .place-hit:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
+/* ---- Tageskarte ---- */
+/* Shared card of the day (src/ui/Tageskarte.tsx): greeting, clock, date, weather, daylight track over 24 hours, season and solar tiles, quote.
+   Phone: a .glass.m-card (its spacing: .m-today in mobile.css), tiles are .m-row. Desktop start world: a .glass.panel in a .panel-col (.tk--desk), tiles are .item.
+   The values without .tk--desk are the phone's and must not change (they were .m-today__*, .m-day*, .m-fact* in mobile.css). */
+.tk__top { display: flex; align-items: flex-start; gap: 12px; }
+.tk__time { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.tk__hello { font-size: 14px; font-weight: 500; color: #ffd9a8; }
+.tk__clock { font-size: clamp(46px, 15.5vw, 62px); white-space: nowrap; font-weight: 600; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; margin: 4px 0 8px -2px; }
+.tk__clock i { font-style: normal; opacity: .5; margin: 0 1px; position: relative; top: -.07em; }
+.tk__date { display: flex; flex-wrap: wrap; gap: 0 6px; font-size: 13px; color: var(--text-2); }
+.tk__date b { color: var(--text); font-weight: 600; }
+.tk__wx { display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 3px; max-width: 44%; padding-top: 1px; }
+.tk__temp { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.tk__temp b { font-size: 26px; font-weight: 600; line-height: 1; white-space: nowrap; }
+.tk-day { position: relative; padding-bottom: 20px; }
+.tk-day__track { position: relative; height: 6px; border-radius: 3px; background: rgba(255,255,255,.14); }
+.tk-day__light { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, #ff9a5c 0%, #ffd77a 22%, #fff3c4 50%, #ffd77a 78%, #ff9a5c 100%); }
+.tk-day__now { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.28), 0 2px 8px rgba(0,0,0,.5); }
+.tk-day__lbl { position: absolute; top: 13px; transform: translateX(-50%); font-size: 11px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tk-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
+.tk-fact { min-width: 0; }
+.tk-fact > .ico { width: 18px; height: 18px; color: var(--accent); flex: none; }
+.tk-fact > div { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.tk-fact b { font-size: 13px; font-weight: 600; }
+.tk-fact span { font-size: 11px; color: var(--text-2); }
+.tk__quote { margin: 0; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12); font-family: var(--hand); font-size: 22px; line-height: 1.15; color: #fff; }
+/* Desktop start world: the same card, tighter. It must end above the Projekte island (the column's bottom edge in Start.tsx), which leaves about 280 px
+   of height at 17cqw of width: enough for a quote of two lines. Whatever is longer than that scrolls inside the card instead of covering the island.
+   The greeting gets a line of its own over the full width (a long name ends in "…"), weather and the sentence of the day stand beside clock and date. */
+.panel-col > .tk--desk > .panel__body { gap: 7px; padding-bottom: 1px; -webkit-mask-image: none; mask-image: none; }
+.tk--desk .tk__top { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "hello hello" "clock wx" "date wx"; column-gap: 10px; align-items: start; }
+.tk--desk .tk__time { display: contents; }
+.tk--desk .tk__hello { grid-area: hello; font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk--desk .tk__clock { grid-area: clock; font-size: 46px; margin: 2px 0 4px; }
+.tk--desk .tk__date { grid-area: date; font-size: 12.5px; line-height: 1.3; }
+.tk--desk .tk__wx { grid-area: wx; max-width: 140px; gap: 1px; padding-top: 2px; }
+.tk--desk .tk__wx > span { max-width: 100%; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk--desk .tk__temp { margin-bottom: 1px; }
+.tk--desk .tk__temp b { font-size: 22px; }
+.tk--desk .tk__motto { margin: 3px 0 0; font-size: 11px; line-height: 1.3; color: var(--text); text-wrap: balance; }
+.tk--desk .tk-day { margin: 0 9px; padding-bottom: 16px; }   /* side room for the mark of "now" at midnight: the body of a panel in a column clips */
+.tk--desk .tk-day__lbl { top: 11px; line-height: 1; }
+.tk--desk .tk-fact { padding: 4px 9px; gap: 8px; }
+.tk--desk .tk__quote { padding-top: 6px; font-size: 18.5px; }
 
 /* ---- Wasser-Look: Einbau ---- */
 /* Drei Stellen, die bisher inline gefärbt waren, tragen jetzt eine Klasse (so erreicht sie der Look ohne !important). Hier steht ihr Aussehen ohne Look. */

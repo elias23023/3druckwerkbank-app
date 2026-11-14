@@ -19,30 +19,8 @@
 .m-card h3 .cnt { margin-left: auto; font-weight: 500; }
 .m-card h3 .btn--icon { color: var(--text-2); background: rgba(255,255,255,.08); padding: 0; width: 34px; height: 34px; }
 .m-card h3 .btn--icon svg { width: 18px; height: 18px; }
-/* Start: card of the day (greeting, clock, date, weather, daylight track, season and solar tiles, quote). A .glass.m-card, so the Wasser-Look treats it as "Becken"; its two tiles are .m-row ("Mulde"). */
+/* Start: the card of the day is the shared component src/ui/Tageskarte.tsx (rules .tk* in global.css, block „Tageskarte“). Here only what the phone's card needs as a .glass.m-card ("Becken" of the Wasser-Look; its two tiles are .m-row, "Mulde"). */
 .m-today { flex: none; margin-top: 6px; padding: 16px 16px 14px; gap: 14px; }
-.m-today__top { display: flex; align-items: flex-start; gap: 12px; }
-.m-today__time { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.m-today__hello { font-size: 14px; font-weight: 500; color: #ffd9a8; }
-.m-today__clock { font-size: clamp(46px, 15.5vw, 62px); white-space: nowrap; font-weight: 600; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; margin: 4px 0 8px -2px; }
-.m-today__clock i { font-style: normal; opacity: .5; margin: 0 1px; position: relative; top: -.07em; }
-.m-today__date { display: flex; flex-wrap: wrap; gap: 0 6px; font-size: 13px; color: var(--text-2); }
-.m-today__date b { color: var(--text); font-weight: 600; }
-.m-today__wx { display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 3px; max-width: 44%; padding-top: 1px; }
-.m-today__temp { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
-.m-today__temp b { font-size: 26px; font-weight: 600; line-height: 1; white-space: nowrap; }
-.m-day { position: relative; padding-bottom: 20px; }
-.m-day__track { position: relative; height: 6px; border-radius: 3px; background: rgba(255,255,255,.14); }
-.m-day__light { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, #ff9a5c 0%, #ffd77a 22%, #fff3c4 50%, #ffd77a 78%, #ff9a5c 100%); }
-.m-day__now { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.28), 0 2px 8px rgba(0,0,0,.5); }
-.m-day__lbl { position: absolute; top: 13px; transform: translateX(-50%); font-size: 11px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.m-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
-.m-fact { min-width: 0; }
-.m-fact > .ico { width: 18px; height: 18px; color: var(--accent); flex: none; }
-.m-fact > div { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.m-fact b { font-size: 13px; font-weight: 600; }
-.m-fact span { font-size: 11px; color: var(--text-2); }
-.m-today__quote { margin: 0; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12); font-family: var(--hand); font-size: 22px; line-height: 1.15; color: #fff; }
 .m-row { display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-radius: 12px; background: rgba(255,255,255,.06); min-height: 52px; }
 .m-row--click { cursor: pointer; }
 .m-row--click:active { background: rgba(255,255,255,.14); }
