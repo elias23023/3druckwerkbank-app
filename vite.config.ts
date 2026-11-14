@@ -9,7 +9,8 @@ import path from 'node:path';
  * The id is a hash over everything the shell consists of, so the same sources give the same id and any change gives a new one. See docs/PWA.md.
  */
 function pwaBuild(): Plugin {
-  const SHELL_EXTRA = ['manifest.webmanifest', 'icons/favicon-32.png', 'icons/favicon-16.png', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
+  // no PNG icons in the shell: nothing offline needs them, and Hostinger's CDN runs .png/.jpg through an image service (docs/PWA.md)
+  const SHELL_EXTRA = ['manifest.webmanifest'];
   let outDir = 'dist'; let files: string[] = [];
   return {
     name: 'wb-pwa-build', apply: 'build',

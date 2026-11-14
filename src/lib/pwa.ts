@@ -5,6 +5,7 @@ import { useSyncExternalStore } from 'react';
  * Nothing reloads by itself. A running app keeps its build until the user presses „Neu laden“; a freshly started app
  * already has the new build (the page comes from the network first) and only lets the new service worker take over. See docs/PWA.md.
  */
+const CHECK_EVERY = 30 * 60_000;
 let updateReady = false;
 let reloading = false;
 let registration: ServiceWorkerRegistration | undefined;
@@ -64,9 +65,16 @@ export function registerServiceWorker() {
         // another window let a new build take over: this one still runs the old build
         void sameBuild(sw.controller).then((same) => setReady(!same));
       });
-      // an installed app can stay open for days: look for a new build when it comes back to the front (at most once an hour)
+      // an installed app can stay open for days: while it is visible and online, look for a new build every 30 minutes,
+      // also when it comes back to the front and when the network returns; only a check that reached the server counts
       let checked = Date.now();
-      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && navigator.onLine && Date.now() - checked > 3_600_000) { checked = Date.now(); reg.update().catch(() => {}); } });
+      const check = (minAge: number) => {
+        if (document.visibilityState !== 'visible' || !navigator.onLine || Date.now() - checked < minAge) return;
+        reg.update().then(() => { checked = Date.now(); }, () => {});
+      };
+      setInterval(() => check(CHECK_EVERY), 5 * 60_000);
+      document.addEventListener('visibilitychange', () => check(CHECK_EVERY));
+      window.addEventListener('online', () => check(60_000));
     } catch { /* no service worker (private mode, blocked, http): the app works as before */ }
   };
   // after the first picture of the page, so the registration never competes with the start

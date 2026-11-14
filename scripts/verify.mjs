@@ -281,9 +281,9 @@ await ctxM.close();
   check('PWA: shell is cached, nothing below /api/', keys.some((k) => /^wb-shell-[a-f0-9]{12} \/$/.test(k)) && keys.some((k) => /\/assets\/index-.*\.js$/.test(k)) && !keys.some((k) => / \/api(\/|$)/.test(k)), `${keys.length} entries`);
   await c.setOffline(true); errs.length = 0;
   const nav = await pg.reload({ waitUntil: 'load', timeout: 20000 }).then(() => true).catch(() => false); await pg.waitForTimeout(1500);
-  await pg.goto(`${base}/#/projekte`); await pg.waitForTimeout(800);
-  check('PWA: starts without network and opens a world', nav && (await pg.locator('.stage').count()) === 1 && (await pg.locator('.world-title h1').count()) === 1 && errs.length === 0, errs.join(' | ').slice(0, 200));
-  check('PWA: /api is not answered from a cache without network', (await pg.evaluate(() => fetch('/api/health.php').then((r) => `answered ${r.status}`, () => 'failed'))) === 'failed');
+  const nav2 = await pg.goto(`${base}/#/projekte`).then(() => true, (e) => { errs.push(`goto: ${e.message.split('\n')[0]}`); return false; }); await pg.waitForTimeout(800);
+  check('PWA: starts without network and opens a world', nav && nav2 && (await pg.locator('.stage').count()) === 1 && (await pg.locator('.world-title h1').count()) === 1 && errs.length === 0, `${nav ? '' : 'reload failed '}${errs.join(' | ')}`.slice(0, 200));
+  check('PWA: /api is not answered from a cache without network', (await pg.evaluate(() => fetch('/api/health.php').then((r) => `answered ${r.status}`, () => 'failed')).catch((e) => `page gone: ${e.message.slice(0, 60)}`)) === 'failed');
   await c.close();
 }
 await browser.close();

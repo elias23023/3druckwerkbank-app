@@ -377,8 +377,9 @@ app.use('/api', api);
 
 // ---- the built React app ----
 const pub = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
-// sw.js is the one script without a hash in its name: never cache it for long, or the CDN keeps handing out an old service worker (the manifest and icons fall under 'no-cache' anyway)
-app.use(express.static(pub, { index: false, setHeaders: (res, file) => res.set('Cache-Control', /\.(js|css|avif|webp|woff2?)$/.test(file) && path.basename(file) !== 'sw.js' ? 'public, max-age=31536000, immutable' : 'no-cache') }));
+// sw.js is the one script without a hash in its name: never cache it for long, or the CDN keeps handing out an old service worker (the manifest and icons fall under 'no-cache' anyway).
+// .avif: express 4 does not know the type and would send application/octet-stream (the service worker only stores pictures with an image type)
+app.use(express.static(pub, { index: false, setHeaders: (res, file) => { res.set('Cache-Control', /\.(js|css|avif|webp|woff2?)$/.test(file) && path.basename(file) !== 'sw.js' ? 'public, max-age=31536000, immutable' : 'no-cache'); if (file.endsWith('.avif')) res.type('image/avif'); } }));
 app.get('*', (_req, res) => { const index = path.join(pub, 'index.html'); if (!fs.existsSync(index)) return res.status(404).type('text/plain').send('3Druckwerkbank-Server läuft; die Oberfläche ist noch nicht ausgeliefert.'); res.set('Cache-Control', 'no-cache').sendFile(index); });
 
 const server = http.createServer(app);

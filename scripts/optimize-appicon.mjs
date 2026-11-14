@@ -1,7 +1,7 @@
-// node scripts/optimize-appicon.mjs [--maskable-scale 0.8] [--screenshots http://localhost:4173]
+// node scripts/optimize-appicon.mjs [--maskable-scale 0.85] [--screenshots http://localhost:4173]
 // App symbol for the installable app (PWA): assets-src/app-symbol.png -> public/icons/
 //   icon-192.png, icon-512.png                    purpose "any" (rounded corners, transparent outside)
-//   icon-maskable-192.png, icon-maskable-512.png  purpose "maskable" (full bleed, motif inside the middle 80 %)
+//   icon-maskable-192.png, icon-maskable-512.png  purpose "maskable" (full bleed, the picture scaled to 85 %, its edge pixels continued to the border)
 //   apple-touch-icon.png (180, no transparency), favicon-32.png, favicon-16.png
 // Input: square PNG, at least 1024 px, full-bleed background, motif in the centre (made by the user's image AI).
 // Without the input file the script renders a PLACEHOLDER: the hexagon logo of the app (Logo in src/ui/TopBar.tsx) on the dark ground of the app.
