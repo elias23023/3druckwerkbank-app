@@ -13,16 +13,18 @@
      .glass.carousel-nav             Perle
      .panel .item, .sim-item, .hour, .hours-mini > div, .ams > div, .gcard, .tabs, .col.glass     Mulde (clickable ones: Mulde zum Tippen)
      .panel (as a ground)            Etikett auf Wasser; Perle mit Schrift (its plain buttons are no live drops)
-     .dock button, .chip, .carousel-nav, .gcard, .back, .brand, .island, .scroll-hint             Wasserlinie
+     .dock button, .chip, .carousel-nav, .gcard, .back, .topbar .brand, .island, .scroll-hint     Wasserlinie
    Shared classes (.btn, .pill, .sheet, .toast, .cmd, .input, .check, .progress, .tabs, .seg ...) are in the same lists
    and look as they do on the phone. Here follows only what these elements need ON TOP of their block.
 
    What is different on a desktop, and what was decided (NOTIZEN.md, section 11):
    - The islands are the stars. Nothing here changes a place or a size; islands, their labels, the day ring, loose text
      over the stage and the hand-written notes get nothing at all.
-   - Many sheets at once. Every panel is a basin, but a shallow one (smaller depth steps), and only the large panel in
-     the middle has the light on its floor; the side panels carry their two rim lights at part strength until the
-     pointer is over them.
+   - Many sheets at once. Every panel is a basin, but a shallow one: smaller depth steps, and thinner depth where the
+     tone allows it (--wa-weit-tiefe), so the painting still shows through. In place of the page's darkening - the stage
+     is not darkened - each sheet dims the scene seen THROUGH it (--wa-weit-grund): that is what gives light text its
+     ground by day. A side panel carries one rim light at part strength until the pointer is over it; only the one
+     large panel of a world has both rim lights and the light on its floor.
    - Few live drops: the three round buttons of the top bar, every button that lies free over the stage, the primary
      button of a panel, the buttons of a sheet. Every other button on a panel is plain glass.
    - A drop that lies free over the stage bends the LANDSCAPE image only (wasser.js, option "scene"); it does not see
@@ -35,7 +37,10 @@
      own blur.
 
    Rules for this file: a rule that changes something a block has set needs at least the weight of that block's list
-   (see the head of kern.css) - hence .glass.panel, .glass.chip, .glass.dock written with both classes. */
+   (see the head of kern.css) - hence .glass.panel, .glass.chip, .glass.dock written with both classes.
+   Three rules carry !important or name an inline style: the app styles those places inline today (the large panel's
+   place, the mark of the current version, the padding of small selects). Each says what to do when the look is built in.
+   After a change:  node scripts/wasser/desktop.mjs pruefen   (and vergleich.mjs, if kern.css was touched). */
 
 /* == 1. Tokens of the desktop shell ============================================================================== */
 [data-wasser="desktop"] {

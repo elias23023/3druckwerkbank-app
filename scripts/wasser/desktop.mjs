@@ -5,7 +5,8 @@
 //        A small server with the built app and the template on top - open it in YOUR browser and use the app:
 //        http://localhost:4320 (wide window = desktop template, narrow = mobile template). The tone follows the app's own
 //        setting "Erscheinungsbild" (Dunkel -> "dunkel", Hell -> "klar", Automatisch -> the hour); ?ton=klar or ?ton=dunkel
-//        fixes it, ?ohne=1 shows the app as it is today.
+//        fixes it, ?ohne=1 shows the app as it is today, ?weich=aus the template without any blur (to compare on a machine
+//        that stutters), ?leben=1.5 more light at rest.
 //   node scripts/wasser/desktop.mjs bild <out-dir> [--format 2000|1920] [--ton klar] [--zeit nacht|tag|morgen|abend] [--nur start,heute] [--alles]
 //        Stills: the eight worlds; with --alles also sheets, forms, settings, account, search, keyboard focus, a toast and the
 //        empty workspace. NN-name.png plus contact sheets uebersicht-N.png.
@@ -235,8 +236,9 @@ async function pruefen() {
   const blue = seen.filter((c) => /124, 198, 255/.test(c)).length; say(!blue && seen.some((c) => /255, 255, 255/.test(c)), 'Tastatur: Wasserlinie statt blauem Ring', `${seen.filter((c) => /255, 255, 255/.test(c)).length} von 24 Stationen mit weißer Linie, ${blue} blau`);
   // 5. a sheet: the stage behind it rests, the drawer flows in from the right, nothing scrolls the stage; the search panel is blurred
   await p.keyboard.press('Escape'); await p.locator('.topbar [aria-label="Einstellungen"]').dispatchEvent('click'); await p.waitForTimeout(900);
-  const sh = await p.evaluate(() => { const s = document.querySelector('.sheet'), st = document.querySelector('.stage'), cs = getComputedStyle(s), r = s.getBoundingClientRect(); return { name: cs.animationName, lauf: getComputedStyle(document.querySelector('.dock')).getPropertyValue('--wa-lauf').trim(), own: getComputedStyle(s).getPropertyValue('--wa-lauf').trim(), scroll: st.scrollLeft, right: innerWidth - r.right, radius: cs.borderBottomRightRadius, behind: [...document.querySelectorAll('.topbar [data-w3="on"]')].length }; });
-  say(sh.name === 'wa-fliesst' && sh.lauf === 'paused' && sh.own === 'running' && sh.scroll === 0 && Math.abs(sh.right - 14) < 1 && parseFloat(sh.radius) > 20, 'Schublade: fließt von rechts, vier runde Ecken, die Bühne dahinter ruht', JSON.stringify(sh)); await d.closeSheet();
+  const name0 = await p.evaluate(() => getComputedStyle(document.querySelector('.sheet')).animationName); await p.evaluate(() => document.querySelector('.sheet').getAnimations().forEach((x) => x.finish()));   // (the entrance takes 0.62 s; a slow machine may still be in it)
+  const sh = await p.evaluate(() => { const s = document.querySelector('.sheet'), st = document.querySelector('.stage'), cs = getComputedStyle(s), r = s.getBoundingClientRect(); return { lauf: getComputedStyle(document.querySelector('.dock')).getPropertyValue('--wa-lauf').trim(), own: getComputedStyle(s).getPropertyValue('--wa-lauf').trim(), scroll: st.scrollLeft, right: innerWidth - r.right, radius: cs.borderBottomRightRadius, behind: [...document.querySelectorAll('.topbar [data-w3="on"]')].length }; });
+  sh.name = name0; say(sh.name === 'wa-fliesst' && sh.lauf === 'paused' && sh.own === 'running' && sh.scroll === 0 && Math.abs(sh.right - 14) < 1 && parseFloat(sh.radius) > 20, 'Schublade: fließt von rechts, vier runde Ecken, die Bühne dahinter ruht', JSON.stringify(sh)); await d.closeSheet();
   await d.search('sens'); const cm = await p.evaluate(() => { const c = document.querySelector('.cmd'), cs = getComputedStyle(c), b = getComputedStyle(c.parentElement); return { blur: cs.backdropFilter || cs.webkitBackdropFilter, scrim: b.backdropFilter || b.webkitBackdropFilter || 'none', anim: b.animationName }; }); say(/blur/.test(cm.blur) && !/blur/.test(cm.scrim) && cm.anim === 'none', 'Suche: das Feld ist weichgezeichnet, der Schleier dahinter nicht', JSON.stringify(cm)); await d.closeSearch();
   // 6. a toast stands in the middle
   await d.toast(); const tc = await p.evaluate(() => { const r = document.querySelector('.toast').getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - innerWidth / 2); }); say(tc < 1.5, 'Hinweis: mittig über dem Dock', `${tc.toFixed(1)} px neben der Mitte`);
@@ -282,6 +284,40 @@ async function takt() {
   }
 }
 
+/* ------------------------------------------------------------------ clip */
+// A tour through the real app as one film, recorded through the browser's screencast (every picture with its true time; the
+// work machine draws only 7 to 9 pictures a second - the film is true to that, not smooth). A drawn pointer shows where the
+// mouse is. Chromium only; needs ffmpeg.
+async function clip(out) {
+  const { execFileSync } = await import('child_process'); const dir = mkdir(out + '.d'); const d = await open(); const p = d.page, { w, h } = d.format; const wait = (ms) => p.waitForTimeout(ms); const marks = [];
+  await p.evaluate(() => { const c = document.createElement('div'); c.style.cssText = 'position:fixed;left:0;top:0;width:22px;height:22px;z-index:99999;pointer-events:none;transform:translate(-100px,-100px);background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 22 22%27%3E%3Cpath d=%27M3 2l14 8-6.2 1.6L8 18z%27 fill=%27%23fff%27 stroke=%27%23000%27 stroke-width=%271.2%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E")'; document.body.appendChild(c); window.addEventListener('pointermove', (e) => { c.style.transform = `translate(${e.clientX - 3}px,${e.clientY - 2}px)`; }, true); });
+  const cdp = await d.context.newCDPSession(p); const frames = []; let n = 0;
+  cdp.on('Page.screencastFrame', (f) => { const file = `${dir}/f${String(n++).padStart(5, '0')}.jpg`; fs.writeFileSync(file, Buffer.from(f.data, 'base64')); frames.push({ file, t: f.metadata.timestamp }); cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {}); });
+  let mx = w / 2, my = h / 2;
+  const glide = async (x, y, ms = 600) => { const k = Math.max(4, Math.round(ms / 45)); const x0 = mx, y0 = my; for (let i = 1; i <= k; i++) { const s = i / k, e = s * s * (3 - 2 * s); await p.mouse.move(x0 + (x - x0) * e, y0 + (y - y0) * e); await wait(ms / k); } mx = x; my = y; };
+  const to = async (loc, ms = 650, fx = 0.5, fy = 0.5) => { const b = await loc.first().boundingBox(); if (!b) return false; await glide(b.x + b.width * fx, b.y + b.height * fy, ms); return true; };
+  const press = async (loc, hold = 130) => { if (!(await to(loc))) return; await wait(250); await p.mouse.down(); await wait(hold); await p.mouse.up(); await d.still(); };
+  const mark = (t) => { marks.push(`${((Date.now() - t0) / 1000).toFixed(1).padStart(5)} s  ${t}`); }; const step = async (t, fn) => { mark(t); try { await fn(); } catch (e) { console.log('!!', t, String(e).split('\n')[0].slice(0, 120)); } };
+  await d.go('start', 2200); await p.mouse.move(mx, my); await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 90, maxWidth: 1600, maxHeight: 1000, everyNthFrame: 1 }); const t0 = Date.now();
+  await step('Start in Ruhe; der Zeiger wandert (die Tropfen unter den Inseln)', async () => { await wait(1800); await glide(w * 0.3, h * 0.42, 900); await to(p.locator('.island__cta').nth(1), 900); await wait(900); });
+  await step('Dock: Heute - die Perle fließt, die Becken kommen an', async () => { await press(p.locator('.dock button', { hasText: 'Heute' })); await wait(2600); });
+  await step('Zeiger über einem Panel: sein Randlicht erwacht; eine Aufgabe wird abgehakt (grüner Ring)', async () => { await to(p.locator('.panel-col--left .panel').nth(1), 700, 0.5, 0.3); await wait(1100); await press(p.locator('.panel-col--left .check').first()); await wait(1500); });
+  await step('Dock: Projekte - freie Tropfen unter der Insel, der Zeiger streicht darüber', async () => { await press(p.locator('.dock button', { hasText: 'Projekte' })); await wait(2400); const b = p.locator('.project-hero .btn'); const k = await b.count(); for (let i = k - 1; i >= 0; i--) { await to(b.nth(i), 380); await wait(280); } await wait(300); });
+  await step('Projekt öffnen (Bernstein-Tropfen): die Innenwelt', async () => { await press(p.locator('.project-hero .btn--primary'), 260); await wait(2800); });
+  await step('Dock: 3D-Druck - das große Becken; "Ergebnis buchen" gedrückt: Ring, die Schublade fließt herein', async () => { await press(p.locator('.dock button', { hasText: '3D-Druck' })); await wait(2600); await press(p.locator('.panel .btn--primary').first(), 300); await wait(2000); await press(p.locator('.sheet .sheet__head button[aria-label="Schließen"]')); await wait(700); });
+  await step('Einstellungen: Schublade, eine Wahl (die Perle fließt), ein Feld', async () => { await press(p.locator('.topbar [aria-label="Einstellungen"]')); await wait(1400); await press(p.locator('.sheet .seg').nth(1).locator('button').nth(2)); await wait(900); await press(p.locator('.sheet .input').first()); await p.keyboard.type('Elias', { delay: 110 }); await wait(700); await press(p.locator('.sheet .sheet__head button[aria-label="Schließen"]')); await wait(700); });
+  await step('Suche (Strg+K)', async () => { await p.keyboard.press('Control+k'); await wait(600); await p.keyboard.type('sens', { delay: 120 }); await wait(1300); await p.keyboard.press('Escape'); await wait(600); });
+  await step('Dock: Wetter', async () => { await press(p.locator('.dock button', { hasText: 'Wetter' })); await wait(2800); });
+  await step('Der zweite Ton: "klar"', async () => { await p.evaluate(() => document.documentElement.setAttribute('data-wa-ton', 'klar')); await glide(w * 0.5, h * 0.55, 700); await wait(2600); await press(p.locator('.dock button', { hasText: 'Heute' })); await wait(3000); });
+  mark('Ende'); await cdp.send('Page.stopScreencast').catch(() => {}); await wait(300); const total = (Date.now() - t0) / 1000;
+  if (d.errors.length) console.log('page errors:', d.errors.slice(0, 4)); await d.close();
+  // every picture for as long as it was on the screen
+  let txt = ''; frames.forEach((f, i) => { txt += `file '${f.file}'\nduration ${Math.max(0.001, (i + 1 < frames.length ? frames[i + 1].t : f.t + 0.2) - f.t).toFixed(4)}\n`; }); txt += `file '${frames[frames.length - 1].file}'\n`; fs.writeFileSync(`${dir}/list.txt`, txt);
+  for (const crf of [a.crf || 27, 30, 33]) { execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', `${dir}/list.txt`, '-vf', 'fps=20,scale=1600:-2:flags=lanczos', '-c:v', 'libx264', '-crf', String(crf), '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', out]); if (fs.statSync(out).size < 3.9e6) break; }
+  fs.writeFileSync(out.replace(/\.mp4$/, '') + '-ablauf.txt', marks.join('\n') + '\n'); fs.rmSync(dir, { recursive: true, force: true });
+  console.log(marks.join('\n')); console.log(`ok ${out}  ${(fs.statSync(out).size / 1e6).toFixed(2)} MB, ${total.toFixed(1)} s, ${frames.length} Bilder (${(frames.length / total).toFixed(1)} je Sekunde)`);
+}
+
 /* ------------------------------------------------------------------ zeigen */
 // The built app (dist/) with the template on top, for the owner's own browser. Nothing is written anywhere.
 const MIME = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8', json: 'application/json', webp: 'image/webp', avif: 'image/avif', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', woff2: 'font/woff2', woff: 'font/woff', ico: 'image/x-icon', webmanifest: 'application/manifest+json' };
@@ -290,7 +326,7 @@ function zeigen() {
   const own = { 'kern.css': `${VORLAGE}/kern.css`, 'mobil.css': `${VORLAGE}/mobil.css`, 'desktop.css': `${VORLAGE}/desktop.css`, 'wasser.js': `${VORLAGE}/wasser.js`, 'einspielen.js': 'scripts/wasser/einspielen.js' };
   // the look goes in after the app's own stylesheets; "ohne" and "ton" are read from the address in the page itself
   const tags = `<script>(function(){var q=new URLSearchParams(location.search);if(q.has('ohne'))return;window.__wasserVorschau={ton:q.get('ton')||'auto'};
-    document.write('<link rel="stylesheet" href="/__wasser/kern.css"><link rel="stylesheet" href="/__wasser/mobil.css"><link rel="stylesheet" href="/__wasser/desktop.css"><script src="/__wasser/wasser.js"><\\/script><script src="/__wasser/einspielen.js"><\\/script>');})();</script>`;
+    document.write('<link rel="stylesheet" href="/__wasser/kern.css"><link rel="stylesheet" href="/__wasser/mobil.css"><link rel="stylesheet" href="/__wasser/desktop.css">'+(q.get('weich')==='aus'?'<style>[data-wasser] *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}</style>':'')+(q.get('leben')?'<style>[data-wasser]{--wa-leben:'+parseFloat(q.get('leben'))+'}</style>':'')+'<script src="/__wasser/wasser.js"><\\/script><script src="/__wasser/einspielen.js"><\\/script>');})();</script>`;
   http.createServer((req, res) => {
     const name = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     const send = (file, type) => { res.writeHead(200, { 'content-type': type || MIME[path.extname(file).slice(1)] || 'application/octet-stream', 'cache-control': 'no-store' }); fs.createReadStream(file).pipe(res); };
@@ -299,12 +335,13 @@ function zeigen() {
     if (file.startsWith(dist) && fs.existsSync(file) && fs.statSync(file).isFile() && name !== '/index.html') return send(file);
     if (name.startsWith('/api/')) { res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{}'); }   // (no account service in the preview)
     res.writeHead(200, { 'content-type': MIME.html, 'cache-control': 'no-store' }); res.end(fs.readFileSync(`${dist}/index.html`, 'utf8').replace('</body>', tags + '</body>'));
-  }).listen(Number(a.port), () => console.log(`Vorschau der Vorlage in der gebauten App:  http://localhost:${a.port}\n  breites Fenster = Desktop, schmales (unter 900 px) = Handy\n  ?ton=klar  ?ton=dunkel  (sonst folgt der Ton der Einstellung "Erscheinungsbild")   ?ohne=1 = die App wie heute\n  Strg+C beendet.`));
+  }).listen(Number(a.port), () => console.log(`Vorschau der Vorlage in der gebauten App:  http://localhost:${a.port}\n  breites Fenster = Desktop, schmales (unter 900 px) = Handy\n  ?ton=klar  ?ton=dunkel  (sonst folgt der Ton der Einstellung "Erscheinungsbild")   ?ohne=1 = die App wie heute\n  ?weich=aus = ohne Weichzeichner (zum Vergleich, falls es ruckelt)   ?leben=1.5 = mehr Licht in Ruhe (0 bis 2)\n  Strg+C beendet.`));
 }
 
 if (mode === 'bild' && a._[1]) await bild(abs(a._[1]));
 else if (mode === 'kontrast') await kontrast();
 else if (mode === 'pruefen') await pruefen();
+else if (mode === 'clip' && a._[1]) await clip(abs(a._[1]));
 else if (mode === 'takt') await takt();
 else if (mode === 'film' && a._[1]) await film(abs(a._[1]));
 else if (mode === 'zeigen') zeigen();
