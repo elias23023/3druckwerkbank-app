@@ -263,6 +263,29 @@ await pm.locator('.toast__undo').click(); await pm.waitForTimeout(250);
 const back = await pm.locator('.m-main .m-shop', { hasText: 'Testfilament Rot' }).count();
 check('Mobile: shopping list add, tick, remove, undo', added === 1 && ticked === true && removed === 0 && back === 1, `${added} ${ticked} ${removed} ${back}`);
 await ctxM.close();
+// installable app (PWA): manifest, icons, service worker, start without network, nothing of /api/ in a cache (docs/PWA.md)
+{
+  const c = await browser.newContext(ctxOpts); const pg = await c.newPage(); const errs = []; pg.on('pageerror', (e) => errs.push(String(e)));
+  await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' });
+  const man = await pg.evaluate(async () => { const href = document.querySelector('link[rel="manifest"]')?.getAttribute('href'); if (!href) return null; const r = await fetch(href); return r.ok ? r.json() : null; });
+  check('PWA: manifest linked and complete', !!man && man.name === '3Druckwerkbank' && man.short_name.length <= 12 && man.display === 'standalone' && man.start_url === '/' && man.scope === '/' && man.lang === 'de'
+    && ['any', 'maskable'].every((p) => ['192x192', '512x512'].every((sz) => man.icons.some((i) => i.purpose === p && i.sizes === sz))) && man.shortcuts.length === 3, man ? man.short_name : 'no manifest');
+  const imgs = [...(man?.icons ?? []), ...(man?.screenshots ?? []), { src: await pg.getAttribute('link[rel="apple-touch-icon"]', 'href'), sizes: '180x180' }, { src: await pg.getAttribute('link[rel="icon"][sizes="32x32"]', 'href'), sizes: '32x32' }];
+  const sizes = await pg.evaluate((list) => Promise.all(list.map(async (i) => { const r = await fetch(i.src); if (!r.ok) return `${i.src} HTTP ${r.status}`; const b = await createImageBitmap(await r.blob()); return `${b.width}x${b.height}` === i.sizes ? '' : `${i.src} ${b.width}x${b.height}`; })), imgs);
+  check('PWA: icons and screenshots answer in the stated size', imgs.length >= 8 && sizes.every((x) => x === ''), sizes.filter(Boolean).join(', '));
+  const controlled = await pg.waitForFunction(() => !!navigator.serviceWorker?.controller, null, { timeout: 15000 }).then(() => true).catch(() => false);
+  await pg.reload({ waitUntil: 'networkidle' });
+  check('PWA: service worker controls the page on the second load', controlled && await pg.evaluate(() => !!navigator.serviceWorker.controller));
+  await pg.evaluate(() => fetch('/api/health.php').catch(() => null));
+  const keys = await pg.evaluate(async () => { const out = []; for (const k of await caches.keys()) for (const r of await (await caches.open(k)).keys()) out.push(`${k} ${new URL(r.url).pathname}`); return out; });
+  check('PWA: shell is cached, nothing below /api/', keys.some((k) => /^wb-shell-[a-f0-9]{12} \/$/.test(k)) && keys.some((k) => /\/assets\/index-.*\.js$/.test(k)) && !keys.some((k) => / \/api(\/|$)/.test(k)), `${keys.length} entries`);
+  await c.setOffline(true); errs.length = 0;
+  const nav = await pg.reload({ waitUntil: 'load', timeout: 20000 }).then(() => true).catch(() => false); await pg.waitForTimeout(1500);
+  await pg.goto(`${base}/#/projekte`); await pg.waitForTimeout(800);
+  check('PWA: starts without network and opens a world', nav && (await pg.locator('.stage').count()) === 1 && (await pg.locator('.world-title h1').count()) === 1 && errs.length === 0, errs.join(' | ').slice(0, 200));
+  check('PWA: /api is not answered from a cache without network', (await pg.evaluate(() => fetch('/api/health.php').then((r) => `answered ${r.status}`, () => 'failed'))) === 'failed');
+  await c.close();
+}
 await browser.close();
 const fails = results.filter((r) => !r.ok).length;
 console.log(`\n${results.length - fails}/${results.length} checks passed`);

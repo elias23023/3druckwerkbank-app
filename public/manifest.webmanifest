@@ -1,0 +1,30 @@
+{
+  "id": "/",
+  "name": "3Druckwerkbank",
+  "short_name": "Werkbank",
+  "description": "Deine persönliche digitale Werkstatt für 3D-Druckprojekte: Projekte, Drucke, Material und Wetter.",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Heute", "url": "/#/heute", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Projekte", "url": "/#/projekte", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Material", "url": "/#/material", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ],
+  "screenshots": [
+    { "src": "/icons/screenshot-breit.jpg", "sizes": "1920x1080", "type": "image/jpeg", "form_factor": "wide", "label": "Startwelt mit den sechs Inseln" },
+    { "src": "/icons/screenshot-schmal.jpg", "sizes": "780x1688", "type": "image/jpeg", "form_factor": "narrow", "label": "Die Werkbank am Handy" }
+  ]
+}
