@@ -19,7 +19,7 @@
 // Prints one line per comparison and a summary; exit code 1 when something differs that is not listed in KNOWN below.
 // Pictures of what differs: <out>/*-diff.png (red = outside the drops, yellow = inside). Default out: scratch folder in the OS temp dir.
 import fs from 'fs'; import os from 'os'; import path from 'path';
-import { session, diff, strip, args, mkdir, abs, lookDir, ALT, SZENEN } from './lib.mjs';
+import { session, diff, strip, args, mkdir, abs, lookDir, isTemplate, ALT, SZENEN } from './lib.mjs';
 import { film, STRIPS } from './film.mjs';
 const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', out: path.join(os.tmpdir(), 'wasser-vergleich'), nur: '' });
 const mode = a._[0] || 'alles'; const out = mkdir(abs(a.out)); const TONES = a.toene.split(','); const ZEIT = '2026-11-12T17:42:00+01:00';
@@ -44,11 +44,11 @@ const s = await session({ engine: a.engine }); let bad = 0; const lines = []; co
 // To check a change of YOUR OWN against the template as it was: --alt git:HEAD (the committed template), or --alt <a copy of
 // the folder made before the change>.
 const RENAMED = { '--w3-pad': '--wa-drop-pad', '--w3-halo': '--wa-drop-halo' };
-const SINCE_1411 = new Set(['--wa-zug-weit', '--wa-zug-boden', '--wa-drop-veil']);
+const SINCE_1411 = new Set(['--wa-zug-weit', '--wa-zug-boden', '--wa-drop-veil']);   // (these three are left out of the comparison altogether: custom properties are inherited, so EVERY element would differ in them)
 const KNOWN = (prop, x, y, key) => (prop === 'transition-duration' && /^0\.18s(, 0\.18s)*$/.test(x[prop] || '') && y[prop] === x[prop].replace(/0\.18s/g, '0.14s'))
   || (prop === 'transition-property' && x['transition-duration'] === '0s' && y['transition-duration'] === '0s')
   || (prop === 'aspect-ratio' && /canvas:\d+\|/.test(key))
-  || SINCE_1411.has(prop) || (/^animation/.test(prop) && /\|wa-(licht|boden)$/.test(key))
+  || (/^animation/.test(prop) && /\|wa-(licht|boden)$/.test(key))
   || (prop === 'translate' && /\|wa-boden$/.test(key) && /%$/.test(x.width || ''));   // (a floor light that is NOT RENDERED - a card inside display: none, its width is still a percentage: the reference's arrival animation never starts there and stands at its first keyframe)
 // the strip "tab": the arrival of the light is named differently on the two sides (see 4.)
 const sameMotion = (ref, neu) => { const set = (t) => [...new Set(t.replace(/::before:wa-schwappt-oben/g, '::before:scale').replace(/::after:wa-schwappt-unten/g, '::after:scale').replace(/:wa-schwappt-boden/g, ':translate').split(/\s+\|\s+|\s\s+/).map((v) => v.trim()).filter(Boolean))].sort().join('  '); return set(ref) === set(neu); };
@@ -116,7 +116,7 @@ const PAGE_LIB = `(() => {
 })()`;
 const customNames = () => {                                        // every custom property the reference declares: [name in this look, name it is reported under]
   const names = (look) => { const dir = lookDir(look); const css = fs.readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => fs.readFileSync(`${dir}/${f}`, 'utf8')).join('\n'); return new Set(css.match(/--[a-z0-9-]+(?=\s*:)/g) || []); };
-  const old = [...names(a.alt)], now = names(a.neu), neu = a.neu === 'vorlage';
+  const old = [...names(a.alt)].filter((n) => !SINCE_1411.has(n) || isTemplate(a.alt)), now = names(a.neu), neu = a.neu === 'vorlage';   // (against another copy of the template nothing is left out)
   return [old.map((n) => [n, n]), old.map((n) => [neu && RENAMED[n] && now.has(RENAMED[n]) ? RENAMED[n] : n, n])];
 };
 async function compare(name, pages, custom, scopeSel = null, quietIfEqual = false) {
