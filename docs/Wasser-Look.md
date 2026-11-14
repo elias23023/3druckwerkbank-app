@@ -418,12 +418,12 @@ Für alles, was die anderen Werkzeuge nicht kennen (ein Bogen, der nicht in ihre
 node scripts/wasser/stelle.mjs screenshots/wasser/ueber.png --welt heute --bogen einstellungen --klick 'Über diesen Entwurf' --css '.sheet .field'
 ```
 
-Das öffnet die gebaute App mit der Vorlage, geht zur Welt, öffnet den Bogen, klickt den Knopf mit diesem Text, macht **ein** Bild und druckt, was der Selektor dort trifft: wie viele Elemente, in welcher Hülle, und von den ersten drei Hintergrund, Schatten, Weichzeichner, Radius, Innenabstand, Position, Schriftfarbe und ob ein lebender Tropfen darauf liegt.
+Das öffnet die gebaute App mit der Vorlage, geht zur Welt, öffnet den Bogen, klickt den Knopf mit diesem Text, macht **ein** Bild und druckt, was der Selektor dort trifft: wie viele Elemente, in welcher Hülle, und von den ersten drei Klassen und `data-`Attribute, Hintergrund, Rand, Schatten, Weichzeichner, Radius, Innenabstand, Position, Schriftfarbe und ob ein lebender Tropfen darauf liegt.
 
 - `--mobil` – dasselbe am Handy (390 × 844). Sonst Desktop, 2000 × 993.
 - `--ton klar`, `--zeit tag`, `--format 1920`, `--look <Kopie>` oder `--look ohne` – wie bei den anderen Werkzeugen.
 - `--nah` – nur das erste getroffene Element im Bild. `--wert transform,water-under` – weitere Werte (eine eigene Eigenschaft ohne ihre zwei Striche).
-- Mehrere Klicks: `--klick 'Einstellungen >> Über diesen Entwurf'`. Ein Selektor statt eines Texts beginnt mit `.`, `#` oder `[`.
+- `--klick` nimmt den Text eines Knopfs oder das Etikett eines Zeichenknopfs (`aria-label`); ein Teil genügt. Mehrere nacheinander: `--klick 'Einstellungen >> Über diesen Entwurf'`. Ein Selektor statt eines Texts beginnt mit `.`, `#` oder `[`.
 - Welche Bögen `--bogen` beim Namen kennt, steht im Kopf der Datei. Jeder andere ist ein Klick mehr.
 
 ### 4.8 Ein Element in einen anderen Baustein setzen, oder herausnehmen
@@ -631,7 +631,7 @@ git log --oneline -5 origin/welt/wasser-desktop      # wie weit der Desktop-Einb
 Zum Nachprüfen und für jeden, der daran weiterbaut. Stand `c7e8299` (Handy) und `e6eb9ef` (Desktop, Zwischenstand).
 
 - **`src/wasser/kern.css`, `mobil.css`, `desktop.css`, `wasser-skript.js`** sind Kopien der Vorlage, jede mit einer Kopfzeile „Kopie – nicht von Hand ändern“. Geholt werden sie mit `node scripts/wasser/uebernehmen.mjs`. Es schreibt nach `src/wasser/` und legt den Ordner an, wo er fehlt – auf einem Stand ohne Einbau (dieser Branch) also nur in einer Kopie des Projekts laufen lassen (8.3, „Probelauf“). Das Skript heißt in der App `wasser-skript.js`: Neben `wasser.ts` fände ein Import ohne Endung eine `wasser.js` zuerst.
-- **`src/wasser/wasser.ts`** lädt die Stylesheets und das Skript und stellt den Haken bereit. Die ganze Datei (Stand `e6eb9ef`):
+- **`src/wasser/wasser.ts`** lädt die Stylesheets und das Skript und stellt den Haken bereit. Die ganze Datei (Stand `e6eb9ef`, ohne die eine Zeile für `einbau.css`):
 
   ```ts
   import './kern.css';
@@ -649,7 +649,7 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand `c7e8299` (Handy) un
   }
   ```
 
-  Auf `main` (`c7e8299`, nur Handy) fehlen noch `DESKTOP` und `on`. Auf `welt/wasser-desktop` steht nach `desktop.css` vorläufig `import './einbau.css';` (Schritt 6).
+  Auf `main` (`c7e8299`, nur Handy) fehlen noch `DESKTOP` und `on`. Auf `welt/wasser-desktop` steht nach der Zeile für `desktop.css` vorläufig `import './einbau.css';` (Schritt 6).
 - **`src/mobile/Mobile.tsx`**, drei Zeilen (`c7e8299`). Der Import steht gleich nach `mobile.css`, weil die Stylesheets des Looks zuletzt kommen müssen. Wo der Aufruf unter den Hooks von `Mobile()` steht, ist gleich:
 
   ```diff
@@ -794,7 +794,7 @@ Jede ist eine Stelle, die beim Probelauf dieser Anleitung aufgefallen ist. Alle 
   ```
 
   Prüfen, bei Tag: `node scripts/wasser/bild.mjs screenshots/wasser/eingebaut app --look ohne --toene dunkel` – die Bilder müssen wirklich dunkel sein. Die Desktop-Werkzeuge sagen den Ton schon in beide Richtungen.
-- **c) `scripts/wasser/desktop.mjs`: der wippende Hinweis – erledigt in diesem Branch (`wasser-look`).** Die Prüfung „Gedrückt: nichts verlässt seinen Platz“ maß das eigene Wippen des Hinweises „Scrollen zum Erkunden“ mit (die Animation `bob` der App) und meldete je nach Augenblick 5 oder 6 px. `pruefen` hält diese Animation jetzt an, bevor es drückt. Ein Branch mit der älteren Fassung des Werkzeugs (`welt/wasser-desktop` bis `e6eb9ef`) meldet noch 23 von 24.
+- **c) `scripts/wasser/desktop.mjs`: der wippende Hinweis – erledigt in diesem Branch (`wasser-look`).** Die Prüfung „Gedrückt: nichts verlässt seinen Platz“ maß das eigene Wippen des Hinweises „Scrollen zum Erkunden“ mit (die Animation `bob` der App) und meldete je nach Augenblick 5 oder 6 px. `pruefen` hält diese Animation jetzt an, bevor es drückt. Ein Branch mit der älteren Fassung des Werkzeugs (`welt/wasser-desktop` bis `e6eb9ef`) kann noch 23 von 24 melden.
 - **Darf nicht passieren:** dass diese Zeilen als Änderung am Look gelten – sie ändern kein Bild. `vergleich.mjs bilder` bleibt ohne Abweichung.
 
 ### Schritt 6 – Den Desktop einschalten (in Arbeit auf `welt/wasser-desktop`)
@@ -979,7 +979,7 @@ Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau �
 14. Wenn ein Vorfahre mit einer `opacity`-Animation und `fill-mode: both` hereinkommt, dann bleibt er für immer ein solcher Hintergrund: Das Suchfeld sah durch seinen Schleier nichts. Dem Schleier die Animation nehmen. (47)
 15. Wenn die Fläche selbst in Ruhe animiert wird (`.m-card`, `.panel`), dann wird ihr Weichzeichner für jedes Bild neu gerechnet. Bewegt wird nur eine kleine eigene Ebene, mit `transform` und `opacity`.
 16. Wenn `backdrop-filter` vor `-webkit-backdrop-filter` steht, dann behält der Build nur die letzte Zeile: kein Weichzeichner in Chromium und Firefox. Die `-webkit-`Zeile zuerst. (Das eigene `global.css` der App hat es andersherum: Darum zeichnet die gebaute App heute `.glass` in Chromium nicht weich.) (8)
-    Die Folge für jedes Element, das in der App die Klasse `glass` trägt und in „Mulde“, „Perle“ oder „Etikett“ kommt: Diese Bausteine setzen keinen Weichzeichner, also bleibt der von `.glass` (18 px) – in Safari und auf dem iPhone. In Chromium sieht man ihn nicht, auch nicht im berechneten Wert. Die Hülle stellt ihn ab, wie `desktop.css` für `.panel .glass:where(.col)`. „Perle“ lässt auch den Rand von `.glass` stehen.
+    Die Folge für jedes Element, das in der App die Klasse `glass` trägt und in „Mulde“, „Perle“ oder „Etikett“ kommt: Diese Bausteine setzen keinen Weichzeichner, also bleibt der von `.glass` stehen (18 px, im gebauten CSS nur als `-webkit-backdrop-filter`). Safari und das iPhone sollten ihn zeichnen; gesehen hat das hier niemand, denn Chromium kennt die Zeile nicht – auch nicht im berechneten Wert – und der WebKit-Testbrowser zeichnet keinen Weichzeichner. Die Hülle stellt ihn ab, wie `desktop.css` für `.panel .glass:where(.col)`. „Perle“ lässt auch den Rand von `.glass` stehen.
 17. Wenn näher als 14 px an einem Tropfen etwas abschneidet (`overflow: hidden`), dann fehlen seine Wölbung und sein Schatten.
 18. Wenn dunkles Glas mit satter Farbe dahinter über warmem Holz braun wird, dann zuerst `--wa-sat` senken. Eine dunklere Fläche hilft nicht. (10)
 19. Wenn am Handy der Bogen selbst weichzeichnet, dann wird das für jedes Bild jedes Tropfens darauf neu gerechnet. Dort trägt der Schleier den Weichzeichner. Über einer Seite, die nie ruht (Desktop), ist es umgekehrt: `--wa-scrim-blur: none`. (11)
@@ -1146,8 +1146,8 @@ Aus dieser Probeseite stammen die Bilder in `docs/wasser-look/bilder/anleitung/`
 | Der Kontrast eines neuen Elements wurde nicht gemessen | Abschnitt 6, Punkt 5 | Zwei Proben-Zeilen in einer Kopie der Werkzeuge: Text der neuen Mulden 11,3 bis 18,2, ihr Titel 7,8 bis 10,0 |
 | `--wa-bead-*` gegen `--wa-perle-*`; die Stufe des schlichten Glases; „6 px“ und 23 von 24; `zeigen` und `dist/` | Abschnitte 6, 5 und 3; `desktop.mjs pruefen` hält den wippenden Hinweis selbst an (Schritt 5 c) | `desktop.mjs pruefen` 24 von 24, an der Vorlage und an der Kopie |
 
-Dabei neu gefunden: der zweite Absatz von Fallstrick 16, die Fallstricke 60 (der erste Vergleich gegen `git:HEAD` lief nach einem Zwischen-Commit gegen den eigenen Stand) und 70, und dass Prüfungen unter Last ausfallen (Tabelle „Alle Prüfungen“).
+Dabei gefunden: der zweite Absatz von Fallstrick 16, die Ergänzung von Fallstrick 60 (der erste Vergleich gegen `git:HEAD` lief nach einem Zwischen-Commit gegen den eigenen Stand), Fallstrick 70, und dass Prüfungen unter Last ausfallen (unter der Tabelle „Alle Prüfungen“).
 An der Vorlage selbst geändert: nur der Kommentar im Kopf von `wasser.js`. Danach `vergleich.mjs bilder --alt git:a81ee77` (der Commit davor): 32 Bildpaare, kein abweichender Bildpunkt; `pruefen.mjs --app` 60 von 60; die Welten „Heute“ (dunkel, Nacht, 2000 × 993) und „Wetter“ (klar, Tag, 1920 × 1080) angesehen.
-Nicht wiederholt: der Lauf durch einen zweiten Neuling.
+Nicht geschehen: ein neuer Lauf durch jemanden, der die Anleitung nicht kennt. Nachgegangen ist, wer sie geändert hat.
 
 **Nicht ausgeführt:** `npm run preview` selbst (der Port war von der laufenden Vorschau des Projekts belegt, gestartet mit demselben Befehl; die Kopien liefen unter anderen Ports mit `WASSER_APP`). `vergleich.mjs --alt git:HEAD` in voller Länge (nur der Teil `bilder`). Von Schritt 6 das, was „noch zu tun“ ist. Von Schritt 7 nur die Bildbefehle. Die Abhilfe aus Schritt 8. Die Schritte 11 bis 13 (von Schritt 11 nur die Klasse `wa-geht`). Nichts davon auf einem echten Gerät: Was dort gesehen wurde, hat der Besitzer gesehen (Entscheidung 11).
