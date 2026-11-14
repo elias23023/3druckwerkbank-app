@@ -31,11 +31,11 @@ shell needs beyond the blocks in its own file. (`.m-ico` also stands in the two 
 drops are round.) The desktop's elements are in the same lists, marked `desktop`.
 
 **The weight of a list entry.** A list weighs as much as its heaviest entry, and the rules of the shells are written
-against that weight. Every entry today weighs at most TWO classes (in "Etikett", "Etikett auf Wasser", "dichtes
-Wasser", "Markierung", "Bogen", "Feld", "Haken", "Pegel", the rows of "Perle mit Schrift": ONE). A new entry that needs
-more to be found is written with the surplus inside `:where()`, which weighs nothing:
-`.panel .glass:where(.col)`, `.chip:where(:not(.btn--icon))`, `:where(.topbar) .brand`, `.panel .item--click:where(.item)`.
-An entry that is heavier changes the phone without a word (pitfall 1); `vergleich.mjs stile` shows it.
+against that weight. So: A NEW ENTRY IS NEVER HEAVIER THAN THE HEAVIEST ENTRY ALREADY IN ITS LIST (two classes in most
+lists; one in "Etikett", "Etikett auf Wasser", "dichtes Wasser", "Markierung", "Bogen", "Feld", "Haken", "Pegel"). What
+it needs beyond that to be found goes inside `:where()`, which weighs nothing: `.panel .glass:where(.col)`,
+`.chip:where(:not(.btn--icon))`, `:where(.topbar) .brand`, `.panel .item--click:where(.item)`.
+A heavier entry changes the phone without a word (pitfall 1); `vergleich.mjs stile` shows it.
 
 Dosage, as told to the owner: the more often something appears on a screen and the more text it carries, the less
 water. Drops and the marker are the only glossy things; sheets are still; troughs carry the text.
@@ -87,8 +87,8 @@ checks that it paints and moves; `--bild out.png` keeps the picture.
 ## 3. Recipes
 
 **Apply a block to another element.** Open `kern.css`, find the block, add the selector to its list on a line of its
-own with a note (`/* desktop: the side panels */`). Keep the entry at the weight of the list - at most two classes,
-everything beyond that inside `:where()` (section 1, "The weight of a list entry"). If the block's comment names script
+own with a note (`/* desktop: the side panels */`). Keep the entry at the weight of the list - never heavier than
+its heaviest entry, everything beyond that inside `:where()` (section 1, "The weight of a list entry"). If the block's comment names script
 options, pass the same selector there (for the desktop: in `Wasser.DESKTOP`, `wasser.js`). Run `vergleich.mjs` (nothing
 else may change), `pruefen.mjs` and, for the desktop, `desktop.mjs pruefen`.
 
@@ -185,6 +185,7 @@ the water's clock), `partRing` (ring, marker), `partChange` (bead of a choice, l
 
 ```js
 Wasser.start();                                   // the mobile shell (defaults)
+Wasser.start(Wasser.DESKTOP);                     // the desktop shell
 Wasser.start({ sleep: 0, webgl: false });         // any option replaces its default
 Wasser.stop();                                    // leaves no helper, attribute, listener, timer or WebGL context behind
 ```
@@ -215,6 +216,22 @@ the name `wasser.js` (an import without extension finds the `.js` first): copy i
 | `scrollers` | `.m-main, .sheet__body` | lists whose scrolling pulls the light |
 | `webgl`, `debug` | `true`; `{ flat, prof, noDeriv }` all false, `cost: null` | test aids (the harness page maps `?fallback=1`, `?w3flat=1`, `?w3prof=1`, `?w3noderiv=1` to them). `debug.cost`: a function (ms) -> ms through which the governor of the drops sees what each water picture cost - to pretend a slow phone (`pruefen.mjs --regler`) |
 
+`Wasser.DESKTOP` is `Wasser.MOBIL` with eight options replaced (the list is in `wasser.js`, right under `MOBIL`):
+
+| Option | Desktop | Why |
+|---|---|---|
+| `scene` | `.land img` | the landscape (during the 2.5 s crossfade of two landscapes two images match: the last, the new one, is taken) |
+| `shade` | `''` | the stage is not darkened |
+| `drops` | `.btn:not(.btn--ghost):not(.item .btn):not(.panel .btn:not(.btn--primary)), .topbar .chip.btn--icon, .wa-tropfen` | free over the stage and in sheets every button that is no ghost; on a panel only the primary one; the three round buttons of the top bar |
+| `ringOn` | `.glass.panel, .wa-becken, .sheet` | |
+| `ringFrom` | `.btn:not(.btn--ghost):not(.sheet__body .btn):not(.item .btn), .wa-tropfen, .panel .check, .wa-becken .wa-haken` | also the plain glass buttons of a panel send a ring |
+| `bar` | `.dock, .wa-markierung` | |
+| `light` | `.glass.panel, .wa-becken, .sheet, .wa-bogen` | |
+| `scrollers` | `.panel__body, .sheet__body` | |
+
+A moving MOUSE counts as a touch for the water's clock (looked at once a second at most; on a phone nothing changes: a
+finger always begins with `pointerdown`).
+
 An empty selector switches its feature off. Helper elements the script makes (all `aria-hidden`, no clicks, React
 may throw them away at any time): `canvas.w3-drop` in every drop (attribute `data-w3="on"` on the button while its
 drop is drawn), `i.wa-floor > i.wa-ring` for the 1.1 s of the ring (removed after 1.7 s at the latest),
@@ -240,9 +257,9 @@ colour) and is handed over as light and shade laid over the real pixels. A wrong
 light a little.
 
 **Sleep, rest, no motion - how it is wired.** One clock (Teil 1: `doze()`, `wake()`): after `sleep` ms without
-touch, scroll or key the drops come to rest and the root gets `data-wa-ruht`; the next touch removes it. CSS follows:
+touch, scroll, key or a moving mouse the drops come to rest and the root gets `data-wa-ruht`; the next touch removes it. CSS follows:
 `--wa-lauf` is `running`, `paused` on `[data-wasser][data-wa-ruht]`, and paused for the page behind an open sheet
-(`mobil.css`, 7). Never paused: answers to a change of state (a toast must be able to land while the water sleeps).
+(`mobil.css`, 7; `desktop.css`, 7). Never paused: answers to a change of state (a toast must be able to land while the water sleeps).
 The clock also runs without WebGL. A hidden page: the browser stops drawing; `visibilitychange` wakes.
 
 **The governor of the drops** (Teil 1, `LEVELS`): pictures that keep eating more than 80 % of their time slot for
@@ -272,6 +289,17 @@ pictures, at most 0.1 s each: at 12 pictures a second 20 s take about 25 s by th
   `--wa-lauf-*`, `--wa-atmet*`).
 - **Mobile shell** (`mobil.css` part 1): `--wa-page-dark`, the bar (`--wa-bar-lift`, `--wa-bar-side`, `--wa-r-bar`,
   `--wa-r-tab`, `--wa-scrim-over`, `--wa-tab-*`).
+- **Desktop shell** (`desktop.css` part 1): the app's text colours, the panels (`--wa-r-panel-1..3`,
+  `--wa-panel-shelf`, `-deep` and their softness: the depth of a shallow basin; `--wa-panel-ruhe`: the rim light at
+  rest), free labels (`--wa-frei`, `--wa-frei-ink-2`, `--wa-frei-feld`, `--wa-r-chip`), the dock (`--wa-r-dock`,
+  `--wa-r-tab`, `--wa-tab-lens`), the drawer (the Bogen tokens re-declared, `--wa-bogen-zug`, `--wa-scrim`,
+  `--wa-scrim-blur: none`), the pointer (`--wa-zeiger`, `--wa-zeiger-film`, `--wa-zeiger-licht`, `--wa-haken-hit`).
+- **The two tone tokens of a wide stage** (`kern.css` part 1, last two of each tone; read by `desktop.css` only):
+  `--wa-weit-tiefe` (how much of a basin's depth is left where the painted scene is the star: dunkel .7, klar 1) and
+  `--wa-weit-grund` (what a sheet does to the scene seen THROUGH it, a filter function added to its blur: dunkel
+  `brightness(.88)`, klar `brightness(.7)`). The second one is the desktop's stand-in for the page's darkening
+  (`--wa-page-*`): without it light text has no ground by day in the tone "klar". Turn them with
+  `node scripts/wasser/desktop.mjs kontrast` open: lighter water costs contrast at once (numbers in section 11).
 
 The motion language:
 
@@ -468,6 +496,34 @@ Motion, found on 14.11.
     and 10.1 with the floor light, in "dunkel"), and a lighter page under a card lifts it for good (cure:
     `--wa-drop-veil`).
 
+Desktop, found on 14.11.
+47. **An ancestor whose opacity is ANIMATED is a backdrop root for good when the animation has `fill-mode: both`.**
+    The search panel lies inside its scrim, the scrim fades in with `both`: the panel's own `backdrop-filter` saw
+    nothing behind the scrim (sharp words of the page between the hits, in "klar"). `desktop.css` takes the scrim's
+    animation away. A drawer is a SIBLING of its scrim: no such problem.
+48. **The app styles some places inline, and an inline style beats every rule.** Small selects carry
+    `padding: 3px 6px` inline (11 places, also in sheets): the room the block "Feld" keeps for its arrow is gone and
+    the arrow lies on the text. `desktop.css` gives it back with `!important` (part 5). The same root cause is in the
+    sheets of the PHONE (drying profile, status selects) and was left there to keep its pictures identical - see
+    "Open". Also inline: the blue line of the current version (`border: 1px solid #7cc6ff`), the place of the large
+    panel (`bottom: 10.5%`, used to find it).
+49. **A row of labels in a flex box is not a row of equal children.** The dock's "3D-Druck" was 5 px wider than its
+    neighbours, the marker stood 1.75 px off; with `flex: 1 1 0` the label wrapped. The dock is a grid of `1fr`
+    columns now (every column as wide as the longest label needs).
+50. **A class of both shells in a list changes both shells.** `.brand` in the Wasserlinie list turned the phone's
+    brand focus ring white (found by `vergleich.mjs stile`, pressed / focused). Scoped: `:where(.topbar) .brand`.
+51. **On the desktop pausing the lights saves nothing** (measured: 144 against 148 ms per picture): the stage itself
+    never rests, every blurred sheet is blurred again for every picture anyway. What costs is the blur (about half of
+    the look's extra work) and the drops (about a tenth).
+52. **The stage can be scrolled by 40 px** (the landscape is drawn 4 % larger; `overflow: hidden` still scrolls by
+    script). Playwright scrolls what it clicks "into view": after a click everything may stand 40 px to the left in a
+    screenshot. No person can do that; `desktop-lib.mjs` puts the stage back before every picture (`still()`).
+53. **The app's theme must be "dunkel" wherever the look is on.** By day the app switches to its light theme (dark
+    text, 17 rules `:root[data-theme="hell"] ...`); `desktop.css` re-declares the text colours on its root, but the
+    light pills, rows and buttons of those rules would stay. The preview tools hold the theme (`einspielen.js`).
+54. **A filmstrip of the desktop:** pause only the animations of the interface (`.ui`), not the stage's own - the
+    islands' flight and the leaves are the app's, and the drops must follow them (`desktop.mjs film`, `grab()`).
+
 ---
 
 ## 8. Tools (`scripts/wasser/`, run from the repository root)
@@ -485,6 +541,15 @@ Motion, found on 14.11.
 | `kontrast.mjs [--app]` | WCAG contrast of the texts - and of the labels on drops - against the pixels really behind the glyphs |
 | `messen.mjs ruhe\|takt` | alive but calm (pixels that change at rest, glyph pixels); frames a second coupled to the compositor (`--css '<rules>' --mal 3`: what does a change buy?) |
 | `keyframes.mjs` | prints the keyframes of the loops at rest |
+| `desktop.mjs zeigen` | THE DESKTOP TEMPLATE IN YOUR OWN BROWSER: a small server with the built app (`dist/`) and the template on top - `http://localhost:4320`. Wide window = desktop, narrow = phone. The tone follows the app's setting "Erscheinungsbild"; `?ton=klar`, `?ton=dunkel`, `?ohne=1` (the app as it is), `?weich=aus` (no blur), `?leben=1.5` |
+| `desktop.mjs bild <out>` | stills of the real app at desktop size: the eight worlds; `--alles`: sheets, forms, search, keyboard focus, toast, the empty workspace. `--format 2000\|1920`, `--zeit nacht\|tag\|morgen\|abend`, `--ton klar`, `--look ohne` (today's desktop) |
+| `desktop.mjs film <out>` | filmstrips: ruhe, dock, druck (press and ring), zeiger (hover), zeiger-panel, bogen (the drawer) |
+| `desktop.mjs kontrast` | WCAG contrast of 50 kinds of text on the desktop, both tones, by night and by day |
+| `desktop.mjs pruefen` | 22 checks: live drops per world (3 to 12, none free over an island), the marker, the drawer, the search, the toast, keyboard focus, sleep and waking by the mouse, reduced motion, stop / start, and "nothing has moved" against the app without the look |
+| `desktop.mjs takt` | what the look costs: pictures a second and work per picture - today's app, the template, the template without lights / drops / blur |
+| `desktop.mjs clip <out.mp4>` | a tour through the real app as a film (screencast, a drawn pointer) |
+| `desktop-lib.mjs` | `openDesktop({ look, format, ton, zeit, wetter, engine, reduced, start })`: the real app at 2000 x 993 or 1920 x 1080 with a fixed hour and made-up weather, the template injected once; `go`, `welt`, `project`, `sheet`, `search`, `toast`, `bereich`, `shot`, `park`, `still` |
+| `einspielen.js` | the browser script the desktop tools inject: root attribute for whichever shell is mounted, `Wasser.start()` with its options, the app's theme held at "dunkel", the tone from what the app wanted |
 
 All take `--engine chromium|webkit` (the screencast tools: Chromium only), most `--ton klar` or `--toene dunkel,klar`,
 `--look vorlage|<folder>|ohne` (a folder is another copy of the template, or an earlier `look.css` + `look.js`).
@@ -668,7 +733,16 @@ with pretended costs or forced levels, never by a machine that really got slow a
    es2022: the build lowers the nesting (no `&` left), keeps both `backdrop-filter` properties, CSS 50 KB (10 KB
    gzip), script 38 KB (15 KB gzip); tokens, blocks, `start()` and `stop()` work in the built page.
 2. `Mobile()`: root `<div className="m-shell" data-wasser="mobil">`, the hook once.
-3. Tone: `src/App.tsx` sets `document.documentElement.dataset.theme` today and forces "dunkel" on mobile. Keep the
+   Desktop: `Stage` (`src/scene/Stage.tsx`): root `<div className="stage" data-wasser="desktop" ...>`, and the hook with
+   the desktop's options in `App()` beside the stage: `useWasser(window.Wasser.DESKTOP)`. One instance at a time: when
+   the window crosses 900 px React swaps the two shells, the clean-up of one hook stops the look, the other starts it
+   (`scripts/wasser/einspielen.js` does the same by hand for the preview - read it, it is 40 lines).
+   Then take the three inline styles away that `desktop.css` has to fight (each rule there says so): give the large
+   panel of druck, material, wetter and archiv a class (`<Panel className="panel--haupt">`) and name it in
+   `desktop.css` part 2 instead of `[style*="bottom:"]`; mark the current version with a class instead of the inline
+   blue border (`ProjektInnen.tsx`); drop the inline paddings of the small selects (11 places).
+3. Tone: `src/App.tsx` sets `document.documentElement.dataset.theme` today and forces "dunkel" on mobile (on the
+   desktop it follows the setting - by day the old light theme with DARK text: that must go). Keep the
    app's theme at "dunkel" wherever the look is on (the look has light text in both tones; the app's
    `[data-theme="hell"]` rules are NOT the light mode of the look) and set `data-wa-ton` from `settings.theme`:
    Dunkel -> no attribute, Hell -> `klar`, Automatisch -> by `DARK_LOOKS` (`src/scene/looks.ts`). A live switch
@@ -678,9 +752,11 @@ with pretended costs or forced levels, never by a machine that really got slow a
 5. After the build grep the CSS for both `backdrop-filter` properties (pitfall 8), then `vergleich.mjs` against the
    built app is not possible as such - use `bild.mjs app --look ohne` on the new build and compare by eye with
    `docs/wasser-look/bilder/mobil`, and run `pruefen.mjs`-like checks by hand.
-6. `scripts/verify.mjs` was never run against a build with the look. Known to matter: a card has one more child
-   (`<i class="wa-licht">`), every drop button has a `<canvas>` as first child, a removed toast leaves a copy for
-   0.26 s, the ring appears on release.
+6. `scripts/verify.mjs` was never run against a build with the look. Known to matter: a card (and a desktop panel)
+   has one more child (`<i class="wa-licht">`), every drop button has a `<canvas>` as first child, a removed toast
+   leaves a copy for 0.26 s, the ring appears on release, the dock is a grid and 21 px wider.
+7. After building it in: `node scripts/wasser/desktop.mjs pruefen` needs one change - it injects the template; point
+   it at the built app without injecting (`--look ohne` opens the app as it is).
 
 ---
 
