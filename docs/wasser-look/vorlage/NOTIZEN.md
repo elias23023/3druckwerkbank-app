@@ -1,7 +1,7 @@
 # Wasser-Look, the template: notebook for whoever applies it
 
 State 14.11. (packed 13.11.; the corrections after the two checkers of the package are in: section 9, "What changed on
-14.11."). Written for a helper who has not seen the look being built. German names of the building blocks are
+14.11."; the DESKTOP template was added on 14.11.: section 11). Written for a helper who has not seen the look being built. German names of the building blocks are
 kept (they are the names the owner knows). Read `LIESMICH.md` first for what is where and how to look at it; the
 owner's decisions are in `docs/wasser-look/entwurf/entscheidungen.md` and override everything here.
 
@@ -15,12 +15,12 @@ a stylesheet and a script injected under `.m-shell`) by restructuring, plus the 
 
 | | |
 |---|---|
-| Files | `kern.css` (the look), `mobil.css` (what only the mobile shell needs), `desktop.css` (empty, for the next step), `wasser.js` (the script). Load order: the app's own stylesheets, then these three, then the script. |
-| Switch | The attribute `data-wasser` on a root element. Every rule of `kern.css` starts with `[data-wasser]`, every rule of `mobil.css` with `[data-wasser="mobil"]`. The script looks only inside the root (option `root`, default `[data-wasser]`). No attribute: the app as it is. |
-| Tones | `dunkel` (default) = dark mode, `klar` (`<html data-wa-ton="klar">`) = light mode. One block of 55 tokens each in `kern.css`, part 1, same tokens in the same order. No other rule mentions `data-wa-ton`; the script has no tone logic. Text is light in BOTH tones. |
+| Files | `kern.css` (the look), `mobil.css` (what only the mobile shell needs), `desktop.css` (what only the desktop shell needs), `wasser.js` (the script). Load order: the app's own stylesheets, then these three, then the script. |
+| Switch | The attribute `data-wasser` on a root element: `data-wasser="mobil"` on `.m-shell`, `data-wasser="desktop"` on `.stage`. Every rule of `kern.css` starts with `[data-wasser]`, every rule of `mobil.css` with `[data-wasser="mobil"]`, every rule of `desktop.css` with `[data-wasser="desktop"]`. The script looks only inside the root (option `root`, default `[data-wasser]`). No attribute: the app as it is. |
+| Tones | `dunkel` (default) = dark mode, `klar` (`<html data-wa-ton="klar">`) = light mode. One block of 57 tokens each in `kern.css`, part 1, same tokens in the same order (the last two, `--wa-weit-*`, are read by the desktop shell only). No other rule mentions `data-wa-ton`; the script has no tone logic. Text is light in BOTH tones. |
 | Tokens | Every colour, radius, gradient, shadow, duration and easing is a `--wa-*` custom property on `[data-wasser]` (`kern.css` parts 1 to 3; the mobile shell's own in `mobil.css` part 1). One more name is read by the drops: `--water-under` (set by sheets). |
 | Blocks | Each building block is ONE nested rule with ONE selector list (`kern.css` part 4). Apply a block by adding a selector to its list, or by giving an element the block's neutral class `.wa-...`. |
-| Script | `Wasser.start(options)` / `Wasser.stop()`; `Wasser.MOBIL` = the default options (the mobile shell); `Wasser.info` = state of the drops. One global, one instance. |
+| Script | `Wasser.start(options)` / `Wasser.stop()`; `Wasser.MOBIL` = the default options (the mobile shell), `Wasser.DESKTOP` = the options of the desktop shell; `Wasser.info` = state of the drops. One global, one instance. |
 | No motion | `prefers-reduced-motion: reduce`, or the app's switch `data-motion="reduziert"` on `<html>`: every block carries both rules itself, nested at its end; the script checks `still()` before every animation. |
 | Without the script | The still look with plain glass buttons (no drops, no ring, no light helpers, the marker glides). Without WebGL: the same, but ring, marker, light and sleep work. |
 
@@ -28,7 +28,14 @@ Why the lists are in `kern.css` also for elements that exist only in the mobile 
 `.m-ico` ...): CSS cannot add to a selector list from another file. The alternative would be a second copy of every
 block per shell. So: block definitions and ALL lists in `kern.css` (mobile entries are marked `mobil`), everything a
 shell needs beyond the blocks in its own file. (`.m-ico` also stands in the two lines of "Tropfen" that say which
-drops are round.)
+drops are round.) The desktop's elements are in the same lists, marked `desktop`.
+
+**The weight of a list entry.** A list weighs as much as its heaviest entry, and the rules of the shells are written
+against that weight. Every entry today weighs at most TWO classes (in "Etikett", "Etikett auf Wasser", "dichtes
+Wasser", "Markierung", "Bogen", "Feld", "Haken", "Pegel", the rows of "Perle mit Schrift": ONE). A new entry that needs
+more to be found is written with the surplus inside `:where()`, which weighs nothing:
+`.panel .glass:where(.col)`, `.chip:where(:not(.btn--icon))`, `:where(.topbar) .brand`, `.panel .item--click:where(.item)`.
+An entry that is heavier changes the phone without a word (pitfall 1); `vergleich.mjs stile` shows it.
 
 Dosage, as told to the owner: the more often something appears on a screen and the more text it carries, the less
 water. Drops and the marker are the only glossy things; sheets are still; troughs carry the text.
@@ -42,27 +49,27 @@ water. Drops and the marker are the only glossy things; sheets are still; trough
 
 | Block | Stufe | Neutral class | In the list today | Script | The element needs |
 |---|---|---|---|---|---|
-| **Tropfen** (drop button) | 3 | `.wa-tropfen`, round: `+ .wa-tropfen--rund` | `.btn:not(.btn--ghost)`; mobil `.m-ico` | `drops` (and `ringFrom`) | nothing. Amber / red: classes `btn--primary` / `btn--danger` (options `primary`, `danger`). A sheet under it should set `--water-under`. |
+| **Tropfen** (drop button) | 3 | `.wa-tropfen`, round: `+ .wa-tropfen--rund` | `.btn:not(.btn--ghost)`; mobil `.m-ico`; desktop `.chip.btn--icon` | `drops` (and `ringFrom`) | nothing. Amber / red: classes `btn--primary` / `btn--danger` (options `primary`, `danger`). A sheet under it should set `--water-under`. |
 | **Film** (ghost button) | 1 | - | `.btn.btn--ghost` | - | - |
-| **Etikett** (pill) | 1 | - | `.pill`: a glass bead free over the scene; flat on the sheets of the list "Etikett auf Wasser" | - | - |
-| **Becken** (sheet with depth) | 2 | `.wa-becken` | mobil `.glass.m-card` | `ringOn`, `light` | about 100 px and more in both directions; its own padding. Sets `position: relative`. |
-| **stilles Wasser** (plain sheet) | 2 | `.wa-wasser` | mobil `.glass.m-stat` | (`light` if it should have the helper) | its own padding. Sets no position. |
-| **dichtes Wasser** (content scrolls under it) | 2 | `.wa-wasser--dicht` | `.sheet`, `.toast`, `.cmd`; mobil `.m-tabs` | - | its own border-radius and place |
-| **Bogen** (bottom sheet) | 2 | `.wa-wasser--dicht.wa-bogen` | `.sheet` | `ringOn`, `light`, `modal`, `scrollers` | its place at the bottom edge, `overflow: hidden`, padding; a scrim behind it (`.sheet-back`) |
+| **Etikett** (pill) | 1 | `.wa-etikett` | `.pill`; desktop `.chip` (not the round ones): a glass bead free over the scene; flat on the sheets of the list "Etikett auf Wasser" (desktop: `.panel`, `.wchip`) | - | its own fill |
+| **Becken** (sheet with depth) | 2 | `.wa-becken` | mobil `.glass.m-card`; desktop `.glass.panel` | `ringOn`, `light` | about 100 px and more in both directions (smaller: re-declare the depth tokens, as `desktop.css` does); its own padding; a position (it sets none: an absolutely placed element keeps its place - the shell gives `position: relative` where there is none) |
+| **stilles Wasser** (plain sheet) | 2 | `.wa-wasser` | mobil `.glass.m-stat`; desktop `.glass.wchip` | (`light` if it should have the helper) | its own padding. Sets no position. |
+| **dichtes Wasser** (content scrolls under it) | 2 | `.wa-wasser--dicht` | `.sheet`, `.toast`, `.cmd`; mobil `.m-tabs`; desktop `.dock` | - | its own border-radius and place |
+| **Bogen** (bottom sheet; on the desktop a drawer) | 2 | `.wa-wasser--dicht.wa-bogen` | `.sheet` | `ringOn`, `light`, `modal`, `scrollers` | its place, `overflow: hidden`, padding; a scrim behind it (`.sheet-back`). Its shape is tokens (`--wa-r-bogen`, `--wa-bogen-rim`, `--wa-bogen-lift`, `--wa-bogen-fuss`, `--wa-kamm`), its entrance an `animation-name` |
 | **Tropfen-Hinweis** (toast) | 2 | `.wa-wasser--dicht.wa-hinweis`, error `+ .wa-hinweis--fehler` | `.toast` (also in "dichtes Wasser" and "Lichtlauf") | `toasts` | position, padding |
 | **Setzen** (a sheet arrives) | - | `.wa-setzt` | nothing (ready for a sheet without an entrance of its own) | - | several at once: `animation-delay` in steps of `--wa-t-step` |
-| **Mulde** (trough) | 1 | `.wa-mulde`, tappable `.wa-mulde--tipp` | rows in sheets (`.sheet .item` ...); mobil `.m-card .m-row`, `.m-card .m-stat` | - | lies on a sheet; its own padding |
+| **Mulde** (trough) | 1 | `.wa-mulde`, tappable `.wa-mulde--tipp` | rows in sheets (`.sheet .item` ...); mobil `.m-card .m-row`, `.m-card .m-stat`; desktop: rows, hour tiles, slots, gallery cards, tab groups and nested boxes of a panel | - | lies on a sheet; its own padding |
 | **Feld** | 1 | `.wa-feld`, a select `+ .wa-feld--auswahl` | `.input`, `.select`, `.textarea` | - | padding, font size 16 px |
 | **Wahl** (one of several) | 1 | group `.wa-wahl`, chosen child `.on` | `.pills > .pill` (`pill--on`), `.seg > button`, `.tabs > button`, `.tile`, `.island-lib > button` | `groups`, `chosen` | padding per label |
 | **Haken** (check) | 1 | `.wa-haken`, ticked `.on`, skipped `.wa-haken--aus` | `.check` (`check--on`, `check--skip`) | `ringFrom`, `tick`, `ticked` | width, height, `border-radius: 50%` |
 | **Pegel** (progress) | 1 | `.wa-pegel > i`, amber `.wa-pegel--amber` | `.progress`; the form's `.steps` are a Pegel in pieces | `levels` | tube: height, radius, `overflow: hidden`; `<i>`: `display: block; height: 100%`, width in % inline |
-| **Perle** (icon bead) | 1 | `.wa-perle` | `.btn.btn--icon.btn--ghost` | - | width and height (28 px and more) |
-| **Perle mit Schrift** | 1 | - | buttons inside the ROWS `.item`; mobil `.m-row` | left out of `drops` and `ringFrom` | - |
+| **Perle** (icon bead) | 1 | `.wa-perle` | `.btn.btn--icon.btn--ghost`; desktop `.glass.carousel-nav` | - | width and height (28 px and more; the desktop has some of 22 px, they hold). Its press is a `transform`: an element that is placed by a transform of its own must repeat it in its `:active` (the carousel arrows do) |
+| **Perle mit Schrift** | 1 | - | buttons inside the ROWS `.item`; mobil `.m-row`; desktop: every plain button on a `.panel` | left out of `drops` and `ringFrom` | - |
 | **Ring** (answer to a tap) | - | helper `.wa-floor > .wa-ring` (made by the script) | - | `ringOn`, `ringFrom` | the sheet: `position: relative; isolation: isolate` |
-| **Markierung** (flowing marker) + **Atmen** | - | `.wa-markierung` | mobil `.m-tabs` | `bar`, `tabOn` | equal children, the active one has class `on`; `--wa-bar-tabs: <n>`; a position and `isolation: isolate` |
+| **Markierung** (flowing marker) + **Atmen** | - | `.wa-markierung` | mobil `.m-tabs`; desktop `.dock` | `bar`, `tabOn` | EQUALLY wide children without a gap (a flex row of labels is not: the dock is a grid of `1fr` columns), the active one has class `on`; `--wa-bar-tabs: <n>` (up to nine); a position and `isolation: isolate` |
 | **Wasserlinie** (keyboard focus) | - | - | two lists (wide gap for drops and pills, narrow for the rest) | - | - |
 | **Licht**, **Bodenlicht**, **Zug**, **Schwappen** | - | helper `.wa-licht > .wa-boden` (made by the script) | - | `light`, `scrollers` | the sheet: a position and `isolation: isolate` |
-| **Lichtlauf** | - | `.wa-lichtlauf` | `.toast`, `.cmd`; mobil `.m-tabs`, `.glass.m-stat` | - | a position and `isolation: isolate`; its `::after` free |
+| **Lichtlauf** | - | `.wa-lichtlauf` | `.toast`, `.cmd`; mobil `.m-tabs`, `.glass.m-stat`; desktop `.dock` | - | a position and `isolation: isolate`; its `::after` free |
 | **Ruhe** (sleep) | - | attribute `data-wa-ruht` on the root, token `--wa-lauf` | - | `sleep`, `modal` | every loop at rest: `animation-play-state: var(--wa-lauf)` |
 
 Pseudo-elements a block takes (do not use them for something else on such an element): Tropfen `::before` (hit area);
@@ -80,8 +87,13 @@ checks that it paints and moves; `--bild out.png` keeps the picture.
 ## 3. Recipes
 
 **Apply a block to another element.** Open `kern.css`, find the block, add the selector to its list on a line of its
-own with a note (`/* desktop: the side panels */`). If the block's comment names script options, pass the same
-selector there. Run `vergleich.mjs` (nothing else may change) and `pruefen.mjs`.
+own with a note (`/* desktop: the side panels */`). Keep the entry at the weight of the list - at most two classes,
+everything beyond that inside `:where()` (section 1, "The weight of a list entry"). If the block's comment names script
+options, pass the same selector there (for the desktop: in `Wasser.DESKTOP`, `wasser.js`). Run `vergleich.mjs` (nothing
+else may change), `pruefen.mjs` and, for the desktop, `desktop.mjs pruefen`.
+
+**A class that both shells have, applied for one shell only** (the brand button of the header): scope it with a class
+only that shell has, inside `:where()` - `:where(.topbar) .brand`. Without the scope the phone changes too.
 
 **Change one member of a block afterwards.** A list has the weight of its heaviest entry: `.glass.m-card` makes the
 whole Becken rule weigh three classes. A later rule with less weight loses silently. Write the change nested inside
@@ -120,9 +132,11 @@ A small or dense sheet: class `wa-lichtlauf` (or its list) instead of the helper
 the light ends 30 px before the far corner (see `.glass.m-stat` in `mobil.css`).
 
 **A new bottom sheet, modal or drawer:** `.wa-wasser--dicht.wa-bogen` (or the lists). Another shape: re-declare
-`--wa-r-bogen` (four round corners), `--wa-bogen-rim`, `--wa-bogen-lift` for that shell and give it another
-`animation-name`; drop the `0 30px 0 0` layer of its box-shadow if it does not touch the bottom edge. Rows inside are
-Mulde, fields Feld. The blur goes on the scrim (`--wa-scrim-blur`), never on the sheet. Add it (or its scrim) to the
+`--wa-r-bogen` (four round corners), `--wa-bogen-rim`, `--wa-bogen-lift`, `--wa-bogen-fuss` (`0 0 0 0 transparent`
+when it does not stand on the bottom edge) and `--wa-kamm` for that shell and give the element and its `::before`
+another `animation-name` - `desktop.css`, part 6, is the worked example (a drawer from the right). Rows inside are
+Mulde, fields Feld. On the phone the blur goes on the scrim (`--wa-scrim-blur`), never on the sheet; over a page that
+never rests (the desktop stage) it is the other way round: no blur on the scrim, the sheet carries its own. Add it (or its scrim) to the
 option `modal` and to the rule "Ruhe hinter einem Bogen" of the shell, so the page behind it rests.
 
 **A drop on a new kind of element:** list of "Tropfen" (and the round list if it is round) + option `drops`. If it
