@@ -641,7 +641,7 @@ git log --oneline -5 origin/main                     # wie weit main ist
 
 ### 8.2 So ist er eingebaut
 
-Zum Nachprüfen und für jeden, der daran weiterbaut. Stand: dieser Branch nach Schritt 5 und 6.
+Zum Nachprüfen und für jeden, der daran weiterbaut. Stand: dieser Branch nach Schritt 5, 6 und 8.
 
 - **`src/wasser/kern.css`, `mobil.css`, `desktop.css`, `wasser-skript.js`** sind Kopien der Vorlage, jede mit einer Kopfzeile „Kopie – nicht von Hand ändern“. Geholt werden sie mit `node scripts/wasser/uebernehmen.mjs`. Das Skript heißt in der App `wasser-skript.js`: Neben `wasser.ts` fände ein Import ohne Endung eine `wasser.js` zuerst.
 - **`src/wasser/wasser.ts`** lädt die Stylesheets und das Skript und stellt den Haken bereit. Die ganze Datei (ihre Kommentarzeilen am Kopf sind hier zu zwei Randbemerkungen gekürzt):
@@ -656,7 +656,7 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand: dieser Branch nach 
   import './wasser-skript.js'; // Nebenwirkung: window.Wasser
   import { useEffect } from 'react';
 
-  declare global { interface Window { Wasser: { start(o?: Record<string, unknown>): unknown; stop(): unknown; DESKTOP: Record<string, unknown> } } }
+  declare global { interface Window { Wasser: { start(o?: Record<string, unknown>): unknown; stop(): unknown; warm?(img: HTMLImageElement | HTMLImageElement[]): unknown; DESKTOP: Record<string, unknown> } } }
 
   /** Startet das Skript des Looks, solange die Komponente steht. Genau einmal je Wurzel verwenden.
    *  on = false: Die Wurzel dieses Aufrufs steht gerade nicht (App() ruft den Hook für die Bühne immer auf, auch am Handy). */
@@ -666,7 +666,7 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand: dieser Branch nach 
   ```
 
   Die Zeile `eslint-disable-line` gehört dazu: Die Abhängigkeiten des Effekts sind mit Absicht nur `[on]` (die Optionen ändern sich nie).
-- **`src/mobile/Mobile.tsx`**, drei Zeilen. Wo der Aufruf unter den Hooks von `Mobile()` steht, ist gleich:
+- **`src/mobile/Mobile.tsx`**, drei Zeilen für den Look. Wo der Aufruf unter den Hooks von `Mobile()` steht, ist gleich:
 
   ```diff
    import './mobile.css';
@@ -678,6 +678,34 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand: dieser Branch nach 
   -    <div className="m-shell" data-look={look}>
   +    <div className="m-shell" data-wasser="mobil" data-look={look}>
   ```
+
+  Dazu seit Schritt 8 das Vorladen der Szenen (eine Sache der App, die dem Look die Bilder übergibt; ohne Look tut `warm` nichts):
+
+  ```tsx
+  const sceneSrcSet = (k: string) => `/img/szene-${k}-640.webp 640w, /img/szene-${k}-1280.webp 1280w`;
+  const TAB_SCENES = ['start', 'heute', 'projekte', 'material', 'druck'];   // the scenes of the five tabs ("Mehr" opens on "druck")
+  function usePreloadScenes(current: string) {
+    useEffect(() => {
+      const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+      if (nav.connection?.saveData) return;
+      const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+      let idle = 0; const imgs: HTMLImageElement[] = [];
+      const load = () => {
+        for (const k of TAB_SCENES) {
+          if (k === current) continue;
+          const img = new Image(); img.decoding = 'async'; img.setAttribute('fetchpriority', 'low');
+          img.sizes = '100vw'; img.srcset = sceneSrcSet(k); img.src = `/img/szene-${k}-1280.webp`;   // (sizes before srcset, as the page has them)
+          imgs.push(img);
+        }
+        window.Wasser?.warm?.(imgs);
+      };
+      const t = window.setTimeout(() => { idle = w.requestIdleCallback ? w.requestIdleCallback(load, { timeout: 3000 }) : window.setTimeout(load, 0); }, 1200);   // after the first pictures of the start
+      return () => { window.clearTimeout(t); if (idle) { if (w.cancelIdleCallback) w.cancelIdleCallback(idle); else window.clearTimeout(idle); } };
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }
+  ```
+
+  In `Mobile()` steht `usePreloadScenes(scene);` gleich unter der Zeile, die `scene` bestimmt, und das `<img>` der Szene nimmt `srcSet={sceneSrcSet(scene)}` – dieselbe Zeichenkette wie das Vorladen, sonst wählt der Browser vielleicht eine andere Größe und lädt doppelt. (Der Kommentar über der Funktion ist hier weggelassen.)
 
 - **`src/scene/Stage.tsx`**, ein Attribut an der Bühne:
 

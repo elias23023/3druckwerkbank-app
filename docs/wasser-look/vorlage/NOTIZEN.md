@@ -305,8 +305,9 @@ seen before. Now:
 - **`Wasser.warm(imgs)`**: images the page will show later (the app hands in the scenes of the other tabs, loaded with
   the same `srcset` and `sizes` in a quiet moment after the start: `usePreloadScenes` in `src/mobile/Mobile.tsx`). They
   are made one at a time while nothing else is being made and the page's own scene is ready, and fill the store up to
-  `KEEP - 1`. Measured worth it: without it the first visit of a tab showed the old scene in the header drops for
-  0.1 to 0.6 s on this machine (the guide's step 8 lists exactly that under "must not happen").
+  `KEEP - 1`. Measured worth it: without it the first visit of a tab showed the old scene in the header drops for a
+  quarter of a second in the median, up to 1 s, on this machine (the guide's step 8 lists exactly that under "must not
+  happen"); with it 45 ms, as on a second visit.
 - **The texture size stays 2048 x 1024**: 1024 x 512 (and 1024 x 1024) were compared at 3x - the gear drop of
   "Projekte" over leaves is visibly softer when enlarged (up to 27/255 on 0.5 % of its pixels); the drops over sky
   differ by 1/255. Pictures and numbers: the finding.
@@ -321,8 +322,8 @@ seen before. Now:
 **The first frame of a new screen** (tab, world, a sheet: `scan()` found new drops) goes out without the drops' work;
 their first water picture follows in the next frame. The new buttons show their plain glass for that one frame - they
 arrive inside cards, panels and sheets that enter from opacity 0, so it is not seen. With reduced motion (no entrance)
-they are drawn at once, as before. On this machine the drops' picture is the expensive part (WebGL in software): this
-alone brought the new screen 60 to 80 ms earlier.
+they are drawn at once, as before. On this machine the drops' picture is the expensive part of a change (WebGL in
+software; measured alone: see the finding).
 
 **Behind a sheet** (`modal`; finding `docs/wasser-look/entwurf/stehenbleiben/BEFUND.md`). A drop that goes behind an
 open sheet finishes its answer first: the press springs back, a running ring fades within `RING_OUT` (300 ms), and at

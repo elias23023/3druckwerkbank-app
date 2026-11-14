@@ -6,7 +6,7 @@
 //        [--netz langsam] [--format 2000,1920] [--look eingebaut|ohne|vorlage|<folder>|git:<rev>] [--ohne] [--json <file>]
 //
 //   handy       390 x 844 @3x, touch: Heute, Projekte, Material, Mehr, Start (first visits), the same five again (second visits)
-//   desktop     2000 x 993 and 1920 x 1080 (--format), the dock: Heute, Projekte, Druck, Material, Wetter, Archiv, Start, twice
+//   desktop     2000 x 993 and 1920 x 1080 (--format), the dock: Heute, Projekte, 3D-Druck, Material, Wetter, Archiv, Start, twice
 //   landschaft  desktop 2000 x 993: the clock stands 15 s before the look of the hour changes (13.11., 16:09:45; without
 //               weather the app takes sunset 17:00, at 16:10 "nachmittag" turns "golden": the landscape goes from herbst-mittag
 //               to herbst-abend with the app's 2.5 s crossfade) and the 20 s around it are watched
@@ -82,7 +82,7 @@ const INSTRUMENT = () => {
 };
 // one change: click the button of a bar whose text is NAME, and watch for MS ms
 const CHANGE = ([bar, name, sceneSel, ms]) => new Promise((resolve) => {
-  const btn = [...document.querySelectorAll(bar)].find((b) => b.textContent.trim() === name); if (!btn) { resolve({ name, err: 'no button ' + name }); return; }
+  const btn = [...document.querySelectorAll(bar)].find((b) => (b.querySelector('span') || b).textContent.trim() === name); if (!btn) { resolve({ name, err: 'no button ' + name }); return; }   // (by its label: a dock button also carries its key)
   const rw = window.__rw; rw.calls.length = 0; const t0 = performance.now(); const o = { name };
   const lastImg = () => { const all = document.querySelectorAll(sceneSel); return all.length ? all[all.length - 1] : null; };
   const mo = new MutationObserver(() => { if (btn.getAttribute('aria-current') === 'page' && o.commit === undefined) { o.commit = performance.now() - t0; mo.disconnect(); o.drops0 = rw.calls.length; requestAnimationFrame(() => requestAnimationFrame((ts2) => { o.bild = ts2 - t0; o.dropsUntil = ts2; })); } });
@@ -121,7 +121,7 @@ async function open(url, { kind, lk, format = '2000', netz = '', zeit = 0, stopp
 
 const rows = [];   // { app, drossel, art, visit, ...change }
 const BAR = { handy: '.m-tabs button', desktop: '.dock button' }, SCENE = { handy: '.m-bg img', desktop: '.land img' };
-const ORDER = { handy: ['Heute', 'Projekte', 'Material', 'Mehr', 'Start'], desktop: ['Heute', 'Projekte', 'Druck', 'Material', 'Wetter', 'Archiv', 'Start'] };
+const ORDER = { handy: ['Heute', 'Projekte', 'Material', 'Mehr', 'Start'], desktop: ['Heute', 'Projekte', '3D-Druck', 'Material', 'Wetter', 'Archiv', 'Start'] };
 async function series(kind, name, url, lk, d, extra) {
   const tag = lk === '' ? ' ohne Look' : extra.stopped ? ' gestoppt' : '';
   for (let run = 0; run < laeufe; run++) {
