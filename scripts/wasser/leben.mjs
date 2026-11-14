@@ -1,7 +1,8 @@
 // HOW MUCH LIFE? One comparison to judge on a phone: the same short walk through the REAL app, recorded once per value of
 // the master token --wa-leben (kern.css, part 3), the recordings side by side as phones, labelled, in real time.
 //
-//   node scripts/wasser/leben.mjs <out> [--werte 1,1.5] [--ton klar] [--look vorlage|<folder>] [--crf 17] [--roh <dir>]
+//   node scripts/wasser/leben.mjs <out> [--werte 1,1.5] [--ton klar] [--look auto|eingebaut|vorlage|<folder>] [--crf 17] [--roh <dir>]
+//   (--look: head of lib.mjs. Default auto = the look the app has built in.)
 //
 // Writes <out>.mp4 (H.264, yuv420p, about 15 s) and <out>.png (the same as a filmstrip, for a reader who cannot play it).
 // The walk: 6 s at rest on "Start" - a tap on the tab "Heute" (a screen of rows: the bead flows, the cards arrive, their
@@ -13,12 +14,13 @@
 // life alone. The work machine renders in software: the drops are drawn a little less often than on a phone.
 // --roh keeps the single frames (JPEG, with frames.json: file and time of each) for a closer look.
 import fs from 'fs'; import os from 'os'; import path from 'path';
-import { session, cast, encodeCast, frameAt, strip, stack, sharp, args, abs, mkdir } from './lib.mjs';
-const a = args({ werte: '1,1.5', ton: '', look: 'vorlage', crf: '17' }); if (!a._[0]) { console.log('usage: node scripts/wasser/leben.mjs <out> [--werte 1,1.5] [--ton klar] [--look vorlage|<folder>] [--crf 17] [--roh <dir>]'); process.exit(1); }
+import { session, cast, encodeCast, frameAt, strip, stack, sharp, args, abs, mkdir, lookArg, sayLook, fail } from './lib.mjs';
+const a = args({ werte: '1,1.5', ton: '', look: 'auto', crf: '17', roh: '' }, { choices: { ton: ['dunkel', 'klar'] } }); if (a._.length !== 1) fail('usage: node scripts/wasser/leben.mjs <out> [--werte 1,1.5] [--ton klar] [--look auto|eingebaut|vorlage|<folder>] [--crf 17] [--roh <dir>]', 1);
+if (a.werte.split(',').some((v) => !(+v >= 0 && +v <= 2))) fail(`--werte ${a.werte}: numbers from 0 to 2, separated by commas`); const look = lookArg(a.look); if (!look) fail('--look ohne: --wa-leben is a value of the look');
 const out = abs(a._[0]).replace(/\.(mp4|png)$/, ''); const roh = a.roh ? mkdir(abs(a.roh)) : fs.mkdtempSync(path.join(os.tmpdir(), 'wasser-leben-'));
 const werte = a.werte.split(','); const de = (v) => String(v).replace('.', ','); const s = await session({ engine: 'chromium' }); const tracks = [];
 for (const [i, wert] of werte.entries()) {
-  const h = await s.app({ look: a.look, ton: a.ton, zeit: '2026-11-12T17:42:00+01:00' }); const p = h.page; const wait = (ms) => p.waitForTimeout(ms);
+  const h = await s.app({ look, ton: a.ton, zeit: '2026-11-12T17:42:00+01:00' }); const p = h.page; const wait = (ms) => p.waitForTimeout(ms); sayLook(h);
   if (wert !== '1') await p.addStyleTag({ content: `[data-wasser] { --wa-leben: ${wert}; }` });   // after the look's own stylesheet: it wins. On the root, where the lights are built from it
   const got = await p.evaluate(() => getComputedStyle(document.querySelector('[data-wasser]')).getPropertyValue('--wa-leben').trim());
   await h.go('#/start', 3000);                                     // the light of the start screen has swung into place

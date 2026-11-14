@@ -1,6 +1,7 @@
 // A short recording of the look in motion, as MP4 (H.264; needs ffmpeg - without it the WebM of the browser stays).
 //
-//   node scripts/wasser/clip.mjs <out.mp4> [--seite app|mobil] [--look vorlage|<folder>] [--ton klar] [--engine chromium|webkit] [--scene start] [--crf 26] [--reduced] [--cast]
+//   node scripts/wasser/clip.mjs <out.mp4> [--seite app|mobil] [--look auto|eingebaut|vorlage|<folder>] [--ton klar] [--engine chromium|webkit] [--scene start] [--crf 26] [--reduced] [--cast]
+//   (--look: head of lib.mjs. Default auto = the look the app has built in; the harness page shows the template.)
 //
 //   --seite app    (default) the REAL app at phone size, a little over 20 s: at rest, a tab change, a long list scrolled and
 //                  let go, a button on a card held down, the form sheet it opens, a field focused and a few letters typed, the
@@ -15,17 +16,18 @@
 // The picture is 390 x 844 (a recording has the size of the page in CSS px). The work machine renders WebGL in software,
 // so a recording made there is choppy; the filmstrips (film.mjs) show the fine points.
 import fs from 'fs'; import { execFileSync } from 'child_process';
-import { session, cast, encodeCast, args, abs, mkdir } from './lib.mjs';
-const a = args({ seite: 'app', look: 'vorlage', ton: '', engine: 'chromium', scene: 'start', crf: '' }); a.crf = a.crf || (a.cast ? '17' : '26'); if (a.cast && a.engine !== 'chromium') { console.log('--cast needs --engine chromium'); process.exit(1); } if (!a._[0]) { console.log('usage: node scripts/wasser/clip.mjs <out.mp4> [--seite app|mobil] [--look vorlage|<folder>] [--ton klar] [--engine chromium|webkit]'); process.exit(1); }
+import { session, cast, encodeCast, args, abs, mkdir, lookArg, sayLook, fail, ENGINES, SZENEN } from './lib.mjs';
+const a = args({ seite: 'app', look: 'auto', ton: '', engine: 'chromium', scene: 'start', crf: '' }, { flags: ['reduced', 'cast'], choices: { seite: ['app', 'mobil'], engine: ENGINES, ton: ['dunkel', 'klar'], scene: SZENEN } }); a.crf = a.crf || (a.cast ? '17' : '26'); if (a.cast && a.engine !== 'chromium') fail('--cast needs --engine chromium'); if (a._.length !== 1) fail('usage: node scripts/wasser/clip.mjs <out.mp4> [--seite app|mobil] [--look auto|eingebaut|vorlage|<folder>] [--ton klar] [--engine chromium|webkit] [--cast]', 1);
+const look = lookArg(a.look, { harness: a.seite === 'mobil' }); if (!look) fail('--look ohne: there is no motion of the look to record without the look');
 const out = abs(a._[0]); const dir = mkdir(out + '.d'); const s = await session({ engine: a.engine }); const t0 = Date.now(); const mark = (m) => console.log(((Date.now() - t0) / 1000).toFixed(1).padStart(5), m);
 let h, p, rec = null; const wait = (ms) => p.waitForTimeout(ms); const video = a.cast ? null : dir;
 const tap = async (loc, hold = 90) => { const r = await loc.first().boundingBox(); await p.mouse.move(r.x + r.width / 2, r.y + r.height / 2); await p.mouse.down(); await wait(hold); await p.mouse.up(); };
 if (a.seite === 'mobil') {
-  h = await s.harness({ look: a.look, ton: a.ton, scene: a.scene, touch: true, reduced: !!a.reduced, video, settle: 0 }); p = h.page; const tab = (i) => p.locator('.m-tabs button').nth(i); if (a.cast) rec = await cast(p, dir);
+  h = await s.harness({ look, ton: a.ton, scene: a.scene, touch: true, reduced: !!a.reduced, video, settle: 0 }); p = h.page; const tab = (i) => p.locator('.m-tabs button').nth(i); if (a.cast) rec = await cast(p, dir);
   mark('at rest'); await wait(1900); mark('tab Projekte'); await tap(tab(2), 260); await wait(1350); mark('tab Material'); await tap(tab(3), 200); await wait(1100);
   mark('tab Start'); await tap(tab(0), 200); await wait(1200); mark('a card button held'); await tap(p.locator('.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon)'), 380); await wait(1300);
 } else {
-  h = await s.app({ look: a.look, ton: a.ton, reduced: !!a.reduced, video }); p = h.page; if (a.cast) rec = await cast(p, dir);
+  h = await s.app({ look, ton: a.ton, reduced: !!a.reduced, video }); p = h.page; sayLook(h); if (a.cast) rec = await cast(p, dir);
   // a finger's flick: the list runs dy px in ms, slowing down a little, and is then held (stops at once)
   const flick = (dy, ms) => p.evaluate(([dy, ms]) => new Promise((ok) => { const m = document.querySelector('.m-main'), y = m.scrollTop, t = performance.now(); const f = (now) => { const k = Math.min(1, (now - t) / ms); m.scrollTop = y + dy * (1 - Math.pow(1 - k, 1.6)); if (k < 1) requestAnimationFrame(f); else ok(); }; requestAnimationFrame(f); }), [dy, ms]);
   mark('at rest on Start'); await wait(3000);

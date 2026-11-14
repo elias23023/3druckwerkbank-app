@@ -1,23 +1,27 @@
 // Motion in numbers. Two measurements:
 //
 //   node scripts/wasser/messen.mjs ruhe [--ton klar] [--scene start] [--engine chromium|webkit] [--look vorlage|<folder>]
+//       (the harness page shows the TEMPLATE; --look auto and eingebaut mean the template there)
 //       ALIVE BUT CALM (harness page, phone view @2x): three stills at rest - now, one second later, four seconds later.
 //       Per surface (the cards, the tab bar; the drop canvases are left out): how many pixels changed, how many by 4 of 255
 //       or more, the mean change and the largest. And the glyph pixels of six kinds of text (painted magenta once to find
 //       them): text must never change by 4 or more. (It does change by 1 to 3 of 255 where its ink is see-through or a
 //       light passes under it - with a mask of ALL text about 3 % of the glyph pixels within a second; nothing the eye sees.)
 //
-//   node scripts/wasser/messen.mjs takt [--seite app|mobil] [--hash '#/start'] [--scale 3] [--engine chromium|webkit] [--ton klar] [--look vorlage|ohne] [--css '<rules>'] [--mal 1]
+//   node scripts/wasser/messen.mjs takt [--seite app|mobil] [--hash '#/start'] [--scale 3] [--engine chromium|webkit] [--ton klar] [--look auto|eingebaut|vorlage|<folder>|ohne] [--css '<rules>'] [--mal 1]
 //       THE PACE OF THE PAGE: frames a second the page gets, COUPLED to the compositor (a 2 px layer outside every sheet is
 //       moved in every frame, so each frame has to wait for the compositor - a page that commits nothing runs its frames
-//       freely and hides a compositor that crawls), and water pictures a second. For the template three times: as it is,
+//       freely and hides a compositor that crawls), and water pictures a second. With a look three times: as it is,
 //       with the loops at rest paused (--wa-lauf: paused), and without drops (lights only). --css adds one more: the page
 //       with those rules laid over it (what does a change buy? e.g. --css '[data-wasser] .m-tabs { backdrop-filter: none }');
 //       --mal 3 measures "as it is" and the --css variant three times in turn (single runs of 3 s scatter by a few frames).
 //       The work machine renders in software: only the relations between the numbers mean something.
-import { session, rgb, args, mkdir, abs } from './lib.mjs'; import os from 'os'; import path from 'path';
-const a = args({ ton: '', scene: 'start', engine: 'chromium', look: 'vorlage', seite: 'app', hash: '#/start', scale: '3', out: path.join(os.tmpdir(), 'wasser-messen') });
-const what = a._[0]; const look = a.look === 'ohne' ? '' : a.look; const s = await session({ engine: a.engine }); const out = mkdir(abs(a.out));
+//       --look: head of lib.mjs. Default auto = the look the app has built in (--seite mobil: the template); ohne = the app
+//       with its look taken out.
+import { session, rgb, args, mkdir, abs, lookArg, sayLook, fail, ENGINES, SZENEN } from './lib.mjs'; import os from 'os'; import path from 'path';
+const a = args({ ton: '', scene: 'start', engine: 'chromium', look: 'auto', seite: 'app', hash: '#/start', scale: '3', out: path.join(os.tmpdir(), 'wasser-messen'), css: '', mal: '1' }, { choices: { engine: ENGINES, ton: ['dunkel', 'klar'], scene: SZENEN, seite: ['app', 'mobil'] } });
+const what = a._[0]; if (!['ruhe', 'takt'].includes(what) || a._.length > 1) fail('usage: node scripts/wasser/messen.mjs ruhe|takt [options]  (see the head of this file)', 1);
+const onHarness = what === 'ruhe' || a.seite === 'mobil'; const look = lookArg(a.look, { harness: onHarness }); const s = await session({ engine: a.engine }); const out = mkdir(abs(a.out));
 
 if (what === 'ruhe') {
   const h = await s.harness({ look, ton: a.ton, scene: a.scene, touch: true, settle: 3200 }); const p = h.page; const shot = async (n) => { await p.screenshot({ path: `${out}/${n}.png` }); return rgb(`${out}/${n}.png`); };
@@ -41,7 +45,8 @@ if (what === 'ruhe') {
   for (const [name, box] of Object.entries(reg.texts)) { const b1 = count(B, [box], true), c1 = count(C, [box], true); console.log(`glyph pixels, ${name.padEnd(26)} ${String(b1.n).padStart(5)} px: changed after 1 s ${b1.ch} (largest ${b1.max}), after 4 s ${c1.ch} (largest ${c1.max})`); }
   await h.close();
 } else if (what === 'takt') {
-  const h = a.seite === 'mobil' ? await s.harness({ look, ton: a.ton, scene: a.scene, touch: true, scale: +a.scale }) : await s.app({ look, ton: a.ton, scale: +a.scale }); const p = h.page; if (a.seite !== 'mobil') await h.go(a.hash, 2500);
+  const h = a.seite === 'mobil' ? await s.harness({ look, ton: a.ton, scene: a.scene, touch: true, scale: +a.scale }) : await s.app({ look, ton: a.ton, scale: +a.scale }); const p = h.page; if (a.seite !== 'mobil') { sayLook(h); await h.go(a.hash, 2500); }
+  const withLook = a.seite === 'mobil' ? !!look : h.look.mode !== 'ohne';   // (a look runs on this page: built in, injected or replaced)
   const meas = (ms) => p.evaluate((ms) => new Promise((ok) => { const t0 = performance.now(); let frames = 0; const f = () => { frames++; if (performance.now() - t0 < ms) requestAnimationFrame(f); else ok(+(frames / (ms / 1000)).toFixed(1)); }; requestAnimationFrame(f); }), ms);
   const tinyOn = () => { const d = document.createElement('i'); d.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;will-change:transform;pointer-events:none;z-index:99'; document.body.appendChild(d); let k = 0; window.__tiny = true; const f = () => { if (!window.__tiny) { d.remove(); return; } d.style.transform = 'translateX(' + (k = 1 - k) + 'px)'; requestAnimationFrame(f); }; requestAnimationFrame(f); };
   const frames = () => p.evaluate(() => (window.Wasser ? window.Wasser.info.frames || 0 : window.__w3 ? window.__w3.frames || 0 : 0));
@@ -53,8 +58,8 @@ if (what === 'ruhe') {
   };
   const res = [await run('as it is', '')];
   if (a.css) { for (let i = 0; i < +(a.mal || 1); i++) { res.push(await run('with --css', a.css)); if (i + 1 < +(a.mal || 1)) res.push(await run('as it is', '')); } }
-  if (look === 'vorlage' && !a.css) { res.push(await run('lights paused', '[data-wasser], [data-wasser] * { --wa-lauf: paused !important; }')); await p.evaluate(() => window.Wasser.start({ drops: '' })); await p.waitForTimeout(600); res.push(await run('no drops, lights only', '')); }
-  console.log(`${a.engine} @${a.scale}x, ${a.look || 'the app without the look'}, ${a.seite === 'mobil' ? 'harness ' + a.scene : a.hash}${a.ton ? ', ton ' + a.ton : ''} | frames a second, coupled | ${res.join(' | ')}`);
+  if (withLook && !a.css) { res.push(await run('lights paused', '[data-wasser], [data-wasser] * { --wa-lauf: paused !important; }')); await p.evaluate(() => window.Wasser.start({ drops: '' })); await p.waitForTimeout(600); res.push(await run('no drops, lights only', '')); }
+  console.log(`${a.engine} @${a.scale}x, ${a.seite === 'mobil' ? (look || 'no look') : h.look.mode}, ${a.seite === 'mobil' ? 'harness ' + a.scene : a.hash}${a.ton ? ', ton ' + a.ton : ''} | frames a second, coupled | ${res.join(' | ')}`);
   await h.close();
-} else console.log('usage: node scripts/wasser/messen.mjs ruhe|takt [options]  (see the head of this file)');
+}
 await s.close();

@@ -18,7 +18,7 @@
   if (window.__wasserEingespielt || !window.Wasser) return;
   window.__wasserEingespielt = true;
   var html = document.documentElement, opt = window.__wasserVorschau || {}, fixed = opt.ton === 'dunkel' || opt.ton === 'klar' ? opt.ton : '';
-  var shell = null, ours = false;                                  // ours: WE gave this shell the look (it has none built in)
+  var shell = null, ours = false, first = true;                    // ours: WE gave this shell the look (it has none built in)
   function setTon(t) { if (t === 'klar') html.setAttribute('data-wa-ton', 'klar'); else html.removeAttribute('data-wa-ton'); }
 
   /* 2. theme -> tone (only in a shell we started the look in) */
@@ -46,11 +46,10 @@
     var o = {}, base = kind === 'desktop' ? window.Wasser.DESKTOP : window.Wasser.MOBIL, k;
     for (k in base) o[k] = base[k];
     for (k in opt.start || {}) o[k] = opt.start[k];
-    if (was === false && window.__wasserGestartet) setTimeout(function () { if (shell === el) window.Wasser.start(o); }, 80);   // (the window crossed 900 px out of a built-in shell: the app's hook stops its own instance a moment later - start after that)
+    if (!was && !first) setTimeout(function () { if (shell === el) window.Wasser.start(o); }, 80);   // (the window crossed 900 px out of a built-in shell: the app's hook stops its own instance a moment later - start after that)
     else window.Wasser.start(o);
-    window.__wasserGestartet = true;
   }
   new MutationObserver(mount).observe(document.getElementById('root') || document.body, { childList: true });
   mount();
-  window.__wasserGestartet = true;
+  first = false;
 })();

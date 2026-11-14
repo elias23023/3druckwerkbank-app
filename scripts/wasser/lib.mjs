@@ -62,16 +62,20 @@ export const isTemplate = (look) => !!look && fs.existsSync(path.join(lookDir(lo
 const urlOf = (dir) => { const rel = path.relative(REPO, dir); return rel.startsWith('..') ? '/@abs' + dir : rel; };   // as the file server below serves it
 
 /* ------------------------------------------------------------------ file server: the repository root */
-const MIME = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8', mjs: 'text/javascript; charset=utf-8', json: 'application/json', webp: 'image/webp', avif: 'image/avif', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', woff2: 'font/woff2', woff: 'font/woff', mp4: 'video/mp4', md: 'text/plain; charset=utf-8' };
-export function serve(root = REPO) {
+const MIME = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8', mjs: 'text/javascript; charset=utf-8', json: 'application/json', webp: 'image/webp', avif: 'image/avif', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', woff2: 'font/woff2', woff: 'font/woff', mp4: 'video/mp4', md: 'text/plain; charset=utf-8', ico: 'image/x-icon', webmanifest: 'application/manifest+json', txt: 'text/plain; charset=utf-8' };
+// serve(root)                      the repository (or any folder) as files, on a free port
+// serve(dist, { app: true, port })   a BUILT APP: "/" is its index.html, /api/ answers 404 (there is no account service here)
+export function serve(root = REPO, { app = false, port = 0 } = {}) {
   const server = http.createServer((req, res) => {
-    const name = decodeURIComponent(new URL(req.url, 'http://x').pathname); const out = name.startsWith('/@abs/');   // /@abs/<absolute path>: a file outside the repository (a copy of the template in a scratch folder)
+    let name = decodeURIComponent(new URL(req.url, 'http://x').pathname); const out = name.startsWith('/@abs/');   // /@abs/<absolute path>: a file outside the repository (a copy of the template in a scratch folder)
+    if (app && name.startsWith('/api/')) { res.writeHead(404, { 'content-type': 'application/json' }); res.end('{}'); return; }
+    if (app && name === '/') name = '/index.html';
     const file = out ? path.normalize(name.slice(5)) : path.join(root, name);
     if ((!out && !file.startsWith(root)) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); res.end('not found'); return; }
     res.writeHead(200, { 'content-type': MIME[path.extname(file).slice(1)] || 'application/octet-stream', 'cache-control': 'no-store' });
     fs.createReadStream(file).pipe(res);
   });
-  return new Promise((ok) => server.listen(0, '127.0.0.1', () => ok({ url: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((done) => server.close(done)) })));
+  return new Promise((ok, no) => { server.once('error', (e) => no(new Error(`cannot listen on port ${port}: ${e.message}`))); server.listen(port, '127.0.0.1', () => ok({ url: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((done) => { server.closeAllConnections?.(); server.close(done); }) })); });
 }
 
 /* ------------------------------------------------------------------ one browser, many pages */
@@ -145,7 +149,7 @@ export async function lookBefore(page, look) {
     try {
       const r = await route.fetch(); let body = await r.text(); const i = lookStart(body);
       if (i >= 0) { st.bundled = true; body = body.slice(0, i); }
-      if (css && !st.served && (i >= 0 || /\/index-[^/]*\.css/.test(route.request().url()))) { st.served = true; body += '\n' + css; }   // in one piece with the app's own rules, as its build bundles them
+      if (css && (i >= 0 || (!st.bundled && /\/index-[^/]*\.css/.test(route.request().url())))) { st.served = true; body += '\n' + css; }   // in one piece with the app's own rules, as its build bundles them (on every load of the page: the tools reload it)
       await route.fulfill({ response: r, body });
     } catch (e) { st.err = e; await route.abort().catch(() => {}); }
   });
@@ -359,6 +363,15 @@ export async function encodeCast(tracks, out, { fps = 25, crf = 17, captions = [
 export async function stack(files, out, { palette = false } = {}) {
   const ms = []; for (const f of files) ms.push(await sharp(f).metadata()); let y = 0; const layers = files.map((f, i) => { const l = { input: f, left: 0, top: y }; y += ms[i].height; return l; });
   await sharp({ create: { width: Math.max(...ms.map((m) => m.width)), height: y, channels: 3, background: '#16171a' } }).composite(layers).png(palette ? { palette: true, colours: 256, effort: 10, dither: 1 } : {}).toFile(out); return out;
+}
+// Go to one spot of the app, as stelle.mjs and kontrast.mjs --css describe it. d = a handle of app() or of openDesktop().
+//   welt   a world (start heute projekte druck material wetter archiv), 'innen' (the inner world of a project) or a hash ('#/material')
+//   bogen  a sheet the handle can open by name      klick  then click: texts or selectors, several separated by ">>"
+export async function geheZu(d, { welt = '', bogen = '', klick = '' } = {}) {
+  const p = d.page;
+  if (welt === 'innen') await d.project(); else if (welt) await d.go(welt.startsWith('#') ? welt : '#/' + welt);
+  if (bogen) await d.sheet(bogen);
+  for (const k of String(klick || '').split('>>').map((x) => x.trim()).filter(Boolean)) { await (/^[.#[]/.test(k) ? p.locator(k).first() : p.getByRole('button', { name: k }).or(p.getByRole('link', { name: k })).last()).click({ timeout: 5000 }); await p.waitForTimeout(900); }
 }
 // The command line: "--name value", "--name=value" and "--flag"; everything else stays in ._
 //   defaults  every option the tool knows that takes a value, with its default

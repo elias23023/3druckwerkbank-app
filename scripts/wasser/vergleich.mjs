@@ -5,6 +5,11 @@
 //   node scripts/wasser/vergleich.mjs [bilder|app|stile|film|alles] [--engine chromium|webkit] [--toene dunkel,klar] [--alt <folder>] [--neu <folder|vorlage>] [--out <dir>] [--nur <name part>]
 //   (--look <folder> is the same as --neu <folder>: the name every other tool has for "another copy of the template")
 //
+// TWO LOOKS IN ONE APP is what this tool compares (--alt against --neu; each a folder, 'vorlage', 'git:<rev>', or 'eingebaut'
+// = the look the app has built in). In the real app each side takes the PLACE of the built-in look (head of lib.mjs), so the
+// parts app, stile and film work against an app with the look built in. TWO STATES OF THE APP (two addresses, two commits)
+// are compared by sollist.mjs.
+//
 //   bilder   the harness page with reduced motion (frozen water): all eight scenes and their close-ups, both tones.
 //            Pixel by pixel; counted apart: inside the boxes of the drop canvases, and everywhere else.
 //   app      the same for the REAL app (preview on :4173, clock standing still): main screens, a project, sheets, search, toast.
@@ -22,9 +27,12 @@
 // point 4); ok~ = a difference that is known and explained (the strip "scroll"; changed drops of "klar" behind a blur).
 // Pictures of what differs: <out>/*-diff.png (red = outside the drops, yellow = inside). Default out: scratch folder in the OS temp dir.
 import fs from 'fs'; import os from 'os'; import path from 'path';
-import { session, diff, strip, args, mkdir, abs, lookDir, isTemplate, ALT, SZENEN } from './lib.mjs';
+import { session, diff, strip, args, mkdir, abs, lookDir, isTemplate, lookArg, sayLook, fail, TOENE, ENGINES, ALT, SZENEN } from './lib.mjs';
 import { film, STRIPS } from './film.mjs';
-const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', look: '', out: path.join(os.tmpdir(), 'wasser-vergleich'), nur: '' }); if (a.look) a.neu = a.look;
+const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', look: '', out: path.join(os.tmpdir(), 'wasser-vergleich'), nur: '' }, { choices: { engine: ENGINES, toene: TOENE } }); if (a.look) a.neu = a.look;
+const MODES = ['bilder', 'app', 'stile', 'film', 'alles']; if (a._.length > 1 || (a._[0] && !MODES.includes(a._[0]))) fail(`"${a._.join(' ')}": one of ${MODES.join(' | ')} (nothing = alles)`);
+for (const k of ['alt', 'neu']) { a[k] = lookArg(a[k]); if (!a[k] || a[k] === 'auto') fail(`--${k}: a folder, vorlage, git:<revision> or eingebaut`); }
+const dirOf = (l) => lookDir(l === 'eingebaut' ? 'vorlage' : l);   // (the files of a look: what is built in are the copies of the template)
 const mode = a._[0] || 'alles'; const out = mkdir(abs(a.out)); const TONES = a.toene.split(','); const ZEIT = '2026-11-12T17:42:00+01:00';
 const only = (name) => !a.nur || name.includes(a.nur);
 const s = await session({ engine: a.engine }); let bad = 0; const lines = []; const say = (t) => { console.log(t); lines.push(t); };
@@ -58,7 +66,7 @@ const sameMotion = (ref, neu) => { const set = (t) => [...new Set(t.replace(/::b
 
 /* ------------------------------------------------------------------ pictures */
 async function pair(name, open, steps) {                           // open(look) -> handle; steps = [[label, async (h) => {}], ...]: one screenshot after each step
-  const hs = []; for (const look of [a.alt, a.neu]) hs.push(await open(look));
+  const hs = []; for (const look of [a.alt, a.neu]) hs.push(await open(look)); hs.forEach(sayLook);
   for (const [label, fn] of steps) {
     const files = [], boxes = [];
     for (let i = 0; i < 2; i++) { try { await fn(hs[i]); } catch (e) { say(`!! ${name} ${label}: ${String(e).split('\n')[0].slice(0, 140)}`); } files.push(`${out}/${name}${label ? '-' + label : ''}-${i ? 'neu' : 'alt'}.png`); await hs[i].page.screenshot({ path: files[i] }); boxes.push(await hs[i].drops()); }
@@ -119,8 +127,8 @@ const PAGE_LIB = `(() => {
   };
 })()`;
 const customNames = () => {                                        // every custom property the reference declares: [name in this look, name it is reported under]
-  const names = (look) => { const dir = lookDir(look); const css = fs.readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => fs.readFileSync(`${dir}/${f}`, 'utf8')).join('\n'); return new Set(css.match(/--[a-z0-9-]+(?=\s*:)/g) || []); };
-  const old = [...names(a.alt)].filter((n) => !SINCE_1411.has(n) || isTemplate(a.alt)), now = names(a.neu), neu = a.neu === 'vorlage';   // (against another copy of the template nothing is left out)
+  const names = (look) => { const dir = dirOf(look); const css = fs.readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => fs.readFileSync(`${dir}/${f}`, 'utf8')).join('\n'); return new Set(css.match(/--[a-z0-9-]+(?=\s*:)/g) || []); };
+  const old = [...names(a.alt)].filter((n) => !SINCE_1411.has(n) || isTemplate(dirOf(a.alt))), now = names(a.neu), neu = a.neu === 'vorlage';   // (against another copy of the template nothing is left out)
   return [old.map((n) => [n, n]), old.map((n) => [neu && RENAMED[n] && now.has(RENAMED[n]) ? RENAMED[n] : n, n])];
 };
 async function compare(name, pages, custom, scopeSel = null, quietIfEqual = false) {
@@ -183,7 +191,7 @@ async function stile() {
     }
     for (const [label, reduced] of [['motion', false], ['reduced motion', true]]) {
       const name = `stile-app-${ton}`; if (!only(name)) continue;
-      const hs = []; for (const look of [a.alt, a.neu]) hs.push(await s.app({ look, ton, reduced, zeit: ZEIT }));
+      const hs = []; for (const look of [a.alt, a.neu]) hs.push(await s.app({ look, ton, reduced, zeit: ZEIT })); hs.forEach(sayLook);
       for (const h of hs) await h.page.evaluate(PAGE_LIB);
       const screens = [['start', (h) => h.go('#/start')], ['heute', (h) => h.go('#/heute')], ['projekte', (h) => h.go('#/projekte')], ['projekt', (h) => h.project()], ['material', (h) => h.go('#/material')], ['mehr', (h) => h.go('#/druck')],
         ['bogen-projekt', (h) => h.sheet('projekt')], ['bogen-projekt 2', async (h) => { await h.page.locator('.sheet .input').first().fill('Halter'); await h.page.locator('.sheet__foot .btn', { hasText: 'Weiter' }).click(); await h.page.waitForTimeout(700); }],

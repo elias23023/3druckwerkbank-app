@@ -2,26 +2,45 @@
 // made transparent for the ground and magenta to find the glyphs; a text-shadow is not counted). Per probe: the median
 // over its glyph pixels, and the worst 5 % of them in brackets. Floor: 4.5 (placeholders 3). Reduced motion: frozen water.
 //
-//   node scripts/wasser/kontrast.mjs [--look vorlage|<folder>] [--toene dunkel,klar] [--engine chromium|webkit] [--szenen start,wetter,innen] [--app] [--out <dir>]
+//   node scripts/wasser/kontrast.mjs [--look auto|eingebaut|vorlage|<folder>] [--toene dunkel,klar] [--engine chromium|webkit] [--szenen start,wetter,innen] [--app] [--out <dir>]
 //
-//   without --app   the harness page: titles, counts, rows, number tiles, pills, the ghost button, the tabs and the labels
-//                   on drops (on a card: short, small, long, red, amber; and free over the scene), per scene
-//                   (all eight: --szenen start,heute,projekte,material,druck,wetter,archiv,innen)
+//   without --app   the harness page (it shows the TEMPLATE): titles, counts, rows, number tiles, pills, the ghost button, the
+//                   tabs and the labels on drops (on a card: short, small, long, red, amber; and free over the scene), per
+//                   scene (all eight: --szenen start,heute,projekte,material,druck,wetter,archiv,innen)
 //   --app           the real app as well: sheets, fields, placeholders, options, tabs, search, toast (needs npm run preview)
-// Exit code 1 when a median falls below the floor. --out keeps the small pictures that were measured.
+//
+// ONE ELEMENT OF YOUR OWN, without editing this file - in the real app, both tones:
+//
+//   node scripts/wasser/kontrast.mjs --css '<selector>' [--welt heute] [--bogen einstellungen] [--klick 'Text'] [--art text|platzhalter|wert]
+//        [--name 'Merkzettel: Zeile'] [--grenze 4.5] [--desktop [--format 1920] [--zeiten nacht,tag]] [--zeiten tag] [--toene klar]
+//
+//   --css      what to measure: the first element the selector matches where --welt, --bogen and --klick lead (the same three
+//              as in stelle.mjs: a world or a hash; a sheet the tools know by name; then clicks, separated by ">>"). Another
+//              than the first: Playwright's ">> nth=2" at the end of the selector.
+//   --art      text (default) | platzhalter (the ::placeholder of a field) | wert (the text typed into a field or shown by a select)
+//   --grenze   the floor it must reach (default 4.5; platzhalter 3; a title on the desktop should reach 7)
+//   --desktop  on the desktop (2000 x 993, by night and by day) instead of the phone. --zeiten: the hours to measure at
+//              (morgen tag abend nacht; phone: default the real hour, with a name the clock stands still and there is no weather)
+// Exit code 1 when a median falls below its floor, or when --css matched nothing. --out keeps the small pictures that were measured.
+// --look: head of lib.mjs. Default auto: the app is measured with the look it has BUILT IN, the harness page with the template.
 import fs from 'fs'; import os from 'os'; import path from 'path';
-import { session, rgb, args, abs, mkdir } from './lib.mjs';
-const a = args({ look: 'vorlage', toene: 'dunkel,klar', engine: 'chromium', szenen: 'start,wetter,innen', out: path.join(os.tmpdir(), 'wasser-kontrast') });
-const out = mkdir(abs(a.out)); const s = await session({ engine: a.engine }); const table = {}; const cols = []; let low = [];
+import { session, rgb, args, abs, mkdir, lookArg, sayLook, geheZu, fail, TOENE, ENGINES, SZENEN, ZEITEN } from './lib.mjs';
+import { openDesktop } from './desktop-lib.mjs';
+const a = args({ look: 'auto', toene: 'dunkel,klar', engine: 'chromium', szenen: 'start,wetter,innen', out: path.join(os.tmpdir(), 'wasser-kontrast'), css: '', welt: '', bogen: '', klick: '', art: 'text', name: '', grenze: '', format: '2000', zeiten: '' },
+  { flags: ['app', 'desktop'], choices: { toene: TOENE, engine: ENGINES, szenen: SZENEN, art: ['text', 'platzhalter', 'wert'], zeiten: Object.keys(ZEITEN), format: ['2000', '1920', '<WxH>'] } });
+if (a._.length) fail(`this tool takes no word without "--": ${a._.join(' ')}`); if (!a.css && (a.welt || a.bogen || a.klick || a.desktop || a.name || a.grenze)) fail('--welt, --bogen, --klick, --name, --grenze and --desktop belong to --css <selector> (one element of your own)');
+const appLook = lookArg(a.look), hLook = lookArg(a.look, { harness: true }); if (!appLook) fail('--look ohne: this tool measures the look');
+const out = mkdir(abs(a.out)); const s = await session({ engine: a.engine }); const table = {}; const cols = []; let low = []; let vw = 390, missing = 0;
 const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
 const lum = (r, g, b) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 const parse = (col) => { const v = (col.match(/[\d.]+/g) || []).map(Number); const f = col.startsWith('color(srgb') ? 255 : 1; return [v[0] * f, v[1] * f, v[2] * f, v.length > 3 ? v[3] : 1]; };
 const CSS = '.__pt::placeholder{color:transparent!important;-webkit-text-fill-color:transparent!important} .__pm::placeholder{color:#ff00ff!important;-webkit-text-fill-color:#ff00ff!important;opacity:1!important} .__vt{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important} .__vm{color:#ff00ff!important;-webkit-text-fill-color:#ff00ff!important;text-shadow:none!important;caret-color:transparent!important} .__vt svg,.__vm svg{visibility:hidden!important}';
-async function probe(p, col, name, loc, kind = 'text') {
+async function probe(p, col, name, loc, kind = 'text', floor = 0, must = false) {
   try {
-    const el = loc.first(); await el.scrollIntoViewIfNeeded({ timeout: 3000 }); await p.waitForTimeout(200);
+    const el = loc.first(); if (must && !(await el.count())) { missing++; console.log('!!', col, name, 'the selector matches nothing here'); return; }
+    await el.scrollIntoViewIfNeeded({ timeout: 3000 }); await p.waitForTimeout(200);
     const info = await el.evaluate((e, kind) => { const cs = getComputedStyle(e, kind === 'placeholder' ? '::placeholder' : null); const b = e.getBoundingClientRect(); return { color: cs.color, x: b.x, y: b.y, w: b.width, h: b.height }; }, kind);
-    const clip = { x: Math.max(0, info.x - 2), y: Math.max(0, info.y - 2), width: Math.min(390 - Math.max(0, info.x - 2), info.w + 4), height: info.h + 4 };
+    const clip = { x: Math.max(0, info.x - 2), y: Math.max(0, info.y - 2), width: Math.min(vw - Math.max(0, info.x - 2), info.w + 4), height: info.h + 4 };
     const [t, m] = kind === 'placeholder' ? ['__pt', '__pm'] : ['__vt', '__vm']; const f = `${out}/${col}_${name}`.replace(/[^\w/.-]+/g, '-');
     await el.evaluate((e, c) => e.classList.add(c), t); await p.waitForTimeout(120); await p.screenshot({ path: f + '_B.png', clip });
     await el.evaluate((e, c) => { e.classList.remove(c[0]); e.classList.add(c[1]); }, [t, m]); await p.waitForTimeout(120); await p.screenshot({ path: f + '_C.png', clip });
@@ -33,15 +52,24 @@ async function probe(p, col, name, loc, kind = 'text') {
       const l1 = lum(al * r + (1 - al) * B.data[i], al * g + (1 - al) * B.data[i + 1], al * b + (1 - al) * B.data[i + 2]), l2 = lum(B.data[i], B.data[i + 1], B.data[i + 2]);
       cr.push((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05));
     }
-    if (cr.length < 12) return; cr.sort((x, y) => x - y);
-    const v = { median: cr[cr.length >> 1], worst: cr[Math.floor(cr.length * 0.05)], floor: kind === 'placeholder' ? 3 : 4.5 };
+    if (cr.length < 12) { if (must) { missing++; console.log('!!', col, name, `too few glyph pixels (${cr.length}): is there text of the kind --art ${a.art} in it?`); } return; } cr.sort((x, y) => x - y);
+    const v = { median: cr[cr.length >> 1], worst: cr[Math.floor(cr.length * 0.05)], floor: floor || (kind === 'placeholder' ? 3 : 4.5) };
     (table[name] = table[name] || {})[col] = v; low.push([v.worst, v.median, name, col, v.floor]);
-  } catch (e) { console.log('!!', col, name, String(e).split('\n')[0].slice(0, 120)); }
+  } catch (e) { if (must) missing++; console.log('!!', col, name, String(e).split('\n')[0].slice(0, 120)); }
 }
-for (const ton of a.toene.split(',')) {
+if (a.css) {                                                       // one element of your own, in the real app
+  const kind = { text: 'text', platzhalter: 'placeholder', wert: 'value' }[a.art], name = a.name || a.css, zeiten = a.zeiten ? a.zeiten.split(',') : a.desktop ? ['nacht', 'tag'] : [''];
+  for (const ton of a.toene.split(',')) for (const zeit of zeiten) {
+    const col = `${ton}${zeit ? ' ' + zeit : ''}`; cols.push(col);
+    const d = a.desktop ? await openDesktop({ look: appLook, format: a.format, ton, zeit, engine: a.engine, reduced: true, browser: s.browser }) : await s.app({ look: appLook, ton, reduced: true, zeit: zeit || null });
+    const p = d.page; vw = a.desktop ? d.format.w : 390; sayLook(d); await p.addStyleTag({ content: CSS });
+    try { await geheZu(d, a); if (a.desktop) await d.park(); await p.waitForTimeout(800); await probe(p, col, name, p.locator(a.css), kind, +a.grenze || 0, true); } catch (e) { missing++; console.log('!!', col, String(e).split('\n')[0].slice(0, 160)); }
+    await d.close();
+  }
+} else for (const ton of a.toene.split(',')) {
   for (const scene of a.szenen.split(',')) {
-    const col = `${ton} ${scene}`; cols.push(col); const h = await s.harness({ look: a.look, ton, scene, reduced: true }); const p = h.page; await p.addStyleTag({ content: CSS });
-    const card = (i) => p.locator('.m-main > .m-card').nth(i);
+    const col = `${ton} ${scene}`; cols.push(col); const h = await s.harness({ look: hLook, ton, scene, reduced: true }); const p = h.page; await p.addStyleTag({ content: CSS });
+    const card = (i) => p.locator('.m-main > .m-card:not(.m-today)').nth(i);   // (the cards with titles and buttons; the card of the day is measured apart)
     await probe(p, col, 'Kartentitel', card(0).locator('h3')); await probe(p, col, 'Kartentitel 2', card(1).locator('h3')); await probe(p, col, 'Zähler', card(0).locator('h3 .cnt')); await probe(p, col, 'Zähler 2', card(1).locator('h3 .cnt'));
     await probe(p, col, 'Zeile: Titel', card(0).locator('.m-row b')); await probe(p, col, 'Zeile: gedämpft', card(0).locator('.m-row .muted')); await probe(p, col, 'Zahl-Kachel', card(1).locator('.m-stat b')); await probe(p, col, 'Kachel: Beschriftung', card(1).locator('.m-stat span'));
     await probe(p, col, 'Etikett gewählt', card(0).locator('.pill').nth(0)); await probe(p, col, 'Etikett grün', card(0).locator('.pill').nth(1)); await probe(p, col, 'Geist-Knopf', card(0).locator('.btn--ghost'));
@@ -53,7 +81,7 @@ for (const ton of a.toene.split(',')) {
     await h.close();
   }
   if (a.app) {
-    const col = `${ton} App`; cols.push(col); const h = await s.app({ look: a.look, ton, reduced: true }); const p = h.page; await p.addStyleTag({ content: CSS });
+    const col = `${ton} App`; cols.push(col); const h = await s.app({ look: appLook, ton, reduced: true }); const p = h.page; sayLook(h); await p.addStyleTag({ content: CSS });
     const S = (sel, text) => (text ? p.locator(sel, { hasText: text }) : p.locator(sel));
     await h.sheet('projekt'); await p.waitForTimeout(1000);
     await probe(p, col, 'Bogen: Titel', S('.sheet__head h2')); await probe(p, col, 'Feld: Beschriftung', S('.sheet .field > label')); await probe(p, col, 'Feld: Platzhalter', S('.sheet .input'), 'placeholder'); await probe(p, col, 'Bogen: Abbrechen', S('.sheet__foot .btn--ghost'));
@@ -74,7 +102,9 @@ for (const ton of a.toene.split(',')) {
 }
 await s.close();
 const cell = (v) => (v ? `${v.median.toFixed(1).padStart(5)} (${v.worst.toFixed(1).padStart(4)})${v.median < v.floor ? '!' : ' '}` : '      -      ');
-const lines = ['median (worst 5 %)'.padEnd(26) + cols.map((c) => c.padEnd(15)).join(''), ...Object.entries(table).map(([name, row]) => name.padEnd(26) + cols.map((c) => cell(row[c]).padEnd(15)).join(''))];
+const wide = Math.max(26, ...Object.keys(table).map((n) => n.length + 2));
+const lines = ['median (worst 5 %)'.padEnd(wide) + cols.map((c) => c.padEnd(15)).join(''), ...Object.entries(table).map(([name, row]) => name.padEnd(wide) + cols.map((c) => cell(row[c]).padEnd(15)).join(''))];
 low.sort((x, y) => x[0] - y[0]); const under = low.filter((l) => l[1] < l[4]);
-lines.push('', 'lowest worst-5-% values: ' + low.slice(0, 4).map((l) => `${l[0].toFixed(1)} (${l[2]}, ${l[3]})`).join('; '), under.length ? `BELOW THE FLOOR (median): ${under.map((l) => `${l[2]}, ${l[3]}: ${l[1].toFixed(1)}`).join('; ')}` : 'no median below the floor (4.5; placeholders 3)');
-console.log(lines.join('\n')); fs.writeFileSync(`${out}/kontrast-${a.engine}.txt`, lines.join('\n') + '\n'); process.exit(under.length ? 1 : 0);
+lines.push('', 'lowest worst-5-% values: ' + low.slice(0, 4).map((l) => `${l[0].toFixed(1)} (${l[2]}, ${l[3]})`).join('; '), under.length ? `BELOW THE FLOOR (median): ${under.map((l) => `${l[2]}, ${l[3]}: ${l[1].toFixed(1)} (floor ${l[4]})`).join('; ')}` : `no median below the floor (${a.css ? (low[0] ? low[0][4] : '-') : '4.5; placeholders 3'})`);
+if (missing) lines.push(`NOT MEASURED in ${missing} of ${cols.length} column(s): see the lines with "!!" above`);
+console.log(lines.join('\n')); fs.writeFileSync(`${out}/kontrast-${a.engine}.txt`, lines.join('\n') + '\n'); process.exit(under.length || missing ? 1 : 0);

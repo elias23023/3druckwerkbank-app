@@ -1,9 +1,11 @@
-// Does the template WORK? One pass of checks on the harness page (scripts/wasser/mobil.html), and - with --app - in the
-// real app. Each line: ok / FAIL, what was checked, what was found. Exit code 1 when a check fails.
+// Does the look WORK? One pass of checks on the harness page (scripts/wasser/mobil.html: the TEMPLATE), and - with --app -
+// in the real app (the look it has BUILT IN). Each line: ok / FAIL, what was checked, what was found. Exit code 1 when a
+// check fails - or when the copies in src/wasser are not the template (then the two halves would check two different looks).
 //
-//   node scripts/wasser/pruefen.mjs [--look vorlage|<folder>] [--engine chromium|webkit] [--ton klar] [--app] [--bild <out.png>] [--regler]
+//   node scripts/wasser/pruefen.mjs [--look auto|vorlage|<folder>] [--engine chromium|webkit] [--ton klar] [--app] [--bild <out.png>] [--regler]
 //
-//   --look <folder>   check another copy of the template (kern.css, mobil.css, desktop.css, wasser.js) instead of docs/wasser-look/vorlage
+//   --look <folder>   check another copy of the template (kern.css, mobil.css, desktop.css, wasser.js): on the harness page
+//                     instead of docs/wasser-look/vorlage, in the app IN PLACE OF the built-in look (head of lib.mjs)
 //
 //   1 start        the script starts, draws the drops, reports no error
 //   2 Markierung   a tap on a tab starts the bead's flight; a class moved by script too; a second tap during a flight; a bar that was replaced
@@ -21,10 +23,13 @@
 //  11 Regler (--regler, about three minutes)  the governor of the drops, fed pretended slow pictures (start option debug.cost):
 //                  it steps down, climbs after the wait, a climb that fails doubles the wait, a climb that holds sets it back
 import fs from 'fs';
-import { session, args, abs, lookDir, isTemplate } from './lib.mjs';
-const a = args({ engine: 'chromium', ton: '', look: 'vorlage' }); if (!isTemplate(a.look)) { console.log(`--look ${a.look}: no copy of the template (kern.css is missing)`); process.exit(1); }
-const s0 = await session({ engine: a.engine }); let fails = 0; if (a.look !== 'vorlage') console.log('look: ' + lookDir(a.look));
-const s = { ...s0, harness: (o) => s0.harness({ look: a.look, ...o }), app: (o) => s0.app({ look: a.look, ...o }) };   // every page of this run gets the look that was asked for
+import { session, args, abs, lookDir, isTemplate, lookArg, sayLook, inSync, fail, ENGINES } from './lib.mjs';
+const a = args({ engine: 'chromium', ton: '', look: 'auto', bild: '' }, { flags: ['app', 'regler'], choices: { engine: ENGINES, ton: ['dunkel', 'klar'] } }); if (a._.length) fail(`this tool takes no word without "--": ${a._.join(' ')}`);
+const appLook = lookArg(a.look), hLook = lookArg(a.look, { harness: true }); if (!isTemplate(hLook)) fail(`--look ${a.look}: this tool checks a copy of the template (kern.css, mobil.css, desktop.css, wasser.js)`);
+const s0 = await session({ engine: a.engine }); let fails = 0; console.log(`harness page: ${hLook === 'vorlage' ? 'the template (docs/wasser-look/vorlage)' : lookDir(hLook)}`);
+const off = appLook === 'auto' || appLook === 'eingebaut' ? inSync() : null;   // the app half checks what is built in: that must be the template the harness half checks
+if (off && off.length) console.log(`!!   src/wasser differs from the template (${off.join(', ')}): node scripts/wasser/uebernehmen.mjs && npm run build`);
+const s = { ...s0, harness: (o) => s0.harness({ look: hLook, ...o }), app: async (o) => { const h = await s0.app({ look: appLook, ...o }); sayLook(h); return h; } };   // every page of this run gets the look that was asked for
 const check = (ok, name, found) => { if (!ok) fails++; console.log(`${ok ? 'ok  ' : 'FAIL'} ${name.padEnd(58)} ${typeof found === 'string' ? found : JSON.stringify(found)}`); };
 const noErr = (h, name) => { const e = h.errors.filter((x) => !/open-meteo|Failed to load resource|ERR_|net::/i.test(x)); check(!e.length, `${name}: no page error`, e.length ? e.slice(0, 3) : 'none'); };
 const centre = async (p, sel, i = 0) => { const r = await p.locator(sel).nth(i).boundingBox(); return [r.x + r.width / 2, r.y + r.height / 2]; };
@@ -59,7 +64,7 @@ const CARD_BTN = '.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon):not(
 {
   const h = await s.harness({ ton: a.ton }); const p = h.page;
   await p.evaluate(() => {
-    const main = document.querySelector('.m-main'); main.querySelectorAll(':scope > .m-card, :scope > .frei, :scope > .m-clock').forEach((el) => el.remove());
+    const main = document.querySelector('.m-main'); main.querySelectorAll(':scope > .m-card, :scope > .frei').forEach((el) => el.remove());
     main.insertAdjacentHTML('beforeend', `
       <section class="wa-becken" id="bk" style="padding:16px; display:flex; flex-direction:column; gap:10px">
         <b>Becken (.wa-becken)</b>
@@ -197,7 +202,7 @@ if (a.app) {
   const badLim = lim.filter(([lv, , lit, far, slide, lag]) => lit < 0.1 - 1e-6 || far < 0.1 - 1e-6 || lit > 2.4 + 1e-6 || far > 2.4 + 1e-6 || slide > 24.01 || lag > 28.01 || (lv === 0 && (lit !== 1 || far !== 1 || slide || lag)));
   check(!badLim.length && lim.length === 10, '10 --wa-leben 0 .. 2 at full pull: lean within 0.1 .. 2.4, slide at most 24 px, lag at most 28 px', lim.map((r) => `${r[0]}/${r[1] > 0 ? '+' : '-'}: ${r[2]} ${r[3]} ${r[4]}px ${+r[5].toFixed(1)}px`).join('  '));
   noErr(h, '10'); await h.close();
-  const css = fs.readFileSync(`${lookDir(a.look)}/kern.css`, 'utf8'); const bare = css.replace(/\/\*[^]*?\*\//g, '');
+  const css = fs.readFileSync(`${lookDir(hLook)}/kern.css`, 'utf8'); const bare = css.replace(/\/\*[^]*?\*\//g, '');
   const block = (from) => { const i = bare.indexOf(from), j = bare.indexOf('\n}', i); return i < 0 ? [] : bare.slice(i, j).match(/--[a-z0-9-]+(?=\s*:)/g) || []; };
   const dunkel = block('[data-wasser] {\n  --wa-drop-red'), klar = block(':root[data-wa-ton="klar"] [data-wasser] {'), named = (bare.match(/data-wa-ton/g) || []).length;
   check(dunkel.length > 40 && JSON.stringify(dunkel) === JSON.stringify(klar) && named === 1, '10 the two tones: the same tokens in the same order, one rule names the tone', `${dunkel.length} and ${klar.length} tokens, data-wa-ton in ${named} rule(s)`);
@@ -223,4 +228,5 @@ if (a.regler) {
   check(d3.took > 0 && d3.wait === 20000 && u5.took > 17 && u5.took < 32, '11 a later step down and up: the climb waits 20 s again (it was 40 s until reload)', { down: d3, up: u5 });
   console.log('     ' + log.join(' | ')); noErr(h, '11'); await h.close();
 }
-await s.close(); console.log(fails ? `\n${fails} check(s) FAILED` : '\nall checks passed'); process.exit(fails ? 1 : 0);
+await s.close(); console.log(fails ? `\n${fails} check(s) FAILED` : '\nall checks passed'); if (off && off.length) console.log('BUT src/wasser is not the template (see the first lines): the app half checked another look than the harness half.');
+process.exit(fails || (off && off.length) ? 1 : 0);
