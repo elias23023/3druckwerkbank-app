@@ -1,6 +1,7 @@
 # Wasser-Look: die Vorlage
 
-Stand 14.11. Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann.
+Stand 14.11. Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann – jetzt als
+**zwei Vorlagen zum Ansehen: Handy und Desktop**.
 **Nichts hier ist in die App eingebaut**: Build und Website laden diese Dateien nicht, `src/`, `public/`, `server/`
 sind unverändert. Die Vorlage wird von außen dazugeladen (Vorschauseite) oder in die laufende App eingespielt (Werkzeuge).
 
@@ -10,11 +11,12 @@ sind unverändert. Die Vorlage wird von außen dazugeladen (Vorschauseite) oder 
 |---|---|
 | `kern.css` | Der Look selbst, für Handy und Desktop gleich: Schalter, die zwei Töne, alle Werte (`--wa-…`), die Bewegungssprache und die **Bausteine** (Tropfen, Becken, stilles Wasser, dichtes Wasser, Bogen, Mulde, Etikett, Feld, Wahl, Haken, Pegel, Perle, Ring, Markierung, Wasserlinie, Licht …). |
 | `mobil.css` | Was nur die mobile Ansicht braucht: Seitenabdunklung, Maße der Karten, Menüleiste, Bogen am unteren Rand. |
-| `desktop.css` | Der Platz für den Desktop. Noch leer, mit Hinweisen für den nächsten Schritt. |
-| `wasser.js` | Das Skript: Wassertropfen (WebGL), Ring, fließende Markierung, Licht, Antwort aufs Scrollen, gemeinsames Ruhen. Zwei Befehle: `Wasser.start(optionen)` und `Wasser.stop()`. |
+| `desktop.css` | Was nur die Desktop-Ansicht braucht: flache Becken für die Panels, das Dock mit der fließenden Perle, die Schublade von rechts, Antwort auf den Mauszeiger. |
+| `wasser.js` | Das Skript: Wassertropfen (WebGL), Ring, fließende Markierung, Licht, Antwort aufs Scrollen, gemeinsames Ruhen. Zwei Befehle: `Wasser.start(optionen)` und `Wasser.stop()`; `Wasser.DESKTOP` sind die Angaben für den Desktop. |
 | `NOTIZEN.md` | Das Notizbuch für alle, die die Vorlage anwenden (englisch): Bausteine, Rezepte, Fallstricke, Prüfbefehle, offene Punkte. |
 
-Die Werkzeuge: `scripts/wasser/`. Bilder der mobilen Vorlage: `docs/wasser-look/bilder/mobil/` –
+Die Werkzeuge: `scripts/wasser/`. Bilder der Desktop-Vorlage: `docs/wasser-look/bilder/desktop/` (siehe unten).
+Bilder der mobilen Vorlage: `docs/wasser-look/bilder/mobil/` –
 
 - `dunkel-start`, `klar-start`: die Vorschauseite in beiden Tönen; `dunkel-szenen`, `klar-szenen`: alle acht Landschaften
 - `dunkel-nah`, `klar-nah`: die Knöpfe aus der Nähe (frei über der Landschaft und auf einer Karte)
@@ -32,12 +34,66 @@ freigegebene Stand, mit dem die Vorlage verglichen wird).
 ## Wie der Look ein- und ausgeschaltet wird
 
 - **Wo:** Der Look gilt nur innerhalb des Elements mit dem Attribut `data-wasser` – mobil ist das `.m-shell`
-  (`data-wasser="mobil"`), am Desktop später die Bühne (`data-wasser="desktop"`). Ohne das Attribut ist die App wie heute.
+  (`data-wasser="mobil"`), am Desktop die Bühne `.stage` (`data-wasser="desktop"`). Ohne das Attribut ist die App wie heute.
 - **Zwei Töne = heller und dunkler Modus:** „dunkel“ ist der Standard, „klar“ wird mit `data-wa-ton="klar"` am
   `<html>`-Element gewählt. Ein Ton ist ein einziger Block von Werten in `kern.css`.
 - **Bewegung aus:** Systemeinstellung „Bewegung reduzieren“ oder der Schalter der App (`data-motion="reduziert"`).
 
-## Ansehen
+## Die Desktop-Vorlage ansehen
+
+**Im eigenen Browser, mit der echten App** (das ist der beste Weg – nur dort sieht man, wie flüssig es läuft):
+
+```
+npm run build
+node scripts/wasser/desktop.mjs zeigen
+```
+
+dann http://localhost:4320 öffnen. Das ist die gebaute App mit der Vorlage obendrauf; an der App wird nichts geändert.
+
+- breites Fenster = Desktop-Vorlage, schmales Fenster (unter 900 px) = Handy-Vorlage – **beide Vorlagen in einem Fenster**
+- der Ton folgt der Einstellung „Erscheinungsbild“ der App: **Dunkel → „dunkel“, Hell → „klar“, Automatisch → nach
+  Tageszeit**. Fest wählen: `?ton=klar` oder `?ton=dunkel` an die Adresse hängen
+- `?ohne=1` – die App wie heute (zum Vergleichen), `?weich=aus` – die Vorlage ohne Weichzeichner (falls es ruckelt),
+  `?leben=1.5` – mehr Licht in Ruhe
+
+**Bilder:** `docs/wasser-look/bilder/desktop/` –
+
+- `dunkel-1-start` bis `dunkel-8-archiv`: alle acht Welten bei Nacht, 2000 × 993, Ton „dunkel“
+- `klar-heute`, `klar-projekte`, `klar-wetter` (bei Tag) und `klar-heute-nacht`: der Ton „klar“
+- `format-1920-material`, `format-1920-innenwelt`: zwei Welten in 1920 × 1080
+- `vorher-nachher-heute`, `vorher-nachher-bogen`, `vorher-nachher-tag`: oben der Desktop von heute, unten die Vorlage
+- `film-1` (Dock, Schublade, Ruhe) und `film-2` (Knopfdruck mit Ring, Mauszeiger): Bewegung als Bildstreifen
+- `desktop.mp4`: ein Rundgang durch die echte App, am Ende der Wechsel zum Ton „klar“ (auf der Arbeitsmaschine
+  aufgenommen: etwa 8 Bilder je Sekunde, daher ruckelig – am eigenen Rechner läuft es anders)
+
+**Was am Desktop anders ist als am Handy** (Einzelheiten in `NOTIZEN.md`, Abschnitt 11):
+
+- Die Inseln bleiben frei: Inseln, ihre Beschriftungen, der Tagesring, lose Schrift über der Landschaft und die
+  handgeschriebenen Zeilen bekommen nichts. Kein Panel, kein Titel und keine Insel steht anders als heute (geprüft).
+- Jedes Panel ist ein flaches Becken, dünner als eine Karte am Handy, damit das Bild durchscheint. Nur das eine große
+  Panel einer Welt hat volles Licht (beide Ränder, Boden); die Seitenpanels tragen ein gedämpftes Randlicht, das unter
+  dem Mauszeiger erwacht.
+- Wenige lebende Tropfen: die drei runden Knöpfe der Kopfzeile, Knöpfe frei über der Landschaft, der Hauptknopf eines
+  Panels, Knöpfe in der Schublade – 3 bis 9 je Bildschirm. Alle anderen Knöpfe auf Panels sind stilles Glas.
+- Ein freier Tropfen bricht nur die Landschaft, nicht die Inseln davor. Deshalb liegt nirgends ein lebender Tropfen
+  vor einer Insel (die Pfeile neben der Insel sind Perlen, die Wetterzeichen kleine stille Flächen).
+- Das Dock ist die Leiste des Desktops: dieselbe Perle, die zur aktiven Welt fließt. Der Bogen ist hier eine Schublade,
+  die von rechts hereinfließt.
+- Maus statt Finger: Was man anklicken kann, wird unter dem Zeiger einen Hauch heller; die Tastatur zeigt überall die
+  weiße Wasserlinie statt des blauen Rings; eine bewegte Maus hält das Wasser wach.
+
+**Werkzeuge für den Desktop** (alle in `scripts/wasser/desktop.mjs`; brauchen `npm run build && npm run preview`):
+
+```
+node scripts/wasser/desktop.mjs bild /tmp/desktop --alles          # Standbilder: Welten, Bögen, Suche, Hinweis (--ton klar --zeit tag --format 1920)
+node scripts/wasser/desktop.mjs film /tmp/desktop-film             # Bewegung als Bildstreifen
+node scripts/wasser/desktop.mjs pruefen                            # 22 Prüfungen (Tropfen, Dock, Schublade, Maus, Ruhe, „nichts ist verrückt“)
+node scripts/wasser/desktop.mjs kontrast                           # Lesbarkeit: beide Töne, Nacht und Tag
+node scripts/wasser/desktop.mjs takt                               # Was der Look kostet (Bilder je Sekunde)
+node scripts/wasser/desktop.mjs clip /tmp/desktop.mp4              # der Rundgang als Film
+```
+
+## Die Handy-Vorlage ansehen
 
 Aus dem Projektordner (nach `npm install`):
 
@@ -94,6 +150,21 @@ Seitenwechsel gelegentlich schwarz (im freigegebenen Stand bei 8 von 48 Wechseln
 - Zum Entscheiden liegt der Vergleich „Leben 1 gegen 1,5“ bei den Bildern (`leben-vergleich`). Ehrlich gesagt: Der
   Unterschied ist auf Handygröße kaum zu sehen; mehr Leben käme vom Tempo des Lichts, nicht von seiner Stärke.
 
-**Noch nie auf einem echten Handy gelaufen** – alles wurde auf der Arbeitsmaschine geprüft; ob es am iPhone flüssig
-läuft, ist offen. Womit man am Handy anfängt und welche eine Zeile man jeweils ändert, steht in `NOTIZEN.md`,
-Abschnitt 13.
+**Die Desktop-Vorlage, 14.11.** (Zahlen in `NOTIZEN.md`, Abschnitt 11.4):
+
+- Alle acht Welten, die Innenwelt, zwölf Bögen und Formulare, Suche, Hinweis, Tastatur und die leere Werkstatt wurden
+  in beiden Formaten (2000 × 993 und 1920 × 1080), in beiden Tönen, bei Nacht und bei Tag angesehen, dreimal auch im
+  WebKit-Testbrowser.
+- `desktop.mjs pruefen`: 22 Prüfungen bestanden – darunter „nichts ist verrückt“: Panels, Titel, Kopfzeile und Inseln
+  stehen wie in der App ohne Look (größte Abweichung 1,8 px); nur das Dock ist 21 px breiter.
+- Lesbarkeit: kein Text unter der Grenze (Titel 7 : 1, Text 4,5 : 1) – in beiden Tönen, bei Nacht und bei Tag. Der
+  Desktop von heute liegt bei Tag an elf Stellen darunter (das Bereichs-Etikett bei 1,0 : 1).
+- **Die Handy-Vorlage ist unverändert**: derselbe Vergleich wie oben gegen den Stand vor dem Desktop-Schritt – kein
+  einziger abweichender Bildpunkt (auch nicht in den Tropfen), kein abweichender Stil.
+- An der Vorlage selbst wurde dabei verbessert, was das Anwenden schwer gemacht hat (Liste in `NOTIZEN.md`,
+  Abschnitt 9, Punkt 8, und Fallstricke 47 bis 54).
+
+**Noch nie auf einem echten Handy und noch nie auf einer echten Grafikkarte gelaufen** – alles wurde auf der
+Arbeitsmaschine geprüft; ob es am iPhone und am eigenen Desktop flüssig läuft, ist offen (die Arbeitsmaschine zeichnet
+den Desktop von heute mit 9 bis 11 Bildern je Sekunde, die Vorlage mit 8). Womit man anfängt und welche eine Zeile
+man jeweils ändert, steht in `NOTIZEN.md`: Abschnitt 13 fürs Handy, Abschnitt 11.5 für den Desktop.

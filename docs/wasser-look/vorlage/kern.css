@@ -24,6 +24,10 @@
      Where a block also needs the script, its comment names the option of Wasser.start() that takes the same selector.
      A list has the weight of its heaviest entry (:is()). A rule that changes one member of a block afterwards needs at
      least that weight, or it loses without a word - write it nested in the block, or with as many classes.
+     For the same reason A NEW ENTRY IS NEVER HEAVIER THAN THE HEAVIEST ENTRY ALREADY IN THE LIST (it would outweigh
+     the rules both shells have written against that list): put whatever it needs beyond that inside :where(), which
+     weighs nothing -  .panel .glass:where(.col)   :where(.topbar) .brand   .chip:where(:not(.btn--icon)).
+     A class that BOTH shells have, applied for one shell only, is scoped the same way - :where(.topbar) .brand.
      CSS cannot add to a selector list from another file. So the lists live HERE, also for elements that only one shell
      has; mobil.css and desktop.css hold what a shell needs beyond the blocks (sizes, places, its own tokens).
 

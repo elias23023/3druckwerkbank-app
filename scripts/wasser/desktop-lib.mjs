@@ -9,7 +9,7 @@
 // Options
 //   look     'vorlage' = the template, '' = no look (the app as it is today), or a folder with another copy of the template
 //   format   '2000' = 2000 x 993 (the owner's screen), '1920' = 1920 x 1080, or 'WxH'
-//   ton      '' / 'dunkel' | 'klar'
+//   ton      '' / 'dunkel' | 'klar' | 'auto' (the tone follows the app's setting "Erscheinungsbild": Hell -> klar)
 //   zeit     'morgen' | 'tag' | 'abend' | 'nacht' or an ISO time: the app's clock. Only Date is shifted; timers and animations run in
 //            real time. The hour chooses the landscape (and, without the look, the app's own light or dark theme).
 //   wetter   'klar' | 'bedeckt' | 'regen' | 'nebel' | 'schnee': a made-up answer of the weather service, so panels are full and two
@@ -71,7 +71,7 @@ export async function openDesktop({ look = 'vorlage', format = '2000', ton = '',
     if (!look) return;
     if (!isTemplate(look)) throw new Error('look: not a copy of the template (kern.css is missing): ' + look);
     const dir = lookDir(look);
-    await page.evaluate((o) => { window.__wasserVorschau = o; }, { ton: ton && ton !== 'dunkel' ? ton : 'dunkel', start });
+    await page.evaluate((o) => { window.__wasserVorschau = o; }, { ton: ton && ton !== 'dunkel' ? ton : 'dunkel', start });   // ('auto': the tone follows the app's setting "Erscheinungsbild", as in "zeigen")
     await page.addStyleTag({ content: ['kern.css', 'mobil.css', 'desktop.css'].map((f) => rd(`${dir}/${f}`)).join('\n') });
     await page.addScriptTag({ content: rd(`${dir}/wasser.js`) });
     await page.addScriptTag({ content: rd('scripts/wasser/einspielen.js') });

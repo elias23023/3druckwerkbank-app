@@ -372,6 +372,13 @@ timers of helpers.
 Dead on purpose or for lack of a hook: a closing sheet, a removed row (both need the app to delay the removal by
 `--wa-t-leave`), a toast that replaces another one, the header. The drops do not lean when the list is scrolled.
 
+On the desktop the same table holds, with these differences: a side panel has ONE rim light at 60 % that becomes full
+under the pointer, only the one large panel of a world has the far light and the floor light; the dock is the bar (its
+bead flows 0.46 s plus 70 ms per further world, at most three); the sheet is a drawer that flows in from the right
+(0.62 s) with its crest along its left edge; under a resting mouse clickable things light up and a live drop gives
+way a breath; the ring answers a click on any non-ghost button of a panel. The stage itself (leaves, clouds, floating
+islands, parallax) is the app's and untouched.
+
 ---
 
 ## 7. Pitfalls
@@ -588,6 +595,12 @@ All on the work machine (software rendering; Chromium and Playwright's WebKit fo
    c. "klar": the tone token `--wa-drop-veil` is .3 ("dunkel": 1, as it was);
    d. the governor of the drops sets its wait back after a climb that held; start option `debug.cost`,
       `Wasser.info.wait`.
+8. The desktop step (14.11.; section 11) - for the phone nothing to see and nothing to measure (numbers in 11.4):
+   a card's `position: relative` moved from the block "Becken" to `mobil.css` (a basin no longer sets a position);
+   "Etikett" became a list with the neutral class `.wa-etikett`; the water below a bottom sheet's foot is the token
+   `--wa-bogen-fuss`; the marker places up to nine children; two more tone tokens (`--wa-weit-*`, read by the desktop
+   only); the lists carry the desktop's entries; `Wasser.DESKTOP`; a moving MOUSE wakes the water, and a live drop
+   gives way a breath under a resting mouse (`HOVER` - a finger never hovers).
 
 **Is it the same look?** `node scripts/wasser/vergleich.mjs` (machine otherwise idle), Chromium. The table is the
 state of the package (13.11.); what the same comparisons say after the corrections of 14.11. follows below it.
@@ -760,40 +773,139 @@ with pretended costs or forced levels, never by a machine that really got slow a
 
 ---
 
-## 11. Desktop (next step; nothing is applied yet)
+## 11. Desktop: the second template (applied on 14.11.; not built into the app)
 
-`desktop.css` is the place; its head lists what belongs there. What the exploration of the desktop found (13.11.):
+The desktop shell is the stage (`.stage`, `data-wasser="desktop"`): a painted landscape, islands in front of it, glass
+panels around them, a top bar, a dock. The template was APPLIED to it, not designed again: selectors in the lists of
+`kern.css`, what the shell needs on top in `desktop.css` (10 parts, about 270 lines), eight options in `Wasser.DESKTOP`.
+How to look at it: `LIESMICH.md` ("Die Desktop-Vorlage ansehen") - `node scripts/wasser/desktop.mjs zeigen`.
 
-- **Root and theme.** `data-wasser="desktop"` on the stage (the scene image must be inside the root). The desktop has
-  no dark tokens of its own: declare `color`, `--text`, `--text-2`, `--text-3` on the root as `mobile.css` does on
-  `.m-shell`, and keep the app's theme at "dunkel" (by day the app switches to dark text on light glass: every
-  heading would be invisible on the water).
-- **Script options.** `scene`: `.land picture:last-child img` (one image; during the 2.5 s crossfade of two
-  landscapes the drop jumps to the new one). `shade: ''` (the desktop has no page darkening). `bar: '.dock'`,
-  `scrollers`: `.panel__body, .inner-cluster, .sheet__body, .cmd__list`. `drops`: few (about six per screen): the
-  three round top-bar buttons (`.topbar .chip.btn--icon`, not a `.btn`), primary buttons, the hero buttons under
-  the island. Wake on pointer movement is not built (the clock counts pointerdown, scroll, key).
-- **A drop free over the stage bends ONE image**: it cannot show islands, clouds, leaves, sun glow, tint or the
-  crossfade. Anything that may have an island behind it must not be a live drop (use the browser's own
-  `backdrop-filter`, or no see-through effect).
-- **Blocks.** Side panels (`.panel-col > .glass.panel`, 440 x 150 to 300 px): stilles Wasser, never Becken (pitfall
-  5). One main panel per world: Becken. Dock: stilles Wasser + Markierung with seven children (two more `:has()`
-  lines, `--wa-bar-tabs: 7`); the dock centres itself with `left: 50%` and a transform - do not give it the mobile
-  bar's `left / right`. Rows, hour tiles, AMS slots, gallery cards: Mulde. Top-bar text chips, info chips, filter
-  pills, carousel arrows: flat glass or Perle WITHOUT blur (they lie over sky).
-- **Sheet.** Same class as on the phone, another shape: a right drawer (460 px, 14 px from top, right, bottom), the
-  app's entrance `slide`. Re-declare the Bogen tokens for the desktop and give it its own entrance; `--wa-scrim-blur:
-  none` (a blur there is a full-screen blur over a stage that never rests).
-- **Panels clip.** Panels in columns are `overflow: hidden`, their bodies scroll behind a fade mask: the 14 px a
-  drop's bulge needs are cut there. Buttons on panels: plain glass, not live drops (as the per-row buttons).
-- **The stage never rests** (clouds, leaves, islands, the clock): every blurred sheet is blurred again for every
-  picture. There are three to four times as many sheets on a screen as on the phone. Blur budget: panels and dock.
-- **Hover** does not exist in the look (only the press); the app's own hover rules lose to the look's selectors.
-  The desktop needs a hover state (a trough at half its pressed light) and more Wasserlinie entries (`.chip`,
-  `.dock button`, `.carousel-nav`, `.gcard`, `.back`).
-- **CSS `zoom` on panels** (0.919 at 2000 x 993) works: drops stay aligned.
-- Check every desktop picture in both formats (1920 x 1080, 2000 x 993), by day and by night, in both tones; no
-  panel or text on an island.
+### 11.1 What got what
+
+| Desktop element | Block (Stufe) | How it was applied |
+|---|---|---|
+| every panel `.glass.panel` (4 to 9 per world) | Becken (2), shallow | list of "Becken" + options `ringOn`, `light`; `desktop.css` 2: padding, three outlines, smaller depth steps, the depth thinned by `--wa-weit-tiefe`, the scene dimmed THROUGH the sheet by `--wa-weit-grund`, one rim light at part strength |
+| the one large panel of a world, the first-project card | Becken, full | `desktop.css` 2: the phone's depth steps, both rim lights at full strength, the light on its floor. Found by its inline `bottom:` until the app gives it a class |
+| dock `.dock`, its seven buttons | dichtes Wasser, Markierung, Lichtlauf | three lists + option `bar`; `desktop.css` 4: `--wa-bar-tabs: 7`, a grid of equal columns, labels, press |
+| round buttons of the top bar `.chip.btn--icon` | Tropfen (3), live | list (and the round lines) + option `drops` |
+| text chips of the top bar, chips under the island | Etikett (1) | list; `desktop.css` 3: smoke glass `--wa-frei`, no blur |
+| buttons free over the stage (hero row of "Projekte", title row of the inner world, "Öffnen" under the islands of "Start") | Tropfen (3), live | nothing to do: `.btn:not(.btn--ghost)` was in the list; option `drops` |
+| primary button on a panel | Tropfen (3), live: shows the panel's water | nothing in CSS; option `drops` keeps it |
+| every other plain button on a panel | plain glass ("Perle mit Schrift", 1) | `.panel` in the list of rows; option `drops` leaves them out |
+| ghost buttons, ghost icon buttons | Film, Perle (1) | shared lists, nothing to do; hover in `desktop.css` 9 |
+| arrows beside the island `.glass.carousel-nav` | Perle (1) | list; `desktop.css` 5: smoke ground, its own centring kept while pressed |
+| weather signs on the island `.glass.wchip` | stilles Wasser (2), small | list (+ "Etikett auf Wasser"); `desktop.css` 5 |
+| rows, hour tiles, AMS slots, gallery cards, tab groups, nested boxes on panels | Mulde / Mulde zum Tippen (1) | lists |
+| pills on panels; filter pills under a world title | Etikett auf Wasser; Wahl (1) | `.panel` in the list of sheets; the filter group was already a `.pills` group - `desktop.css` 5 gives it smoke ground |
+| selects (filter, station, small ones in rows) | Feld (1) | shared list; `desktop.css` 5: ground for the free ones, room for the arrow where the app sets the padding inline |
+| checks, progress bars, fields, options, tabs, tiles | Haken, Pegel, Feld, Wahl (1) | shared lists, nothing to do (`--wa-haken-hit: -5px` for the pointer) |
+| drawer `.sheet` | Bogen (2), another shape | shared list; `desktop.css` 1 and 6: the Bogen tokens re-declared, entrance `wa-fliesst` from the right, crest along its left edge, its own blur |
+| search panel, toast | dichtes Wasser, Tropfen-Hinweis (2) | shared lists; `desktop.css` 6: the panel's own blur, the scrim without fade (pitfall 47) |
+| scrims | tint | `--wa-scrim: .3`, `--wa-scrim-blur: none` |
+| islands, their labels, the day ring, loose text over the stage, hand-written notes, charts, the scene | none (0) | nothing |
+
+Counted (`desktop.mjs pruefen`, 2000 x 993, demo data): live drops per world 9 (start), 3, 8, 7, 4, 3, 3, 3 - never more
+than 9; blurred surfaces 1, 9, 3, 10, 7, 6, 12, 6 covering 2 to 41 % of the screen; lights 0 to 9.
+
+### 11.2 Decisions, and why
+
+- **The islands are the stars.** No place and no size changes: `desktop.mjs pruefen` compares the boxes of panels, top
+  bar, titles, hero, islands, weather signs and notes in all eight worlds with the app without the look - largest shift
+  1.8 px, largest change of size 2 px (a panel that lost its 1 px border). The dock is 21 px wider (equal columns).
+- **How dense the water is** is the one real change against the phone. A wall of the phone's dark cards buried the
+  painting (first round: black slabs). Now, per tone (`--wa-weit-*`): "dunkel" keeps 70 % of a basin's depth and dims
+  the scene behind a sheet by 12 %; "klar" keeps its depth and dims the scene behind a sheet by 30 % - the stand-in for
+  the page's darkening, which the desktop does not have. Lighter is not possible without losing the floor of 4.5 : 1
+  for faint text in "dunkel" by day (4.7 now); "klar" has room left (see 11.4), kept as margin.
+- **What a drop free over the stage shows:** the landscape image, bent - as on the phone. It does NOT see islands,
+  clouds, leaves, sun glow, mist or the 2.5 s crossfade of two landscapes (it jumps to the new one). So no live drop
+  lies where an island can be behind it: checked for every world (the sprite's own pixel under the drop's centre).
+  The better solution would be to draw the islands into the drops' picture as well (each island as one more textured
+  quad in the shader, with its place, scale and opacity read per picture): about a day of work and a texture per
+  island; not started - nothing on today's screens needs it. If a layout ever puts a button over an island: leave it
+  out of `drops` (it stays plain glass).
+- **Dosage of life.** The stage already moves forty things. Side panels: ONE rim light at 60 % (`--wa-panel-ruhe`), no
+  far light, no floor light; under the pointer the light becomes full. The large panel: all three lights. Dock: its
+  Lichtlauf and the breathing bead. Pausing lights saves nothing here (pitfall 51) - this is a decision of calm, not of
+  cost.
+- **Pointer.** Hover is one rule block (`desktop.css` 9): clickable troughs, ghost buttons, beads, labels, chips and the
+  dock answer with a little light; plain glass and drops get 16 % brighter; a LIVE drop also gives way a breath under
+  the mouse (`HOVER` in `wasser.js`: 30 % of a press, no ring). Rows that cannot be clicked do not answer (the app
+  lit every row). The ring answers a click on any non-ghost button of a panel and a ticked check.
+- **Keyboard.** Wasserlinie everywhere: the lists of `kern.css` plus one catch-all in `desktop.css` 10. Checked: 24 tab
+  stops, 24 white lines, no blue ring.
+- **The drawer and the search carry their own blur**, the scrims none: the stage never rests, a blur behind a scrim
+  would be a full-screen blur for every picture. In "klar" the drawer without blur would show the page's words.
+- **Sleep:** a moving mouse counts as a touch (`wasser.js`); the page behind a drawer or the search rests
+  (`desktop.css` 7).
+- **Not done on purpose:** no blur on chips and labels free over the stage (smoke glass instead); no drop on the
+  per-row buttons, the queue's 22 px buttons stay beads; the app's own entrance of the panels ("rise") stays.
+
+### 11.3 To apply the look to one more desktop element
+
+1. Find its block in section 2. Add its selector to the block's list in `kern.css`, marked `desktop`, no heavier than
+   the list (section 1). If the class also exists on the phone, scope it: `:where(.topbar) .brand`.
+2. If the block names script options: add the selector to the same option in `Wasser.DESKTOP` (`wasser.js`).
+3. What it needs on top (place, size, hover) goes into `desktop.css`, with at least the weight of the list.
+4. Free over the stage and carrying text: give it `background: var(--wa-frei)` and no blur. May an island lie behind
+   it: never a live drop.
+5. `node scripts/wasser/desktop.mjs pruefen`, `... bild <out> --nur <world>` in BOTH formats and both tones,
+   `... kontrast`; `node scripts/wasser/vergleich.mjs --alt git:HEAD` (the phone must not change).
+
+### 11.4 Verified (14.11., work machine: software rendering; Chromium, and Playwright's WebKit which paints no backdrop-filter)
+
+- `desktop.mjs pruefen`: 22 checks pass (three runs in a row; `--format 1920` and `--ton klar` as well).
+- Looked at: every world, the inner world, 12 sheets and forms, search, keyboard focus, toast, the empty workspace -
+  2000 x 993 and 1920 x 1080, both tones, by night and by day; WebKit three times.
+- Contrast (`desktop.mjs kontrast`, 50 kinds of text, median; worst 5 % in brackets):
+
+| Text | dunkel, night | dunkel, day | klar, night | klar, day | today's app, night / day (its light theme) |
+|---|---|---|---|---|---|
+| panel titles (four places) | 15.5 to 16.8 | 12.3 to 15.9 | 13.6 to 15.5 | 9.6 to 14.1 (8.9) | 13.0 to 15.9 / 6.6 to 11.2 |
+| text on open water / small muted in a row | 10.2 / 9.8 | 9.9 / 9.6 | 9.9 / 10.1 | 9.1 / 9.5 | 6.4 / 7.5 night; 5.4 / 4.1 day |
+| small faint text on open water | 4.9 | 4.7 (4.6) | 9.1 | 7.7 | 4.6 / 3.2 |
+| status pill / clickable pill | 9.1 / 10.3 | 7.6 / 8.9 | 7.8 / 8.8 | 5.8 / 7.0 | 8.1 / 8.9 night; 5.7 / 9.7 day |
+| dock: world / active world | 10.0 / 16.5 | 9.8 / 15.5 | 7.2 / 9.8 | 5.8 / 7.4 | 8.8 / 8.5 night; 5.1 / 5.1 day |
+| top bar: search / weather / workspace chip | 11.4 / 13.2 / 11.7 | 6.2 / 8.1 / 5.3 | as dunkel | as dunkel | 9.0 / 13.4 / 12.1 night; 5.9 / 10.9 / **1.0** day |
+| free: chosen filter / chip under the island / clear drop / amber drop / "Öffnen" | 9.5 / 14.9 / 13.6 / 7.8 / 5.6 | 6.0 / 9.6 / 5.0 / 8.8 / 4.9 | as dunkel | as dunkel | 7.6 / 15.7 / 9.8 / 10.2 / **3.9** night; **3.1 / 1.7** / 4.8 / **3.4 / 2.5** day |
+| drawer: title / field label / typed text / placeholder | 16.9 / 11.4 / 18.0 / 4.6 | 16.7 / 11.2 / 17.8 / 4.5 | 10.1 / 8.5 / 12.5 / 4.4 | 9.4 / 7.6 / 10.9 / 3.8 | 16.6 / 9.0 / 17.2 / 4.0 night |
+| search: group, small hit; toast: text, "Rückgängig" | 11.4, 8.7; 16.9, 11.1 | 11.4, 8.6; 16.6, 10.9 | 8.2, 5.6; 9.9, 6.3 | 8.0, 5.6 (5.1); 8.5, 5.3 (4.7) | 4.8, 6.9; 17.0, 11.2 night; **3.2**, 6.2; 16.5, **1.6** day |
+
+  No median below its floor in the template (titles 7, text 4.5, placeholders 3). Today's app: 1 below the floor by
+  night, 11 by day (bold). The lowest worst-5-% values of the template: placeholder 3.6 (klar, day), faint text 4.6
+  (dunkel, day), "Öffnen" 4.6.
+- What it costs (`desktop.mjs takt`, 2000 x 993, night; pictures drawn a second / CPU ms of the GPU process per picture):
+
+| | "Heute" (9 blurred sheets, 30 % of the screen) | "Wetter" (12, 42 %) |
+|---|---|---|
+| the app today | 9.4 / 105 | 10.8 / 91 |
+| the template | 7.8 / 144 | 8.2 / 140 |
+| ... lights paused | 7.6 / 148 | 8.0 / 141 |
+| ... no live drops | 7.6 / 129 | 7.8 / 127 |
+| ... no blur at all | 9.6 / 120 | 10.4 / 113 |
+
+  On this machine a picture costs 37 to 54 % more work than today; the blur is about half of that, the drops about a
+  tenth, the lights nothing. A water picture of three to nine drops: 9 to 11 ms. NOT measured on a real graphics card.
+- The phone is unchanged: `vergleich.mjs alles --alt <the template as it was before the desktop step>`, Chromium:
+  186 comparisons, no pixel differs outside AND inside the drops (64 pairs, 99 million pixels), no computed style
+  differs (72 comparisons, 17,792 styles; 1,132 pressed / focused elements), the same motion in 12 filmstrips (the two
+  "scroll" strips differ as always: real frame times). After the script had learned the hover, `bilder`, `app` and
+  `film` once more: again no pixel, outside or inside. `pruefen.mjs --app`: all 60 checks, 57 and 57 tone tokens.
+  WebKit test build: `bilder` and `app` against the same reference, 64 pairs: no pixel differs, outside or inside the
+  drops; `pruefen.mjs --app --engine webkit`: all 60 checks. (To compare against the state before a step when
+  intermediate commits exist: `--alt git:<commit before the step>` - for the desktop step that is `git:ae614b7` - or a
+  copy of the folder.)
+
+### 11.5 The first look on the owner's own desktop (nothing has run on a real graphics card)
+
+| # | Look at | Good | Bad | The one line |
+|---|---|---|---|---|
+| 1 | **Smoothness**: `zeigen`, move the mouse over "Heute" and "Wetter" (parallax), change worlds; then the same with `?weich=aus` and with `?ohne=1` | no difference to `?ohne=1` | choppier than the app today, and `?weich=aus` cures it | fewer blurred sheets: in `desktop.css` 2 take `-webkit-backdrop-filter` / `backdrop-filter` off `.bottom-row .glass.panel` first (four sheets over the lake's shore, where the blur shows least) |
+| 2 | **Is the painting still the star?** every world, "dunkel" at night | panels read as dark water, the lake glows through their rims | a wall of slabs | `--wa-weit-tiefe: .55;` (`kern.css`, tone "dunkel"; today .7) - then check `desktop.mjs kontrast`: faint text by day falls below 4.5 |
+| 3 | **"klar" by day**: `?ton=klar` at noon | smoked clear water, every text easy to read | too grey / too dark | `--wa-weit-grund: brightness(.8);` (`kern.css`, tone "klar"; today .7) - titles stay above 8, small text about 5 |
+| 4 | **Life at rest**: sit still for a minute on "3D-Druck" | calm; the large basin breathes a little | panels shimmer / nothing lives | `--wa-panel-ruhe: .35;` or `1` (`desktop.css` 1); all of it: `?leben=1.5` / `--wa-leben` |
+| 5 | **Hover**: move over the hero buttons of "Projekte" and over rows | each drop answers, nothing flickers | not noticed / too much | `HOVER` in `wasser.js` (0.3) and `--wa-zeiger-licht` (`desktop.css` 1) |
+| 6 | **Free drops**: "Start" and "Projekte" with the mouse moving (parallax) | the lake inside the drops moves with the lake outside | a drop shows a different place than its surroundings | report it; `drops: '.topbar .chip.btn--icon, .btn--primary'` in `Wasser.DESKTOP` makes the free plain buttons glass |
 
 ---
 
@@ -841,8 +953,32 @@ with pretended costs or forced levels, never by a machine that really got slow a
   bright foliage in both tones and in today's app.
 - **Still dead:** a closing sheet, a removed row, a toast that replaces another one, the header.
 - **The marker's observer** forces style in the middle of a tab change (about 8 ms on the work machine).
-- **The marker knows five children**; more need one `:has()` line each.
-- **Desktop:** nothing applied (section 11). **`scripts/verify.mjs`:** never run against a build with the look.
+- **The marker knows nine children** (five before the desktop step); a tenth needs one more `:has()` line.
+- **`scripts/verify.mjs`:** never run against a build with the look.
+
+Desktop (section 11):
+- **Never on a real graphics card.** Smoothness of the desktop template is unknown: the work machine draws today's
+  desktop at 9 to 11 pictures a second and the template at 8. Section 11.5 is the order in which to look.
+- **A free drop does not see islands** (11.2). Safe on today's screens (checked per world); a layout change can move
+  an island behind a free button.
+- **"klar" needs `backdrop-filter`.** Its ground under light text by day is the dimming of the scene THROUGH the sheet
+  (`--wa-weit-grund`) plus the blur. In Playwright's WebKit build, which paints no backdrop-filter, panels of "klar" by
+  day show the sharp bright scene and small text gets hard to read (picture: the third WebKit run). Every current
+  browser paints it (Safari through the prefixed property, which is written first); no fallback for a browser
+  without it was built, because none could be tested.
+- **Small selects with an inline padding on the PHONE** (in sheets: drying profile, status of a version, a tool, a
+  member): the same root cause as pitfall 48 - the arrow has no room of its own. It was not touched there (the phone's
+  pictures had to stay identical; in the approved pictures the arrow happens to stand clear). The cure is the rule of
+  `desktop.css` part 5 moved to `kern.css` without its shell.
+- **The brand button of the phone's header keeps the app's blue focus ring** (the last blue there): `.brand` is not in
+  the Wasserlinie list for the phone, again to keep it identical. One entry.
+- **Three places are found or fought by the app's inline styles** (the large panel, the current version, small
+  selects): section 10, point 2.
+- **The empty workspace** shows large empty basins in "3D-Druck" and "Material" (one line of text in 835 x 290 px of
+  dark water): the app's layout; nothing was changed.
+- **Dead on the desktop:** a closing drawer (gone in one frame, as on the phone), panels that leave a world (the app
+  unmounts them), the top bar's text chips at rest, the weather signs.
+- **Firefox** was not run for the desktop (its build here has no WebGL: plain glass buttons, everything else CSS).
 
 ---
 

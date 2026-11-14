@@ -240,8 +240,9 @@
 /* Islands, their labels, the day ring, loose text over the stage, hand-written notes, charts: nothing. */
 
 /* == 9. Zeiger =================================================================================================== */
-/* What can be clicked answers the pointer with a little light - at once, never with a movement of its own, and only
-   where a pointer can hover at all. The press answers as on the phone. */
+/* What can be clicked answers the pointer with a little light - at once, and only where a pointer can hover at all.
+   A live drop also gives way a breath under the mouse (wasser.js, HOVER: it swells towards the pointer, no ring).
+   Nothing else moves. The press answers as on the phone. */
 @media (hover: hover) {
   /* troughs that can be clicked */
   [data-wasser="desktop"] :is(.item--click, .sim-item, .gcard, .cmd__item, .tile:not(.on), .island-lib > button:not(.on)):hover:not(:has(:is(button, a, .check):hover)) { background-color: var(--wa-zeiger); transition-duration: var(--wa-t-fast); }

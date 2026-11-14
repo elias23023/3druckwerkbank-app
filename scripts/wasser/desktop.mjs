@@ -23,7 +23,8 @@
 //        What the look costs: pictures a second and work per picture for today's app, the template, and the template
 //        without its lights / drops / blur.
 //   node scripts/wasser/desktop.mjs clip <out.mp4> [--ton klar] [--zeit nacht]
-//        A tour of about 40 s through the real app, recorded through the browser's screencast.
+//        A tour through the real app (about 80 s on the work machine), recorded through the browser's screencast; at its
+//        end the app's setting "Erscheinungsbild: Hell" switches the tone to "klar".
 // All take --look vorlage|ohne|<folder> (ohne = today's desktop), --engine chromium|webkit|firefox, --format, --reduced.
 import fs from 'fs'; import path from 'path'; import http from 'http';
 import { REPO, VORLAGE, abs, mkdir, args, strip, sharp } from './lib.mjs';
@@ -93,36 +94,36 @@ async function film(out) {
   if (only('ruhe')) {
     begin('ruhe'); await d.go('druck', 3200); await d.park(); const clip = union(await box('.ui > .panel[style*="bottom"]', 14), await box('.dock', 10));
     let t = 0; for (const at of [0, 3000, 6000, 9000, 12000]) { await p.waitForTimeout(Math.max(0, at - t)); const t0 = Date.now(); await shot(`${at / 1000} s`, clip); t = at + (Date.now() - t0); }
-    await make('In Ruhe: Licht wandert am Rand des großen Beckens und der Leiste, die Perle atmet, der Tropfen fließt', 'Fünf Bilder im Abstand von drei Sekunden. Darunter, was sich gegenüber dem ersten Bild verändert hat (auch Laub, das hinter dem Wasser vorbeitreibt).', { scale: 0.5, diffGain: 8 });
+    await make('In Ruhe: Licht wandert am Rand des großen Beckens und des Docks', 'Fünf Bilder im Abstand von drei Sekunden. Darunter, was sich gegenüber dem ersten Bild verändert hat: Randlichter, Bodenlicht, die Perle, der Tropfen (und Laub hinter dem Wasser).', { scale: 0.5, diffGain: 8 });
   }
   if (only('dock')) {
     begin('dock'); await d.go('heute', 2600); await d.park(); const clip = await box('.dock', 18); await shot('vorher', clip);
     await p.locator('.dock button').nth(4).dispatchEvent('click'); await frames3(); await grab();
     for (const t of [70, 150, 240, 340, 460, 700]) { await seek(t); await shot(`${t} ms`, clip); }
-    await finish(); await make('Dock: die Perle fließt von „Heute“ zu „Material“ – sie streckt sich, läuft voraus, setzt sich', 'Zeit nach dem Klick auf „Material“.', { cols: 4, scale: 0.8 });
+    await finish(); await make('Dock: die Perle fließt von „Heute“ zu „Material“', 'Zeit nach dem Klick. Sie streckt sich, läuft voraus und setzt sich.', { cols: 4, scale: 0.8 });
   }
   if (only('druck')) {
-    begin('druck'); await d.go('druck', 3000); await d.park(); const clip = await box('.ui > .panel[style*="bottom"]', 14); const b = await p.locator('.panel .btn--primary').first().boundingBox(); const x = b.x + b.width * 0.5, y = b.y + b.height * 0.5;
+    begin('druck'); await d.go('druck', 3000); await d.park(); const whole = await box('.ui > .panel[style*="bottom"]', 14); const clip = { x: whole.x, y: whole.y + Math.round(whole.height * 0.36), width: Math.round(whole.width * 0.6), height: whole.height - Math.round(whole.height * 0.36) }; const b = await p.locator('.panel .btn--primary').first().boundingBox(); const x = b.x + b.width * 0.5, y = b.y + b.height * 0.5;
     await shot('vorher', clip); await p.mouse.move(x, y); await p.waitForTimeout(350); await shot('Zeiger darüber', clip);
     await swallow(); await p.mouse.down(); await p.waitForTimeout(260); await shot('gedrückt', clip); await p.mouse.up(); await frames3(); await grab();
     for (const t of [120, 350, 650, 1000]) { await seek(t); await shot(`${t} ms nach dem Loslassen`, clip); }
-    await finish(); await d.closeSheet(); await make('Knopf auf einem Panel: der Tropfen wird unter dem Zeiger heller, gibt beim Drücken nach, dann läuft EIN Ring über den Boden des Beckens', 'Der Ring startet beim Loslassen, in der Farbe des Wassers (Bernstein).', { cols: 4, scale: 0.62 });
+    await finish(); await d.closeSheet(); await make('Knopf auf einem Panel gedrückt: EIN Ring läuft über den Boden des Beckens', 'Unter dem Zeiger wird der Tropfen heller, beim Drücken gibt er nach; der Ring startet beim Loslassen, in der Farbe des Wassers.', { cols: 4, scale: 0.9 });
   }
   if (only('zeiger')) {
     begin('zeiger'); await d.go('projekte', 3000); await d.park(); const row = p.locator('.project-hero .btn'); const k = await row.count(); const clip = union(await box('.project-hero .btn', 22, 0), await box('.project-hero .btn', 22, k - 1));
     await shot('Zeiger weg', clip);
     for (let i = 0; i < k; i++) { const b = await row.nth(i).boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 4 }); await p.waitForTimeout(420); await shot(`über Knopf ${i + 1}`, clip); }
-    await make('Zeiger über einer Reihe von Knöpfen: jeder Tropfen wird unter dem Zeiger einen Hauch heller – sonst bewegt sich nichts', 'Die Knöpfe liegen frei über der Bühne: lebende Tropfen, die die Landschaft brechen.', { cols: 3, scale: 1 });
+    await make('Zeiger über einer Reihe von Knöpfen', 'Der Tropfen unter dem Zeiger gibt einen Hauch nach und wird heller, sonst bewegt sich nichts. (Freie Tropfen: sie brechen die Landschaft.)', { cols: 3, scale: 1.25 });
     begin('zeiger-panel'); await d.go('heute', 3000); await d.park(); const pc = await box('.panel-col--left', 12); await shot('Zeiger weg', pc);
     const it = await p.locator('.panel-col--left .item').nth(1).boundingBox(); await p.mouse.move(it.x + it.width * 0.4, it.y + it.height / 2, { steps: 5 }); await p.waitForTimeout(900); await shot('über einer Zeile, 0,9 s', pc);
     const ck = await p.locator('.panel-col--left .item--click').first().boundingBox(); await p.mouse.move(ck.x + ck.width * 0.5, ck.y + ck.height / 2, { steps: 5 }); await p.waitForTimeout(700); await shot('über einer klickbaren Zeile', pc);
-    await make('Zeiger über einem Panel: das Randlicht dieses Beckens wird voll, eine klickbare Zeile hellt auf', 'Panels in Ruhe tragen ihr Randlicht nur gedämpft; unter dem Zeiger erwacht das Wasser.', { scale: 0.8 });
+    await make('Zeiger über einem Panel', 'In Ruhe trägt ein Panel sein Randlicht nur gedämpft; unter dem Zeiger wird es voll, und eine klickbare Zeile hellt auf.', { scale: 0.95 });
   }
   if (only('bogen')) {
     begin('bogen'); await d.go('heute', 2600); await d.park(); const w = Math.min(760, d.format.w), clip = { x: d.format.w - w, y: 0, width: w, height: d.format.h };
     await shot('vorher', clip); await p.locator('.topbar [aria-label="Einstellungen"]').dispatchEvent('click'); await frames3(); await grab();
-    for (const t of [60, 140, 240, 360, 520, 900]) { await seek(t); await shot(`${t} ms`, clip); }
-    await finish(); await d.closeSheet(); await make('Schublade: der Bogen fließt von rechts herein, läuft einen Hauch über seinen Platz und setzt sich; ein Lichtkamm läuft an seiner Kante entlang', 'Zeit nach dem Klick auf „Einstellungen“. Die Bühne dahinter bleibt sichtbar (leichter Schleier, kein Weichzeichner).', { cols: 7, scale: 0.36 });
+    for (const t of [60, 140, 240, 400, 900]) { await seek(t); await shot(`${t} ms`, clip); }
+    await finish(); await d.closeSheet(); await make('Schublade: der Bogen fließt von rechts herein und setzt sich', 'Zeit nach dem Klick auf „Einstellungen“. Die Bühne dahinter bleibt sichtbar: ein leichter Schleier, kein Weichzeichner.', { cols: 6, scale: 0.42 });
   }
   if (d.errors.length) console.log('page errors:', d.errors.slice(0, 6));
   await d.close(); console.log('ok', out);
@@ -289,7 +290,7 @@ async function takt() {
 // work machine draws only 7 to 9 pictures a second - the film is true to that, not smooth). A drawn pointer shows where the
 // mouse is. Chromium only; needs ffmpeg.
 async function clip(out) {
-  const { execFileSync } = await import('child_process'); const dir = mkdir(out + '.d'); const d = await open(); const p = d.page, { w, h } = d.format; const wait = (ms) => p.waitForTimeout(ms); const marks = [];
+  const { execFileSync } = await import('child_process'); const dir = mkdir(out + '.d'); const d = await open({ ton: 'auto' }); const p = d.page, { w, h } = d.format; const wait = (ms) => p.waitForTimeout(ms); const marks = [];
   await p.evaluate(() => { const c = document.createElement('div'); c.style.cssText = 'position:fixed;left:0;top:0;width:22px;height:22px;z-index:99999;pointer-events:none;transform:translate(-100px,-100px);background:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 22 22%27%3E%3Cpath d=%27M3 2l14 8-6.2 1.6L8 18z%27 fill=%27%23fff%27 stroke=%27%23000%27 stroke-width=%271.2%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E")'; document.body.appendChild(c); window.addEventListener('pointermove', (e) => { c.style.transform = `translate(${e.clientX - 3}px,${e.clientY - 2}px)`; }, true); });
   const cdp = await d.context.newCDPSession(p); const frames = []; let n = 0;
   cdp.on('Page.screencastFrame', (f) => { const file = `${dir}/f${String(n++).padStart(5, '0')}.jpg`; fs.writeFileSync(file, Buffer.from(f.data, 'base64')); frames.push({ file, t: f.metadata.timestamp }); cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {}); });
@@ -299,16 +300,15 @@ async function clip(out) {
   const press = async (loc, hold = 130) => { if (!(await to(loc))) return; await wait(250); await p.mouse.down(); await wait(hold); await p.mouse.up(); await d.still(); };
   const mark = (t) => { marks.push(`${((Date.now() - t0) / 1000).toFixed(1).padStart(5)} s  ${t}`); }; const step = async (t, fn) => { mark(t); try { await fn(); } catch (e) { console.log('!!', t, String(e).split('\n')[0].slice(0, 120)); } };
   await d.go('start', 2200); await p.mouse.move(mx, my); await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 90, maxWidth: 1600, maxHeight: 1000, everyNthFrame: 1 }); const t0 = Date.now();
-  await step('Start in Ruhe; der Zeiger wandert (die Tropfen unter den Inseln)', async () => { await wait(1800); await glide(w * 0.3, h * 0.42, 900); await to(p.locator('.island__cta').nth(1), 900); await wait(900); });
+  await step('Start in Ruhe; der Zeiger wandert zu einem Tropfen unter einer Insel', async () => { await wait(1500); await to(p.locator('.island__cta').nth(1), 1100); await wait(800); });
   await step('Dock: Heute - die Perle fließt, die Becken kommen an', async () => { await press(p.locator('.dock button', { hasText: 'Heute' })); await wait(2600); });
-  await step('Zeiger über einem Panel: sein Randlicht erwacht; eine Aufgabe wird abgehakt (grüner Ring)', async () => { await to(p.locator('.panel-col--left .panel').nth(1), 700, 0.5, 0.3); await wait(1100); await press(p.locator('.panel-col--left .check').first()); await wait(1500); });
-  await step('Dock: Projekte - freie Tropfen unter der Insel, der Zeiger streicht darüber', async () => { await press(p.locator('.dock button', { hasText: 'Projekte' })); await wait(2400); const b = p.locator('.project-hero .btn'); const k = await b.count(); for (let i = k - 1; i >= 0; i--) { await to(b.nth(i), 380); await wait(280); } await wait(300); });
+  await step('Zeiger über einem Panel: sein Randlicht erwacht; eine Aufgabe wird abgehakt (grüner Ring)', async () => { await to(p.locator('.panel-col--left .panel').nth(1), 700, 0.5, 0.3); await wait(900); await press(p.locator('.panel-col--left .check').first()); await wait(1300); });
+  await step('Dock: Projekte - freie Tropfen unter der Insel, der Zeiger streicht darüber', async () => { await press(p.locator('.dock button', { hasText: 'Projekte' })); await wait(2400); const b = p.locator('.project-hero .btn'); const k = await b.count(); for (let i = k - 1; i >= 0; i--) { await to(b.nth(i), 320); await wait(220); } });
   await step('Projekt öffnen (Bernstein-Tropfen): die Innenwelt', async () => { await press(p.locator('.project-hero .btn--primary'), 260); await wait(2800); });
   await step('Dock: 3D-Druck - das große Becken; "Ergebnis buchen" gedrückt: Ring, die Schublade fließt herein', async () => { await press(p.locator('.dock button', { hasText: '3D-Druck' })); await wait(2600); await press(p.locator('.panel .btn--primary').first(), 300); await wait(2000); await press(p.locator('.sheet .sheet__head button[aria-label="Schließen"]')); await wait(700); });
-  await step('Einstellungen: Schublade, eine Wahl (die Perle fließt), ein Feld', async () => { await press(p.locator('.topbar [aria-label="Einstellungen"]')); await wait(1400); await press(p.locator('.sheet .seg').nth(1).locator('button').nth(2)); await wait(900); await press(p.locator('.sheet .input').first()); await p.keyboard.type('Elias', { delay: 110 }); await wait(700); await press(p.locator('.sheet .sheet__head button[aria-label="Schließen"]')); await wait(700); });
   await step('Suche (Strg+K)', async () => { await p.keyboard.press('Control+k'); await wait(600); await p.keyboard.type('sens', { delay: 120 }); await wait(1300); await p.keyboard.press('Escape'); await wait(600); });
-  await step('Dock: Wetter', async () => { await press(p.locator('.dock button', { hasText: 'Wetter' })); await wait(2800); });
-  await step('Der zweite Ton: "klar"', async () => { await p.evaluate(() => document.documentElement.setAttribute('data-wa-ton', 'klar')); await glide(w * 0.5, h * 0.55, 700); await wait(2600); await press(p.locator('.dock button', { hasText: 'Heute' })); await wait(3000); });
+  await step('Einstellungen: ein Feld, dann Erscheinungsbild "Hell" - der Ton wechselt zu "klar"', async () => { await press(p.locator('.topbar [aria-label="Einstellungen"]')); await wait(1300); await press(p.locator('.sheet .input').first()); await p.keyboard.type('Elias', { delay: 110 }); await wait(500); await press(p.locator('.sheet .seg').first().locator('button', { hasText: 'Hell' })); await wait(2200); await press(p.locator('.sheet .sheet__head button[aria-label="Schließen"]')); await wait(900); });
+  await step('Ton "klar": Wetter, dann Heute', async () => { await press(p.locator('.dock button', { hasText: 'Wetter' })); await wait(3000); await press(p.locator('.dock button', { hasText: 'Heute' })); await wait(3000); });
   mark('Ende'); await cdp.send('Page.stopScreencast').catch(() => {}); await wait(300); const total = (Date.now() - t0) / 1000;
   if (d.errors.length) console.log('page errors:', d.errors.slice(0, 4)); await d.close();
   // every picture for as long as it was on the screen
@@ -345,4 +345,4 @@ else if (mode === 'clip' && a._[1]) await clip(abs(a._[1]));
 else if (mode === 'takt') await takt();
 else if (mode === 'film' && a._[1]) await film(abs(a._[1]));
 else if (mode === 'zeigen') zeigen();
-else { console.log(fs.readFileSync(new URL(import.meta.url), 'utf8').split('\n').filter((l) => l.startsWith('//')).map((l) => l.slice(3)).join('\n')); process.exit(mode ? 1 : 0); }
+else { const head = fs.readFileSync(new URL(import.meta.url), 'utf8').split('\n'); console.log(head.slice(0, head.findIndex((l) => !l.startsWith('//'))).map((l) => l.slice(3)).join('\n')); process.exit(mode ? 1 : 0); }
