@@ -322,8 +322,9 @@ seen before. Now:
 **The first frame of a new screen** (tab, world, a sheet: `scan()` found new drops) goes out without the drops' work;
 their first water picture follows in the next frame. The new buttons show their plain glass for that one frame - they
 arrive inside cards, panels and sheets that enter from opacity 0, so it is not seen. With reduced motion (no entrance)
-they are drawn at once, as before. On this machine the drops' picture is the expensive part of a change (WebGL in
-software; measured alone: see the finding).
+they are drawn at once, as before. Measured alone (the same app with and without this line): the new screen stands 30
+to 40 ms earlier unthrottled, 10 to 15 ms at four times throttled (on this machine the drops' picture is expensive:
+WebGL in software).
 
 **Behind a sheet** (`modal`; finding `docs/wasser-look/entwurf/stehenbleiben/BEFUND.md`). A drop that goes behind an
 open sheet finishes its answer first: the press springs back, a running ring fades within `RING_OUT` (300 ms), and at

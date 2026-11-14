@@ -9,8 +9,8 @@
 //   Fälle (cases), each opened by a real pointer (phone: a touch; desktop: the mouse) on
 //     tropfen   a live drop that opens a sheet - phone: the gear "Einstellungen" of the head; desktop: "Ergebnis buchen" on the
 //               main panel of the world Druck (a primary button on a panel is a live drop), beside the drawer
-//     glas      something of plain glass that opens one - phone: the chip of the workshop in the head (sheet "Bereich");
-//               desktop: "verwalten" in the head of a panel (world Druck, sheet "Geräte")
+//     glas      a plain-glass button that opens one - desktop: "verwalten" in the head of a panel (world Druck, sheet "Geräte").
+//               The phone has none (its ghost buttons navigate, the buttons of its rows act in place): skipped there
 //     zeile     a row that opens one - phone: the running print on Start ("Läuft gerade"); desktop: the running print in the
 //               left column of Heute
 //     suche     the search - phone: the drop "Suche" of the head; desktop: the glass chip "Suche" of the top bar
@@ -26,8 +26,12 @@
 //   steht     the drop's canvas no longer changes from 600 ms on (600 = 1000 = 2500); for the picture, which also holds the
 //             ring of light on the floor of a card (it runs out in 1.1 s, nothing holds it): 1500 = 2500
 //   Ruhe      the drop's script reports no drop behind the sheet still answering 600 ms after the tap (Wasser.info.settling = 0;
-//             a script without that count: -); with --bewegung aus the canvas at 600 ms is the REF canvas, pixel for pixel,
-//             and so is the picture
+//             a script without that count: null); with --bewegung aus the canvas at 600 ms is the REF canvas, pixel for pixel,
+//             and so is the picture (on the phone a touch: the finger is lifted before the sheet opens, so even the old
+//             script showed the rest pose there - the desktop's mouse rests on the drop and tells them apart)
+//   klingtAus the drop's canvas still changed between 60 and 600 ms (with motion): it finished its answer behind the sheet;
+//             a drop frozen in the middle of it does not change any more once the sheet is there
+//   The tap: phone a finger held 90 ms (DevTools touch events), desktop the mouse resting 0.3 s on it, then held 90 ms
 //   lebt      after the sheet closed the drop's canvas changes again within 1 s (with motion)
 //   Sprung    the change of the drop's canvas from its last picture behind the sheet to its first after it, against the change
 //             between two pictures at rest (mean of |difference| in 0..255; "x 1.4" = 1.4 times a step at rest). A drop that
@@ -48,7 +52,7 @@ const TIMES = [60, 200, 400, 600, 1000, 1500, 2500];
 const CASES = {
   handy: {
     tropfen: { hash: '#/start', sel: '.m-head [aria-label="Einstellungen"]', open: '.sheet', close: 'sheet' },
-    glas: { hash: '#/start', sel: '.m-head .ws-chip', open: '.sheet', close: 'sheet' },
+    glas: null,   // (the phone has no plain-glass button that opens a sheet: its ghost buttons navigate, its row buttons act in place)
     zeile: { hash: '#/start', sel: '.m-main .m-row--click', open: '.sheet', close: 'sheet' },
     suche: { hash: '#/start', sel: '.m-head [aria-label="Suche"]', open: '.cmd-back', close: 'escape' },
   },
@@ -80,6 +84,7 @@ async function open(kind, url, ton, reduced) {
 }
 
 async function run(kind, name, url, ton, reduced, key, c) {
+  if (!c) { console.log(`--   ${kind} ${name} ${ton} ${key}: no such case on this shell`); return; }
   const o = await open(kind, url, ton, reduced); const p = o.page; const label = `${kind} ${name} ${ton} ${reduced ? 'still' : 'bewegt'} ${key}`;
   await p.evaluate((h) => { location.hash = h; }, c.hash); await p.waitForTimeout(1800);
   if (kind === 'desktop') { await p.mouse.move(3, 990); await p.evaluate(() => { const s = document.querySelector('.stage'); if (s) { s.scrollLeft = 0; s.scrollTop = 0; } }); }
@@ -100,7 +105,9 @@ async function run(kind, name, url, ton, reduced, key, c) {
   await shot('1-ref'); const ref = await canvas(); await closeIt();
   // the real tap
   const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
-  if (kind === 'handy') await p.touchscreen.tap(cx, cy); else { await p.mouse.move(cx, cy); await p.waitForTimeout(300); await p.mouse.down(); await p.waitForTimeout(70); await p.mouse.up(); }
+  if (kind === 'handy') {   // a finger: down, 90 ms, up (Playwright's tap lasts no time at all - no drop answers that much)
+    const cdp = await o.ctx.newCDPSession(p); await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] }); await p.waitForTimeout(90); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await cdp.detach();
+  } else { await p.mouse.move(cx, cy); await p.waitForTimeout(300); await p.mouse.down(); await p.waitForTimeout(90); await p.mouse.up(); }
   const t0 = Date.now(); const cv = {}; let inf600 = null;
   for (const t of TIMES) { const wait = t - (Date.now() - t0); if (wait > 0) await p.waitForTimeout(wait); await shot(`2-${String(t).padStart(4, '0')}`); cv[t] = await canvas(); if (t === 600) inf600 = await info(); }
   const opened = await p.evaluate((s) => !!document.querySelector(s), c.open);
@@ -115,14 +122,15 @@ async function run(kind, name, url, ton, reduced, key, c) {
   const res = { opened, drop };
   if (drop) {
     res.steht = eq(cv[600], cv[1000]) && eq(cv[1000], cv[2500]);
-    res.ruhe = inf600 ? inf600.settling === 0 : null;
+    res.ruhe = inf600 && typeof inf600.settling === 'number' ? inf600.settling === 0 : null;
+    if (!reduced) res.klingtAus = !!(cv[60] && cv[600] && diffMean(cv[60], cv[600]) > 0);   // it went on after the sheet appeared (a drop frozen in the middle of its answer does not)
     if (reduced) res.wieRef = eq(cv[600], ref);
     res.sprung = first && step ? +(diffMean(first, frozen) / step).toFixed(2) : null;
     res.lebt = reduced ? null : !!(later && frozen && diffMean(later, frozen) > 0);
   }
   res.bildSteht = await fileEq('2-1500', '2-2500');
   if (reduced) res.bildWieRef = await fileEq('2-0600', '1-ref') || await fileEq('2-1000', '1-ref');
-  const must = ['opened', 'steht', 'bildSteht', ...(reduced ? ['wieRef', 'bildWieRef'] : ['lebt'])].filter((k) => k in res);
+  const must = ['opened', 'steht', 'bildSteht', ...(reduced ? ['wieRef', 'bildWieRef'] : ['lebt', 'klingtAus'])].filter((k) => k in res);
   const bad = must.filter((k) => res[k] === false); const sprungBad = drop && !reduced && res.sprung !== null && res.sprung > 3;
   const counts = /^(jetzt|nachher)$/.test(name); const ok = !bad.length && !sprungBad && res.ruhe !== false;
   if (!ok && counts) fails++;
