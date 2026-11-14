@@ -16,6 +16,8 @@
           ?ohne=1              the app as it is today, without the look
           ?alt=<folder>        an earlier state of the look instead (a folder with look.css and look.js, path from the
                                repository root, e.g. docs/wasser-look/entwurf/nachgebessert): what vergleich.mjs compares with
+          ?vorlage=<folder>    another copy of the template instead (kern.css, mobil.css, desktop.css, wasser.js) - a copy made
+                               before a change, to compare with
           ?schlaf=<ms>         the water rests after this time (default 30000)      ?w3flat=1 ?w3prof=1 ?w3noderiv=1  test aids
   Tapping a tab moves class "on" and swaps the scene image like the real app.
 -->
@@ -43,8 +45,9 @@
   // kern.css alone; Chromium then draws the soft shadows of the zoomed close-up a few grey levels differently.)
   const q = new URLSearchParams(location.search);
   const ROOT = '../../';                                           // the repository root, seen from this page
-  const VORLAGE = ROOT + 'docs/wasser-look/vorlage/';
-  const ALT = q.get('alt') ? (/^(https?:)?\//.test(q.get('alt')) ? q.get('alt') : ROOT + q.get('alt')) : '';   // an earlier state of the look (its rules start with .m-shell, its script starts itself)
+  const from = (v) => (/^(https?:)?\//.test(v) ? v : ROOT + v);     // a folder: an address, or a path from the repository root
+  const VORLAGE = (q.get('vorlage') ? from(q.get('vorlage')) : ROOT + 'docs/wasser-look/vorlage') + '/';
+  const ALT = q.get('alt') ? from(q.get('alt')) : '';              // an earlier state of the look (its rules start with .m-shell, its script starts itself)
   for (const href of ALT ? [ALT + '/look.css'] : q.get('ohne') ? [] : [VORLAGE + 'kern.css', VORLAGE + 'mobil.css', VORLAGE + 'desktop.css']) document.write('<link rel="stylesheet" href="' + href + '">');
 </script>
 </head><body>

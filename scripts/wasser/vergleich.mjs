@@ -19,7 +19,7 @@
 // Prints one line per comparison and a summary; exit code 1 when something differs that is not listed in KNOWN below.
 // Pictures of what differs: <out>/*-diff.png (red = outside the drops, yellow = inside). Default out: scratch folder in the OS temp dir.
 import fs from 'fs'; import os from 'os'; import path from 'path';
-import { session, diff, strip, args, mkdir, abs, ALT, SZENEN, VORLAGE } from './lib.mjs';
+import { session, diff, strip, args, mkdir, abs, lookDir, ALT, SZENEN } from './lib.mjs';
 import { film, STRIPS } from './film.mjs';
 const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', out: path.join(os.tmpdir(), 'wasser-vergleich'), nur: '' });
 const mode = a._[0] || 'alles'; const out = mkdir(abs(a.out)); const TONES = a.toene.split(','); const ZEIT = '2026-11-12T17:42:00+01:00';
@@ -99,7 +99,7 @@ const PAGE_LIB = `(() => {
   };
 })()`;
 const customNames = () => {                                        // every custom property the reference declares: [name in this look, name it is reported under]
-  const names = (look) => { const dir = abs(look === 'vorlage' ? VORLAGE : look); const css = fs.readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => fs.readFileSync(`${dir}/${f}`, 'utf8')).join('\n'); return new Set(css.match(/--[a-z0-9-]+(?=\s*:)/g) || []); };
+  const names = (look) => { const dir = lookDir(look); const css = fs.readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => fs.readFileSync(`${dir}/${f}`, 'utf8')).join('\n'); return new Set(css.match(/--[a-z0-9-]+(?=\s*:)/g) || []); };
   const old = [...names(a.alt)], now = names(a.neu), neu = a.neu === 'vorlage';
   return [old.map((n) => [n, n]), old.map((n) => [neu && RENAMED[n] && now.has(RENAMED[n]) ? RENAMED[n] : n, n])];
 };

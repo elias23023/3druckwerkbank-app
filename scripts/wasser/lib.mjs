@@ -6,11 +6,13 @@
 //   const h = await s.harness({ ton: 'klar', scene: 'wetter', nah: false, reduced: false, look: 'vorlage' })   -> h.page, h.errors, h.drops(), h.close()
 //   const a = await s.app({ ton: '', reduced: false, look: 'vorlage', zeit: '2026-11-12T17:42:00+01:00' })      -> a.page, a.go(hash), a.sheet(name), a.closeSheet(), a.project(), a.shot(file), a.errors, a.close()
 //   await s.close()
-// look: 'vorlage' = the template (docs/wasser-look/vorlage), '' = no look (the app as it is), anything else = a folder
-//       with an earlier state of the look (look.css + look.js, path from the repository root), e.g. docs/wasser-look/entwurf/nachgebessert
+// look: 'vorlage' = the template (docs/wasser-look/vorlage), '' = no look (the app as it is), anything else = a folder (path
+//       from the repository root, or absolute): either ANOTHER COPY OF THE TEMPLATE (it holds kern.css, mobil.css, desktop.css,
+//       wasser.js - e.g. a copy made before a change, or 'git:HEAD' = the template as it is committed), or an earlier state
+//       of the look (look.css + look.js), e.g. docs/wasser-look/entwurf/nachgebessert
 // The real app needs its preview server:  npm run build && npm run preview   (http://localhost:4173; another address: WASSER_APP=...)
 // WebKit and Firefox need Playwright's builds of them (on the work machine: source <scratchpad>/judge-phone/env.sh first).
-import { createRequire } from 'module'; import fs from 'fs'; import path from 'path'; import http from 'http'; import { fileURLToPath } from 'url';
+import { createRequire } from 'module'; import fs from 'fs'; import os from 'os'; import path from 'path'; import http from 'http'; import { fileURLToPath } from 'url'; import { execFileSync } from 'child_process';
 import sharp from 'sharp';
 const require = createRequire(import.meta.url);
 export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -24,13 +26,24 @@ const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebK
 const PHONE = { width: 390, height: 844 };
 export const abs = (p) => (path.isAbsolute(p) ? p : path.join(REPO, p));
 export const mkdir = (d) => { fs.mkdirSync(d, { recursive: true }); return d; };
+// a look given as 'git:<revision>' (git:HEAD): the template as that commit has it, written to a scratch folder once
+const fromGit = {};
+export function lookDir(look) {
+  if (look === 'vorlage') return abs(VORLAGE);
+  if (!/^git:/.test(look)) return abs(look);
+  if (!fromGit[look]) { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wasser-git-')); for (const f of ['kern.css', 'mobil.css', 'desktop.css', 'wasser.js']) fs.writeFileSync(path.join(dir, f), execFileSync('git', ['show', `${look.slice(4)}:${VORLAGE}/${f}`], { cwd: REPO, maxBuffer: 1 << 26 })); fromGit[look] = dir; }
+  return fromGit[look];
+}
+export const isTemplate = (look) => !!look && fs.existsSync(path.join(lookDir(look), 'kern.css'));   // a copy of the template (not an earlier look.css / look.js)
+const urlOf = (dir) => { const rel = path.relative(REPO, dir); return rel.startsWith('..') ? '/@abs' + dir : rel; };   // as the file server below serves it
 
 /* ------------------------------------------------------------------ file server: the repository root */
 const MIME = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8', mjs: 'text/javascript; charset=utf-8', json: 'application/json', webp: 'image/webp', avif: 'image/avif', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', woff2: 'font/woff2', woff: 'font/woff', mp4: 'video/mp4', md: 'text/plain; charset=utf-8' };
 export function serve(root = REPO) {
   const server = http.createServer((req, res) => {
-    const file = path.join(root, decodeURIComponent(new URL(req.url, 'http://x').pathname));
-    if (!file.startsWith(root) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); res.end('not found'); return; }
+    const name = decodeURIComponent(new URL(req.url, 'http://x').pathname); const out = name.startsWith('/@abs/');   // /@abs/<absolute path>: a file outside the repository (a copy of the template in a scratch folder)
+    const file = out ? path.normalize(name.slice(5)) : path.join(root, name);
+    if ((!out && !file.startsWith(root)) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); res.end('not found'); return; }
     res.writeHead(200, { 'content-type': MIME[path.extname(file).slice(1)] || 'application/octet-stream', 'cache-control': 'no-store' });
     fs.createReadStream(file).pipe(res);
   });
@@ -43,7 +56,7 @@ export async function session({ engine = 'chromium' } = {}) {
   return { engine, browser, base: server.url, harness: (o) => openHarness(browser, server.url, engine, o), app: (o) => openApp(browser, engine, o), close: async () => { await browser.close(); await server.close(); } };
 }
 const listen = (page) => { const errors = []; page.on('pageerror', (e) => errors.push(String(e).slice(0, 300))); page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); }); return errors; };
-const lookQuery = (look) => (look === 'vorlage' ? '' : look ? `&alt=${encodeURIComponent(look)}` : '&ohne=1');
+const lookQuery = (look) => (look === 'vorlage' ? '' : !look ? '&ohne=1' : isTemplate(look) ? `&vorlage=${encodeURIComponent(urlOf(lookDir(look)))}` : `&alt=${encodeURIComponent(urlOf(lookDir(look)))}`);
 // the boxes of the drop canvases that are shown, in device px of a screenshot: [left, top, right, bottom].
 // pad (CSS px) widens them; all = also the canvases whose drop is not drawn yet; clip = the part of the page a screenshot shows
 const dropBoxes = (page, scale, { pad = 0, all = false, clip = null } = {}) => page.evaluate(([s, pad, all, ox, oy]) => [...document.querySelectorAll('.w3-drop')].filter((e) => e.getClientRects().length && (all || getComputedStyle(e).visibility === 'visible')).map((e) => { const r = e.getBoundingClientRect(); return [Math.floor((r.left - pad - ox) * s), Math.floor((r.top - pad - oy) * s), Math.ceil((r.right + pad - ox) * s), Math.ceil((r.bottom + pad - oy) * s)]; }), [scale, pad, all, clip ? clip.x : 0, clip ? clip.y : 0]);
@@ -71,15 +84,16 @@ export async function openApp(browser, engine, { look = 'vorlage', ton = '', red
   await page.waitForSelector('.m-shell', { timeout: 15000 });
   const rd = (f) => fs.readFileSync(abs(f), 'utf8');
   if (ton && ton !== 'dunkel') await page.evaluate((t) => { document.documentElement.dataset.waTon = t; }, ton);
-  if (look === 'vorlage') {
+  if (isTemplate(look)) {
     // what the app will do itself once the look is built in: the attribute on the root, the three stylesheets after its own
     // (in one piece, as its build bundles them), the script, start()
+    const dir = lookDir(look);
     await page.evaluate(() => document.querySelector('.m-shell').setAttribute('data-wasser', 'mobil'));
-    await page.addStyleTag({ content: ['kern.css', 'mobil.css', 'desktop.css'].map((f) => rd(`${VORLAGE}/${f}`)).join('\n') });
-    await page.addScriptTag({ content: rd(`${VORLAGE}/wasser.js`) });
+    await page.addStyleTag({ content: ['kern.css', 'mobil.css', 'desktop.css'].map((f) => rd(`${dir}/${f}`)).join('\n') });
+    await page.addScriptTag({ content: rd(`${dir}/wasser.js`) });
     await page.evaluate((o) => window.Wasser.start(o), start);
   } else if (look) {
-    await page.addStyleTag({ content: rd(`${look}/look.css`) }); await page.addScriptTag({ content: rd(`${look}/look.js`) });
+    await page.addStyleTag({ content: rd(`${lookDir(look)}/look.css`) }); await page.addScriptTag({ content: rd(`${lookDir(look)}/look.js`) });
   }
   await page.waitForTimeout(900);
   const go = async (hash, wait = 700) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(wait); };
