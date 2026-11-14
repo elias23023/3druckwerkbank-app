@@ -13,6 +13,8 @@
                              when the root goes away.
      Wasser.MOBIL            the default options: the mobile shell of this app. The base for another shell:
                              Wasser.start(Object.assign({}, Wasser.MOBIL, { scene: '...', shade: '', bar: '...' }))
+     Wasser.DESKTOP          the options of the desktop shell (the stage with its panels, top bar and dock):
+                             Wasser.start(Wasser.DESKTOP)
      Wasser.info             what the drops are doing, for tests: state ('init', 'gl', 'fallback (reason)', 'context lost',
                              'stopped'), level (governor: 0 = full pace), wait (governor: ms of easy pictures before its
                              next step up), drops, px, atlas, frames, ms, prof, blank (how often a scene image could not be
@@ -77,6 +79,19 @@
     webgl: true,                      // false: behave like a browser without WebGL (the plain glass of kern.css stays, the clock still runs)
     debug: { flat: false, prof: false, noDeriv: false, cost: null }   // flat: plain copy of the scene inside the drops (to check the alignment); prof: frame cost in Wasser.info.prof; noDeriv: shader path without OES_standard_derivatives; cost: a function (ms) -> ms through which the governor of the drops sees what each water picture cost - to pretend a slow phone and watch it step down and up (scripts/wasser/pruefen.mjs --regler)
   };
+  /* The desktop shell (root: the stage, data-wasser="desktop"): only what differs from the mobile shell. Which block each
+     desktop element is made of is written in kern.css (the lists) and desktop.css; here only what the script must know. */
+  var DESKTOP = {
+    scene: '.land img',               // the landscape. ONE image: a drop free over the stage bends the landscape, not the islands, clouds or leaves in front of it - so no live drop where an island may lie behind
+    shade: '',                        // the stage is not darkened
+    drops: '.btn:not(.btn--ghost):not(.item .btn):not(.panel .btn:not(.btn--primary)), .topbar .chip.btn--icon, .wa-tropfen',   // free over the stage and in sheets: every button that is not a ghost; on a panel only the primary one (the others stay plain glass: there are too many of them); the three round buttons of the top bar
+    ringOn: '.glass.panel, .wa-becken, .sheet',
+    ringFrom: '.btn:not(.btn--ghost):not(.sheet__body .btn):not(.item .btn), .wa-tropfen, .panel .check, .wa-becken .wa-haken',
+    bar: '.dock, .wa-markierung',
+    light: '.glass.panel, .wa-becken, .sheet, .wa-bogen',
+    scrollers: '.panel__body, .sheet__body'
+  };
+  (function () { for (var k in MOBIL) if (!(k in DESKTOP)) DESKTOP[k] = MOBIL[k]; })();   // everything else as in the mobile shell
   var SELECTORS = ['scene', 'shade', 'drops', 'modal', 'ringOn', 'ringFrom', 'tick', 'bar', 'groups', 'levels', 'toasts', 'light', 'scrollers'];
   var NOTHING = ':not(*)';            // what an empty selector option becomes: matches no element
 
@@ -102,7 +117,7 @@
      much colour the sheet leaves the scene come from the sheet as well (custom properties, see PROP), so a
      colour tone of the look never needs a change in this file. A marker bar (option "bar") is not observed here.
 
-     The water's clock lives here: after "sleep" ms without touch, scroll or key the drops come to rest, and the root
+     The water's clock lives here: after "sleep" ms without touch, scroll, key or a moving mouse the drops come to rest, and the root
      carries the attribute REST (data-wa-ruht) until the next touch - everything else in the look that moves at rest
      stops and starts with it (kern.css, "Ruhe", --wa-lauf).
 
@@ -142,6 +157,7 @@
     var FLAT = !!cfg.debug.flat, PROF = !!cfg.debug.prof;   // test aids: plain copy of the landscape (to check the alignment), frame cost in Wasser.info.prof
     var COST = cfg.debug.cost;          // test aid: a function (ms) -> ms through which the governor sees what every water picture cost (pretend a slow phone)
     var STILL_T = 2.4;                  // frozen water time for reduced motion
+    var HOVER = 0.3;                    // how far a drop gives way under a MOUSE that rests on it (1 = pressed): it swells a breath towards the pointer and its glint brightens. No ring. A finger never hovers
 
     var reduced = still, alive = true;
 
@@ -595,7 +611,7 @@
       cv.className = 'w3-drop'; cv.setAttribute('aria-hidden', 'true'); cv.width = 2; cv.height = 2;
       var r = { btn: btn, cv: cv, ctx: cv.getContext('2d'), seed: (seedN++ * 0.6180339887) % 1, vis: true, painted: false, behind: false, stale: false,
         w: 0, h: 0, cw: 0, ch: 0, rad: 0, tint: TINT[0], under: [0, 0, 0, 0, 0], light: [1, 1, 1, 0], sat: 1, veil: 1, ink: 1, lab: [0, 0, 6, 6], parent: null, rect: null, seen: -1, last: '',
-        px: 0, py: 0, pv: 0, pvel: 0, ptarget: 0, ripT: -1, ripA: 0 };
+        px: 0, py: 0, pv: 0, pvel: 0, ptarget: 0, hov: 0, ripT: -1, ripA: 0 };
       recs.set(btn, r);
       btn.insertBefore(cv, btn.firstChild);
       if (io) io.observe(btn); if (ro) ro.observe(btn);
@@ -654,7 +670,7 @@
           if (restyle || r.stale || r.parent !== btn.parentNode || r._cls !== btn.className) measure(r);
         }
         r.behind = !!modal && !modal.contains(btn);
-        if (r.behind) { r.ptarget = r.pv = r.pvel = 0; r.ripT = -1; }   // a drop that disappears behind a sheet is not drawn any more, so its press and its ring would never end: they end here (else the water behind kept the whole loop at the pace of a touched drop for as long as the sheet was open)
+        if (r.behind) { r.ptarget = r.pv = r.pvel = r.hov = 0; r.ripT = -1; }   // a drop that disappears behind a sheet is not drawn any more, so its press and its ring would never end: they end here (else the water behind kept the whole loop at the pace of a touched drop for as long as the sheet was open)
       }
       restyle = false;
       recs.forEach(function (rr, b) { if (!seen.has(b) || !b.isConnected) detach(rr); });
@@ -694,7 +710,7 @@
       var active = false;                                         // a pressed drop or a running ring
       recs.forEach(function (r) {
         if (still) { if (r.pv !== r.ptarget || r.ripT >= 0) { r.pv = r.ptarget; r.pvel = 0; r.ripT = -1; needOne = true; } }   // no spring, no ring: the pressed state is one still picture
-        else if (r.vis && (r.ptarget || Math.abs(r.pv) > 0.002 || Math.abs(r.pvel) > 0.01 || r.ripT >= 0)) active = true;
+        else if (r.vis && (r.ptarget >= 1 || Math.abs(r.pv - r.ptarget) > 0.002 || Math.abs(r.pvel) > 0.01 || r.ripT >= 0)) active = true;   // (a drop under a resting mouse has come to rest too: only a pressed one, a moving one or a ring keeps the fast pace)
       });
       var flowing = !still && (speed > 0 || active), follow = now < followUntil;
       var fps = active ? lv.fps : lv.idle;
@@ -868,8 +884,16 @@
     }
     function release() {
       var any = false;
-      recs.forEach(function (r) { if (r.ptarget) { r.ptarget = 0; any = true; if (r.ripT < 0 || r.ripT > 0.7) { r.ripT = 0; r.ripA = 2.4; } } });   // long press: a second, smaller ring on release
+      recs.forEach(function (r) { if (r.ptarget >= 1) { r.ptarget = r.hov || 0; any = true; if (r.ripT < 0 || r.ripT > 0.7) { r.ripT = 0; r.ripA = 2.4; } } });   // long press: a second, smaller ring on release. (A drop the mouse still rests on goes back to its hover)
       if (any) kick();
+    }
+    // a mouse comes to rest on a drop, or leaves it: the drop gives way a little under the pointer and comes back (no ring)
+    function hover(btn, cx, cy, on) {
+      var r = recs.get(btn); if (!r || btn.disabled) return;
+      r.hov = on ? HOVER : 0;
+      if (r.ptarget >= 1) return;                                  // pressed: the press decides
+      if (on) { var b = r.cv.getBoundingClientRect(), zoom = b.width / (r.cw || 1) || 1; r.px = (cx - (b.left + b.width / 2)) / zoom; r.py = (cy - (b.top + b.height / 2)) / zoom; }
+      r.ptarget = r.hov; kick();
     }
 
     // The observer sees the children of the shell except the tab bar, the shell's own child list (main area and
@@ -920,6 +944,9 @@
       on(window, 'scroll', function () { followUntil = performance.now() + 160; wake(); }, cap);       // follow scrolling frame by frame
       on(window, 'resize', function () { scene.pos = null; grad.key = ''; readGradient(); measureAll(); followUntil = performance.now() + 300; wake(); }, { passive: true });
       on(window, 'pointerdown', function (e) { var b = mine(e.target); if (b) press(b, e.clientX, e.clientY); wake(); }, cap);
+      on(window, 'pointermove', function (e) { if (e.pointerType === 'mouse' && performance.now() - lastInput > 1000) wake(); }, cap);
+      on(window, 'pointerover', function (e) { if (e.pointerType !== 'mouse') return; var b = mine(e.target); if (b && !(e.relatedTarget && b.contains(e.relatedTarget))) hover(b, e.clientX, e.clientY, true); }, cap);
+      on(window, 'pointerout', function (e) { if (e.pointerType !== 'mouse') return; var b = mine(e.target); if (b && !(e.relatedTarget && b.contains(e.relatedTarget))) hover(b, 0, 0, false); }, cap);   // a mouse that moves is someone at the screen: it keeps the water awake (looked at once a second at most; a finger always begins with pointerdown)
       ['pointerup', 'pointercancel', 'dragend', 'keyup'].forEach(function (n) { on(window, n, release, cap); });
       on(window, 'blur', function (e) { if (e.target === window) release(); }, cap);   // the window lost focus (not: focus moved from one button to the next)
       on(window, 'keydown', function (e) { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { var b = mine(e.target); if (b) { press(b, null, null); wake(); } } }, cap);
@@ -1285,5 +1312,5 @@
     cur = null;
     return api;
   }
-  var api = window.Wasser = { start: start, stop: stop, MOBIL: MOBIL, info: info };
+  var api = window.Wasser = { start: start, stop: stop, MOBIL: MOBIL, DESKTOP: DESKTOP, info: info };
 })();

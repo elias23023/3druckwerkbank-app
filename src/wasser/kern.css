@@ -25,6 +25,10 @@
      Where a block also needs the script, its comment names the option of Wasser.start() that takes the same selector.
      A list has the weight of its heaviest entry (:is()). A rule that changes one member of a block afterwards needs at
      least that weight, or it loses without a word - write it nested in the block, or with as many classes.
+     For the same reason A NEW ENTRY IS NEVER HEAVIER THAN THE HEAVIEST ENTRY ALREADY IN THE LIST (it would outweigh
+     the rules both shells have written against that list): put whatever it needs beyond that inside :where(), which
+     weighs nothing -  .panel .glass:where(.col)   :where(.topbar) .brand   .chip:where(:not(.btn--icon)).
+     A class that BOTH shells have, applied for one shell only, is scoped the same way - :where(.topbar) .brand.
      CSS cannot add to a selector list from another file. So the lists live HERE, also for elements that only one shell
      has; mobil.css and desktop.css hold what a shell needs beyond the blocks (sizes, places, its own tokens).
 
@@ -56,7 +60,7 @@
 }
 
 /* == 1. Töne ====================================================================================================== */
-/* A tone is one block of values. Both blocks list the SAME 55 tokens in the SAME order (also those with the same value),
+/* A tone is one block of values. Both blocks list the SAME 57 tokens in the SAME order (also those with the same value),
    so either tone can be read, changed or removed without looking at the other. No other rule in the look mentions
    data-wa-ton, and wasser.js has no tone logic: a drop reads what it needs from the sheet it lies on. */
 
@@ -134,6 +138,9 @@
     inset 5px 6px 9px -6px rgba(var(--wa-dark), .75),              /* the lit side stays dark */
     4px 8px 9px -6px rgba(var(--wa-light), .42),                   /* glint on the floor below */
     2px 6px 11px -2px rgba(var(--wa-dark), .85);
+  /* on a wide stage (the desktop), where the painted scene is the star and the page itself is not darkened */
+  --wa-weit-tiefe: .7;                          /* how much of the depth of a basin is left there, 0 .. 1 (1 = a card on the phone): dark water over a dark scene may stay see-through */
+  --wa-weit-grund: brightness(.88);             /* what a sheet does to the scene seen THROUGH it, in place of the page's darkening (a filter function, added to the sheet's blur) */
 }
 
 /* -- Ton "klar" (<html data-wa-ton="klar">; the light mode): clear water. No colour of its own - the scene stays
@@ -202,6 +209,8 @@
     inset 5px 6px 9px -6px rgba(var(--wa-dark), .6),
     4px 8px 9px -6px rgba(var(--wa-light), .4),
     2px 6px 11px -2px rgba(var(--wa-dark), .7);
+  --wa-weit-tiefe: 1;                           /* clear water keeps its gentle depth ... */
+  --wa-weit-grund: brightness(.7);              /* ... and the scene under it is dimmed as the page dims it on the phone (there: --wa-page-3, --wa-page-4) - without it light text has no ground by day */
 }
 
 /* == 2. Form (the same in every tone; colours here are either neutral or built from the tone tokens) ============== */
@@ -322,6 +331,7 @@
   --wa-r-bogen: 30px 36px 0 0 / 26px 32px 0 0;  /* a soft, slightly uneven shoulder; square at the bottom edge of the screen */
   --wa-bogen-rim: inset 0 1px 0 rgba(var(--wa-core), .5), inset 0 18px 22px -18px rgba(var(--wa-light), .2);   /* meniscus on the top edge, and the shallow water just below it catches light */
   --wa-bogen-lift: 0 -14px 36px -6px rgba(var(--wa-dark), .6);
+  --wa-bogen-fuss: 0 30px 0 0 var(--wa-sheet);  /* water below its bottom edge: no gap while the wave runs past its place. (A sheet that does not stand on the edge of the screen - the desktop's drawer - sets this to "0 0 0 0 transparent") */
   --wa-bogen-rise: 68px;                        /* how far below its place the wave starts */
   --wa-bogen-swing: 5px;                        /* how far it runs past before it settles */
   --wa-scrim: rgba(var(--wa-abyss), .55);       /* the page behind a sheet sinks into the dark ... */
@@ -533,7 +543,8 @@
 [data-wasser] :is(
   .wa-tropfen,
   .btn:not(.btn--ghost),                        /* both shells: every button that is not a ghost */
-  .m-ico                                        /* mobil: the round buttons of the header */
+  .m-ico,                                       /* mobil: the round buttons of the header */
+  .chip.btn--icon                               /* desktop: the round buttons of the top bar */
   /* apply this block to further elements here (and in wasser.js, option "drops") */
 ) {
   position: relative;
@@ -554,7 +565,7 @@
   &:where(:nth-of-type(2n)) { border-radius: var(--wa-r-tropfen-2); }
   &:where(:nth-of-type(3n)) { border-radius: var(--wa-r-tropfen-3); }
   &:where(.wa-tropfen--rund, .btn--icon, .m-ico /* round drops: add further round elements here */) { border-radius: var(--wa-r-tropfen-rund-1); }
-  &:where(.wa-tropfen--rund, .m-ico):where(:nth-of-type(2n)) { border-radius: var(--wa-r-tropfen-rund-2); }
+  &:where(.wa-tropfen--rund, .m-ico, .chip):where(:nth-of-type(2n)) { border-radius: var(--wa-r-tropfen-rund-2); }
 
   /* the visible drop may swell a few px beyond the button box: taps there count too (touch targets only grow) */
   &::before { content: ""; position: absolute; inset: var(--wa-drop-hit); border-radius: inherit; }
@@ -626,9 +637,14 @@
 
 /* ---------------------------------------------------------------------------------------------------- Stufe 1 --- */
 
-/* -- Etikett (.pill): a pill free over the scene is a small glass bead (CSS only). On a sheet of water it is a flat
-      label instead: "Etikett auf Wasser" below. -- */
-[data-wasser] .pill {
+/* -- Etikett (.wa-etikett): a pill free over the scene is a small glass bead (CSS only): outline, rim light, shadow. Its
+      fill is the element's own. On a sheet of water it is a flat label instead: "Etikett auf Wasser" below. -- */
+[data-wasser] :is(
+  .wa-etikett,
+  .pill,                                        /* both shells */
+  .chip:where(:not(.btn--icon))                 /* desktop: the text chips of the top bar and under the island */
+  /* apply this block to further elements here */
+) {
   border: 1px solid var(--wa-pill-frei-line);
   border-radius: var(--wa-r-pill);
   box-shadow: var(--wa-pill-frei-rim);
@@ -650,15 +666,18 @@
       - The drops lie ON this water: they show the sheet, not the scene (--water-under tells them what they lie on).
       Needs room for the two depth steps: at least about 100 px in both directions, otherwise use "stilles Wasser"
       (a 150 px panel in the tone "dunkel" is filled black by them). Its direct content lies above the depth by itself.
-      It sets position: relative - do NOT put an element in this list that is placed absolutely; give that one
-      "stilles Wasser" or write the three depth rules for it by hand.
+      Small sheets: re-declare the depth for them (--wa-shelf-inset, --wa-shelf-soft, --wa-deep-inset, --wa-deep-soft,
+      as the desktop shell does for its panels), or use "stilles Wasser".
+      It needs a position (its depth and its helpers are placed inside it) but does NOT set one: an element that is
+      placed absolutely keeps its place. The shell gives position: relative to those that have none (mobil.css: the
+      cards; desktop.css: the panels in a column); the neutral class gets it by the rule below the block.
       Script: options "ringOn" (its floor shows the ring) and "light" (it gets the light helper). -- */
 [data-wasser] :is(
   .wa-becken,
-  .glass.m-card                                 /* mobil: the cards */
+  .glass.m-card,                                /* mobil: the cards */
+  .glass.panel                                  /* desktop: the panels around the islands */
   /* apply this block to further elements here (and in wasser.js, options "ringOn" and "light") */
 ) {
-  position: relative;
   isolation: isolate;
   border: 0;
   border-radius: var(--wa-r-becken-1);
@@ -699,9 +718,12 @@
         border: 0; background: var(--wa-still); -webkit-backdrop-filter: var(--wa-blur); backdrop-filter: var(--wa-blur);
         box-shadow: var(--wa-meniscus), var(--wa-shallow), var(--wa-far), var(--wa-lift);
         --water-under: var(--wa-still); --text-2: var(--wa-ink-2); --text-3: var(--wa-ink-3); text-shadow: var(--wa-shade); -- */
+:where([data-wasser]) :where(.wa-becken) { position: relative; }   /* (no weight at all: any rule of the element's own that places it wins) */
+
 [data-wasser] :is(
   .wa-wasser,
-  .glass.m-stat                                 /* mobil: the free-standing number tiles */
+  .glass.m-stat,                                /* mobil: the free-standing number tiles */
+  .glass.wchip                                  /* desktop: the small weather signs on the island */
   /* apply this block to further elements here */
 ) {
   border: 0;
@@ -724,7 +746,9 @@
 [data-wasser] :is(
   .wa-mulde,
   .sheet .item, .sheet .konto-side, .sheet .bereich-card, .sheet .tabs, .sheet .sim-item,   /* both shells: rows inside a sheet */
-  .m-card .m-row, .m-card .m-stat               /* mobil: rows and number tiles of a card */
+  .m-card .m-row, .m-card .m-stat,              /* mobil: rows and number tiles of a card */
+  .panel .item, .panel .sim-item, .panel .tabs, .panel .hour, .hours-mini > div, .ams > div, .panel .gcard,
+  .panel .glass:where(.col)                     /* desktop: rows, hour tiles, slots, gallery cards and nested boxes of a panel */
   /* apply this block to further elements here */
 ) {
   border: 0;
@@ -742,7 +766,8 @@
 [data-wasser] :is(
   .wa-mulde--tipp,
   .sheet .item--click, .sheet .sim-item,        /* both shells */
-  .m-card .m-row--click                         /* mobil */
+  .m-card .m-row--click,                        /* mobil */
+  .panel .item--click:where(.item), .panel .sim-item, .panel .gcard   /* desktop (only rows that ARE troughs: the app also puts item--click on a part of a row) */
   /* apply this block to further elements here */
 ) {
   box-shadow: var(--wa-trough-walls), var(--wa-trough-line);
@@ -802,7 +827,8 @@
 [data-wasser] :is(
   .wa-becken, .wa-wasser, .wa-wasser--dicht,
   .sheet, .cmd, .toast,                         /* both shells */
-  .m-card                                       /* mobil */
+  .m-card,                                      /* mobil */
+  .panel, .wchip                                /* desktop */
   /* add further sheets here */
 ) .pill {
   box-shadow: none; border-color: var(--wa-pill-line); text-shadow: var(--wa-shade-pill);
@@ -821,7 +847,8 @@
 [data-wasser] :is(
   .wa-wasser--dicht,
   .sheet, .toast, .cmd,                         /* both shells: sheet, toast, search panel */
-  .m-tabs                                       /* mobil: the tab bar */
+  .m-tabs,                                      /* mobil: the tab bar */
+  .dock                                         /* desktop: the dock */
   /* apply this block to further elements here */
 ) {
   border: 0;
@@ -843,17 +870,23 @@
       the bead breathes ("Atmen": it swells a little in height while its light dims, once in --wa-t-atem - only in
       HEIGHT: the bead is moved sideways by its transform, and the single property "scale" works from the place of the
       first child, a wider bead would drift).
-      More than five children: one more :has() line each, and --wa-bar-tabs on the bar. -- */
+      The number of children: --wa-bar-tabs on the bar (5 when nothing is said; up to nine are placed, a tenth needs
+      one more :has() line). The children must be equally wide and lie side by side without a gap. -- */
 [data-wasser] :is(
   .wa-markierung,
-  .m-tabs                                       /* mobil: the tab bar */
+  .m-tabs,                                      /* mobil: the tab bar */
+  .dock                                         /* desktop: the dock (seven children: --wa-bar-tabs in desktop.css) */
   /* apply this block to further elements here (and in wasser.js, option "bar") */
 ) {
   --wa-tab: 0;
   &:has(> :nth-child(2).on) { --wa-tab: 1; }
   &:has(> :nth-child(3).on) { --wa-tab: 2; }
   &:has(> :nth-child(4).on) { --wa-tab: 3; }
-  &:has(> :nth-child(5).on) { --wa-tab: 4; }   /* five children; a sixth needs one more line and --wa-bar-tabs: 6 */
+  &:has(> :nth-child(5).on) { --wa-tab: 4; }
+  &:has(> :nth-child(6).on) { --wa-tab: 5; }
+  &:has(> :nth-child(7).on) { --wa-tab: 6; }
+  &:has(> :nth-child(8).on) { --wa-tab: 7; }
+  &:has(> :nth-child(9).on) { --wa-tab: 8; }   /* nine children; a tenth needs one more line */
   &::before {
     content: "";
     position: absolute;
@@ -908,8 +941,9 @@
       The page behind it sinks out of focus: the SCRIM carries the blur, not the sheet (see "Bogen: was dazugehört").
       Its own blur would be redone with every picture of the drops that lie on it.
       It needs: its own place at the bottom edge, overflow: hidden, padding.
-      Another shape (a drawer that comes in from the side): re-declare --wa-r-bogen, --wa-bogen-rim, --wa-bogen-lift for
-      that shell and give the element another animation-name.
+      Another shape (a drawer that comes in from the side): re-declare --wa-r-bogen, --wa-bogen-rim, --wa-bogen-lift,
+      --wa-bogen-fuss and --wa-kamm for that shell and give the element and its ::before another animation-name
+      (desktop.css, "Bogen als Schublade", does exactly that).
       Script: options "ringOn" and "light"; "modal" (the drops behind it rest); "scrollers" for its scrolling body. -- */
 [data-wasser] :is(
   .wa-bogen,
@@ -918,8 +952,7 @@
 ) {
   border-radius: var(--wa-r-bogen);
   background: var(--wa-sheet);
-  box-shadow: var(--wa-bogen-rim), var(--wa-bogen-lift),
-    0 30px 0 0 var(--wa-sheet);                 /* water below the bottom edge: no gap while the wave runs past its place */
+  box-shadow: var(--wa-bogen-rim), var(--wa-bogen-lift), var(--wa-bogen-fuss);
   --water-under: var(--wa-sheet);               /* read by the drops (wasser.js, underOf) */
   --wa-drop-veil: var(--wa-bogen-veil);         /* ... and how much light they gather (wasser.js, PROP.veil) */
   --text-2: var(--wa-ink-2);
@@ -1200,10 +1233,14 @@
 [data-wasser] .steps span.on { background: var(--wa-pegel-voll); box-shadow: none; }
 
 /* -- Perle (.wa-perle): a small round icon button (close, skip, remove, "more") as a glass bead - no bending, no
-      script. It gives way under the finger and springs back. It needs: width and height (28 px and more). -- */
+      script. It gives way under the finger and springs back. It needs: width and height (28 px and more).
+      This list weighs THREE classes (.btn.btn--icon.btn--ghost), one more than the other lists: a shell's rule for one
+      of its members needs as many (desktop.css, the arrows beside the island). And its press is a transform: a member
+      that is placed by a transform of its own must repeat that place in its :active, or it hops under the finger. -- */
 [data-wasser] :is(
   .wa-perle,
-  .btn.btn--icon.btn--ghost                     /* both shells: ghost icon buttons */
+  .btn.btn--icon.btn--ghost,                    /* both shells: ghost icon buttons */
+  .glass.carousel-nav                           /* desktop: the two arrows beside the island */
   /* apply this block to further elements here */
 ) {
   padding: 0;                                   /* (the mobile shell's own .btn padding squeezed these icons to a dot) */
@@ -1224,7 +1261,8 @@
       they keep the plain glass, a touch lighter and without the heavy shadow. The list names the ROWS. -- */
 [data-wasser] :is(
   .item,                                        /* both shells */
-  .m-row                                        /* mobil */
+  .m-row,                                       /* mobil */
+  .panel                                        /* desktop: every plain button on a panel (only the primary one is a live drop there) */
   /* add further kinds of rows here (and leave their buttons out of the options "drops" and "ringFrom") */
 ) .btn:not(.btn--ghost):not(.btn--primary):not(.btn--danger) { background: var(--wa-glass-sheen), var(--wa-perle-bg); box-shadow: var(--wa-perle-rim); border-color: var(--wa-perle-line); }
 
@@ -1273,12 +1311,14 @@
       more distance (their outline flows), around everything else less. Fields have their own (see "Feld"). -- */
 [data-wasser] :is(
   .wa-tropfen, .btn, .pill,
-  .m-ico                                        /* mobil */
+  .m-ico,                                       /* mobil */
+  .chip, .carousel-nav                          /* desktop */
   /* add further drops and pills here */
 ):focus-visible { outline: var(--wa-focus); outline-offset: var(--wa-focus-gap); }
 [data-wasser] :is(
   .check, .seg > button, .tabs > button, .tile, .island-lib > button, .item--click, .toast__undo, .place-hit, .ms__btn, .dev-row, .sim-item, .link, .cmd__item,
-  .m-row--click, .m-back                        /* mobil */
+  .m-row--click, .m-back,                       /* mobil */
+  .dock button, .gcard, .back, :where(.topbar) .brand, .island, .scroll-hint   /* desktop */
   /* add everything else that can take the keyboard focus here */
 ):focus-visible { outline: var(--wa-focus); outline-offset: var(--wa-focus-gap-nah); }
 
@@ -1420,7 +1460,8 @@
 [data-wasser] :is(
   .wa-lichtlauf,
   .toast, .cmd,                                 /* both shells */
-  .m-tabs, .glass.m-stat                        /* mobil: the tab bar, the free-standing number tiles */
+  .m-tabs, .glass.m-stat,                       /* mobil: the tab bar, the free-standing number tiles */
+  .dock                                         /* desktop: the dock */
   /* apply this block to further elements here */
 ) {
   &::after {
