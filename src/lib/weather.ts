@@ -33,9 +33,14 @@ export async function fetchWeather(loc: Settings['location'], signal?: AbortSign
     hourly: 'temperature_2m,precipitation_probability,precipitation,weather_code,cloud_cover,shortwave_radiation,is_day,wind_speed_10m,wind_gusts_10m,surface_pressure,uv_index',
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,precipitation_sum,shortwave_radiation_sum,wind_gusts_10m_max,uv_index_max',
   });
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${p}`, { signal });
-  if (!res.ok) throw new Error(`Open-Meteo ${res.status}`);
-  const j = await res.json();
+  // the message ends up in the weather panel: say it in the user's language, never as a raw script error
+  let res: Response;
+  try { res = await fetch(`https://api.open-meteo.com/v1/forecast?${p}`, { signal }); } catch (e) { if ((e as Error)?.name === 'AbortError') throw e; throw new Error('keine Verbindung zum Wetterdienst'); }
+  if (!res.ok) throw new Error(res.status === 429 ? 'der Wetterdienst ist gerade überlastet' : `Open-Meteo ${res.status}`);
+  const j = await res.json().catch(() => null);
+  const lists = (o: unknown, keys: string) => !!o && keys.split(',').every((k) => Array.isArray((o as Record<string, unknown>)[k]));
+  if (!j || !j.current || !lists(j.hourly, 'time,temperature_2m,weather_code,precipitation_probability,precipitation,cloud_cover,shortwave_radiation,is_day,wind_speed_10m')
+    || !lists(j.daily, 'time,weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,precipitation_sum,shortwave_radiation_sum')) throw new Error('unerwartete Antwort des Wetterdienstes');
   const hourly: WeatherHour[] = j.hourly.time.map((t: string, i: number) => ({
     time: t, temp: j.hourly.temperature_2m[i], code: j.hourly.weather_code[i], precipProb: j.hourly.precipitation_probability[i] ?? 0,
     precip: j.hourly.precipitation[i] ?? 0, cloud: j.hourly.cloud_cover[i] ?? 0, ghi: j.hourly.shortwave_radiation[i] ?? 0,
