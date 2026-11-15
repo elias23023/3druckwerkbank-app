@@ -1,7 +1,7 @@
 # Wasser-Look: Anleitung
 
-Stand 14.11., spät abends (nach dem Tempo der Lichter und dem durchsichtigeren „klar“, Schritte 9 und 10 – beides noch nicht live). Für alle, die den Wasser-Look ansehen, anwenden oder weiter an ihm bauen.
-**Der Look ist in die App eingebaut, am Handy und am Desktop** (`src/wasser/`), und live: das Handy seit 14.11. vormittags, der Desktop seit 14.11. gegen 13 Uhr (Entscheidung 13; Stand `9c4afa7`). Dieser Branch (`wasser-look`) trägt den Feinschliff danach. Was getan ist und was als Nächstes kommt: Abschnitt 8. Der Stand bewegt sich – 8.1 sagt, wie man ihn nachsieht.
+Stand 15.11., früh morgens: **Der Feinschliff ist fertig und abschließend geprüft** (Schritte 8 bis 11, Abschnitt 8 und 11; nichts davon ist live, der Besitzer hat ihn noch nicht gesehen). Für alle, die den Wasser-Look ansehen, anwenden oder weiter an ihm bauen.
+**Der Look ist in die App eingebaut, am Handy und am Desktop** (`src/wasser/`), und live: das Handy seit 14.11. vormittags, der Desktop seit 14.11. gegen 13 Uhr (Entscheidung 13; Stand `9c4afa7`). Dieser Branch (`wasser-look`) trägt den Feinschliff danach; `main` ist inzwischen eigene Wege gegangen (8.1). Was getan ist und was als Nächstes kommt: Abschnitt 8. Der Stand bewegt sich – 8.1 sagt, wie man ihn nachsieht.
 **Die Werkzeuge messen seit dem Einbau den eingebauten Look** – nicht mehr die Vorlage, die sie obendrauf legen. Was `--look` jetzt heißt: 8.3.
 
 | Was | Wo |
@@ -610,13 +610,14 @@ Der Unterschied zwischen 1 und 1,5 ist auf Handygröße kaum zu sehen ([leben-ve
 
 ## 8. Fahrplan: der Look in der App
 
-### 8.1 Wo der Einbau steht (14.11., nachmittags)
+### 8.1 Wo der Einbau steht (15.11., früh morgens)
 
 | | Stand | Wo |
 |---|---|---|
 | **Handy** | eingebaut, auf `main`, **live** auf 3druckwerkbank.com | Einbau `c7e8299`; mit der Tageskarte live seit 14.11. vormittags (`65b1e44`) |
 | **Desktop** | eingebaut, auf `main`, **live** seit 14.11. gegen 13 Uhr (Entscheidung 13) | Einbau `a24ce60` bis `5132a10` (Branch `welt/wasser-desktop`), Tageskarte `9c4afa7`; live ist der Stand `9c4afa7`. Rückweg: `65b1e44` |
 | **Dieser Branch** (`wasser-look`) | alles zusammen, dazu der Feinschliff: Vorlage, Kopien in `src/wasser/`, Werkzeuge, Bilder, Anleitung | Der Feinschliff beginnt beim Commit mit dem Tag `feinschliff-basis` (`19447f6`): Das ist für jeden Vergleich das „Vorher“ |
+| **`main` seit 14.11. abends** | weiter als `9c4afa7`, ohne den Feinschliff | Am 15.11. um 5:20 stand `origin/main` auf `bd009ab` (unter anderem „Felder am Desktop“ und die installierbare App). Ein Zusammenführen von `wasser-look` mit diesem Stand hat Konflikte in `src/ui/Toast.tsx` und `src/ui/TopBar.tsx` (beide hat Schritt 11 geändert). Alle Prüfungen der Abschlussprüfung liefen auf `wasser-look` allein, **nicht** auf dem zusammengeführten Stand |
 
 Den Stand selbst nachsehen (nach `git fetch`):
 
@@ -631,13 +632,13 @@ git log --oneline -5 origin/main                     # wie weit main ist
 | 2 | Das Handy einschalten | erledigt, live |
 | 3 | Der Ton folgt der Einstellung | erledigt, Handy und Desktop |
 | 4 | Baustelle, echtes Handy, live | erledigt fürs Handy (Entscheidungen 9 und 11) |
-| 5 | Drei kleine Absicherungen | erledigt (14.11., `wasser-look`) |
-| 6 | Den Desktop einschalten | erledigt; `einbau.css` ist aufgelöst. Offen bleiben die Inline-Innenabstände kleiner Auswahlfelder |
+| 5 | Drei kleine Absicherungen | erledigt (14.11., `wasser-look`); in der Abschlussprüfung am 15.11. nachgeprüft: Reihenfolge gut, 16 und 16; der Ton über die Einstellung der App, in beide Richtungen |
+| 6 | Den Desktop einschalten | erledigt, live seit 14.11. (`9c4afa7`); `einbau.css` ist auf `wasser-look` aufgelöst (dort keine Datei und kein Import mehr). Offen bleiben die Inline-Innenabstände kleiner Auswahlfelder |
 | 7 | Den Desktop abnehmen, Baustelle, eigener Bildschirm, live | live seit 14.11. (Entscheidung 13); die Abnahme Welt für Welt gehört zum Feinschliff |
-| 8 | Die Wartezeit beim Reiterwechsel (Entscheidung 11) | gebaut (14.11. abends, `wasser-look`); am echten Handy noch nicht gesehen |
-| 9 | Das Tempo der Lichter (Entscheidung 7) | gebaut (14.11. abends, `wasser-look`); er hat es noch nicht gesehen |
-| 10 | „klar“ durchsichtiger (Entscheidung 8) | gebaut (14.11. abends, `wasser-look`), mit einer Reparatur am Desktop; er hat es noch nicht gesehen |
-| 11 | Weiches Gehen (Entscheidung 10), dazu der weiche Wechsel des Handy-Hintergrunds und das Suchfeld mittig auf Start | gebaut (15.11. nachts, `wasser-look`); er hat es noch nicht gesehen |
+| 8 | Die Wartezeit beim Reiterwechsel (Entscheidung 11) | gebaut und abschließend geprüft (15.11.: drei Läufe im Wechsel gegen `feinschliff-basis`, Abschnitt 11); nicht live, am echten Handy noch nicht gesehen |
+| 9 | Das Tempo der Lichter (Entscheidung 7) | gebaut und abschließend geprüft (15.11.: die Längen in der gebauten App nachgemessen, Film neu); nicht live, er hat es noch nicht gesehen |
+| 10 | „klar“ durchsichtiger (Entscheidung 8) | gebaut, mit zwei Reparaturen am Desktop, und abschließend geprüft (15.11.: Lesbarkeit beider Töne, Handy und Desktop; Bilder vorher/nachher neu); nicht live, er hat es noch nicht gesehen |
+| 11 | Weiches Gehen (Entscheidung 10), dazu der weiche Wechsel des Handy-Hintergrunds und das Suchfeld mittig auf Start | gebaut, nachgebessert und abschließend geprüft (15.11.: `rennen.mjs` 51 von 51, Film neu); nicht live, er hat es noch nicht gesehen. WebKit nicht geprüft |
 | 12 | Das alte helle Thema | offen – der Desktop ist jetzt live, die Regeln können gehen |
 | 13 | Eine Quelle | später |
 
@@ -1164,12 +1165,20 @@ Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau �
 - **Der Regler der Tropfen** wurde nur mit vorgetäuschten Kosten durchlaufen, nie von einem Gerät, das wirklich langsam und wieder schnell wurde.
 - **Firefox am Desktop** (sein Build hier hat kein WebGL: schlichtes Glas, alles andere ist CSS).
 
-**Vom Besitzer entschieden, noch nicht gebaut:**
+**Vom Besitzer entschieden, gebaut, von ihm noch nicht gesehen** (alles auf `wasser-look`, nichts davon live; abschließend geprüft am 15.11. früh, Abschnitt 11):
 
-- Das Tempo der Lichter ein wenig schneller (Entscheidung 7; Schritt 9): **gebaut am 14.11. abends**; er hat es noch nicht gesehen (Film und Zahlen: Schritt 9).
-- „klar“ ein wenig durchsichtiger (Entscheidung 8; Schritt 10): **gebaut am 14.11. abends**; er hat es noch nicht gesehen (Bilder vorher/nachher: Schritt 10).
-- Weiches Gehen von Bögen, Schubladen und Zeilen (Entscheidung 10; Schritt 11): **gebaut am 15.11. nachts**; er hat es noch nicht gesehen. Die nachrückenden Zeilen schließen die Lücke weich – mit einer Höhe, die läuft (die zweite Ausnahme der Regel „nur transform und opacity“; ein Wert schaltet sie ab).
-- Die Wartezeit beim Reiterwechsel (Entscheidung 11; Schritt 8): **gebaut am 14.11. abends**, auf der Arbeitsmaschine gemessen; ob sie am Handy des Besitzers weg ist, sagt nur sein Handy.
+- Das Tempo der Lichter ein wenig schneller (Entscheidung 7; Schritt 9).
+- „klar“ ein wenig durchsichtiger (Entscheidung 8; Schritt 10).
+- Weiches Gehen von Bögen, Schubladen und Zeilen (Entscheidung 10; Schritt 11). Die nachrückenden Zeilen schließen die Lücke weich – mit einer Höhe, die läuft (die zweite Ausnahme der Regel „nur transform und opacity“; ein Wert schaltet sie ab).
+- Die Wartezeit beim Reiterwechsel (Entscheidung 11; Schritt 8), auf der Arbeitsmaschine gemessen; ob sie am Handy des Besitzers weg ist, sagt nur sein Handy.
+- Der stehende Tropfen hinter einem Bogen, den er an der Live-Seite gemeldet hat (unten, „Offen am Look“).
+
+**Was am neuen Stand niemand geprüft hat:**
+
+- **Ein echtes Handy.** Der Besitzer hat nur den Einbau vor dem Feinschliff (`c7e8299`) am Handy gesehen. Der Feinschliff (neuer Reiterwechsel, weiches Gehen, Überblenden des Hintergrunds, sechs Szenen im Speicher des Grafikchips, das Vorladen 1,2 s nach dem Start) lief nie auf einem Handy. Zuerst auf der Baustelle ansehen: fünf Reiter zweimal durchtippen, einen Bogen öffnen und schließen, eine Aufgabe abhaken, einen Eintrag der Einkaufsliste entfernen und „Rückgängig“ tippen, das Zahnrad antippen und den Tropfen ansehen, solange der Bogen offen ist.
+- **Der Desktop auf einer echten Grafikkarte.** Der Besitzer hat `9c4afa7` auf seiner RTX 4090 gesehen (Entscheidung 14), den Feinschliff nicht. Schwächere Rechner sind ganz ungeprüft.
+- **WebKit / Safari.** Am 15.11. lief in Playwrights WebKit (Software-Zeichnung, kein Safari) nur ein kurzer Rauchtest am Handy (`docs/wasser-look/entwurf/abschluss/webkit.cjs`): Der Tropfen hinter einem Bogen ruht, eine abgehakte Zeile geht und ist nach 1 s weg, der Hintergrund blendet über und endet mit einem Bild, ein Hinweis ersetzt den anderen, kein Seitenfehler. Auffällig: Das Bild eines geschlossenen Bogens stand dort 0,75 bis 1 s fast unverändert, bevor es ging (Chromium auf derselben Maschine: 0,3 bis 0,5 s) – ob Safari auf einem iPhone das ebenso tut, ist offen. Nicht in WebKit: `pruefen.mjs --app`, `desktop.mjs pruefen`, `sollist.mjs`, die Lesbarkeit, der Desktop.
+- **Der zusammengeführte Stand.** `main` ist seit dem 14.11. abends weiter (8.1); das Zusammenführen hat Konflikte. Alles oben ist an `wasser-look` allein geprüft.
 
 **Offen am Einbau:**
 
@@ -1204,7 +1213,7 @@ Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau �
 
 **Offen am Look:**
 
-- **Ein gedrückter Tropfen blieb stehen, wenn sich ein Bogen öffnet** – vom Besitzer an der Live-Seite gemeldet (14.11., 13:30): **behoben am 14.11. abends** auf `wasser-look` (der Tropfen klingt aus und ruht dann), live erst mit dem nächsten Einspielen: `docs/wasser-look/entwurf/stehenbleiben/BEFUND.md`.
+- **Ein gedrückter Tropfen blieb stehen, wenn sich ein Bogen öffnet** – vom Besitzer an der Live-Seite gemeldet (14.11., 13:30): **behoben am 14.11. abends** auf `wasser-look` (der Tropfen klingt aus und ruht dann), live erst mit dem nächsten Einspielen: `docs/wasser-look/entwurf/stehenbleiben/BEFUND.md`. Am 15.11. noch einmal nachgestellt, mit einem Finger, der 140 ms liegt (ein Tipp von Playwright ist augenblicklich und zeigt den Fehler am alten Stand **nicht**): Bild in `docs/wasser-look/entwurf/abschluss/`.
 - Die Szenen von „Wetter“, „Archiv“ und der Innenwelt eines Projekts werden nicht vorgeladen: Beim ersten Besuch zeigen die Tropfen der Kopfzeile dort einige Bilder lang noch die alte Szene (Schritt 8).
 - „klar“ braucht `backdrop-filter`. Ohne ihn (WebKit-Testbrowser) zeigen Flächen die Szene scharf, und kleiner Text wird bei Tag schwer lesbar. Jeder aktuelle Browser zeichnet ihn; ein Ersatz ist nicht gebaut. Durchsichtigeres „klar“ macht das nicht leichter.
 - Die Etiketten auf klaren Tropfen im Ton „klar“ sehen etwas anders aus als auf den am 13.11. freigegebenen Bildern (weniger Silber im Körper, `--wa-drop-veil: .3`).
@@ -1316,3 +1325,38 @@ Nicht geschehen: ein neuer Lauf durch jemanden, der die Anleitung nicht kennt. N
 - **Der Prüfblock:** `npm run build`, `VITE_API=node npm run build`, wieder `npm run build` ohne Fehler; Reihenfolge im CSS gut, 16 und 16; `verify.mjs` 65 und 64 von 69 (die fehlenden: Open-Meteo „429“, Netz); `pruefen.mjs --app` 64 von 64; `desktop.mjs pruefen` 27 von 27. Gegenprobe der neuen Prüfungen am alten Stand: `pruefen.mjs --app` fällt dort in „rings out … then rests“ (der Tropfen ändert sich nach dem Erscheinen des Bogens nicht mehr), `desktop.mjs pruefen` in beiden neuen Prüfungen – sie fassen den Fehler.
 - **`sollist.mjs --soll git:feinschliff-basis`** (alle 164 Bildschirme, 35 Minuten): 103 gleich (8 davon `ok*`), 61 abweichend. 57 davon sind Bildschirme mit offenem Bogen oder offener Suche, die Abweichung liegt zu 98 bis 99,9 % in den Leinwänden der Tropfen: Ein Tropfen hinter einem Bogen bekommt jetzt ein letztes Bild in Ruhelage, gezeichnet nach dem Öffnen – vorher blieb das Bild von davor stehen. Was sich darin unterscheidet, ist nicht Stück für Stück bewiesen; gesehen: am Handy weicht der Tropfen ab, über dem die Maus vom Bildschirm davor stand (Haltung „Maus darüber“, bis 5/255 unter dem Schleier), am Desktop die Form des Wassers in Tropfen hinter und in der Schublade (bis 56/255; vermutlich die Lage der Landschaft, die der Maus folgt, im Augenblick des Zeichnens). Gegenproben: derselbe alte Stand auf beiden Seiten gleich, derselbe neue ebenso; die Suche am Handy allein (ohne die Bildschirme davor) gleich, nach „Konto“ abweichend. Die übrigen 4: „Start“ und „leer-start“ bei 1920 × 1080 – das bekannte Rauschen um die Insel „Material“ (Fallstrick 73). Wer diesen Stand vergleicht, nennt die Bögen als gewollt: `sollist.mjs --soll git:feinschliff-basis --erwartet bogen,suche`.
 - **Nicht geprüft:** ein echtes Handy, ein echter Grafikchip, Safari (die WebKit-Teste liefen nur für das Dekodieren und die Streifen), `film.mjs` und `vergleich.mjs` (die Vorlage auf der Vorschauseite ist in Ruhe unverändert, das zeigt der Vergleich der Tropfen oben, nicht `vergleich.mjs`).
+
+### Abschlussprüfung des Feinschliffs (15.11., früh)
+
+Eine letzte, unabhängige Prüfung des ganzen Feinschliffs (Schritte 8 bis 11 und die Nachbesserungen danach), von jemandem, der nichts davon gebaut hat. Vorher = `feinschliff-basis`, in einer Kopie gebaut; nachher = dieser Branch. Arbeitsmaschine, Chromium, ohne Grafikkarte. Die Vorlage wurde dabei nicht geändert. Einzelheiten und alle Zahlen: `NOTIZEN.md`, Abschnitt 18; Bilder, Filme und Skripte: `docs/wasser-look/entwurf/abschluss/`.
+
+```
+node scripts/wasser/uebernehmen.mjs && git status --short                   # nichts geändert: die Kopien sind die Vorlage
+npm run build                                                               # dazu VITE_API=node npm run build, danach wieder npm run build
+node scripts/verify.mjs http://localhost:4173                               # 69 von 69, gegen beide Builds
+node scripts/wasser/pruefen.mjs --app                                       # 64 von 64
+node scripts/wasser/desktop.mjs pruefen                                     # 27 von 27
+node scripts/wasser/kontrast.mjs --app                                      # kein Median unter der Grenze
+node scripts/wasser/desktop.mjs kontrast                                    # ebenso
+node scripts/wasser/sollist.mjs --soll git:feinschliff-basis --toene dunkel # was sich in „dunkel“ geändert hat
+node scripts/wasser/reiter.mjs handy --app vorher=<Ordner>,nachher=<Ordner> --drossel 1,4 --laeufe 1   # dreimal, die zwei Apps im Wechsel zuerst
+node docs/wasser-look/entwurf/gehen/rennen.mjs                              # 51 von 51
+node docs/wasser-look/entwurf/abschluss/layout.mjs vorher=<Adresse> nachher=http://localhost:4173
+```
+
+(`<Ordner>`: ein gebauter Stand, z. B. `dist/` einer Kopie von `feinschliff-basis`; `<Adresse>`: derselbe Stand unter einer eigenen Vorschau. Gelaufen ist es hier mit eigenen Vorschauen auf 4180 und 4181 – `WASSER_APP=http://localhost:4180` vor den Werkzeugen.)
+
+| Was | Ergebnis |
+|---|---|
+| Kopien, Reihenfolge im CSS | `uebernehmen.mjs` ändert nichts; „Reihenfolge gut“, 16 und 16 |
+| Prüfblock | Build und Node-Build ohne Fehler; `verify.mjs` 69 von 69 gegen beide; `pruefen.mjs --app` 64 von 64; `desktop.mjs pruefen` 27 von 27 |
+| Lesbarkeit | Handy und Desktop, beide Töne, Nacht und Tag: kein Median unter der Grenze. Die schwächsten 5 % der Buchstaben: Handy 4,2 („Fußnote auf der Seite“, „dunkel“), Desktop 3,6 (Platzhalter eines Felds, „klar“ bei Tag; Grenze 3). Die Zeiten der Desktop-Tageskarte bei 1920 × 1080 an einem Wintertag: 5,1 (vor dem Feinschliff 5,7) |
+| „dunkel“ in Ruhe | Handy Start, Heute, Projekte, 21:30: kein Bildpunkt anders als vor dem Feinschliff |
+| `sollist.mjs` „dunkel“ gegen `feinschliff-basis` | 82 Bildschirme (Handy, Desktop in beiden Formaten, Nacht, beide Bereiche), 18 Minuten: 48 gleich (4 davon `ok*`), 34 abweichend. 29 davon zeigen einen offenen Bogen oder die Suche – die Tropfen dahinter stehen jetzt in ihrer Ruhelage (die Behebung des stehenden Tropfens, Schritt 8), 87 bis 99,9 % der abweichenden Bildpunkte in den Tropfen, der Rest (höchstens 420 je Bildschirm) gleich daneben. 4 sind der Desktop-Start und der leere Start in beiden Formaten (das Suchfeld mittig, Schritt 11). 1 war Rauschen (Desktop 1920 „Projekte“, 129 Bildpunkte, allein wiederholt gleich). Jeder Bildschirm ohne Bogen ist gleich |
+| Anordnung | jede Desktop-Welt, beide Formate, Tag und Nacht, beide Bereiche (60 Bildschirme je Stand): vorher und nachher genau dieselbe Liste von Dingen auf Inseln – keine Insel neu verdeckt, kein Inselname verdeckt, kein Text abgeschnitten. Was auf beiden Seiten steht, ist die Anordnung der App (blasse Hintergrund-Inseln unter Panels, die Wetterzeichen auf der Insel „Wetter“) |
+| Reiterwechsel (Handy) | bis das neue Bild steht, Median der drei Läufe: erster Besuch 81 → 25 ms, zweiter 95 → 29 ms; viermal gebremst 326 → 117 und 243 → 92 ms. Lange Aufgaben, die Szenenarbeit sind: 16 → 0 |
+| Weiches Gehen | `rennen.mjs` 51 von 51; die letzte Aufgabe auf „Heute“: Zeile und Leer-Text nie zugleich zu sehen |
+| Der stehende Tropfen | am alten Stand nachgestellt (Finger 140 ms), am neuen behoben – Bild 9 im Paket |
+| Leerer Bereich, reduzierte Bewegung, Fenstergröße | Handy „Meine Werkstatt“: sieben Bildschirme und ein Bogen, beide Töne, mit und ohne reduzierte Bewegung, kein Seitenfehler; siebenmal schmal und breit im Wechsel: jedes Mal die richtige Hülle mit Tropfen, kein Fehler in der Konsole |
+| WebKit | Playwrights WebKit startet. Kurzer Rauchtest am Handy bestanden (Abschnitt 10); das Bild eines geschlossenen Bogens blieb dort bis 1 s stehen |
+| Befunde der Kontrollen, Stichprobe | F1 (`sollist.mjs` sieht ein Zeichen auf einem Tropfen): ein eingepflanztes magentafarbenes Zeichen → „DIFF … ON a drop“; F12: 5,1; F13: 0 Bilder mit Zeile und Leer-Text zugleich |

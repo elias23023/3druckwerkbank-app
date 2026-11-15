@@ -1,6 +1,6 @@
 # Wasser-Look, the template: notebook for whoever applies it
 
-State 14.11. (packed 13.11.; the corrections after the two checkers of the package are in: section 9, "What changed on
+State 15.11., early morning: the fine-tuning (sections 15 to 17) is finished and checked once more by an independent final check (section 18); none of it is live. Before that: state 14.11. (packed 13.11.; the corrections after the two checkers of the package are in: section 9, "What changed on
 14.11."; the DESKTOP template was added on 14.11.: section 11, and corrected after its checker the same day: 11.4,
 "After the checker"). Written for a helper who has not seen the look being built. German names of the building blocks are
 kept (they are the names the owner knows). Read `LIESMICH.md` first for what is where and how to look at it; the
@@ -1425,3 +1425,49 @@ What the two checkers of the four fine-tuning steps found, and what changed in t
   difference outside the drops remains, and counts the rest pose of a drop behind a sheet (seen through the blur, 1 of
   255 beyond the drop) as known; the CSS-order guard of `lib.mjs` (`strangers`) accepts only `[data-wasser` / `[data-wa-ton`
   followed by no further name character.
+
+## 18. Final check of the fine-tuning (15.11., early morning; step "Abschluss")
+
+An independent last look at the whole fine-tuning (steps 8 to 11 of the guide and the corrections of section 17), made
+by someone who built none of it. Before = the tag `feinschliff-basis` (`19447f6`; its app code equals `9c4afa7`, the
+state that went live on 14.11.), built in a scratch folder; after = this branch. Work machine, Chromium, no GPU. The
+template itself was not changed in this step.
+
+- **Copies:** `node scripts/wasser/uebernehmen.mjs` changes nothing (`git status` clean); `pruefen.mjs --app` says the
+  copies are the template. CSS order in the build: "Reihenfolge gut", 16 and 16.
+- **Standard checks:** `npm run build` and `VITE_API=node npm run build` without errors; `verify.mjs` 69 of 69 against
+  each of the two builds; `pruefen.mjs --app` 64 of 64; `desktop.mjs pruefen` 27 of 27.
+- **Contrast:** `kontrast.mjs --app` (phone, both tones) and `desktop.mjs kontrast` (2000 x 993, both tones, night and
+  day): no median below its floor. Lowest worst-5-% values: phone 4.2 ("Fußnote auf der Seite", dunkel), desktop 3.6
+  (field placeholder, klar by day; floor 3). The day card's times at 1920 on a winter day (`.tk-day__lbl`): 5.1 (worst
+  5 %: 5.0); at 08:40 6.5 (worst 5 %: 4.0); before the fine-tuning 5.7.
+- **"dunkel" at rest:** phone Start, Heute, Projekte at 21:30, reduced motion, deviceScaleFactor 2: 0 pixels differ
+  from the state before the fine-tuning.
+- **`sollist.mjs --toene dunkel` against `feinschliff-basis`** (both builds as folders): 82 screens (phone and desktop in both formats, night, both workspaces), 18 min: 48 equal (4 of them `ok*`), 34 differ. 29 are screens with an open sheet or the search: the drops behind it now show their rest pose (the fix of the owner's bug, step 8); 87 to 99.9 % of their differing pixels lie inside drop canvases; the rest (at most 420 px per screen) lies around those drops - presumably that rest pose seen through the blur (KNOWN 5 of vergleich.mjs), not checked pixel by pixel. 4 are the desktop Start and empty Start in both formats (the search is centred, step 11). 1 was noise: desktop 1920 Projekte, 129 px of at most 6/255 in a 3-px strip of water below the island "Bewässerungsclip", equal when repeated alone (pitfall 73). Every phone and desktop screen WITHOUT a sheet is equal - the resting picture of "dunkel" did not change. The sheet screens were not compared with `--tropfen` or judged one by one by eye; I trusted that "inside the drops" means the rest pose. Check: open two of the `-vergleich.png` pictures (phone `bogen-einstellungen`, largest 82/255; desktop `bogen-versionen`, largest 196/255) and confirm the difference is the drop that rests.
+- **Layout** (`docs/wasser-look/entwurf/abschluss/layout.mjs`): every desktop world, 2000 x 993 and 1920 x 1080, night
+  and day, both workspaces (60 screens per side): which text, panel or button lies on an opaque part of an island
+  picture or on an island's name, and which text leaves the window. Before and after give the SAME list on every screen
+  (no new covering); no island name is covered; no text is cut off. What the list holds on both sides: faded background
+  islands under panels (inner world, Projekte), the weather signs on the island "Wetter", the search field over the far
+  island "3D-Druck" / "Material" - the app's layout, not the look.
+- **Tab change** (`reiter.mjs handy`, three runs alternating the order of the two builds, `--drossel 1,4 --laeufe 1`;
+  ms, median of the three run medians): first visit 81 -> 25, second visit 95 -> 29; four times slowed down 326 -> 117
+  and 243 -> 92. Long tasks that are mostly scene work: 16 before, 0 after (all runs, x4). The drops show the new scene
+  27 to 34 ms after the tap (x4: 96 to 133 ms).
+- **Soft leaving:** `docs/wasser-look/entwurf/gehen/rennen.mjs` 51 of 51 on the final build; the last task on the phone's
+  Heute: leaving row and empty text never both visible (84 frames sampled; `abschluss/leer-probe.mjs`).
+- **The drop behind a sheet** (the owner's bug): reproduced on the old state with a finger held 140 ms - the drop
+  stands with its ring at 1 s and at 3 s (pixel-equal); on the new state it rests. A Playwright `tap()` (no frame
+  between touch and release) does NOT show the bug on the old state.
+- **Empty workspace, reduced motion, resizing:** phone "echt", seven screens and the settings sheet, both tones, with
+  and without system reduced motion: no page error, the sheet goes; the desktop worlds of "echt" in the layout check;
+  narrow and wide seven times in a row (390 / 1920 / 700 / 2000 / 390 / 1280 / 1920): the right shell each time, drops
+  drawn, no page or console error.
+- **WebKit** (Playwright's build, software GL, `abschluss/webkit.cjs`): the app loads (with `waitUntil: 'load'`; a
+  networkidle wait timed out for an earlier checker), the drop behind a sheet rests, a ticked row leaves and is gone,
+  the background crossfade ends with one picture and the drops on it, a toast replaces a toast, no page error. The
+  leaving picture of a closed sheet stood almost unchanged for 0.5 to 0.75 s and was gone after 0.75 to 1 s (Chromium,
+  same machine and load: gone after 0.3 to 0.5 s) - not explained; Safari on a phone not seen.
+- **Spot checks of the checkers' findings:** F1 (sollist.mjs blind to what lies on a drop): a magenta icon planted in a
+  copy of the build -> "DIFF ... ON a drop" on 3 of 3 screens; the unplanted copy -> equal. F12 (day card label in
+  "klar" under 4.5): 5.1. F13 (leaving row and empty text together): 0 frames.

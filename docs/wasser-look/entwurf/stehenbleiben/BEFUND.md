@@ -60,3 +60,8 @@ In `pruefen.mjs --app` (drei Prüfungen) und `desktop.mjs pruefen` (drei Prüfun
 Live ist das erst mit dem nächsten Einspielen (die Live-Seite läuft auf `9c4afa7`).
 
 **Folge für Vergleiche mit älteren Ständen:** `sollist.mjs --soll git:feinschliff-basis` zeigt jeden Bildschirm mit offenem Bogen oder offener Suche als abweichend (57 von 164, fast alles in den Leinwänden der Tropfen): Die Tropfen hinter dem Bogen zeigen jetzt ihr letztes Bild in Ruhelage statt des Bilds von davor. Gewollt; beim Vergleich mit Ständen vor diesem `--erwartet bogen,suche` angeben. Noch offen: Ruhende Tropfen werden nicht neu gezeichnet, solange der Bogen offen bleibt – auch nicht, wenn sich darunter die Szene, der Ton oder die Fenstergröße ändert (war vorher genauso; `NACHSEHEN-FABLE.md`, Punkt 18).
+
+## Abschlussprüfung am 15.11. (früh)
+
+Noch einmal nachgestellt, am Stand `feinschliff-basis` (wie live bis zum nächsten Einspielen) gegen den fertigen Feinschliff, Handy, Ton „dunkel“, 21:30: das Zahnrad mit einem Finger angetippt, der 140 ms liegt. Bild: `docs/wasser-look/entwurf/abschluss/fuer-den-eigentuemer/9-fehler-tropfen-bleibt-stehen.webp` (Skript `abschluss/bug.mjs`). Bisher steht der Tropfen 1 s und 3 s nach dem Tippen mit seinem Ring da (die zwei Bilder Bildpunkt für Bildpunkt gleich); neu ruht er in seiner Ruhelage (`Wasser.info.settling` 0, `resting` 4).
+Wichtig für jede weitere Prüfung: Ein Tipp von Playwright (`locator.tap()`) ist augenblicklich – Berühren und Loslassen ohne ein Bild dazwischen. Mit ihm zeigt auch der alte Stand **keinen** Ring hinter dem Bogen; der Fehler erscheint erst mit einem Finger, der liegen bleibt, wie ein Mensch tippt.

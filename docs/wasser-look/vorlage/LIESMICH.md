@@ -5,7 +5,7 @@ Rezepten, Dosierung, Töne, Bewegung, der Fahrplan für den Einbau in die App, F
 auch der aktuelle Stand (14.11.: am Handy und am Desktop eingebaut und live) und was der Besitzer seither
 entschieden hat. Dieses Blatt sagt nur, was in diesem Ordner liegt und was an der Vorlage zuletzt geprüft wurde.
 
-Stand 14.11. Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann – jetzt als
+Stand 15.11., früh: Der Feinschliff (Tempo, „klar“, weiches Gehen, Reiterwechsel) ist auf dem Branch `wasser-look` fertig und abschließend geprüft, aber nicht live. Stand 14.11.: Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann – jetzt als
 **zwei Vorlagen zum Ansehen: Handy und Desktop**.
 **Dieser Ordner ist die Vorlage, nicht der Einbau**: Build und Website laden diese Dateien nicht. Die App lädt Kopien
 davon aus `src/wasser/` (`node scripts/wasser/uebernehmen.mjs` holt sie, danach `npm run build`): am Handy und am
@@ -241,3 +241,12 @@ Suche behalten ihre Abdunkelung. Zwei neue Werte je Ton (`--wa-weit-grund-panel`
 durch den Ton Bildpunkt für Bildpunkt gleich (nur das Tempo ändert dort hinter zwei Bögen das Wasser zweier Tropfen um
 1 von 255). Bilder vorher/nachher und der Film zum Tempo: `docs/wasser-look/entwurf/tempo-und-ton/`;
 Werte, Zahlen und wie man sie zurückdreht: `docs/Wasser-Look.md`, Abschnitt 8, Schritte 9 und 10.
+
+**Weiches Gehen und Abschluss (15.11., früh; Entscheidung 10 – der Besitzer hat es noch nicht gesehen):** Bögen,
+Schubladen und die Suche schließen weich, abgehakte oder entfernte Zeilen gehen weich, ein Hinweis ersetzt den anderen
+weich (Block „Gehen“ in `kern.css`; die App behält das gehende Element dafür kurz als Bild, `src/ui/gehen.ts`). Danach
+haben zwei Kontrollen nachgebessert (`NOTIZEN.md`, Abschnitt 17), und eine letzte, unabhängige Prüfung hat den ganzen
+Feinschliff gegen den Stand davor gehalten (`NOTIZEN.md`, Abschnitt 18): alle Prüfungen bestanden, keine Schrift unter
+ihrer Grenze, „dunkel“ in Ruhe Bildpunkt für Bildpunkt gleich, keine Insel neu verdeckt. Bilder und Filme für den
+Besitzer: `docs/wasser-look/entwurf/abschluss/`. Auf einem echten Handy, auf einer echten Grafikkarte und in Safari
+lief der Feinschliff noch nie.
