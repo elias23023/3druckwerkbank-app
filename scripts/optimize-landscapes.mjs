@@ -1,4 +1,5 @@
-// assets-src/landschaft-<season>-<phase>.png and landschaft-regen.png -> public/img/landschaft-<key>-{1672,1280}.{avif,webp}
+// assets-src/landschaft-<season>-<key>.png (key: daemmerung, morgen, mittag, abend, blau, nacht, regen; see LOOK_PHASE in src/scene/looks.ts)
+// -> public/img/landschaft-<season>-<key>-{1672,1280}.{avif,webp}
 import sharp from 'sharp';
 import { readdirSync } from 'node:fs';
 const out = 'public/img';

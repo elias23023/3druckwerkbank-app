@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/check-hintergruende.mjs dist",
     "preview": "vite preview --port 4173 --strictPort",
     "images": "node scripts/optimize-images.mjs && node scripts/optimize-landscapes.mjs",
     "shots": "node scripts/screenshots.mjs"

@@ -98,7 +98,7 @@ Demodaten: fünf aktive Projekte (Sensorhalter Garten, Bewässerungsclip, Werkze
 
 ## 6. Bilder (alle vom Nutzer mit Bild-KI erzeugt, von mir freigestellt und optimiert)
 
-**Landschaften (1672 × 941, Bergsee mit gleichbleibendem Bildaufbau):** je Jahreszeit vier Bilder (früher Morgen, Mittag, Sonnenuntergang, Nacht) für Frühling, Sommer, Herbst und Winter, dazu ein regennasser Bergsee für bedeckt, Nebel und Regen. Die zwölf Licht-Looks (Dämmerung bis Mondnacht) steuern weiter Sonnenstand, Himmelsfarbe und Wolken und werden auf die vier Tagesbilder der aktuellen Jahreszeit abgebildet (`src/scene/looks.ts`, `LOOK_PHASE`). Die früheren zwölf Tal-Landschaften liegen in `reference/alte-assets/`.
+**Landschaften (1672 × 941, Alpensee mit gleichbleibendem Bildaufbau):** je Jahreszeit sechs Bilder (Morgendämmerung, Morgen, Mittag, Abend, Blaue Stunde, Nacht) für Frühling, Sommer, Herbst und Winter, dazu je Jahreszeit eine grau abgestimmte Fassung des Mittagsbilds für bedeckt, Nebel und Regen (`scripts/grade-regen.mjs`; ein echtes Regenbild fehlt noch). Die zwölf Licht-Looks (Dämmerung bis Mondnacht) steuern weiter Sonnenstand, Himmelsfarbe und Wolken und werden auf die Bilder der aktuellen Jahreszeit abgebildet (`src/scene/looks.ts`, `LOOK_PHASE`). Das Handy zeigt dasselbe Raster im Hochformat (830 × 1846) auf allen Reitern. Die früheren zwölf Tal-Landschaften liegen in `reference/alte-assets/`.
 
 **Hauptinseln (1536 × 1024, freigestellt geliefert):** Heute (Garten mit Bank, Hütte und gemaltem Holzring auf einem Gestell; die App legt Sonnenweg, Skala und Uhr in den gemalten Ring), Projekte (Werkstatthütte mit Baum), 3D-Druck (Druckwerkstatt mit AMS), Material (Spulenregal), Wetter (Kuppel, Wettermast, Wasserfall), Archiv (Bibliothek mit Vitrinen).
 

@@ -9,8 +9,9 @@ import { fmtTime, fmtNum, fmtGrams, fmtDuration, relTime, fmtDate, fmtDayShort }
 import { NotesField } from '../forms/ProjektDetail';
 import { STATUS_COLOR } from '../forms/GeraetForm';
 import { bestPvWindow, todayDaily, wmo, pvKw } from '../lib/weather';
-import { sceneLook, type Look } from '../scene/looks';
-import { islandSrc } from '../scene/Island';
+import { sceneLook, timeLook, landscapeKey, type Look } from '../scene/looks';
+import { resolveSeason, type Season } from '../lib/season';
+import { islandSrc, ASSET_VERSION } from '../scene/Island';
 import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { Logo } from '../ui/TopBar';
 import { Check, Progress, Stack } from '../ui/Glass';
@@ -36,30 +37,53 @@ function Card({ title, icon, count, children, onMore }: { title?: string; icon?:
   return <section className="glass m-card">{title ? <h3>{icon}{title}{count !== undefined ? <span className="cnt pill xs">{count}</span> : null}{onMore ? <button className="btn btn--icon btn--ghost" style={{ marginLeft: count === undefined ? 'auto' : 0 }} onClick={onMore} aria-label={`${title}: alles anzeigen`}><IChevR /></button> : null}</h3> : null}{children}</section>;
 }
 
-/** The painted scene of a view: the same address in the page and in the preloading below (the browser picks one candidate of the srcset for both). */
-const sceneSrcSet = (k: string) => `/img/szene-${k}-640.webp 640w, /img/szene-${k}-1280.webp 1280w`;
-const TAB_SCENES = ['start', 'heute', 'projekte', 'material', 'druck'];   // the scenes of the five tabs ("Mehr" opens on "druck")
-/** Loads the scenes of the other tabs in a quiet moment after the start - once per start of the phone view, not when the connection asks to
- *  save data - and hands them to the water look, which makes them ready for its drops (Wasser.warm). So the first visit of a tab waits
- *  neither for the network nor for the picture inside the drops. */
-function usePreloadScenes(current: string) {
+/** The picture behind the phone shell: the portrait Alpensee "<season>-<phase>" (landscapeKey). The same address in the page and
+ *  in the preloading below (the browser picks one candidate of the srcset for both). Widths as in scripts/optimize-scenes.mjs;
+ *  ?v= because the CDN and browsers keep /img/* for a year (ASSET_VERSION, Island.tsx). */
+const sceneSrc = (k: string) => `/img/szene-${k}-830.webp?v=${ASSET_VERSION}`;
+const sceneSrcSet = (k: string) => `/img/szene-${k}-540.webp?v=${ASSET_VERSION} 540w, ${sceneSrc(k)} 830w`;
+/** The landscape key of the NEXT time of day: the first look after now (in steps of 10 minutes, over one day, without the
+ *  weather) whose picture differs from the current one. While the weather shows the grey picture, the picture of the time of
+ *  day under it comes first (the weather may clear). */
+function nextSceneKeys(look: Look, season: Season, sunrise: string | undefined, sunset: string | undefined, now: Date): string[] {
+  const cur = landscapeKey(look, season), keys: string[] = [];
+  const plain = landscapeKey(timeLook(now, sunrise, sunset), season);
+  if (plain !== cur) keys.push(plain);
+  const day0 = new Date(now).setHours(0, 0, 0, 0);
+  const shift = (iso: string | undefined, d: number) => (iso && d ? new Date(new Date(iso).getTime() + d * 86400_000).toISOString() : iso);   // (today's sun times, moved to the day of the step)
+  for (let m = 10; m <= 24 * 60; m += 10) {
+    const t = new Date(now.getTime() + m * 60_000), d = Math.round((new Date(t).setHours(0, 0, 0, 0) - day0) / 86400_000);
+    const k = landscapeKey(timeLook(t, shift(sunrise, d), shift(sunset, d)), season);
+    if (k !== cur && k !== plain) { keys.push(k); break; }
+  }
+  return keys;
+}
+/** Loads the picture of the next time of day (and, under grey weather, the one of the hour) in a quiet moment - once per picture,
+ *  not when the connection asks to save data - and hands it to the water look, which makes it ready for its drops
+ *  (Wasser.warm). So the change of the time of day waits neither for the network nor for the picture inside the drops. */
+const preloaded = new Set<string>();
+function usePreloadScenes(look: Look, season: Season, sunrise: string | undefined, sunset: string | undefined, now: Date) {
+  const minute = Math.floor(now.getTime() / 60_000);   // (the next picture is looked for once a minute, not with every tick of the clock)
+  const want = useMemo(() => nextSceneKeys(look, season, sunrise, sunset, now).filter((k) => !preloaded.has(k)).join(','), [look, season, sunrise, sunset, minute]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
+    if (!want) return;
     const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
     if (nav.connection?.saveData) return;
     const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
-    let idle = 0; const imgs: HTMLImageElement[] = [];
+    let idle = 0;
     const load = () => {
-      for (const k of TAB_SCENES) {
-        if (k === current) continue;
+      const imgs: HTMLImageElement[] = [];
+      for (const k of want.split(',')) {
+        if (preloaded.has(k)) continue; preloaded.add(k);
         const img = new Image(); img.decoding = 'async'; img.setAttribute('fetchpriority', 'low');
-        img.sizes = '100vw'; img.srcset = sceneSrcSet(k); img.src = `/img/szene-${k}-1280.webp`;   // (sizes before srcset, as the page has them)
+        img.sizes = '100vw'; img.srcset = sceneSrcSet(k); img.src = sceneSrc(k);   // (sizes before srcset, as the page has them)
         imgs.push(img);
       }
-      window.Wasser?.warm?.(imgs);
+      if (imgs.length) window.Wasser?.warm?.(imgs);
     };
     const t = window.setTimeout(() => { idle = w.requestIdleCallback ? w.requestIdleCallback(load, { timeout: 3000 }) : window.setTimeout(load, 0); }, 1200);   // after the first pictures of the start
     return () => { window.clearTimeout(t); if (idle) { if (w.cancelIdleCallback) w.cancelIdleCallback(idle); else window.clearTimeout(idle); } };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [want]);
 }
 
 type Bg = { src: string; srcSet?: string };
@@ -116,14 +140,16 @@ export function Mobile() {
   const tab: Tab = route.world === 'heute' ? 'heute' : route.world === 'projekte' ? 'projekte' : route.world === 'material' ? 'material' : route.world === 'start' ? 'start' : 'mehr';
   const project = route.world === 'projekte' && route.projectId ? s.projects.find((p) => p.id === route.projectId && !p.deletedAt) : undefined;
   const go = (t: Tab) => navigate({ world: t === 'mehr' ? 'druck' : t });
-  // background: one of the eight painted scenes (island over the lake), chosen by tab / view
-  const scene = project ? 'innen' : tab === 'mehr' ? (route.world === 'wetter' ? 'wetter' : route.world === 'archiv' ? 'archiv' : 'druck') : tab;
-  usePreloadScenes(scene);
+  // background: the portrait Alpensee of the season in the light of the current look (same keys as the desktop landscape),
+  // on every tab the same picture; a new time of day fades in (SceneBg)
+  const season = resolveSeason(s.settings.season, now);
+  const scene = landscapeKey(look, season);
+  usePreloadScenes(look, season, today?.sunrise, today?.sunset, now);
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
     <div className="m-shell" data-wasser="mobil" data-look={look}>
-      <SceneBg src={`/img/szene-${scene}-1280.webp`} srcSet={sceneSrcSet(scene)} />
+      <SceneBg src={sceneSrc(scene)} srcSet={sceneSrcSet(scene)} />
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
         <span className="spacer" />
