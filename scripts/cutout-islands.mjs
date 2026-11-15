@@ -1,18 +1,26 @@
 // Removes the plain white background from AI-generated island renders (flood fill from the corners), feathers the edge,
-// un-tints the light fringe and trims. usage: node scripts/cutout-islands.mjs <srcDir> [--waterfall]
+// un-tints the light fringe and trims. usage: node scripts/cutout-islands.mjs <srcDir> [--waterfall [--mist]]
 // --waterfall: for islands whose waterfall foam runs into the white background (bottom edge). The flood fill eats the
 // foam's lower end there and leaves ragged, hard-ended streaks. With the flag the script finds the waterfall columns
 // (solid, light, unsaturated pixels in the lower 40 %), measures per column where the foam ends and fades the foam
 // out over FADE px above that end; faded and edge foam keep their own white colour (no un-premultiply), so the fall
 // ends in white mist instead of grey outlines. Rock, roots and leaves (dark or saturated) are never faded, and outside
 // the waterfall columns the result is the same as without the flag. Prints the detected columns.
+// --mist (only with --waterfall): additionally softens the alpha of the foam's lower end, where the flood fill leaves
+// small square notches that show on dark ground. In the lower 40 % of the waterfall columns (and MIST_PAD px beside
+// them) the alpha of foam and background pixels is blurred, normalized over foam and background only, so rock and roots
+// neither bleed into the mist nor darken the foam beside them; colour stays untouched. Used for bereich-smarthome and
+// bereich-technik (Nov 2026); cutout-holes-keep.json then needs a box over the mist, or cutout-holes cuts it out again.
 import sharp from 'sharp';
 import { readdirSync } from 'node:fs';
 const src = process.argv[2];
 const WATERFALL = process.argv.includes('--waterfall');
+const MIST = WATERFALL && process.argv.includes('--mist');
 const names = readdirSync(src).filter((f) => /^(insel|sonnenuhr|zeiger)-.*\.png$/.test(f));
 // waterfall mode: length of the fade at the lower end of the foam, soft margin of the zone (px of the source image)
 const FADE = 90, ZONE_PAD = 28;
+// mist: box radius of the alpha blur (three passes, about a Gaussian with sigma 4.5 px), reach beside the columns
+const MIST_R = 4, MIST_PAD = 70;
 for (const f of names) {
   const img = sharp(`${src}/${f}`).ensureAlpha();
   const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
@@ -58,6 +66,25 @@ for (const f of names) {
         keep[i] = 1;
         const f = Math.min(1, Math.max(0, (yEndS[x] - y) / FADE)); if (f >= 1) continue;
         const mult = 1 - wx[x] * (1 - Math.pow(f, 1.3)); alpha[i] = Math.round(alpha[i] * mult);
+      }
+    }
+    if (MIST) {
+      // normalized blur of alpha over foam and background pixels in the lower part of the waterfall columns
+      // the mist zone reaches MIST_PAD px beside the detected columns, so thin side strands of the fall are included
+      const wm = new Float64Array(W);
+      for (const [a, b] of zones) for (let x = Math.max(0, a - MIST_PAD); x <= Math.min(W - 1, b + MIST_PAD); x++) { const d = x < a ? (x - (a - MIST_PAD)) / MIST_PAD : x > b ? ((b + MIST_PAD) - x) / MIST_PAD : 1; wm[x] = Math.max(wm[x], Math.min(1, 2 * d)); }
+      const y0 = fy0, R = MIST_R, HH = H - y0; const inZ = (x, y) => wm[x] > 0 && (bg[y * W + x] || keep[y * W + x] || foamSoft(y * W + x));
+      let num = new Float32Array(W * HH), den = new Float32Array(W * HH);
+      for (let y = y0; y < H; y++) for (let x = 0; x < W; x++) if (inZ(x, y)) { const j = (y - y0) * W + x; num[j] = alpha[y * W + x]; den[j] = 1; }
+      const box = (a, horiz) => { const o = new Float32Array(a.length); const n = horiz ? W : HH, m = horiz ? HH : W;
+        for (let q = 0; q < m; q++) { let s = 0; const at = (k) => horiz ? q * W + k : k * W + q;
+          for (let k = -R; k <= R; k++) if (k >= 0 && k < n) s += a[at(k)];
+          for (let k = 0; k < n; k++) { o[at(k)] = s; const add = k + R + 1, sub = k - R; if (add < n) s += a[at(add)]; if (sub >= 0) s -= a[at(sub)]; } }
+        return o; };
+      for (let p = 0; p < 3; p++) { num = box(box(num, true), false); den = box(box(den, true), false); }
+      for (let y = y0; y < H; y++) for (let x = 0; x < W; x++) {
+        if (!inZ(x, y)) continue; const i = y * W + x, j = (y - y0) * W + x; if (den[j] <= 0) continue;
+        const b = num[j] / den[j]; alpha[i] = Math.round(alpha[i] + wm[x] * (b - alpha[i])); keep[i] = 1;
       }
     }
     console.log(f, 'waterfall zones', JSON.stringify(zones));

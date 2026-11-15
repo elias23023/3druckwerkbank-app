@@ -62,9 +62,9 @@ function nextSceneKeys(look: Look, season: Season, sunrise: string | undefined, 
  *  not when the connection asks to save data - and hands it to the water look, which makes it ready for its drops
  *  (Wasser.warm). So the change of the time of day waits neither for the network nor for the picture inside the drops. */
 const preloaded = new Set<string>();
-function usePreloadScenes(look: Look, season: Season, sunrise: string | undefined, sunset: string | undefined, now: Date) {
+function usePreloadScenes(look: Look, season: Season, sunrise: string | undefined, sunset: string | undefined, now: Date, on = true) {
   const minute = Math.floor(now.getTime() / 60_000);   // (the next picture is looked for once a minute, not with every tick of the clock)
-  const want = useMemo(() => nextSceneKeys(look, season, sunrise, sunset, now).filter((k) => !preloaded.has(k)).join(','), [look, season, sunrise, sunset, minute]); // eslint-disable-line react-hooks/exhaustive-deps
+  const want = useMemo(() => (on ? nextSceneKeys(look, season, sunrise, sunset, now).filter((k) => !preloaded.has(k)).join(',') : ''), [on, look, season, sunrise, sunset, minute]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!want) return;
     const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
@@ -87,6 +87,8 @@ function usePreloadScenes(look: Look, season: Season, sunrise: string | undefine
 }
 
 type Bg = { src: string; srcSet?: string };
+/** Longest wait for the first weather answer before the phone picks its first background (Mobile). */
+const BG_WAIT = 1200;
 /** CSS time ("0.62s", "620ms") in ms. */
 const cssMs = (v: string) => { const n = parseFloat(v); return !(n > 0) ? 0 : /ms\s*$/.test(v) ? n : n * 1000; };
 /** The picture behind the phone shell. A new ADDRESS (today another view's scene, later another time of day) is not cut in:
@@ -144,12 +146,21 @@ export function Mobile() {
   // on every tab the same picture; a new time of day fades in (SceneBg)
   const season = resolveSeason(s.settings.season, now);
   const scene = landscapeKey(look, season);
-  usePreloadScenes(look, season, today?.sunrise, today?.sunset, now);
+  // first start without stored weather: the look would come from the fallback sun times and without the weather code, and
+  // its picture would be loaded and faded out again a moment later. So the picture waits for the first weather answer,
+  // at most BG_WAIT ms (offline, no place); the .m-bg layer (and its darkening) is there from the start
+  const [bgReady, setBgReady] = useState(() => !!useStore.getState().weather);
+  useEffect(() => {
+    if (bgReady) return;
+    if (s.weather) { setBgReady(true); return; }
+    const t = window.setTimeout(() => setBgReady(true), BG_WAIT); return () => window.clearTimeout(t);
+  }, [bgReady, s.weather]);
+  usePreloadScenes(look, season, today?.sunrise, today?.sunset, now, bgReady);
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
     <div className="m-shell" data-wasser="mobil" data-look={look}>
-      <SceneBg src={sceneSrc(scene)} srcSet={sceneSrcSet(scene)} />
+      {bgReady ? <SceneBg src={sceneSrc(scene)} srcSet={sceneSrcSet(scene)} /> : <div className="m-bg" aria-hidden />}
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
         <span className="spacer" />

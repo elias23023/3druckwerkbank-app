@@ -15,7 +15,7 @@ export const ISLAND_META: Record<LibraryIsland, { w: number; h: number; disc?: {
   planung: { w: 1141, h: 1147 }, 'garten-ring': { w: 1519, h: 997 }, pavillon: { w: 1519, h: 1022 },
   // project islands by type and by area (wide format, waterfall fades out at the lower end)
   'art-gehaeuse': { w: 1489, h: 1007 }, 'art-halterung': { w: 1442, h: 995 }, 'art-organizer': { w: 1476, h: 985 }, 'art-reparatur': { w: 1416, h: 1003 },
-  'bereich-smarthome': { w: 1473, h: 1010 }, 'bereich-garten': { w: 1479, h: 986 }, 'bereich-haushalt': { w: 1480, h: 998 }, 'bereich-technik': { w: 1453, h: 1005 }, 'bereich-werkstatt': { w: 1458, h: 1009 },
+  'bereich-smarthome': { w: 1473, h: 1010 }, 'bereich-garten': { w: 1479, h: 986 }, 'bereich-haushalt': { w: 1480, h: 998 }, 'bereich-technik': { w: 1453, h: 1001 }, 'bereich-werkstatt': { w: 1458, h: 1009 },
 };
 /** Where a photo goes on the two frame islands (percent of the sprite box): the board face / the opening of the easel frame. */
 export const FRAME_BOX: Partial<Record<LibraryIsland, CSSProperties>> = {
@@ -24,7 +24,7 @@ export const FRAME_BOX: Partial<Record<LibraryIsland, CSSProperties>> = {
 };
 /** Bump when an image under /img changes its content (islands, landscapes, phone backgrounds): the CDN and browsers cache
  *  /img/* for a year (immutable), so the URL must change; it also names the image cache of the installed app (sw.js). */
-export const ASSET_VERSION = '20261115a';
+export const ASSET_VERSION = '20261115b';
 /** Desktop: name and subtitle under an island stand on a small label of smoke glass (block „Felder“ in global.css, class
  *  `island__label--feld`). false = the names stand free on the landscape as before (only the text shadow). */
 const LABEL_FIELD = true;

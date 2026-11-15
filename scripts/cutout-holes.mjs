@@ -4,7 +4,8 @@
 // Not every such region is background: white objects (printed parts, a caliper), lamp light, glass and waterfall foam look
 // the same. scripts/cutout-holes-keep.json lists, per file name, boxes [x0, y0, x1, y1] (pixels of the sprite as the
 // cutout left it); a region lying completely inside one of them stays. The boxes were picked by eye for the project
-// islands of Nov 2026 and only fit the sprites exactly as cutout-islands.mjs --waterfall produces them.
+// islands of Nov 2026 and only fit the sprites exactly as cutout-islands.mjs --waterfall produces them (bereich-smarthome
+// and bereich-technik with --waterfall --mist; their lowest box keeps the mist below the fall).
 import sharp from 'sharp';
 import { readFileSync } from 'node:fs';
 const MIN = 40;

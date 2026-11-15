@@ -10,7 +10,7 @@ Hier steht, was nach Augenmaß entschieden wurde, was ungeprüft ist und wo Risi
 - Die Nachladeliste (`preloaded`) gilt je Seitenaufruf. Ein Bild wird nie zweimal vorgeladen.
 
 ## Zwischenspeicher (CDN)
-- `ASSET_VERSION` = `20261115a`. Alle drei Bildadressen tragen jetzt `?v=`: Inseln (wie bisher), Landschaften (`Landscape.tsx`, neu) und Handy-Hintergründe (`Mobile.tsx`, neu).
+- `ASSET_VERSION` = `20261115b` (nach den Korrekturen, siehe unten; vorher `20261115a`). Alle drei Bildadressen tragen jetzt `?v=`: Inseln (wie bisher), Landschaften (`Landscape.tsx`, neu) und Handy-Hintergründe (`Mobile.tsx`, neu).
 - Die Landschaften `landschaft-<jahreszeit>-<morgen|mittag|abend|nacht>` behalten ihren Namen, haben aber neuen Inhalt. Ohne `?v=` hätte das CDN ein Jahr lang die alten Bilder gezeigt.
 - Der Bild-Zwischenspeicher der installierbaren App (`sw.js`) heißt nach `ASSET_VERSION` und wird damit neu angelegt. Nach dem Einspielen trotzdem `hosting_cache_clear`.
 
@@ -35,8 +35,9 @@ Hier steht, was nach Augenmaß entschieden wurde, was ungeprüft ist und wo Risi
 
 ## Licht am Desktop
 - Sonnenschein und Strahlen sind jetzt sehr zurückhaltend und enden bei 38 % der Höhe. Werte in `LOOK_META` und die Maske sind Einschätzungen des Hintergrund-Zweigs.
-- Nachts gibt es keinen gemalten Mond mehr (das neue Nachtbild hat keinen). Siehe `vgl-start-nacht.jpg`.
+- Nachts gibt es keinen gemalten Mond mehr (das neue Nachtbild hat keinen). Seit den Korrekturen auch keinen Lichtschein mehr (`LOOK_META.nacht.glow` 0). Siehe `vgl-start-nacht.jpg`.
 - Die kleinen fernen Inseln des Karussells (Projekte) stehen jetzt vor den Bergen statt im Himmel. Das war vorher ähnlich, fällt vor Fels aber mehr auf. Siehe `nachher-projekte-2000x993.png`.
+- Die beiden fernen Karussell-Inseln (±2) stehen seit den Korrekturen bei 35,5 % statt 39 % Höhe (siehe unten).
 
 ## Projektinseln
 - Freistellen mit neuer Option `--waterfall`: der Schaum läuft auf 90 px weiß aus. Teils bleiben Streifen (Organizer, Halterung). Nur der stärkste Wasserfall je Insel wird erkannt; schwächere (Technik, am Wasserrad) laufen ohne Ausblenden aus.
@@ -60,6 +61,23 @@ Hier steht, was nach Augenmaß entschieden wurde, was ungeprüft ist und wo Risi
 - Auf der Vorschauseite tauscht ein Reiterwechsel weiter das Bild, in der App nicht mehr. `reiter.mjs` misst damit in der App keinen Bildwechsel mehr beim Reiterwechsel.
 - Alte Entwürfe unter `docs/wasser-look/entwurf/` laden noch die alten Szenen. Nicht angefasst.
 - **Abweichung zum laufenden Branch `wasser-look`:** Dort gibt es weiter Seitenszenen je Reiter und deren Vorladen. Wer dort weiterarbeitet, muss auf diesen Stand umstellen, sonst kommen die alten Szenen zurück oder fehlen die Bilder.
+
+## Korrekturen nach der Prüfung (15.11., zweiter Durchgang)
+Zwei Prüfer haben sechs Punkte gemeldet. Jeder wurde zuerst nachgestellt.
+- **Wasserfall-Enden Smart Home und Technik** (bestätigt: auf #14161c endet der Schaum in eckigen, dunklen Kerben). Neue Option `cutout-islands.mjs --waterfall --mist`: Im unteren Teil der Wasserfallspalten (und 70 px daneben) wird nur der Alpha-Kanal von Schaum und Hintergrund weichgezeichnet (dreimal Kastenfilter, Radius 4). Fels und Wurzeln zählen nicht mit, die Farbe bleibt. Nur diese zwei Inseln, aus den Originalbildern neu freigestellt. Das alte Verfahren ergab vorher dieselben Bytes wie die eingecheckten PNG, also ist der Neuaufbau sauber. Außerhalb des Wasserfallbereichs ist jedes Pixel gleich geblieben.
+  - `cutout-holes.mjs` hätte den neuen Nebel als „eingeschlossene weiße Fläche“ wieder ausgeschnitten. Darum gibt es je Insel einen weiteren Schutzkasten unter dem Fall (`[200,780,510,1010]`, `[500,900,780,1006]`). Danach schneidet `cutout-holes` genau dieselben Stellen wie vorher (34 Regionen/14066 px und 19/30084).
+  - Technik ist dadurch 1001 statt 1005 px hoch (`ISLAND_META`). `ASSET_VERSION` steht jetzt auf `20261115b`.
+  - Nachsehen: Der Nebel wirkt auf sehr dunklem Grund als grauer Schleier unter dem Fall. Bei Smart Home liegen links zwischen den dünnen Strähnen weiche dunkle Lücken. Organizer und Halterung (Streifen) sind nicht angefasst. Vergleich vorher, nachher und auf Blau: `nb-fix/ab-smarthome.png`, `nb-fix/ab-technik.png` im Scratchpad.
+- **Lichtschein „Mondnacht“** (bestätigt: keines der vier Nachtbilder hat einen Mond oder eine helle Stelle bei 74 %/4 %). `glow` für `nacht` ist jetzt 0, das Label bleibt.
+- **Schild „ESP32-Wettergehäuse“ über der Baumkrone von art-reparatur** (bestätigt: 1920×1080 rund 30 px, 2000×993 rund 33 px). Gespiegelt lag rechts auch „Werkzeug-Organizer“ auf art-halterung. Die fernen Karussell-Inseln (±2) stehen jetzt bei `y: 35.5` statt 39 (`worldLayouts.ts`). Für alle fünf Karussell-Stellungen und beide Formate nachgemessen: kein Schild liegt mehr auf deckenden Pixeln (Alpha über 40) einer anderen Insel.
+  - Nicht neu, nicht angefasst: Das Feld „Projekte“ (Weltkopf) liegt in beiden Formaten über der blassen fernen Welt-Insel „Heute“ (`FAR`, Deckkraft 0,55). Das ist auf `origin/main` genauso.
+- **README.md** (bestätigt): Der Abschnitt „Bilder austauschen“ beschreibt jetzt sechs Tageszeiten, die graue Fassung `-regen` (`prepare-alpensee.mjs`, `grade-regen.mjs`, `check-hintergruende.mjs`) und die Handybilder `szene-<jahreszeit>-<phase>` (830/540). `--mist` steht dort und in CLAUDE.md.
+- **Handy lädt beim ersten Start ein Bild doppelt** (bestätigt: 12:30 Regen erst `mittag`, dann `regen`; 17:15 erst `abend`, dann `blau`). Ohne gespeichertes Wetter wartet das Hintergrundbild jetzt auf die erste Wetterantwort, höchstens 1,2 s (`BG_WAIT`, `Mobile.tsx`). Die Ebene `.m-bg` mit ihrer Abdunkelung ist von Anfang an da. Das Vorladen der nächsten Tageszeit wartet ebenso. Nachgemessen: Mit 400 ms Wetter kommt nur noch ein Bild, mit 3 s Wetter verhält es sich wie vorher (nach 1,2 s das Bild ohne Wetter). Die Tropfen (`Wasser.info.scene`) zeigen danach das richtige Bild. `scripts/wasser/pruefen.mjs --app`: alle bestanden.
+  - Nachsehen: Beim allerersten Start ist das Handy bis zur Wetterantwort (bis 1,2 s) ohne Bild, nur dunkel. Später kommt das Wetter aus dem Speicher und es gibt keine Wartezeit. Ein veralteter gespeicherter Wetterstand (z. B. von gestern) wird nicht abgewartet. Der Desktop (`Landscape`) verhält sich wie auf `origin/main` (auch dort ein Bild zu viel beim ersten Start); nicht geändert.
+- **Modellname im Dateinamen** (`NACHSEHEN-FABLE-bilder.md`): Entscheidung des Hauptchats. Nicht umbenannt, weil es das bestehende Muster auf `origin/main` ist (`NACHSEHEN-FABLE-felder.md`) und der Auftrag diese Datei nennt.
+- Bilder in `neue-bilder-bilder/` neu: `inseln.jpg` (Zellen Smart Home und Technik), `nachher-projekte-2000x993.png`, `nachher-projekte-abend-2000x993.png`, rechte Hälften von `vgl-projekte.jpg` und `vgl-start-nacht.jpg`. Diesmal mit festem Wetter (klar) aufgenommen.
+- Prüfungen nach den Korrekturen: `npm run build` und `VITE_API=node npm run build` fehlerfrei. `verify.mjs`: 80/80 (zwei Läufe davor 79/80, jeweils nur „Mobile: no console errors“ wegen 429 von Open-Meteo, also Netz). `scripts/wasser/pruefen.mjs --app`: alle bestanden. `desktop.mjs` und `kontrast.mjs` nicht erneut gelaufen.
+- Hinweis für Tests: Mit Playwright-Uhr auf einem früheren Tag als heute und echtem Open-Meteo liegt der Sonnenaufgang der Antwort in der Zukunft, und die App zeigt mittags die Nacht. Das ist ein Messfehler, kein Fehler der App. Mit festem Wetter (`wetter-mock.mjs`) messen.
 
 ## Größe
 - Die Bildquellen (PNG) in `assets-src`: 31 MB neue Inseln, 148 MB Hintergründe (Desktop und Handy; 16 alte Landschaften überschrieben, die alten bleiben in der Git-Historie). Das Repo wird um gut 130 MB größer. `public/img`: Desktop-Landschaften rund 15 MB, Handy 6,3 MB.

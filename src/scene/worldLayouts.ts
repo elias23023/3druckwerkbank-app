@@ -55,8 +55,8 @@ export function projectCarousel(projects: Project[], activeIndex: number): Place
     if (r === 0) out.push({ key: `p-${p.id}`, x: 50, y: 40, size: 30, depth: 0, projectId: p.id });
     else if (r === -1) out.push({ key: `p-${p.id}`, x: 16, y: 52, size: 17, depth: 0.4, projectId: p.id, label: p.name, labelSize: 'small' });
     else if (r === 1) out.push({ key: `p-${p.id}`, x: 84, y: 52, size: 17, depth: 0.4, projectId: p.id, label: p.name, labelSize: 'small' });
-    else if (r === -2) out.push({ key: `p-${p.id}`, x: 6.5, y: 39, size: 9, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
-    else if (r === 2) out.push({ key: `p-${p.id}`, x: 93.5, y: 39, size: 9, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
+    else if (r === -2) out.push({ key: `p-${p.id}`, x: 6.5, y: 35.5, size: 9, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
+    else if (r === 2) out.push({ key: `p-${p.id}`, x: 93.5, y: 35.5, size: 9, depth: 0.7, projectId: p.id, label: p.name, labelSize: 'small' });
     else out.push({ key: `p-${p.id}`, x: 50 + (r < 0 ? -34 : 34), y: 22, size: 6, depth: 0.92, projectId: p.id, opacity: 0.35 });
   });
   return out;

@@ -8,7 +8,8 @@ export const HAS_MORGEN = true;
 
 /** sx/sy: where the sun (or moon) glow and the rays start, in % of the stage. The Alpensee pictures have little sky (the peaks
  *  reach the top edge, the shore lies at about 38 % of the height), so the light sits at the top edge, on the side the
- *  picture is lit from: morning from the right, evening from the left; never over the water (global.css masks both layers). */
+ *  picture is lit from: morning from the right, evening from the left; never over the water (global.css masks both layers).
+ *  The night pictures have no moon, so the night look has no glow (the label stays). */
 export const LOOK_META: Record<Look, { sx: string; sy: string; glow: number; rays: number; sky: string; cloud: string; label: string }> = {
   daemmerung: { sx: '50%', sy: '8%', glow: .2, rays: 0, sky: 'linear-gradient(180deg,#0a1140 0%,#2a3a86 55%,#c98a6a 100%)', cloud: '170,180,220', label: 'Morgendämmerung' },
   sonnenaufgang: { sx: '82%', sy: '5%', glow: .55, rays: .1, sky: 'linear-gradient(180deg,#121a4a 0%,#4a4f93 50%,#f0a060 100%)', cloud: '255,205,170', label: 'Sonnenaufgang' },
@@ -18,7 +19,7 @@ export const LOOK_META: Record<Look, { sx: string; sy: string; glow: number; ray
   golden: { sx: '22%', sy: '4%', glow: .6, rays: .12, sky: 'linear-gradient(180deg,#2f3f8a 0%,#b6708a 40%,#f6a85a 60%,#f8c99a 100%)', cloud: '255,214,180', label: 'Goldene Stunde' },
   sonnenuntergang: { sx: '12%', sy: '8%', glow: .55, rays: .1, sky: 'linear-gradient(180deg,#5a1f4a 0%,#d8402e 45%,#ff8a3c 60%,#f7b27a 100%)', cloud: '255,190,150', label: 'Sonnenuntergang' },
   blau: { sx: '8%', sy: '12%', glow: .2, rays: 0, sky: 'linear-gradient(180deg,#0b1340 0%,#1e2d6e 55%,#5c4a6a 100%)', cloud: '150,170,220', label: 'Blaue Stunde' },
-  nacht: { sx: '74%', sy: '4%', glow: .12, rays: 0, sky: 'linear-gradient(180deg,#050a24 0%,#0e1a4a 55%,#223262 100%)', cloud: '120,140,200', label: 'Mondnacht' },
+  nacht: { sx: '74%', sy: '4%', glow: 0, rays: 0, sky: 'linear-gradient(180deg,#050a24 0%,#0e1a4a 55%,#223262 100%)', cloud: '120,140,200', label: 'Mondnacht' },
   bedeckt: { sx: '50%', sy: '5%', glow: 0, rays: 0, sky: 'linear-gradient(180deg,#8d98a8 0%,#c8d0da 60%,#e5e9ee 100%)', cloud: '235,238,242', label: 'Bedeckt' },
   nebel: { sx: '55%', sy: '5%', glow: .15, rays: 0, sky: 'linear-gradient(180deg,#b9c2cf 0%,#dfe4ea 60%,#f2f4f6 100%)', cloud: '245,246,248', label: 'Nebel' },
   regen: { sx: '50%', sy: '5%', glow: .05, rays: 0, sky: 'linear-gradient(180deg,#3a4452 0%,#6d7886 60%,#9aa3ae 100%)', cloud: '170,180,195', label: 'Regen' },
