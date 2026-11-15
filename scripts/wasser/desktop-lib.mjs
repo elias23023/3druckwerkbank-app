@@ -36,7 +36,7 @@ export async function openDesktop({ look = 'auto', format = '2000', ton = '', ze
   const [w, h] = FORMATE[format] ?? String(format).split('x').map(Number); if (!(w > 0 && h > 0)) throw new Error('format: ' + format);
   const t0 = zeitOf(zeit); ton = ton || 'dunkel';
   const own = !browser; const b = browser || await pw[engine].launch();
-  const c = await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: scale, timezoneId: 'Europe/Vienna', locale: 'de-AT', reducedMotion: reduced ? 'reduce' : 'no-preference', ...(video ? { recordVideo: { dir: video, size: { width: w, height: h } } } : {}) });
+  const c = await b.newContext({ serviceWorkers: 'block', viewport: { width: w, height: h }, deviceScaleFactor: scale, timezoneId: 'Europe/Vienna', locale: 'de-AT', reducedMotion: reduced ? 'reduce' : 'no-preference', ...(video ? { recordVideo: { dir: video, size: { width: w, height: h } } } : {}) });
   if (uhr !== 'steht') await c.addInitScript((t) => { const R = Date, off = t - R.now(); class D extends R { constructor(...a) { if (a.length) super(...a); else super(R.now() + off); } static now() { return R.now() + off; } } window.Date = D; }, t0);
   const page = await c.newPage(); const errors = [];
   if (uhr === 'steht') await page.clock.setFixedTime(new Date(t0));

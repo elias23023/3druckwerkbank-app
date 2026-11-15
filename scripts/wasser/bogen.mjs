@@ -94,7 +94,7 @@ const STILL = '.stage > :not(.ui), .stage > :not(.ui) * { animation-play-state: 
 async function open(kind, url, ton, reduced) {
   const [w, h] = kind === 'handy' ? [390, 844] : [2000, 993];
   const t0 = zeitOf(ton === 'klar' ? 'tag' : 'nacht');
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, timezoneId: 'Europe/Vienna', locale: 'de-AT', reducedMotion: reduced ? 'reduce' : 'no-preference', ...(kind === 'handy' ? { isMobile: true, hasTouch: true } : {}) });
+  const ctx = await browser.newContext({ serviceWorkers: 'block', viewport: { width: w, height: h }, deviceScaleFactor: 2, timezoneId: 'Europe/Vienna', locale: 'de-AT', reducedMotion: reduced ? 'reduce' : 'no-preference', ...(kind === 'handy' ? { isMobile: true, hasTouch: true } : {}) });
   const page = await ctx.newPage(); const errors = []; page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));
   await page.clock.setFixedTime(new Date(t0)); await wetterRoute(page, 'klar', t0);
   const root = kind === 'handy' ? '.m-shell' : '.stage';

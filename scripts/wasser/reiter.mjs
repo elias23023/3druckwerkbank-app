@@ -109,7 +109,7 @@ const CHANGE = ([bar, name, sceneSel, ms]) => new Promise((resolve) => {
 const browser = await pw.chromium.launch({ args: ['--host-resolver-rules=MAP api.open-meteo.com 127.0.0.1:9, MAP geocoding-api.open-meteo.com 127.0.0.1:9'] });
 async function open(url, { kind, lk, format = '2000', netz = '', zeit = 0, stopped = false }) {
   const [w, h] = kind === 'handy' ? [390, 844] : format === '1920' ? [1920, 1080] : [2000, 993];
-  const ctx = await browser.newContext(kind === 'handy' ? { viewport: { width: w, height: h }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, ...VIENNA } : { viewport: { width: w, height: h }, deviceScaleFactor: 1, ...VIENNA });
+  const ctx = await browser.newContext({ serviceWorkers: 'block', ...(kind === 'handy' ? { viewport: { width: w, height: h }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, ...VIENNA } : { viewport: { width: w, height: h }, deviceScaleFactor: 1, ...VIENNA }) });
   if (zeit) await ctx.addInitScript((t) => { const R = Date, off = t - R.now(); class D extends R { constructor(...x) { if (x.length) super(...x); else super(R.now() + off); } static now() { return R.now() + off; } } window.Date = D; }, zeit);
   await ctx.addInitScript(() => { const f = window.fetch; window.fetch = function (u, o) { if (/open-meteo\.com/.test(String(u && u.url || u))) return Promise.reject(new TypeError('weather blocked by reiter.mjs')); return f.call(this, u, o); }; });
   const page = await ctx.newPage(); const cdp = await ctx.newCDPSession(page); const errors = []; page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));

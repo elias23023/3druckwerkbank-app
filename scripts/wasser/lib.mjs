@@ -97,7 +97,7 @@ const dropBoxes = (page, scale, { pad = 0, all = false, clip = null } = {}) => p
 // options: look ('vorlage'), ton ('' | 'klar'), scene, nah (close-up), reduced, scale, touch (phone emulation), query (more parameters), viewport, video (folder)
 export async function openHarness(browser, base, engine, { look = 'vorlage', ton = '', scene = 'start', nah = false, reduced = false, scale = 2, touch = false, query = '', viewport = null, video = null, settle = 1500 } = {}) {
   viewport = viewport || (nah ? { width: 900, height: 620 } : PHONE);
-  const context = await browser.newContext({ viewport, deviceScaleFactor: scale, reducedMotion: reduced ? 'reduce' : 'no-preference', ...(touch ? { hasTouch: true, isMobile: engine !== 'firefox' } : {}), ...(touch && engine === 'webkit' ? { userAgent: IPHONE } : {}), ...(video ? { recordVideo: { dir: video, size: viewport } } : {}) });   // (a recording has the size of the page in CSS px, whatever the scale)
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport, deviceScaleFactor: scale, reducedMotion: reduced ? 'reduce' : 'no-preference', ...(touch ? { hasTouch: true, isMobile: engine !== 'firefox' } : {}), ...(touch && engine === 'webkit' ? { userAgent: IPHONE } : {}), ...(video ? { recordVideo: { dir: video, size: viewport } } : {}) });   // (a recording has the size of the page in CSS px, whatever the scale)
   const page = await context.newPage(); const errors = listen(page);
   const url = `${base}/scripts/wasser/mobil.html?scene=${scene}${ton && ton !== 'dunkel' ? '&ton=' + ton : ''}${nah ? '&nah=1' : ''}${lookQuery(look)}${query ? '&' + query : ''}`;
   await page.goto(url, { waitUntil: 'load' }); await page.waitForFunction(() => window.__ready === true, null, { timeout: 20000 }); if (settle) await page.waitForTimeout(settle);
@@ -239,7 +239,7 @@ export async function wetterRoute(page, kind, t0) {
 //          without zeit and without wetter the app asks the real service), start (options for Wasser.start on top of the shell's own),
 //          app (another address than WASSER_APP / :4173)
 export async function openApp(browser, engine, { look = 'auto', ton = '', reduced = false, scale = 2, video = null, zeit = null, wetter = null, start = {}, app = APP } = {}) {
-  const context = await browser.newContext({ viewport: PHONE, deviceScaleFactor: scale, isMobile: engine !== 'firefox', hasTouch: true, timezoneId: 'Europe/Vienna', locale: 'de-AT', reducedMotion: reduced ? 'reduce' : 'no-preference', ...(engine === 'webkit' ? { userAgent: IPHONE } : {}), ...(video ? { recordVideo: { dir: video, size: PHONE } } : {}) });
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: PHONE, deviceScaleFactor: scale, isMobile: engine !== 'firefox', hasTouch: true, timezoneId: 'Europe/Vienna', locale: 'de-AT', reducedMotion: reduced ? 'reduce' : 'no-preference', ...(engine === 'webkit' ? { userAgent: IPHONE } : {}), ...(video ? { recordVideo: { dir: video, size: PHONE } } : {}) });
   const page = await context.newPage(); const errors = listen(page); ton = ton || 'dunkel';
   if (zeit) await page.clock.setFixedTime(new Date(zeitOf(zeit)));     // only the clock stands still, timers and animations run
   if (zeit || wetter) await wetterRoute(page, wetter || 'aus', zeit ? zeitOf(zeit) : Date.now());   // (real weather comes on one run and not on the next)
