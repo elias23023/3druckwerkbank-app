@@ -256,13 +256,19 @@
   }
 }
 [data-wasser="desktop"] .cmd { -webkit-backdrop-filter: var(--wa-blur-dense) var(--wa-weit-grund); backdrop-filter: var(--wa-blur-dense) var(--wa-weit-grund); }
+[data-wasser="desktop"] .sheet.wa-geht { animation-name: wa-fliesst-weg; }   /* leaving (the app sets wa-geht, kern.css "Gehen"): it flows back out to the right */
 [data-wasser="desktop"] .cmd-back { animation: none; }   /* the search panel lies INSIDE its scrim: while the scrim's own fade is applied (and with fill-mode "both" it is applied for good) the panel's blur sees nothing behind the scrim. The panel has its own entrance */
+[data-wasser="desktop"] .cmd-back.wa-geht { animation: none; }   /* (the same when it leaves: the panel dives away with its own blur; the scrim - a plain shade here, --wa-scrim-blur is none - goes at the end, in one picture) */
 @keyframes wa-fliesst {                         /* flows in fast, runs a little past its place, comes back, rests */
   0%   { transform: translateX(var(--wa-bogen-zug)); opacity: 0; }
   40%  { opacity: 1; }
   58%  { transform: translateX(calc(-1 * var(--wa-bogen-swing))); }
   80%  { transform: translateX(calc(var(--wa-bogen-swing) * .3)); }
   100% { transform: none; opacity: 1; }
+}
+@keyframes wa-fliesst-weg {                     /* lets go slowly, flows back to where it came from and is gone */
+  0%   { transform: none; opacity: 1; }
+  100% { transform: translateX(var(--wa-bogen-zug)); opacity: 0; }
 }
 @keyframes wa-kamm-seite {                      /* a gleam in the middle of the edge that spreads along it and fades */
   0%   { opacity: 0; transform: scaleY(.25); }

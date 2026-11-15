@@ -1,0 +1,58 @@
+PASS phone sheet: removed within one frame after its leaving animation (sheet-back wa-geht) wa-klart: removed 8.9 ms after its end (frames begun in between: 1; frame interval here: median 50 ms)
+PASS phone sheet: removed within one frame after its leaving animation (sheet wa-geht) wa-sinkt: removed 9.2 ms after its end (frames begun in between: 1; frame interval here: median 50 ms)
+PASS phone keyboard: Enter opens, Escape closes, focus back on the opener at once (while it leaves) ["Einstellungen",1]
+PASS phone Escape twice: nothing left, no error hash #/heute
+PASS phone sheet (keyboard): removed within one frame after its leaving animation (sheet-back wa-geht) wa-klart: removed 21.2 ms after its end (frames begun in between: 1; frame interval here: median 33 ms)
+PASS phone sheet (keyboard): removed within one frame after its leaving animation (sheet wa-geht) wa-sinkt: removed 21.6 ms after its end (frames begun in between: 1; frame interval here: median 33 ms)
+PASS phone backdrop tap during leaving: no ghost left, at most one sheet sheets 0
+PASS phone sheet B opens while A leaves: A is cut at once, B stands ghosts right after: 0; [1,"Hinweise",false,"1",false]
+PASS phone tick five rows within a second: each store action once, no ghost left done 1->6, check rows 8->3
+PASS phone row: removed within one frame after its leaving animation (m-row wa-geht wa-geht--zeile) wa-zeile-sinkt+wa-zeile-zu: removed 13.3 ms after its end (frames begun in between: 1; frame interval here: median 17 ms)
+PASS phone row: removed within one frame after its leaving animation (m-row wa-geht wa-geht--zeile) wa-zeile-sinkt+wa-zeile-zu: removed 19.2 ms after its end (frames begun in between: 1; frame interval here: median 17 ms)
+PASS phone row: removed within one frame after its leaving animation (m-row wa-geht wa-geht--zeile) wa-zeile-sinkt+wa-zeile-zu: removed 8.6 ms after its end (frames begun in between: 1; frame interval here: median 17 ms)
+PASS phone row: removed within one frame after its leaving animation (m-row wa-geht wa-geht--zeile) wa-zeile-sinkt+wa-zeile-zu: removed 7.7 ms after its end (frames begun in between: 1; frame interval here: median 17 ms)
+PASS phone row: removed within one frame after its leaving animation (m-row wa-geht wa-geht--zeile) wa-zeile-sinkt+wa-zeile-zu: removed 7.7 ms after its end (frames begun in between: 1; frame interval here: median 17 ms)
+PASS phone change of tab while a row leaves 
+PASS phone change of tab while a sheet leaves: it finishes over the new page, then gone ghosts during: 2
+PASS phone undo while the row leaves: the row is back once, its leaving picture cut shop 2->1->2, rows with that id right after undo: 1 (ghosts 0)
+PASS phone toast replaced: the old one (with its undo) lies under the new one, inert and hidden [false,null,true,"true"]
+PASS phone change of workspace from its sheet: nothing left over workspace now echt
+errors phone demo []
+PASS echt (empty workspace): a removed entry leaves, store once ghost during 1, shop 1->0
+PASS echt phone sheet: removed within one frame after its leaving animation (m-row m-shop wa-geht wa-geht--zeile) wa-zeile-sinkt+wa-zeile-zu: removed 9.8 ms after its end (frames begun in between: 1; frame interval here: median 50 ms)
+PASS echt phone sheet: removed within one frame after its leaving animation (sheet-back wa-geht) wa-klart: removed 19.2 ms after its end (frames begun in between: 1; frame interval here: median 83 ms)
+PASS echt phone sheet: removed within one frame after its leaving animation (sheet wa-geht) wa-sinkt: removed 19.6 ms after its end (frames begun in between: 1; frame interval here: median 83 ms)
+PASS reduced motion (app setting): the sheet is gone at once, nothing waits [0,0,0]
+PASS reduced motion (app setting): a removed row is gone at once 
+errors phone echt []
+PASS reduced motion (system setting): the sheet is gone at once [0,0,"reduziert"]
+PASS without the look (look taken out): the sheet is gone at once [0,0,true,""]
+PASS desktop 2000: Escape closes, focus back on the opener, a second Escape does not leave the world ["Einstellungen",1,"wa-fliesst-weg"] hash #/heute
+PASS desktop 2000 drawer: removed within one frame after its leaving animation (sheet-back wa-geht) wa-klart: removed 73.9 ms after its end (frames begun in between: 1; frame interval here: median 167 ms)
+PASS desktop 2000 drawer: removed within one frame after its leaving animation (sheet wa-geht) wa-fliesst-weg: removed 74.3 ms after its end (frames begun in between: 1; frame interval here: median 167 ms)
+PASS desktop 2000: the search leaves (panel dives), then gone [1,"wa-taucht"]
+PASS desktop 2000 search: removed within one frame after its leaving animation (cmd-back wa-geht) wa-taucht: removed 55.7 ms after its end (frames begun in between: 1; frame interval here: median 167 ms)
+PASS desktop 2000: drawer B opens while A leaves [0,1,"Hinweise","1"]
+PASS desktop 2000: a ticked task leaves, store once ghost 1, done 1->2
+PASS desktop 2000 row: removed within one frame after its leaving animation (item wa-geht wa-geht--zeile) wa-zeile-sinkt+wa-zeile-zu: removed 118.4 ms after its end (frames begun in between: 1; frame interval here: median 133 ms)
+PASS desktop 2000: change of world while the drawer leaves 
+PASS desktop 2000: a removed shopping entry leaves ghost 1, shop 2->1
+PASS desktop 2000, echt (empty workspace): the drawer and a removed entry leave ghosts 2, 1; shop 1->0
+PASS desktop echt: removed within one frame after its leaving animation (sheet-back wa-geht) wa-klart: removed 51.6 ms after its end (frames begun in between: 1; frame interval here: median 150 ms)
+PASS desktop echt: removed within one frame after its leaving animation (sheet wa-geht) wa-fliesst-weg: removed 51.9 ms after its end (frames begun in between: 1; frame interval here: median 150 ms)
+PASS desktop echt: removed within one frame after its leaving animation (row small wa-geht wa-geht--zeile) wa-zeile-sinkt+wa-zeile-zu: removed 78.7 ms after its end (frames begun in between: 1; frame interval here: median 117 ms)
+errors desktop 2000 []
+PASS desktop 1920: Escape closes, focus back on the opener, a second Escape does not leave the world ["Einstellungen",1,"wa-fliesst-weg"] hash #/heute
+PASS desktop 1920 drawer: removed within one frame after its leaving animation (sheet-back wa-geht) wa-klart: removed 306.6 ms after its end (frames begun in between: 1; frame interval here: median 367 ms)
+PASS desktop 1920 drawer: removed within one frame after its leaving animation (sheet wa-geht) wa-fliesst-weg: removed 307.2 ms after its end (frames begun in between: 1; frame interval here: median 367 ms)
+PASS desktop 1920: the search leaves (panel dives), then gone [1,"wa-taucht"]
+PASS desktop 1920 search: removed within one frame after its leaving animation (cmd-back wa-geht) wa-taucht: removed 49.1 ms after its end (frames begun in between: 1; frame interval here: median 150 ms)
+PASS desktop 1920: drawer B opens while A leaves [0,1,"Hinweise","1"]
+PASS desktop 1920: a ticked task leaves, store once ghost 1, done 1->2
+PASS desktop 1920 row: removed within one frame after its leaving animation (item wa-geht wa-geht--zeile) wa-zeile-sinkt+wa-zeile-zu: removed 114.2 ms after its end (frames begun in between: 1; frame interval here: median 117 ms)
+PASS desktop 1920: change of world while the drawer leaves 
+PASS desktop 1920: a removed shopping entry leaves ghost 1, shop 2->1
+errors desktop 1920 []
+restarted inside ghosts (finite): ["wa-klart","wa-fliesst-weg","wa-zeile-sinkt,wa-zeile-zu","wa-taucht"]
+
+51 passed, 0 failed

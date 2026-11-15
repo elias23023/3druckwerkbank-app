@@ -1,0 +1,13 @@
+dunkel fade began 383 ms after the tap; 5 animations held
+PASS dunkel: after the fade one picture, the drops on it {"imgs":["szene-projekte-1280.webp"],"scene":"szene-projekte-1280.webp"}
+errors dunkel [ 'console: Failed to load resource: net::ERR_FAILED' ]
+klar fade began 433 ms after the tap; 5 animations held
+PASS klar: after the fade one picture, the drops on it {"imgs":["szene-projekte-1280.webp"],"scene":"szene-projekte-1280.webp"}
+errors klar [ 'console: Failed to load resource: net::ERR_FAILED' ]
+vorher header drop, mean brightness of its canvas: change over the tab change, largest step between two of its pictures [{"to":"Projekte","total":1.2,"maxStep":0.2,"pictures":14},{"to":"Material","total":0.9,"maxStep":1.2,"pictures":16},{"to":"Heute","total":1.1,"maxStep":1.4,"pictures":14}]
+jetzt header drop, mean brightness of its canvas: change over the tab change, largest step between two of its pictures [{"to":"Projekte","total":1.1,"maxStep":0.2,"pictures":13},{"to":"Material","total":1,"maxStep":0.4,"pictures":14},{"to":"Heute","total":1.2,"maxStep":0.8,"pictures":13}]
+PASS ten tab changes 70 ms apart: ends on the last tab's picture (page and drops), never more than two pictures, never none shown {"maxImgs":2,"empty":0,"frames":66,"imgs":["szene-projekte-1280.webp"],"scene":"szene-projekte-1280.webp","hash":"#/projekte"}
+PASS reduced motion: no fade, the new picture replaces the old one once loaded, never empty {"fades":0,"empty":0,"maxImgs":2,"oneAfter":260}
+PASS slow network (400 ms, 400 kbit/s, no cache), a scene not preloaded: the old picture stands until the new one has loaded, then the fade {"empty":0,"maxImgs":2,"fadeBeganAfter":5065,"imgs":["szene-wetter-1280.webp"]}
+
+5 passed, 0 failed

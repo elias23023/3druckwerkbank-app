@@ -1,11 +1,14 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { IX } from './Icons';
+import { gehtBogen } from './gehen';
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function Sheet({ title, onClose, children, foot, icon }: { title: string; onClose: () => void; children: ReactNode; foot?: ReactNode; icon?: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
   const close = useRef(onClose); close.current = onClose;
+  // soft leaving (Wasser-Look): the sheet and its scrim stay as a picture for the look's leaving time (src/ui/gehen.ts)
+  const setRef = useCallback((el: HTMLElement | null) => { ref.current = el; return gehtBogen(el); }, []);
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null;
     const el = ref.current;
@@ -26,8 +29,8 @@ export function Sheet({ title, onClose, children, foot, icon }: { title: string;
   }, []);
   return (
     <>
-      <div className="sheet-back" onClick={onClose} />
-      <aside ref={ref} className="glass glass--strong sheet" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
+      <div className="sheet-back" ref={gehtBogen} onClick={onClose} />
+      <aside ref={setRef} className="glass glass--strong sheet" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
         <div className="sheet__head">{icon}<h2>{title}</h2><button className="btn btn--icon btn--ghost" onClick={onClose} aria-label="Schließen"><IX /></button></div>
         <div className="sheet__body">{children}</div>
         {foot ? <div className="sheet__foot">{foot}</div> : null}

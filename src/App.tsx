@@ -13,6 +13,7 @@ import { Dock } from './ui/Dock';
 import { SheetHost } from './ui/SheetHost';
 import { CommandBar } from './ui/CommandBar';
 import { Toast } from './ui/Toast';
+import { leaving } from './ui/gehen';
 import { Heute } from './worlds/Heute';
 import { Projekte } from './worlds/Projekte';
 import { ProjektInnen } from './worlds/ProjektInnen';
@@ -123,7 +124,7 @@ export function App() {
       const t = e.target as HTMLElement;
       const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setCommand(true); return; }
-      if (typing || e.ctrlKey || e.metaKey || e.altKey || sheet || commandOpen) return;
+      if (typing || e.ctrlKey || e.metaKey || e.altKey || sheet || commandOpen || leaving()) return; // (leaving: a sheet that was just closed is still sinking - a second Escape does nothing more)
       const worlds: WorldId[] = ['heute', 'projekte', 'druck', 'material', 'wetter', 'archiv'];
       if (/^[1-6]$/.test(e.key)) navigate({ world: worlds[Number(e.key) - 1] });
       if (e.key === '0') navigate({ world: 'start' });

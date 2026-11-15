@@ -349,6 +349,11 @@
   /* -- Setzen: a sheet that appears comes to rest -- */
   --wa-setzt-rise: 16px;                        /* it rises this far ... */
   --wa-setzt-swing: 2px;                        /* ... runs this far past its place and sinks back */
+  /* -- Gehen einer Zeile: a row that the app takes away (block below) -- */
+  --wa-zeile-tief: 8px;                         /* it sinks this far while it fades */
+  --wa-zeile-zu: wa-zeile-zu;                   /* the rows below close the gap meanwhile (keyframes of the block). A matter of taste and of a rule:
+                                                   "none" keeps the gap until the row is gone, then it closes in one picture - the strict
+                                                   "nothing that needs layout" (see the block) */
   /* -- Tropfen-Hinweis: the toast -- */
   --wa-r-hinweis: 19px 24px 18px 22px / 22px 18px 24px 19px;
   --wa-hinweis-fall: 14px;                      /* it falls this far */
@@ -978,9 +983,8 @@
     transform-origin: 50% 0;
     animation: wa-kamm var(--wa-kamm-t) var(--wa-ease-flow) both;
   }
-  /* Leaving - READY BUT NOT USED: the app removes a sheet from one moment to the next, and the look does not hold it
-     back (a copy of a whole form would be fragile). When the app itself delays the removal by --wa-t-leave, it only has
-     to add the class wa-geht to the sheet: it sinks back like the wave it came as. */
+  /* Leaving: the APP keeps the sheet for --wa-t-leave with the class wa-geht (block "Gehen" below; in this app
+     src/ui/gehen.ts): it sinks back like the wave it came as. The look itself holds nothing back. */
   &.wa-geht { animation: wa-sinkt var(--wa-t-leave) var(--wa-ease-drain) both; pointer-events: none; }
   &.wa-geht::before { animation: none; }
 
@@ -1072,6 +1076,38 @@
 /* whatever leaves (a copy the script keeps, a sheet the app lets sink): with no motion wanted it is simply gone */
 @media (prefers-reduced-motion: reduce) { [data-wasser] .wa-geht { display: none !important; } }
 :root[data-motion="reduziert"] [data-wasser] .wa-geht { display: none !important; }
+
+/* -- Gehen (.wa-geht set by the APP): what the app takes away stays as a picture for --wa-t-leave and leaves like water.
+      The app keeps the very node (src/ui/gehen.ts in this app: a ref whose clean-up puts it back for that time with the
+      class wa-geht, inert and aria-hidden, and takes it out on animationend). The sheet sinks (block "Bogen", wa-sinkt;
+      the desktop's drawer flows out: desktop.css 6), and with it:
+      - its scrim: it clears (the page under it rests until the sheet is gone: its blur is computed once);
+      - the search: its scrim clears, the panel dives a little;
+      - a row of a list (.wa-geht--zeile with wa-geht; the app writes --wa-geht-h, its height, and --wa-geht-gap, the row-gap
+        of its list, into its style): it sinks and fades (gone from sight at 55 %), and from 30 % on its height runs to nothing, so the rows
+        below - and the cards below its card - close the gap. This is the second exception to "only transform and opacity"
+        (the first: the waterline of a field): a gap cannot close by a transform without the edge of the card jumping. It runs
+        once per removal, 0.26 s, on one element, never at rest. --wa-zeile-zu: none keeps the strict rule (the gap closes in
+        one picture at the end). In a grid or a row of tiles the app sets --wa-zeile-zu: none on the row itself.
+      No motion wanted: gone at once (the two rules just above; the app does not wait either). -- */
+[data-wasser] :is(.sheet-back, .cmd-back).wa-geht { animation: wa-klart var(--wa-t-leave) var(--wa-ease-drain) both; pointer-events: none; }
+[data-wasser] .cmd-back.wa-geht > .cmd { animation: wa-taucht var(--wa-t-leave) var(--wa-ease-drain) both; }
+[data-wasser] .wa-geht--zeile {
+  box-sizing: border-box;
+  overflow: hidden;                             /* (its content, while its height runs out) */
+  flex-shrink: 0;                               /* (in a list that is a flex column of fixed height - a panel - a row with overflow: hidden would otherwise be squeezed first) */
+  pointer-events: none;
+  animation: wa-zeile-sinkt var(--wa-t-leave) var(--wa-ease-drain) both, var(--wa-zeile-zu) var(--wa-t-leave) var(--wa-ease-flow) both;
+}
+@keyframes wa-klart { to { opacity: 0; } }
+@keyframes wa-taucht { to { opacity: 0; transform: translateY(var(--wa-setzt-rise)); } }
+@keyframes wa-zeile-sinkt {                    /* gone from sight by the middle: its height runs out behind it, never through its words */
+  55%, 100% { opacity: 0; transform: translateY(var(--wa-zeile-tief)) scale(.98); }
+}
+@keyframes wa-zeile-zu {                        /* holds its height for the first third (it begins to sink), then runs out: fast, arriving softly (--wa-ease-flow) */
+  0%, 30% { height: var(--wa-geht-h); }
+  100% { height: 0; min-height: 0; padding-top: 0; padding-bottom: 0; border-top-width: 0; border-bottom-width: 0; margin-top: 0; margin-bottom: calc(-1 * var(--wa-geht-gap, 0px)); }
+}
 
 /* ---------------------------------------------------------------------------------------------------- Stufe 1 --- */
 

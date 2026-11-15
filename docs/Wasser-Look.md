@@ -604,7 +604,7 @@ Der Unterschied zwischen 1 und 1,5 ist auf Handygröße kaum zu sehen ([leben-ve
 
 **Keine Bewegung.** Zwei Auslöser: die Systemeinstellung (`prefers-reduced-motion: reduce`) oder der Schalter der App (`data-motion="reduziert"` am `<html>`). Dann gibt es die Lichter gar nicht, nichts schwingt oder atmet, Zustände wechseln sofort, die Tropfen stehen. Jeder Baustein trägt die zwei Regeln selbst, am Ende seines Blocks. Ein neuer Block braucht beide.
 
-**Was der Look nicht allein kann** (die App entfernt das Element in einem Bild): ein Bogen, der weich geht; eine Zeile, die verschwindet; ein Hinweis, der einen anderen ersetzt. Der Besitzer will es (Entscheidung 10): Fahrplan, Schritt 11.
+**Was der Look nicht allein kann** (die App entfernt das Element in einem Bild): ein Bogen, der weich geht; eine Zeile, die verschwindet; ein Hinweis, der einen anderen ersetzt. Seit 15.11. tut es die App selbst (Entscheidung 10; `src/ui/gehen.ts`): Fahrplan, Schritt 11.
 
 ---
 
@@ -637,7 +637,7 @@ git log --oneline -5 origin/main                     # wie weit main ist
 | 8 | Die Wartezeit beim Reiterwechsel (Entscheidung 11) | gebaut (14.11. abends, `wasser-look`); am echten Handy noch nicht gesehen |
 | 9 | Das Tempo der Lichter (Entscheidung 7) | gebaut (14.11. abends, `wasser-look`); er hat es noch nicht gesehen |
 | 10 | „klar“ durchsichtiger (Entscheidung 8) | gebaut (14.11. abends, `wasser-look`), mit einer Reparatur am Desktop; er hat es noch nicht gesehen |
-| 11 | Weiches Gehen (Entscheidung 10) | offen – nichts gebaut |
+| 11 | Weiches Gehen (Entscheidung 10), dazu der weiche Wechsel des Handy-Hintergrunds und das Suchfeld mittig auf Start | gebaut (15.11. nachts, `wasser-look`); er hat es noch nicht gesehen |
 | 12 | Das alte helle Thema | offen – der Desktop ist jetzt live, die Regeln können gehen |
 | 13 | Eine Quelle | später |
 
@@ -707,7 +707,7 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand: dieser Branch nach 
   }
   ```
 
-  In `Mobile()` steht `usePreloadScenes(scene);` gleich unter der Zeile, die `scene` bestimmt, und das `<img>` der Szene nimmt `srcSet={sceneSrcSet(scene)}` – dieselbe Zeichenkette wie das Vorladen, sonst wählt der Browser vielleicht eine andere Größe und lädt doppelt. (Der Kommentar über der Funktion ist hier weggelassen.)
+  In `Mobile()` steht `usePreloadScenes(scene);` gleich unter der Zeile, die `scene` bestimmt, und der Hintergrund nimmt `srcSet={sceneSrcSet(scene)}` – dieselbe Zeichenkette wie das Vorladen, sonst wählt der Browser vielleicht eine andere Größe und lädt doppelt. Seit Schritt 11 steht dort statt eines `<img key={scene}>` die Komponente `<SceneBg src=… srcSet=… />` (weiches Überblenden, Schritt 11). (Der Kommentar über der Funktion ist hier weggelassen.)
 
 - **`src/scene/Stage.tsx`**, ein Attribut an der Bühne:
 
@@ -963,20 +963,40 @@ Nur der Ton „klar“. Durchsichtiger heißt: mehr von der Szene durch das Wass
 - **Prüfen:** die Befehle unter „Zurückdrehen“, dazu `desktop.mjs pruefen`, `pruefen.mjs --app` (Prüfung 10: die zwei Töne haben dieselben 59 Werte) und `sollist.mjs --toene dunkel`.
 - **Darf nicht passieren:** Ein Median unter der Grenze – auch an einem Wintertag. Eine Abweichung in „dunkel“. Live, bevor er es gesehen hat.
 
-### Schritt 11 – Weiches Gehen (Entscheidung 10; offen, nach den Einbauten)
+### Schritt 11 – Weiches Gehen (Entscheidung 10; gebaut am 15.11. nachts, Branch `wasser-look`)
 
-Bögen und Schubladen sollen weich schließen, abgehakte oder entfernte Zeilen weich gehen – am Handy und am Desktop. Der Look kann nichts festhalten, was React in einem Bild entfernt: Die App selbst muss warten. **Nichts davon ist gebaut.**
+Bögen, Schubladen und die Suche schließen weich, abgehakte oder entfernte Zeilen gehen weich, ein Hinweis ersetzt den anderen weich – am Handy und am Desktop. Dazu (Auftrag des Hauptchats) der weiche Wechsel des Handy-Hintergrunds und das Suchfeld mittig auf dem Desktop-Start. **Der Besitzer hat nichts davon gesehen.** Bilder, Prüfskripte und Protokolle: `docs/wasser-look/entwurf/gehen/`.
 
-| Fall | Was bereitliegt | Was die App tun muss | Was fehlt |
-|---|---|---|---|
-| **Ein Bogen geht weich** | Klasse `wa-geht` auf `.sheet`: Er sinkt in 0,26 s um 68 px und wird durchsichtig (`wa-sinkt`), nimmt keine Klicks mehr, bei reduzierter Bewegung ist er sofort weg. Ausprobiert: Die Klasse allein genügt | Das Entfernen des Bogens um `--wa-t-leave` (260 ms) verzögern und ihm für diese Zeit die Klasse geben. Eine Stelle: dort, wo `{sheet ? <SheetHost sheet={sheet} /> : null}` steht (`src/App.tsx`, `src/mobile/Mobile.tsx`), den letzten Bogen 260 ms weiter zeigen. Öffnet in dieser Zeit ein neuer Bogen: die Klasse wieder wegnehmen | Am Desktop sinkt die Schublade damit nach **unten**, statt nach rechts hinauszufließen: `desktop.css` braucht eine eigene Bewegung (`animation-name`). Der Schleier (`.sheet-back`) verschwindet weiter in einem Bild |
-| **Eine Zeile geht weich** (abgehakte Aufgabe, entfernter Eintrag) | nichts | Die Zeile 260 ms mit einer Klasse stehen lassen | Eine Regel im Baustein „Mulde“ (nur `opacity` und `transform`). Die Zeilen darunter rücken danach trotzdem in einem Bild nach – eine Höhe weich zu ändern, verbietet die Regel „nichts, das Layout braucht“. Das ist mit dem Besitzer zu klären |
-| **Ein Hinweis ersetzt einen anderen** | Ein Hinweis, der ganz verschwindet, geht schon weich (das Skript hält eine Kopie) | Dem neuen Hinweis einen neuen `key` geben, damit React den alten wirklich entfernt | ausprobieren |
+**Der Mechanismus** (`src/ui/gehen.ts`, Kopf der Datei): React 19 ruft das Aufräumen eines `ref` auf, solange das Element noch im Dokument steht – unmittelbar bevor React es entfernt. Dort merkt sich die App Eltern, Nachbarn und Bildlauf; eine Mikroaufgabe nach dem Commit (vor dem nächsten Bild) setzt **genau denselben Knoten** wieder an seinen Platz, mit der Klasse `wa-geht`, `inert` und `aria-hidden`. Er geht, wenn seine Gehen-Animation endet (ein Zeitgeber ist das Netz darunter). Der Store ist sofort die Wahrheit; React kennt den Knoten nicht mehr (keine Klicks, kein Neuzeichnen mit Daten, die es nicht mehr gibt); der Fokus ist schon beim Auslöser. Ohne Look (kein `data-wasser`, kein `--wa-t-leave`) und bei reduzierter Bewegung (Schalter der App oder System) wird nichts behalten und auf nichts gewartet.
 
-- **Dateien:** `src/App.tsx`, `src/mobile/Mobile.tsx`, `src/ui/SheetHost.tsx` oder `src/ui/Sheet.tsx`, die Listen, `src/ui/Toast.tsx`; in der Vorlage `kern.css` („Mulde“) und `desktop.css` (Teil 6).
-- **Schritt 5 a ist erledigt:** Diese Dateien dürfen etwas aus `wasser.ts` laden, die Reihenfolge der Stylesheets bleibt.
-- **Prüfen:** Bildstreifen (`film.mjs`, Streifen `bogen` und `haken`; `desktop.mjs film`), Tastatur (Escape; der Fokus kehrt zum Auslöser zurück), `verify.mjs`, der Befehl für die Reihenfolge im CSS.
-- **Darf nicht passieren:** Ein Bogen, der beim schnellen Wieder-Öffnen unsichtbar bleibt. Ein Klick auf einen Knopf eines gehenden Bogens. Eine Verzögerung bei reduzierter Bewegung. Eine Löschung, die nicht mehr rückgängig zu machen ist (`wrap(…)` in `src/store.ts` bleibt, wie es ist).
+| Fall | So gebaut | Wo |
+|---|---|---|
+| **Bogen, Schublade, Suche** | `ref={gehtBogen}` auf `.sheet`, `.sheet-back`, `.cmd-back`. Handy: der Bogen sinkt (`wa-sinkt`), der Schleier klärt sich (`wa-klart`); Desktop: die Schublade fließt nach rechts hinaus (`wa-fliesst-weg`); die Suche taucht ab (`wa-taucht`; am Desktop bleibt ihr Schleier bis zum Ende, sonst sähe die Unschärfe des Felds nichts mehr). Ein neuer Bogen oder die Suche schneidet einen gehenden sofort ab – ein Bogen, der einen anderen im selben Augenblick ersetzt, verhält sich also wie bisher. Ein zweites Escape während des Gehens tut nichts (`leaving()` in `src/App.tsx`), ein zweiter Tipp auf den Schleier trifft die Seite darunter | `src/ui/Sheet.tsx`, `src/ui/CommandBar.tsx`, `src/App.tsx`; Vorlage `kern.css` „Gehen“, `desktop.css` 6 |
+| **Eine Zeile geht** | `{...weich(id)}` auf der Zeile: Sie sinkt und wird durchsichtig (bis zur Mitte unsichtbar), ab 30 % läuft ihre Höhe aus, die Zeilen und Karten darunter schließen die Lücke. Eine abgehakte Zeile zeigt dabei ihren Haken gefüllt. Kommt sie mit derselben Id zurück („Rückgängig“), verschwindet ihr Bild sofort | Listen siehe unten; Vorlage `kern.css` „Gehen“ (`.wa-geht--zeile`) |
+| **Ein Hinweis ersetzt einen anderen** | `key={toast.id}` in `src/ui/Toast.tsx`: Der alte wird wirklich entfernt, das Skript legt seine Kopie an seinen alten Platz – unter den neuen, der landet. Die Kopie ist `inert` und `aria-hidden`; ihr „Rückgängig“ ist nicht erreichbar | `src/ui/Toast.tsx`; Vorlage `wasser.js` Teil 3 |
+
+**Welche Listen:** Handy – Heute: Aufgaben und fällige Wartung; Projekt: Aufgaben; Material: Einkaufsliste. Desktop – Heute: Aufgaben und fällige Wartung; Material: Einkaufsliste; Innenwelt: offene Aufgaben und Dateien; 3D-Druck: Warteschlange und Wartung. Beide – im Projekt-Bogen die Aufgabenliste und das Dateiraster (im Raster sinkt die Kachel nur, die anderen springen: Eine Höhe schließt dort keine Lücke). **Nicht:** Listen, die filtern oder blättern (Rollen nach Material, Archiv), Meilensteine (Abhaken entfernt sie nicht), Geräte- und Werkzeuglisten der Bögen (gelöscht wird im eigenen Formular, die Liste ist danach ein neuer Bogen), das Energie-Protokoll in „Über“, der Eingang in 3D-Druck. Wo eine Liste nur die ersten fünf (drei) zeigt, rückt die nächste Zeile ohne Bewegung nach.
+
+**Eine neue Liste weich machen:** an der Zeile `{...weich(<id>)}` (aus `src/ui/gehen.ts`), neben `key` – fertig, wenn die Zeile nur durch eine Handlung in dieser Liste verschwindet (abhaken, überspringen, löschen). Nicht für Listen, die filtern oder blättern (sonst ginge beim Filtern jede Zeile weich). Ein neuer Bogen oder eine neue Überdeckung: `ref={gehtBogen}` auf das Element und auf seinen Schleier, und eine Gehen-Regel im Block „Gehen“ (`kern.css`) für seine Klasse.
+
+**Die Lücke schließt sich mit einer Höhe** – die zweite Ausnahme von „nur transform und opacity“ (die erste: die Wasserlinie eines Felds). Mit `transform` allein springt der Rand der Karte. Sie läuft einmal je Entfernung, 0,26 s, an einem Element, nie in Ruhe. Geschmackssache und ein Wert: `--wa-zeile-zu: none` (`kern.css`, Teil 2) lässt die Lücke stehen, bis die Zeile weg ist, dann schließt sie sich in einem Bild.
+
+**Der Hintergrund des Handys** (Auftrag des Hauptchats nach dem Wunsch des Besitzers vom 14.11., 14:40): `SceneBg` in `src/mobile/Mobile.tsx` blendet über, **sobald sich die Adresse des Bilds ändert** (heute beim Reiterwechsel, mit den neuen Bildern später beim Wechsel der Tageszeit). Das neue Bild liegt unsichtbar über dem alten, bis es geladen und dekodiert ist, blendet dann in `--wa-t-szene` (= `--wa-t-settle`, 0,62 s) mit `--wa-ease-szene` (= `--wa-ease-flow`) ein (`mobil.css` 2), erst dann geht das alte. Höchstens zwei Bilder; eine neuere Adresse ersetzt ein Bild, das noch unterwegs ist. Ohne Look oder bei reduzierter Bewegung: harter Wechsel, sobald das neue geladen ist – nie ein dunkles oder leeres Bild dazwischen. Die Tropfen mischen die zwei Szenen nach der Deckkraft des neuen Bilds (`wasser.js`, Option `scene`). `.m-bg img` steht jetzt `position: absolute`, sein Ankerpunkt ist `--m-bg-pos` (58 % 40 % für die acht Szenen).
+- **Für die neuen Hochformat-Bilder** (Branch `welt/neue-bilder`): `SceneBg` bekommt `src` und `srcSet` des Bilds der Tageszeit statt der Szene des Reiters – keine Änderung an `SceneBg`. Zu setzen: `--m-bg-pos` auf `.m-bg` (für Hochformat wohl `50% 50%` oder der Punkt, der beim Zuschneiden an schmalen Handys stehen bleiben soll); die Breiten in `scripts/optimize-scenes.mjs` (heute 1280 und 640; für Hochformat bei `sizes="100vw"` und 3-fachen Handys sind 1280 und 640 brauchbar, 828 dazwischen spart auf 2-fachen Handys) und dieselben in `sceneSrcSet`; die Abdunkelung sind die vier Tonwerte `--wa-page-1..4` (`kern.css`, Teil 1) – nur ändern, wenn die neuen Bilder unten heller sind als die alten (dann `kontrast.mjs --app` in beiden Tönen). `usePreloadScenes` lädt dann die Szenen der Reiter vor, die es nicht mehr gibt: Es sollte stattdessen das Bild der nächsten Tageszeit vorladen.
+
+**Das Suchfeld auf Start** (`src/ui/TopBar.tsx`, Klasse `topbar--start`; `src/styles/global.css` bei `.topbar__search`): Auf Start fehlen Uhr, Datum, Gruß und Wetter (sie stehen in der Tageskarte), das Feld stand darum 62 px rechts der Mitte. Jetzt steht es in der Mitte (2000: 1062 → 1000 px, 1920: 1022 → 960 px). Die anderen Welten tragen die Klasse nicht: Ihre Kopfzeile ist Bildpunkt für Bildpunkt gleich (Heute, 2000 und 1920, gegen den Stand davor).
+
+**Gemessen und geprüft** (Arbeitsmaschine, Chromium):
+- Bildstreifen bei 0 / 80 / 160 / 240 / 300 ms (`frames.mjs`: die Gehen-Animationen angehalten und auf die Zeit gesetzt, das Entfernen bis zum letzten Bild gehalten): Bogen am Handy in beiden Tönen, Schublade am Desktop, abgehakte Aufgabe am Handy und am Desktop, entfernter Eintrag der Einkaufsliste, ein Hinweis ersetzt einen anderen („Rückgängig“). Der Hintergrund bei 0 / 100 / 200 / 300 / 450 / 600 ms in beiden Tönen (`szene.mjs`).
+- `rennen.mjs`, 51 Prüfungen, alle bestanden: jedes Bild wird im ersten Bild nach dem Ende seiner Animation entfernt (Handy 9 bis 33 ms danach, Desktop 13 bis 190 ms – dort dauert hier ein Bild 130 bis 280 ms); zweimal Escape; Tipp auf den Schleier während des Gehens; Bogen B während A geht; fünf Haken in einer Sekunde (der Store genau fünfmal); „Rückgängig“ während die Zeile geht; Reiterwechsel, Weltwechsel, Bereichswechsel währenddessen; der leere Bereich „Meine Werkstatt“ am Handy und am Desktop; reduzierte Bewegung über die App und über das System; ohne Look; Tastatur (Fokus zurück auf den Auslöser, beide Desktop-Formate).
+- `szene.mjs`: nach dem Blenden ein Bild, die Tropfen darauf; zehn Reiterwechsel im Abstand von 70 ms enden auf dem Bild des letzten Reiters (Seite und Tropfen), nie mehr als zwei Bilder, nie keins sichtbar; reduzierte Bewegung ohne Blende; langsames Netz (400 ms, 400 kbit/s, kein Cache) – das alte Bild steht, bis das neue da ist (hier 5 s). Die Blende beginnt auf der Arbeitsmaschine 380 bis 430 ms nach dem Tipp (Laden aus dem Cache und Dekodieren; vorher stand in dieser Zeit ein leeres Bild).
+- `reiter.mjs handy --app vorher=…,nachher=… --drossel 1,4 --laeufe 3` (Median/größter Wert, ms): neues Bild erster Besuch 38/99 → 45/153, zweiter 34/119 → 43/133; viermal gebremst 124/214 → 139/216 und 85/193 → 93/261. Keine Aufgabe über 50 ms, die Szenenarbeit ist (vorher wie nachher 0). Das neue Bild steht im Median 7 bis 15 ms später – auf dieser Maschine; ob es am Handy zu merken ist, sagt nur das Handy.
+- `sollist.mjs alles --soll git:f001263` (164 Bildschirme, der Stand vor diesem Schritt): 154 gleich (12 davon `ok*`); anders der Desktop-Start in beiden Tönen und Formaten (das Suchfeld, gewollt), Desktop 1920 „klar“ „Archiv“ an der Beschriftung einer Insel (835 Bildpunkte, wohl Fallstrick 73, nicht allein wiederholt) und Handy „Neue Rolle“ bei Nacht in „dunkel“: 796 Bildpunkte, höchstens 1 von 255, in den Tropfen der Kopfzeile hinter dem offenen Bogen – dieselbe Stelle wie in Schritt 10, Ursache offen (`NACHSEHEN-FABLE.md`). Alle anderen 55 Handy-Bildschirme sind gleich: Das neue `position: absolute` des Hintergrundbilds ändert nichts.
+- `verify.mjs` (zwei Prüfungen minimal angepasst: Eine gehende Zeile ist 0,26 s lang ein Bild ohne Funktion und zählt nicht mehr als Zeile – `:not(.wa-geht)`), `pruefen.mjs --app`, `desktop.mjs pruefen`.
+
+**Was nur das echte Gerät sagt:** wie es sich anfühlt (Tempo 0,26 s, das Auslaufen der Höhe), ob Safari den Knoten ebenso zurücknimmt (WebKit nicht geprüft), ob ein Bildschirmleser den gehenden Bogen still übergeht.
+
+**Darf nicht passieren:** ein Bogen, der beim schnellen Wieder-Öffnen unsichtbar bleibt; ein Klick auf einen Knopf eines gehenden Bogens; ein Warten bei reduzierter Bewegung oder ohne Look; eine Löschung, die nicht mehr rückgängig zu machen ist (`wrap(…)` in `src/store.ts` ist unverändert); mehr als zwei Hintergrundbilder; ein dunkles oder leeres Bild beim Reiterwechsel.
 
 ### Schritt 12 – Das alte helle Thema der App (offen; der Desktop ist jetzt live)
 
@@ -1126,6 +1146,9 @@ Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau �
 79. Wenn ein Bild außerhalb des Takts dekodiert werden soll, dann nicht mit `createImageBitmap(img)` (Chromium dekodiert dabei auf dem Faden der Seite) und nicht mit `img.decode()` vor einem Canvas (Chromium dekodiert für den Canvas noch einmal), sondern `createImageBitmap(blob)`. Mit `resizeWidth` skaliert es auch – anders als ein Canvas: Die Tropfen wären dann nicht mehr bildpunktgleich. (61)
 80. Wenn in einem Teil von `wasser.js` zwei Funktionen denselben Namen tragen, dann gewinnt die spätere ohne Meldung (Teil 1 hat `next()` für die Bildschleife; ein zweites `next()` für die Szene ersetzte sie beim Umbau still). (62)
 81. Wenn auf der Arbeitsmaschine gemessen wird, wie lange ein Tipp braucht, dann landet er oft in einem Wasserbild, das gerade gerechnet wird (Software-WebGL: 60 bis 150 ms je Bild). Gegen dieselbe App mit gestopptem Skript vergleichen (`reiter.mjs --gestoppt`), nie gegen ein Handy. (63)
+82. Wenn ein Knoten, den React entfernt hat, wieder ins Dokument gesetzt wird (weiches Gehen, Schritt 11), dann beginnt jede CSS-Animation darin von vorn. Darum entscheiden über das Ende eines gehenden Bilds nur die Animationen des Elements selbst und seiner direkten Kinder (`src/ui/gehen.ts`) – eine tiefere (der Auftritt einer Karte im Bogen) darf es nicht festhalten.
+83. Wenn eine Zeile mit `overflow: hidden` in einer Flex-Spalte fester Höhe steht (ein Panel am Desktop) und die Liste überläuft, dann wird sie als erste zusammengedrückt: Die gehende Zeile trägt `flex-shrink: 0` (sonst stand sie am Desktop schon im ersten Bild halb zusammengefaltet da).
+84. Wenn ein Werkzeug die Uhr festhält (`zeit:`, `page.clock.setFixedTime`), dann ist auch `performance.now()` gefälscht: Zeiten von Animationen mit `document.timeline.currentTime` vergleichen.
 
 ---
 
@@ -1142,7 +1165,7 @@ Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau �
 
 - Das Tempo der Lichter ein wenig schneller (Entscheidung 7; Schritt 9): **gebaut am 14.11. abends**; er hat es noch nicht gesehen (Film und Zahlen: Schritt 9).
 - „klar“ ein wenig durchsichtiger (Entscheidung 8; Schritt 10): **gebaut am 14.11. abends**; er hat es noch nicht gesehen (Bilder vorher/nachher: Schritt 10).
-- Weiches Gehen von Bögen, Schubladen und Zeilen (Entscheidung 10; Schritt 11). Nichts gebaut; offen ist, was mit den nachrückenden Zeilen geschieht.
+- Weiches Gehen von Bögen, Schubladen und Zeilen (Entscheidung 10; Schritt 11): **gebaut am 15.11. nachts**; er hat es noch nicht gesehen. Die nachrückenden Zeilen schließen die Lücke weich – mit einer Höhe, die läuft (die zweite Ausnahme der Regel „nur transform und opacity“; ein Wert schaltet sie ab).
 - Die Wartezeit beim Reiterwechsel (Entscheidung 11; Schritt 8): **gebaut am 14.11. abends**, auf der Arbeitsmaschine gemessen; ob sie am Handy des Besitzers weg ist, sagt nur sein Handy.
 
 **Offen am Einbau:**

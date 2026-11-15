@@ -165,8 +165,13 @@ real pixels of the sheet, and what the sheet is "told" (`--water-under`) hardly 
 **Panels that appear together and have no entrance of their own:** `.wa-setzt` on each,
 `animation-delay: calc(var(--wa-t-step) * n)`.
 
-**A leaving sheet (not used yet):** when the app delays unmounting by `--wa-t-leave` (0.26 s), add class `wa-geht`
-to the sheet; the keyframes `wa-sinkt` are in "Bogen".
+**Something the app takes away (built 14.11., owner's decision 10):** the app keeps the element for `--wa-t-leave`
+(0.26 s) with the class `wa-geht`, inert and aria-hidden, and removes it on `animationend` (kern.css, block "Gehen").
+A sheet sinks (`wa-sinkt`; the desktop's drawer flows out to the right, `wa-fliesst-weg`), its scrim clears (`wa-klart`),
+the search panel dives (`wa-taucht`); a row gets `wa-geht wa-geht--zeile` plus `--wa-geht-h` (its height) and
+`--wa-geht-gap` (the row-gap of its list) in its style: it fades and sinks, and its height runs out so the rows below
+close the gap. In this app all of that is `src/ui/gehen.ts`: `ref={gehtBogen}` on a sheet, its scrim and the search,
+`{...weich(id)}` on a row. With no motion wanted nothing is kept (and nothing waits).
 
 **A new loop at rest:** transform and opacity only, on a layer of its own; eight equal keyframe intervals
 (`node scripts/wasser/keyframes.mjs` prints them); `animation: <name> var(--wa-t-ruhe-N) var(--wa-gang-N) infinite;
@@ -431,8 +436,10 @@ timers of helpers.
 | Drops | always alive: flowing outline, ripples (15 pictures a second); the glint under a drop on a sheet breathes | spreads, the glint flares, a ripple runs from the finger | the picture inside follows the scene | follows a card that slides in; a press ends when a sheet covers the drop |
 | Becken (cards) | a glint with a soft glow wanders along the lit rim and back (17 s), another along the far rim the other way (24 s); a large soft patch of light crosses the floor (33 s); every card at another place of the loop | ONE ring over the floor, when the finger lets go (1.1 s) | the lights lean (up to 90 % deeper / 70 % drawn back), the glints slide 24 px, the floor light stays 28 px behind; let go, all swings out (1.6 s) | the card arrives with the app's own entrance, one 40 ms after the other; its light arrives too deep and swings into place |
 | Tab bar | one glint along its top rim (29 s); the bead breathes (9 s) | icon and label of a tab give way and spring back | - | the marker flows to the new tab (0.46 s, 70 ms more per further tab) |
-| Bottom sheet | one soft glint on its top rim (29 s) | the ring, from its foot buttons only | its light leans with the scrolling of its body | rises like a wave and settles (0.62 s), a crest of light spreads and fades (1.1 s). Closing: gone in one frame |
-| Toast | one glint (the common Lichtlauf) | - | - | lands like a drop (0.62 s), leaves like one (0.26 s) |
+| Bottom sheet | one soft glint on its top rim (29 s) | the ring, from its foot buttons only | its light leans with the scrolling of its body | rises like a wave and settles (0.62 s), a crest of light spreads and fades (1.1 s). Closing: sinks back and fades (0.26 s), its scrim clears |
+| Toast | one glint (the common Lichtlauf) | - | - | lands like a drop (0.62 s), leaves like one (0.26 s); a new one lands over the old one, which leaves under it |
+| Rows the app takes away (ticked, skipped, deleted) | - | - | - | fade and sink, their height runs out, the rows below close the gap (0.26 s) |
+| The phone's background | - | - | - | a new picture fades in over the old one (0.62 s) once it has loaded; the drops blend the two by its opacity |
 | Search panel | one glint along its top rim | the hit under the finger lights up | - | the app's own entrance |
 | Number tiles (free) | a short glint along the top rim | - | - | - |
 | Rows, tiles | - | a tappable row lights up at once and settles (not while a button inside it is pressed) | - | - |
@@ -443,8 +450,8 @@ timers of helpers.
 | Icon beads, per-row buttons, back link, brand | - | give way and spring back | - | - |
 | Text, icons, photos, charts, header, the scene | - | - | - | - |
 
-Dead on purpose or for lack of a hook: a closing sheet, a removed row (both need the app to delay the removal by
-`--wa-t-leave`), a toast that replaces another one, the header. The drops do not lean when the list is scrolled.
+Dead on purpose: the header. The drops do not lean when the list is scrolled. (Until 14.11. also a closing sheet, a
+removed row and a toast that replaced another one - built since, see section 16.)
 
 On the desktop the same table holds, with these differences: a side panel has ONE rim light at 60 % that becomes full
 under the pointer, only the one large panel of a world has the far light and the floor light; the dock is the bar (its
@@ -1194,7 +1201,7 @@ Desktop (section 11):
   selects): section 10, point 2.
 - **The empty workspace** shows large empty basins in "3D-Druck" and "Material" (one line of text in 835 x 290 px of
   dark water): the app's layout; nothing was changed.
-- **Dead on the desktop:** a closing drawer (gone in one frame, as on the phone), panels that leave a world (the app
+- **Dead on the desktop:** panels that leave a world (the app
   unmounts them), the top bar's text chips at rest, the weather signs.
 - **Firefox** was not run for the desktop (its build here has no WebGL: plain glass buttons, everything else CSS).
 
@@ -1322,3 +1329,64 @@ only offsets a start by fractions of `--wa-t-ruhe-3`).
   "Projekte" (the same build against itself: 3013 and 19142 px there, pitfall 73). Desktop 2000 "archiv" by day differed
   once (698 px) and was equal in the second run. The first run was stopped by a time limit after 122 screens; the desktop
   by day was then run alone. The checker of this workflow ran its own sollist at the same time (load).
+
+## 16. Soft leaving and the phone's background (15.11., night; owner's decision 10 - he has seen neither)
+
+What the app takes away no longer vanishes in one picture. Built in the APP (the look cannot hold back what React removes)
+plus the leaving blocks in the template.
+
+- **The mechanism, `src/ui/gehen.ts`.** A stable ref callback; React 19 calls a ref's clean-up while the element is still
+  in the document, right before it removes it. The clean-up notes parent, neighbours and scroll offsets; a microtask
+  (after React's commit, before the next picture) puts the VERY SAME node back with `wa-geht`, `inert`, `aria-hidden`
+  (role and aria-modal removed), and it goes on `animationend` of its own leaving animation or that of a direct child,
+  with a timer as safety net that gives a late-started animation the rest of its time. Not a copy: field values, scroll
+  offsets and the drops' canvases are as they were, and the drops' script keeps its records (the node is back before
+  its next scan). React no longer knows the node: no handlers, no re-render with data that has gone. The store changes
+  at once; focus goes back to the opener at once (Sheet's own effect).
+  - `ref={gehtBogen}` on `.sheet`, `.sheet-back` (src/ui/Sheet.tsx) and `.cmd-back` (src/ui/CommandBar.tsx). A new one
+    that mounts cuts every leaving one at once (a sheet that replaces another in one commit therefore behaves as
+    before: no leaving picture). App.tsx swallows Escape while one leaves (`leaving()`), so a second Escape does not also
+    leave the world.
+  - `{...weich(id)}` on a row: phone - Heute's tasks and due maintenance, a project's tasks, the shopping list; desktop -
+    Heute's tasks and due maintenance, Material's shopping list, the inner world's open tasks and files, 3D-Druck's queue
+    and maintenance; both - the task list and the file grid of the project detail sheet. A row that comes back with the
+    same id (Rückgängig) cuts its leaving picture. A row whose check was just pressed shows that check ticked while it
+    leaves. In a grid or a row of tiles (the file grid) only the sink runs (`--wa-zeile-zu: none`), the tiles jump.
+  - Not covered: lists that filter or page (the spools by material, the archive), the milestones (ticking does not
+    remove them), the device and tool lists of the sheets (a device is deleted in its own form, the list is a new sheet),
+    the energy log in "Über", the inbox of 3D-Druck. Rows that leave because a list shows "the first five" make the sixth
+    arrive at once (Heute on the desktop, the inner world's three).
+  - No look (no `data-wasser` or no `--wa-t-leave`), reduced motion (the app's switch or the system's): nothing is kept,
+    nothing waits.
+- **The template:** kern.css block "Gehen" (scrim `wa-klart`, search panel `wa-taucht`, rows `.wa-geht--zeile` with
+  `wa-zeile-sinkt` and `wa-zeile-zu`, tokens `--wa-zeile-tief` and `--wa-zeile-zu`); desktop.css 6: the drawer flows out
+  (`wa-fliesst-weg`), the search's scrim keeps no animation when it leaves (the panel's blur would see nothing behind a
+  fading scrim; the scrim goes at the end). The rows' height animation is the SECOND exception to "only transform and
+  opacity" (a gap cannot close by transform without the card's edge jumping); `--wa-zeile-zu: none` restores the strict
+  rule. wasser.js: a toast's leaving copy is put where the toast stood, so a new one (the app gives each its own key)
+  lands on top; anything that starts a `wa-geht` animation makes the drops follow the layout for 0.7 s.
+- **The phone's background:** `SceneBg` in src/mobile/Mobile.tsx, keyed by the picture's ADDRESS (not the tab): a new
+  address is laid over the old picture invisible (`data-szene="laedt"`, mobile.css), fades in once loaded and decoded
+  (`data-szene="kommt"`, mobil.css 2: `--wa-t-szene` = `--wa-t-settle`, `--wa-ease-szene` = `--wa-ease-flow`), and the old
+  one goes on `animationend`. At most two pictures; a newer address replaces one on its way. No animation (no look,
+  reduced motion): the new one replaces the old one once loaded. wasser.js blends the two scene textures in the drops by
+  the newest picture's computed opacity (uniforms `uTex2`, `uImg2`, `uMix`; with `uMix` 1 the second texture is not read,
+  so a page with one picture is drawn exactly as before) and keeps drawing at its resting pace while it blends.
+  `.m-bg img` is now `position: absolute` (two pictures stack) and its anchor is `--m-bg-pos` (58% 40% for the eight
+  landscape scenes).
+- **Pitfalls found on the way:**
+  - Putting a node back into the document restarts every CSS animation inside it. So the ghost's end is decided only by
+    the animations of the element and its direct children - a deeper one (a card's entrance in a sheet) must not hold it.
+  - A row with `overflow: hidden` in a flex column of fixed height (a desktop panel) is squeezed first when the list
+    overflows: `flex-shrink: 0` on the leaving row.
+  - The tools' fixed clock (`page.clock.setFixedTime`, `zeit:`) fakes `performance.now()`: compare animation times with
+    `document.timeline.currentTime`.
+- **Verified** (work machine, Chromium; the proofs and their scripts are in `docs/wasser-look/entwurf/gehen/`):
+  frames at 0/80/160/240/300 ms of a phone sheet (both tones), a desktop drawer, a ticked task (phone and desktop), a
+  removed shopping entry, a toast replacing a toast; 51 scripted checks (`rennen.mjs`: removal in the first frame after
+  the leaving animation's end, Escape twice, backdrop tap, sheet B during A, five ticks in a second, undo during leaving,
+  change of tab and of world, change of workspace, the empty workspace on phone and desktop, reduced motion both ways, no look, keyboard
+  focus); the background: frames at 0/100/200/300/450/600 ms in both tones, ten quick tab changes, reduced motion, a slow
+  network (`szene.mjs`); `reiter.mjs handy` before/after; `sollist.mjs alles --soll git:f001263`: 154 of 164 equal, the
+  differences are the desktop Start (the search, meant), one island label at 1920 and one phone sheet with 1/255 inside
+  the head drops (cause open, `NACHSEHEN-FABLE.md`). NOT verified: WebKit/Safari, a real phone, a screen reader.

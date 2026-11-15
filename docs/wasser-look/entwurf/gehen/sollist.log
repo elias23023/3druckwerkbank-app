@@ -1,0 +1,63 @@
+Soll: git:f001263 = f001263, built in /tmp/wasser-sollist-staende/f0012630d598
+Ist:  the working tree, built just now
+reduced motion, the clock stands still, made-up weather; pictures of what differs: /tmp/claude-0/-home-user-3druckwerkbank/c7034e5f-c75e-5dc3-a0df-70a196fe2d21/scratchpad/fs-gehen/sollist
+Look: built in (the app as it is built, nothing injected)
+DIFF handy dunkel nacht bogen-neuerolle           796 px differ (largest 1; 793 of them inside drops)  x 324..389, y 0..65
+DIFF desktop 2000 dunkel nacht start              41129 px differ (largest 234; 7286 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1987, y 7..69
+ok*  desktop 2000 dunkel nacht bogen-bereich      equal outside the drops; other water in a drop (7829 px inside 4 drops)
+ok*  desktop 2000 dunkel nacht bogen-versionen    equal outside the drops; other water in a drop (20187 px inside 8 drops)
+ok*  desktop 2000 dunkel nacht hinweis            equal outside the drops; other water in a drop (4172 px inside 4 drops)
+diff desktop 2000 dunkel nacht leer-start         45741 px differ (largest 230; 7130 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1987, y 9..69
+DIFF desktop 1920 dunkel nacht start              53088 px differ (largest 235; 7306 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1907, y 7..815
+ok*  desktop 1920 dunkel nacht bogen-bereich      equal outside the drops; other water in a drop (7989 px inside 4 drops)
+ok*  desktop 1920 dunkel nacht bogen-versionen    equal outside the drops; other water in a drop (20238 px inside 8 drops)
+ok*  desktop 1920 dunkel nacht hinweis            equal outside the drops; other water in a drop (4667 px inside 4 drops)
+diff desktop 1920 dunkel nacht leer-start         47382 px differ (largest 233; 7799 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1907, y 9..930
+DIFF desktop 2000 klar tag start                  43854 px differ (largest 205; 7404 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1987, y 7..69
+ok*  desktop 2000 klar tag bogen-bereich          equal outside the drops; other water in a drop (8200 px inside 4 drops)
+ok*  desktop 2000 klar tag bogen-versionen        equal outside the drops; other water in a drop (20794 px inside 8 drops)
+ok*  desktop 2000 klar tag hinweis                equal outside the drops; other water in a drop (4170 px inside 4 drops)
+diff desktop 2000 klar tag leer-start             47321 px differ (largest 206; 7259 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1987, y 9..69
+DIFF desktop 1920 klar tag start                  46804 px differ (largest 206; 7405 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1907, y 7..881
+DIFF desktop 1920 klar tag archiv                 835 px differ (largest 26; 0 of them inside drops)  x 84..117, y 744..780
+ok*  desktop 1920 klar tag bogen-bereich          equal outside the drops; other water in a drop (8130 px inside 4 drops)
+ok*  desktop 1920 klar tag bogen-versionen        equal outside the drops; other water in a drop (20571 px inside 8 drops)
+ok*  desktop 1920 klar tag hinweis                equal outside the drops; other water in a drop (4616 px inside 4 drops)
+diff desktop 1920 klar tag leer-start             50254 px differ (largest 207; 7257 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1907, y 9..881
+
+== Soll gegen Ist: 164 screens, 154 equal (12 of them with other water inside a drop), 10 differ (4 of them named in --erwartet); 25.9 min ==
+equal outside the drops, other water in a drop (not compared; --tropfen counts it):
+  desktop 2000 dunkel nacht bogen-bereich (7829 px in 4 drops)
+  desktop 2000 dunkel nacht bogen-versionen (20187 px in 8 drops)
+  desktop 2000 dunkel nacht hinweis (4172 px in 4 drops)
+  desktop 1920 dunkel nacht bogen-bereich (7989 px in 4 drops)
+  desktop 1920 dunkel nacht bogen-versionen (20238 px in 8 drops)
+  desktop 1920 dunkel nacht hinweis (4667 px in 4 drops)
+  desktop 2000 klar tag bogen-bereich (8200 px in 4 drops)
+  desktop 2000 klar tag bogen-versionen (20794 px in 8 drops)
+  desktop 2000 klar tag hinweis (4170 px in 4 drops)
+  desktop 1920 klar tag bogen-bereich (8130 px in 4 drops)
+  desktop 1920 klar tag bogen-versionen (20571 px in 8 drops)
+  desktop 1920 klar tag hinweis (4616 px in 4 drops)
+DIFFER, and were not expected to:
+  handy dunkel nacht bogen-neuerolle           796 px differ (largest 1; 793 of them inside drops)  x 324..389, y 0..65
+      handy-dunkel-nacht-bogen-neuerolle-vergleich.png
+  desktop 2000 dunkel nacht start              41129 px differ (largest 234; 7286 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1987, y 7..69
+      desktop-2000-dunkel-nacht-start-vergleich.png
+  desktop 1920 dunkel nacht start              53088 px differ (largest 235; 7306 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1907, y 7..815
+      desktop-1920-dunkel-nacht-start-vergleich.png
+  desktop 2000 klar tag start                  43854 px differ (largest 205; 7404 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1987, y 7..69
+      desktop-2000-klar-tag-start-vergleich.png
+  desktop 1920 klar tag start                  46804 px differ (largest 206; 7405 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1907, y 7..881
+      desktop-1920-klar-tag-start-vergleich.png
+  desktop 1920 klar tag archiv                 835 px differ (largest 26; 0 of them inside drops)  x 84..117, y 744..780
+      desktop-1920-klar-tag-archiv-vergleich.png
+differ as expected (--erwartet):
+  desktop 2000 dunkel nacht leer-start         45741 px differ (largest 230; 7130 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1987, y 9..69
+      desktop-2000-dunkel-nacht-leer-start-vergleich.png
+  desktop 1920 dunkel nacht leer-start         47382 px differ (largest 233; 7799 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1907, y 9..930
+      desktop-1920-dunkel-nacht-leer-start-vergleich.png
+  desktop 2000 klar tag leer-start             47321 px differ (largest 206; 7259 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1987, y 9..69
+      desktop-2000-klar-tag-leer-start-vergleich.png
+  desktop 1920 klar tag leer-start             50254 px differ (largest 207; 7257 of them inside drops); THE DROPS THEMSELVES DIFFER (number, place, size or label)  x 25..1907, y 9..881
+      desktop-1920-klar-tag-leer-start-vergleich.png

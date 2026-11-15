@@ -1,7 +1,8 @@
 /* Mobile companion: simple, one-hand, large touch targets. Own dark glass tokens for readability on any landscape. */
 .m-shell { position: fixed; inset: 0; display: flex; flex-direction: column; color: #f4f6fb; --glass-bg: rgba(14,22,38,.8); --glass-bg-strong: rgba(12,19,33,.93); --glass-border: rgba(255,255,255,.14); --text: #f4f6fb; --text-2: rgba(244,246,251,.74); --text-3: rgba(244,246,251,.5); }
 .m-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
-.m-bg img { width: 100%; height: 100%; object-fit: cover; object-position: 58% 40%; transition: opacity 2s var(--ease); }
+.m-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--m-bg-pos, 58% 40%); }   /* --m-bg-pos: where a picture is anchored when the screen crops it (the eight landscape scenes: 58% 40%; set it on .m-bg for other pictures) */
+.m-bg img[data-szene="laedt"] { opacity: 0; }   /* a new picture on its way lies invisible over the old one (SceneBg, Mobile.tsx) */
 .m-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,12,24,.35) 0%, rgba(8,12,24,.15) 30%, rgba(8,12,24,.55) 70%, rgba(8,12,24,.85) 100%); }
 .m-head { position: relative; z-index: 2; display: flex; align-items: center; gap: 8px; padding: calc(10px + env(safe-area-inset-top)) 14px 8px; }
 .m-head .brand b { font-size: 14px; } .m-head .brand span { display: none; }

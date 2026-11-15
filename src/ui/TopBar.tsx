@@ -33,7 +33,7 @@ export function TopBar() {
   // Start world: clock, date, greeting and weather stand in the card of the day (src/ui/Tageskarte.tsx), so the bar does not repeat them there
   const onStart = useRoute().world === 'start';
   return (
-    <header className="topbar">
+    <header className={`topbar${onStart ? ' topbar--start' : ''}`}>
       <button className="brand" onClick={() => navigate({ world: 'start' })} title="Zur Startwelt"><Logo /><div><b>3Druckwerkbank</b><span>Ideen. Machen. Erleben.</span></div></button>
       <button className={`glass chip ws-chip ws-chip--${workspace}`} onClick={() => openSheet({ kind: 'bereich' })} title={WORKSPACE_META[workspace].hint} aria-label={`Bereich: ${WORKSPACE_META[workspace].label}`}><i className="dot" />{WORKSPACE_META[workspace].short}</button>
       <button className="glass chip topbar__search desktop-only" onClick={() => setCommand(true)} aria-label="Suche öffnen (Strg+K)">

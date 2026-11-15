@@ -56,7 +56,7 @@
   var MOBIL = {
     root: '[data-wasser]',            // the element the look lives in (the CSS switch itself)
     /* Teil 1: drops */
-    scene: '.m-bg img',               // the painted image a drop that lies FREE over the scene bends (one image; if several match, the last one)
+    scene: '.m-bg img',               // the painted image a drop that lies FREE over the scene bends (if several match, the last one; while it is not yet opaque - the page fades it in over the one before - the drops blend the two by its opacity)
     shade: '.m-bg',                   // the element whose ::after darkens that image (a linear-gradient with four stops); the drops copy it. '' = the scene is not darkened
     drops: '.btn:not(.btn--ghost):not(.m-row .btn, .item .btn), .m-ico, .wa-tropfen',   // what becomes a drop (the same elements carry the block "Tropfen" in kern.css). Buttons that repeat per list row stay plain glass beads
     primary: 'btn--primary',          // CLASS of a drop of amber water (--wa-drop-amber); it also sends an amber ring
@@ -172,7 +172,7 @@
     var recs = new Map();               // button -> record
     var seedN = 0, frameNo = 0;
     var gl = null, glc = null, prog = null, U = {}, tex = null, texReady = false, lost = false, deriv = false, maxTex = 2048;
-    var scene = { el: null, src: '', nw: 1280, nh: 720, pos: null, wait: null };
+    var scene = { el: null, src: '', nw: 1280, nh: 720, pos: null, wait: null, blend: false };
     var store = new Map(), job = null, gen = 0, want = '', bad = new Set();   // the scene textures (address -> { tex, nw, nh }, the one used longest ago first), the scene being made, a count that makes older work stale (lost context, stop), the address the page shows now, addresses that could not be decoded
     W3.scenes = 0; W3.uploads = 0; W3.reused = 0; W3.warmed = 0; W3.resting = 0; W3.settling = 0;
     var NO_SHADE = [0, 0, 0.3, 0, 0.7, 0, 1, 0];
@@ -201,6 +201,9 @@
       'uniform vec2 uCtr;',     // button centre, screen css px
       'uniform float uZoom;',   // screen css px per local px (CSS zoom / transforms)
       'uniform vec4 uImg;',     // where the landscape image is painted: x, y, w, h in screen css px
+      'uniform sampler2D uTex2;',   // while the page fades a new picture in over the old one: the old one ...
+      'uniform vec4 uImg2;',    // ... where it is painted ...
+      'uniform float uMix;',    // ... and how much of the new one shows (its opacity; 1 = only the new one, the old one is not read)
       'uniform vec2 uBgY;',     // top and height of the darkening layer (option "shade"), for its gradient
       'uniform vec4 uG0;',      // darkening stops: pos0, a0, pos1, a1
       'uniform vec4 uG1;',      //                  pos2, a2, pos3, a3
@@ -291,12 +294,14 @@
       'vec3 scene(vec2 sp, float lod){',
       '  vec2 uv = (sp - uImg.xy)/uImg.zw;',
       '  vec3 c = texture2D(uTex, clamp(uv, 0., 1.), lod).rgb;',
+      '  if (uMix < 1.) c = mix(texture2D(uTex2, clamp((sp - uImg2.xy)/uImg2.zw, 0., 1.), lod).rgb, c, uMix);',
       '  return mix(c, uGCol, darkA(sp.y)*(1. - .5*uWet));',
       '}',
       // the landscape as a SHEET (card, panel) lets it through: as soft as the sheet's backdrop blur (about 32 local px
       // wide), with the page's full darkening
       'vec3 soft(vec2 sp){',
       '  vec3 c = texture2D(uTex, clamp((sp - uImg.xy)/uImg.zw, 0., 1.), 5. + log2(uPx)).rgb;',
+      '  if (uMix < 1.) c = mix(texture2D(uTex2, clamp((sp - uImg2.xy)/uImg2.zw, 0., 1.), 5. + log2(uPx)).rgb, c, uMix);',
       '  c = mix(c, uGCol, darkA(sp.y));',
       '  return mix(vec3(dot(c, vec3(.2126, .7152, .0722))), c, uSat);',   // the sheet mutes the colours behind it (backdrop-filter: saturate)
       '}',
@@ -453,7 +458,7 @@
       '  gl_FragColor = vec4(outC, outA);',
       '}'
     ].join('\n');
-    var UNI = ['uTex', 'uVp', 'uPx', 'uHalf', 'uRad', 'uCtr', 'uZoom', 'uImg', 'uBgY', 'uG0', 'uG1', 'uGCol', 'uTime', 'uSeed', 'uTint', 'uUnder', 'uWet', 'uLight', 'uSat', 'uVeil',
+    var UNI = ['uTex', 'uTex2', 'uImg2', 'uMix', 'uVp', 'uPx', 'uHalf', 'uRad', 'uCtr', 'uZoom', 'uImg', 'uBgY', 'uG0', 'uG1', 'uGCol', 'uTime', 'uSeed', 'uTint', 'uUnder', 'uWet', 'uLight', 'uSat', 'uVeil',
       'uPress', 'uRipA', 'uInk', 'uLab', 'uNbL', 'uNbR', 'uFlat'];
 
     /* ------------------------------------------------------------------ GL setup */
@@ -818,7 +823,7 @@
         if (still) { if (r.pv !== r.ptarget || r.ripT >= 0) { r.pv = r.ptarget; r.pvel = 0; r.ripT = -1; needOne = true; } }   // no spring, no ring: the pressed state is one still picture
         else if (r.vis && (r.ptarget >= 1 || Math.abs(r.pv - r.ptarget) > 0.002 || Math.abs(r.pvel) > 0.01 || r.ripT >= 0)) active = true;   // (a drop under a resting mouse has come to rest too: only a pressed one, a moving one or a ring keeps the fast pace)
       });
-      var flowing = !still && (speed > 0 || active), follow = now < followUntil;
+      var flowing = !still && (speed > 0 || active || scene.blend), follow = now < followUntil;   // (blend: the page is fading a new picture in - the drops follow at their resting pace, also when the water sleeps)
       var fps = active ? lv.fps : lv.idle;
       var timeDue = needOne || (flowing && now - lastFrame >= 1000 / fps - 3);
       var any = true;
@@ -927,6 +932,23 @@
       gl.viewport(0, 0, glc.width, glc.height); gl.disable(gl.SCISSOR_TEST); gl.clear(gl.COLOR_BUFFER_BIT); gl.enable(gl.SCISSOR_TEST);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex); gl.uniform1i(U.uTex, 0);
       gl.uniform4f(U.uImg, ir.left + (ir.width - dw) * fx, ir.top + (ir.height - dh) * fy, dw, dh);
+      // the page fades a new picture in over the old one (two images match option "scene", the newest not yet opaque): the
+      // drops blend the two by the newest one's opacity - read from its computed style, so they follow whatever the page's
+      // fade does. The old one must still be in the store (it is: it was the scene until now).
+      var under = null, mixv = 1, all = img && cfg.scene ? shell.querySelectorAll(cfg.scene) : [];
+      if (all.length > 1 && all[all.length - 1] === img) {
+        var op = parseFloat(getComputedStyle(img).opacity), bi = all[all.length - 2];
+        under = op < 0.999 ? store.get(bi.currentSrc || bi.src) || null : null;
+        if (under && under.tex === tex) under = null;
+        if (under) mixv = op >= 0 ? op : 1;
+      }
+      scene.blend = !!under;
+      gl.uniform1f(U.uMix, mixv);
+      if (under) {
+        var sc2 = Math.max(ir.width / under.nw, ir.height / under.nh), dw2 = under.nw * sc2, dh2 = under.nh * sc2;
+        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, under.tex); gl.uniform1i(U.uTex2, 1); gl.activeTexture(gl.TEXTURE0);
+        gl.uniform4f(U.uImg2, ir.left + (ir.width - dw2) * fx, ir.top + (ir.height - dh2) * fy, dw2, dh2);
+      } else { gl.uniform1i(U.uTex2, 0); gl.uniform4f(U.uImg2, 0, 0, 1, 1); }
       gl.uniform2f(U.uBgY, br.top, Math.max(1, br.height));
       var g = grad.stops;
       gl.uniform4f(U.uG0, g[0], g[1], g[2], g[3]); gl.uniform4f(U.uG1, g[4], g[5], g[6], g[7]);
@@ -1069,9 +1091,10 @@
       ['pointerup', 'pointercancel', 'dragend', 'keyup'].forEach(function (n) { on(window, n, release, cap); });
       on(window, 'blur', function (e) { if (e.target === window) release(); }, cap);   // the window lost focus (not: focus moved from one button to the next)
       on(window, 'keydown', function (e) { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { var b = mine(e.target); if (b) { press(b, null, null); wake(); } } }, cap);
-      // a card that slides or fades in carries its buttons along: follow until it has arrived
+      // a card that slides or fades in carries its buttons along: follow until it has arrived. And something the app lets
+      // leave (class wa-geht, kern.css "Gehen"): a row that runs out moves every drop below it
       ['animationstart', 'transitionstart'].forEach(function (n) {
-        on(window, n, function (e) { var t = e.target; if (shell && t && t.nodeType === 1 && t !== shell && shell.contains(t) && !recs.has(t) && t.querySelector(SEL)) { followUntil = performance.now() + 700; kick(); } }, cap);
+        on(window, n, function (e) { var t = e.target; if (shell && t && t.nodeType === 1 && t !== shell && shell.contains(t) && !recs.has(t) && (t.querySelector(SEL) || (t.classList && t.classList.contains('wa-geht')))) { followUntil = performance.now() + 700; kick(); } }, cap);
       });
       on(document, 'visibilitychange', function () { if (!document.hidden) { lastFrame = lastTick = performance.now(); wake(); } });
       if (mqReduce.addEventListener) on(mqReduce, 'change', kick);
@@ -1210,7 +1233,9 @@
         ::before) FLOWS over from the place of the old one - it stretches on the way and settles. A label that is
         chosen in addition (several may be chosen) wells up in place.
      2. Tropfen-Hinweis: the app removes a toast from one moment to the next; a copy of it stays for a quarter of a
-        second and leaves like a drop (class wa-geht, keyframes in kern.css).
+        second and leaves like a drop (class wa-geht, keyframes in kern.css). It is put where the toast stood, so a new
+        toast that replaces it lies on top (inert and aria-hidden: its button cannot be reached). (Sheets and rows the APP
+        lets leave itself - it keeps the real node: kern.css, "Gehen".)
      3. Pegel: when the level of a progress bar really changes (not the hair a running print moves every second), the
         water runs from the old level to the new one and swings in - the bar is already at its new width, the way
         there is a transform (scaleX from its left end).
@@ -1281,11 +1306,12 @@
     /* -- 2. a toast leaves like a drop -- */
     var ghosts = [];
     function drop(g) { var i = ghosts.indexOf(g); if (i >= 0) ghosts.splice(i, 1); if (g.parentNode) g.parentNode.removeChild(g); }
-    function leave(node, parent) {
+    function leave(node, parent, prev) {
       if (still() || !parent.isConnected || !inRoot(parent)) return;
       var g = node.cloneNode(true);
       g.classList.add(LEAVE); g.setAttribute('aria-hidden', 'true'); g.removeAttribute('role'); g.inert = true;
-      parent.appendChild(g); ghosts.push(g);
+      // where it stood: a toast that replaces it (the app gives each toast its own key) comes after it and lies on top
+      parent.insertBefore(g, prev && prev.parentNode === parent ? prev.nextSibling : parent.firstChild); ghosts.push(g);
       g.addEventListener('animationend', function () { drop(g); }); setTimeout(function () { drop(g); }, dur(T.leave) + 200);
     }
     function gone(ms) {
@@ -1293,7 +1319,7 @@
         m = ms[i]; if (m.type !== 'childList' || !m.removedNodes.length) continue;
         for (j = 0; j < m.removedNodes.length; j++) {
           n = m.removedNodes[j];
-          if (n.nodeType === 1 && n.matches(TOAST) && !n.classList.contains(LEAVE)) leave(n, m.target);
+          if (n.nodeType === 1 && n.matches(TOAST) && !n.classList.contains(LEAVE)) leave(n, m.target, m.previousSibling);
         }
       }
     }
