@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CHECKLISTS, type FileRef, type Project } from '../types';
 import { liveMode } from '../lib/cloud';
 import { useStore, suggestedProgress, availableGrams, printProgress } from '../store';
+import { weich, leer } from '../ui/gehen';
 import { Sheet } from '../ui/Sheet';
 import { Check, Progress, Stack } from '../ui/Glass';
 import { IPlus, IUp, IDown, IFlag, ICheck, IGit, IPrinter, IFile, ILayers, IHistory, ISkip, ISparkle, IImage, IWrench, ITrash } from '../ui/Icons';
@@ -45,8 +46,8 @@ export function TasksFull({ p }: { p: Project }) {
   return (
     <>
       <div className="list">
-        {tasks.length === 0 ? <p className="muted small">Keine Aufgaben.</p> : tasks.map((t, i) => (
-          <div key={t.id} className="item" style={{ padding: '6px 8px' }}>
+        {tasks.length === 0 ? <p {...leer()} className="muted small">Keine Aufgaben.</p> : tasks.map((t, i) => (
+          <div key={t.id} {...weich(t.id)} className="item" style={{ padding: '6px 8px' }}>
             <Check on={t.done} skip={t.skipped} onClick={() => s.toggleTask(t.id)} />
             <span className="grow small ellipsis" style={{ textDecoration: t.skipped ? 'line-through' : undefined, opacity: t.done || t.skipped ? .6 : 1 }}>{t.title}{t.kind !== 'allgemein' ? <span className="xs faint"> · {t.kind}</span> : null}</span>
             <button className="btn btn--icon btn--ghost" style={{ width: 24, height: 24 }} title="Überspringen" aria-label="Überspringen" onClick={() => s.skipTask(t.id)}><ISkip width={12} height={12} /></button>
@@ -153,7 +154,7 @@ export function FilesFull({ p }: { p: Project }) {
     <>
       {p.files.length === 0 ? <p className="muted small">Noch keine Dateien.</p> : (
         <div className="grid3">
-          {p.files.map((f) => <div key={f.id} className="col" style={{ alignItems: 'center', gap: 3 }} title={f.name}><div className="thumb" style={{ width: '100%', height: 64, borderRadius: 8 }}>{f.dataUrl ? <img src={f.dataUrl} alt="" /> : <span className="xs muted" style={{ textTransform: 'uppercase' }}>{f.kind}</span>}</div>{f.url ? <a className="xs ellipsis" style={{ maxWidth: '100%' }} href={f.url} download={f.name} title="Herunterladen">{f.name}</a> : <span className="xs ellipsis" style={{ maxWidth: '100%' }}>{f.name}</span>}<span className="row xs faint" style={{ gap: 4 }}>{f.size ? `${(f.size / 1e6).toFixed(1)} MB` : fmtDate(f.createdAt)}<button className="btn btn--icon btn--ghost" style={{ width: 20, height: 20 }} title="Datei entfernen" aria-label={`${f.name} entfernen`} onClick={() => { if (confirm(`„${f.name}“ aus dem Projekt entfernen?`)) removeFile(p.id, f.id); }}><ITrash width={11} height={11} /></button></span></div>)}
+          {p.files.map((f) => <div key={f.id} {...weich(f.id)} className="col" style={{ alignItems: 'center', gap: 3 }} title={f.name}><div className="thumb" style={{ width: '100%', height: 64, borderRadius: 8 }}>{f.dataUrl ? <img src={f.dataUrl} alt="" /> : <span className="xs muted" style={{ textTransform: 'uppercase' }}>{f.kind}</span>}</div>{f.url ? <a className="xs ellipsis" style={{ maxWidth: '100%' }} href={f.url} download={f.name} title="Herunterladen">{f.name}</a> : <span className="xs ellipsis" style={{ maxWidth: '100%' }}>{f.name}</span>}<span className="row xs faint" style={{ gap: 4 }}>{f.size ? `${(f.size / 1e6).toFixed(1)} MB` : fmtDate(f.createdAt)}<button className="btn btn--icon btn--ghost" style={{ width: 20, height: 20 }} title="Datei entfernen" aria-label={`${f.name} entfernen`} onClick={() => { if (confirm(`„${f.name}“ aus dem Projekt entfernen?`)) removeFile(p.id, f.id); }}><ITrash width={11} height={11} /></button></span></div>)}
         </div>
       )}
       <div className="row" style={{ flexWrap: 'wrap' }}>

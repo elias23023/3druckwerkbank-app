@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useStore, printProgress, printRemainingMin, availableGrams } from '../store';
+import { weich, leer } from '../ui/gehen';
 import { useShallow } from 'zustand/react/shallow';
 import { useNow, greeting, sameDay, type DayPhase } from '../lib/time';
 import { fmtDuration, fmtNum, fmtTime, relTime, fmtGrams, fmtDate } from '../lib/format';
@@ -59,8 +60,8 @@ export function Heute({ phase }: { phase: DayPhase }) {
       </Panel>
 
       <Panel title="Aufgaben heute" icon={<ICheck />} right={<span className="pill xs">{open.length}</span>} delay={120}>
-        {open.length === 0 ? <p className="muted small">Alles erledigt. Schöner Tag.</p> : open.slice(0, 5).map((t) => (
-          <div key={t.id} className="item" style={{ padding: '6px 8px' }}>
+        {open.length === 0 ? <p {...leer()} className="muted small">Alles erledigt. Schöner Tag.</p> : open.slice(0, 5).map((t) => (
+          <div key={t.id} {...weich(t.id, () => !useStore.getState().tasks.some((x) => x.id === t.id && !x.done && !x.skipped))} className="item" style={{ padding: '6px 8px' }}>
             <Check on={t.done} onClick={() => toggleTask(t.id)} />
             <div className="grow col" style={{ gap: 1 }}>
               <span className="small ellipsis">{t.title}</span>
@@ -100,7 +101,7 @@ export function Heute({ phase }: { phase: DayPhase }) {
           <button className="btn btn--sm btn--ghost" style={{ alignSelf: 'flex-start' }} onClick={() => navigate({ world: 'material' })}>Material ansehen</button>
         </Panel>
         <Panel title="Wartung" icon={<IWrench />} delay={280}>
-          {due.length === 0 ? <p className="muted small">Nichts fällig.</p> : due.map(({ d, m }) => <div key={m.id} className="row small"><Check on={m.done} onClick={() => toggleMaintenance(d.id, m.id)} /><div className="col grow" style={{ gap: 0 }}><span className="ellipsis">{d.name}: {m.title}</span><span className={`xs ${new Date(m.due).getTime() < now.getTime() ? 'pill pill--warn' : 'muted'}`} style={{ alignSelf: 'flex-start' }}>{new Date(m.due).getTime() < now.getTime() ? 'überfällig' : relTime(m.due, now.getTime())}</span></div></div>)}
+          {due.length === 0 ? <p {...leer()} className="muted small">Nichts fällig.</p> : due.map(({ d, m }) => <div key={m.id} {...weich(m.id, () => !useStore.getState().devices.some((x) => x.maintenance.some((y) => y.id === m.id && !y.done)))} className="row small"><Check on={m.done} onClick={() => toggleMaintenance(d.id, m.id)} /><div className="col grow" style={{ gap: 0 }}><span className="ellipsis">{d.name}: {m.title}</span><span className={`xs ${new Date(m.due).getTime() < now.getTime() ? 'pill pill--warn' : 'muted'}`} style={{ alignSelf: 'flex-start' }}>{new Date(m.due).getTime() < now.getTime() ? 'überfällig' : relTime(m.due, now.getTime())}</span></div></div>)}
         </Panel>
         <Panel title="Druckfenster" icon={<IEnergy />} delay={320}>
           <div className="row"><ISun width={30} height={30} style={{ color: '#ffd77a' }} /><div className="col" style={{ gap: 1 }}><b className="small">{windowText}</b><span className="xs muted">{pv ? `ab ${fmtTime(pv.start)} Uhr · ≈ ${fmtNum(pv.kwh, 1)} kWh Solar` : dry ? `Trocken ab ${fmtTime(dry.start)}` : 'PV-Schätzung aus Globalstrahlung'}</span></div></div>

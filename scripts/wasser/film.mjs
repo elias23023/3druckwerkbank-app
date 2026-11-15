@@ -1,7 +1,8 @@
 // Motion as pictures: filmstrips from the REAL app at phone size (390 x 844 @2x) - each motion as five to seven stills at
 // fixed times, side by side, the time under each still. Motion cannot be judged from one still.
 //
-//   node scripts/wasser/film.mjs <out-dir> [--look vorlage|<folder>] [--engine chromium|webkit] [--ton klar] [--nur ruhe,tab,...] [--reduced] [--fest]
+//   node scripts/wasser/film.mjs <out-dir> [--look auto|eingebaut|vorlage|<folder>] [--engine chromium|webkit] [--ton klar] [--nur ruhe,tab,...] [--reduced] [--fest]
+//   (--look: head of lib.mjs. Default auto = the look the app has built in.)
 //
 //   ruhe    a screen at rest over 4 s (real time), with the amplified difference to the first still below
 //   tab     the marker flows to another tab, the cards of the new screen arrive, their light swings into place
@@ -18,11 +19,11 @@
 // Writes <out>/<name>.png (the strip), <out>/<name>-<n>.png (its stills) and returns / prints which animations it found.
 // Needs the app's preview (npm run build && npm run preview).
 import fs from 'fs'; import { fileURLToPath } from 'url';
-import { session, strip, args, mkdir, abs } from './lib.mjs';
+import { session, strip, args, mkdir, abs, lookArg, sayLook, fail, ENGINES } from './lib.mjs';
 export const STRIPS = ['ruhe', 'tab', 'druck', 'scroll', 'bogen', 'haken'];
 
-export async function film(s, out, { look = 'vorlage', ton = '', reduced = false, fest = false, nur = STRIPS, zeit = '2026-11-12T17:42:00+01:00', strips = true } = {}) {
-  mkdir(out); const app = await s.app({ look, ton, reduced, zeit }); const p = app.page; const found = {}; const frames = {}; const boxes = {};
+export async function film(s, out, { look = 'auto', ton = '', reduced = false, fest = false, nur = STRIPS, zeit = '2026-11-12T17:42:00+01:00', strips = true } = {}) {
+  mkdir(out); const app = await s.app({ look, ton, reduced, zeit }); const p = app.page; sayLook(app); const found = {}; const frames = {}; const boxes = {};
   await p.evaluate(() => { const st = window.setTimeout; window.setTimeout = (f, t, ...a) => (t === 1700 ? 0 : st(f, t, ...a)); });   // the ring's own clean-up timer (RING_LIFE) would remove it while we look at it
   const T = ton === 'klar' ? ' (Ton klar)' : ''; let cur = '', n = 0;
   const begin = (name) => { cur = name; n = 0; frames[name] = []; boxes[name] = []; };
@@ -108,9 +109,10 @@ export async function film(s, out, { look = 'vorlage', ton = '', reduced = false
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const a = args({ look: 'vorlage', engine: 'chromium', ton: '', nur: STRIPS.join(',') }); if (!a._[0]) { console.log('usage: node scripts/wasser/film.mjs <out-dir> [--look vorlage|<folder>] [--engine chromium|webkit] [--ton klar] [--nur ruhe,tab,druck,scroll,bogen,haken] [--reduced] [--fest]'); process.exit(1); }
+  const a = args({ look: 'auto', engine: 'chromium', ton: '', nur: STRIPS.join(',') }, { flags: ['reduced', 'fest'], choices: { engine: ENGINES, ton: ['dunkel', 'klar'], nur: STRIPS } }); if (a._.length !== 1) fail('usage: node scripts/wasser/film.mjs <out-dir> [--look auto|eingebaut|vorlage|<folder>] [--engine chromium|webkit] [--ton klar] [--nur ruhe,tab,druck,scroll,bogen,haken] [--reduced] [--fest]', 1);
+  const look = lookArg(a.look); if (!look) fail('--look ohne: there is no motion of the look to film without the look');
   const s = await session({ engine: a.engine }); const out = abs(a._[0]);
-  const r = await film(s, out, { look: a.look, ton: a.ton, reduced: !!a.reduced, fest: !!a.fest, nur: a.nur.split(',') });
+  const r = await film(s, out, { look, ton: a.ton, reduced: !!a.reduced, fest: !!a.fest, nur: a.nur.split(',') });
   for (const [name, f] of Object.entries(r.found)) console.log(name.padEnd(7), f);
   if (r.errors.length) console.log('errors', r.errors.slice(0, 4));
   fs.writeFileSync(`${out}/film.txt`, Object.entries(r.found).map(([n, f]) => `${n}: ${f}`).join('\n') + '\n');

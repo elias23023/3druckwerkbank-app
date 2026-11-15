@@ -2,15 +2,16 @@
 
 **Die Anleitung zum Ansehen, Anwenden und Einbauen ist [`docs/Wasser-Look.md`](../../Wasser-Look.md)** – Bausteine mit
 Rezepten, Dosierung, Töne, Bewegung, der Fahrplan für den Einbau in die App, Fallstricke, offene Punkte. Dort steht
-auch der aktuelle Stand (14.11.: am Handy eingebaut und live, der Desktop in Arbeit) und was der Besitzer seither
+auch der aktuelle Stand (14.11.: am Handy und am Desktop eingebaut und live) und was der Besitzer seither
 entschieden hat. Dieses Blatt sagt nur, was in diesem Ordner liegt und was an der Vorlage zuletzt geprüft wurde.
 
-Stand 14.11. Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann – jetzt als
+Stand 15.11., früh: Der Feinschliff (Tempo, „klar“, weiches Gehen, Reiterwechsel) ist auf dem Branch `wasser-look` fertig und abschließend geprüft, aber nicht live. Stand 14.11.: Der fertige Wasser-Look als Vorlage, die man auf weitere Teile der App anwenden kann – jetzt als
 **zwei Vorlagen zum Ansehen: Handy und Desktop**.
-**Dieser Ordner ist die Vorlage, nicht der Einbau**: Build und Website laden diese Dateien nicht. Die Vorlage wird von
-außen dazugeladen (Vorschauseite) oder in die laufende App eingespielt (Werkzeuge). In die App kommt sie über Kopien in
-`src/wasser/` (`node scripts/wasser/uebernehmen.mjs`): am Handy geschehen und seit 14.11. live, am Desktop in Arbeit –
-Stand und Fahrplan: `docs/Wasser-Look.md`, Abschnitt 8. Auf diesem Branch ist der App-Code noch der ohne Look.
+**Dieser Ordner ist die Vorlage, nicht der Einbau**: Build und Website laden diese Dateien nicht. Die App lädt Kopien
+davon aus `src/wasser/` (`node scripts/wasser/uebernehmen.mjs` holt sie, danach `npm run build`): am Handy und am
+Desktop geschehen und seit 14.11. live. **Geändert wird immer hier, nie in den Kopien.** Die Vorschauseite lädt die
+Vorlage von außen; die Werkzeuge messen in der App den eingebauten Look und setzen auf Wunsch (`--look`) eine Kopie
+der Vorlage an seine Stelle. Stand und Fahrplan: `docs/Wasser-Look.md`, Abschnitt 8.
 
 ## Was hier liegt
 
@@ -19,7 +20,7 @@ Stand und Fahrplan: `docs/Wasser-Look.md`, Abschnitt 8. Auf diesem Branch ist de
 | `kern.css` | Der Look selbst, für Handy und Desktop gleich: Schalter, die zwei Töne, alle Werte (`--wa-…`), die Bewegungssprache und die **Bausteine** (Tropfen, Becken, stilles Wasser, dichtes Wasser, Bogen, Mulde, Etikett, Feld, Wahl, Haken, Pegel, Perle, Ring, Markierung, Wasserlinie, Licht …). |
 | `mobil.css` | Was nur die mobile Ansicht braucht: Seitenabdunklung, Maße der Karten, Menüleiste, Bogen am unteren Rand. |
 | `desktop.css` | Was nur die Desktop-Ansicht braucht: flache Becken für die Panels, das Dock mit der fließenden Perle, die Schublade von rechts, Antwort auf den Mauszeiger. |
-| `wasser.js` | Das Skript: Wassertropfen (WebGL), Ring, fließende Markierung, Licht, Antwort aufs Scrollen, gemeinsames Ruhen. Zwei Befehle: `Wasser.start(optionen)` und `Wasser.stop()`; `Wasser.DESKTOP` sind die Angaben für den Desktop. |
+| `wasser.js` | Das Skript: Wassertropfen (WebGL), Ring, fließende Markierung, Licht, Antwort aufs Scrollen, gemeinsames Ruhen. Zwei Befehle: `Wasser.start(optionen)` und `Wasser.stop()`; `Wasser.DESKTOP` sind die Angaben für den Desktop. Dazu `Wasser.warm(bilder)`: Szenen, die die Seite später zeigt (die anderen Reiter), werden vorab für die Tropfen bereitgemacht. |
 | `NOTIZEN.md` | Das Notizbuch der Erbauer (englisch): alle Zahlen, Gründe und Messungen. Zum Anwenden zuerst die Anleitung `docs/Wasser-Look.md` lesen. |
 
 Die Werkzeuge: `scripts/wasser/`. Bilder der Desktop-Vorlage: `docs/wasser-look/bilder/desktop/` (siehe unten).
@@ -52,15 +53,17 @@ freigegebene Stand, mit dem die Vorlage verglichen wird).
 
 ```
 npm run build
-node scripts/wasser/desktop.mjs zeigen
+node scripts/wasser/desktop.mjs zeigen --look vorlage
 ```
 
-dann http://localhost:4320 öffnen. Das ist die gebaute App mit der Vorlage obendrauf; an der App wird nichts geändert.
+dann http://localhost:4320 öffnen. Das ist die gebaute App, in der die Vorlage an der Stelle des eingebauten Looks
+steht (eine Änderung an der Vorlage zeigt sich nach dem Neuladen, ohne zu bauen); an der App wird nichts geändert.
+Ohne `--look vorlage` zeigt `zeigen` die App, wie sie gebaut ist – dasselbe wie `npm run preview`.
 
 - breites Fenster = Desktop-Vorlage, schmales Fenster (unter 900 px) = Handy-Vorlage – **beide Vorlagen in einem Fenster**
 - der Ton folgt der Einstellung „Erscheinungsbild“ der App: **Dunkel → „dunkel“, Hell → „klar“, Automatisch → nach
-  Tageszeit**. Fest wählen: `?ton=klar` oder `?ton=dunkel` an die Adresse hängen
-- `?ohne=1` – die App wie heute (zum Vergleichen), `?weich=aus` – die Vorlage ohne Weichzeichner (falls es ruckelt),
+  Tageszeit**. `?ton=klar` oder `?ton=dunkel` an der Adresse stellt diese Einstellung um
+- `?ohne=1` – die App ohne Look (zum Vergleichen), `?weich=aus` – die Vorlage ohne Weichzeichner (falls es ruckelt),
   `?leben=1.5` – mehr Licht in Ruhe
 
 **Bilder:** `docs/wasser-look/bilder/desktop/` –
@@ -95,7 +98,7 @@ dann http://localhost:4320 öffnen. Das ist die gebaute App mit der Vorlage oben
 ```
 node scripts/wasser/desktop.mjs bild /tmp/desktop --alles          # Standbilder: Welten, Bögen, Suche, Hinweis (--ton klar --zeit tag --format 1920)
 node scripts/wasser/desktop.mjs film /tmp/desktop-film             # Bewegung als Bildstreifen
-node scripts/wasser/desktop.mjs pruefen                            # 24 Prüfungen (Tropfen, Dock, Schublade, Maus, Ruhe, „nichts ist verrückt“, „nichts springt beim Drücken“)
+node scripts/wasser/desktop.mjs pruefen                            # 27 Prüfungen (Tropfen, Dock, Schublade, Maus, Ruhe, „nichts ist verrückt“, „nichts springt beim Drücken“)
 node scripts/wasser/desktop.mjs kontrast                           # Lesbarkeit: beide Töne, Nacht und Tag
 node scripts/wasser/desktop.mjs takt                               # Was der Look kostet (Bilder je Sekunde)
 node scripts/wasser/desktop.mjs clip /tmp/desktop.mp4              # der Rundgang als Film
@@ -120,8 +123,9 @@ dann im Browser mit schmalem Fenster (oder Handy-Ansicht der Entwicklerwerkzeuge
 
 Mit `npm run dev` geht dieselbe Seite unter http://localhost:5173/scripts/wasser/mobil.html.
 
-Die Vorschauseite ist ein Nachbau des mobilen Bildschirms mit den echten Stylesheets der App. Den Look **in der echten
-App** zeigen die Werkzeuge (sie spielen ihn in die gebaute App ein, ohne sie zu ändern):
+Die Vorschauseite ist ein Nachbau des mobilen Bildschirms mit den echten Stylesheets der App; sie beginnt wie „Start“
+mit der Tageskarte und ist darum länger als ein Handy. Den Look **in der echten App** zeigen die Werkzeuge (den
+eingebauten; mit `--look vorlage` die Vorlage an seiner Stelle):
 
 ```
 npm run build && npm run preview                 # die App unter http://localhost:4173 (in einem zweiten Fenster laufen lassen)
@@ -134,8 +138,11 @@ node scripts/wasser/leben.mjs /tmp/leben --werte 1,1.5   # zwei Werte von „Leb
 ## Prüfen (nach jeder Änderung an der Vorlage)
 
 ```
+node scripts/wasser/uebernehmen.mjs && npm run build   # die Änderung in die App holen: Die Werkzeuge prüfen dort den eingebauten Look
+node scripts/wasser/sollist.mjs --soll git:HEAD        # Hat sich in der App sonst etwas geändert? Handy und Desktop, Bildpunkt für Bildpunkt (vor dem Commit)
 node scripts/wasser/vergleich.mjs     # Ist es noch der freigegebene Look? Bildpunkt für Bildpunkt und Stil für Stil
 node scripts/wasser/pruefen.mjs --app # Funktioniert alles? Tropfen, Ring, Markierung, Bausteine, Ruhe, Start/Stopp, Zug, Töne
+node scripts/wasser/desktop.mjs pruefen   # dasselbe am Desktop, dazu „nichts ist verrückt“ und „nichts springt beim Drücken“
 node scripts/wasser/kontrast.mjs --app  # Ist die Schrift lesbar? (Kontrast in beiden Tönen)
 node scripts/wasser/messen.mjs ruhe   # Lebt es in Ruhe, und bleibt es ruhig?
 ```
@@ -217,3 +224,29 @@ eine kurze Wartezeit beim Reiterwechsel (`docs/Wasser-Look.md`, Abschnitt 8, Sch
 nichts. **Auf einer echten Grafikkarte lief der Desktop noch nie** (die Arbeitsmaschine zeichnet den Desktop von heute
 mit 9 bis 11 Bildern je Sekunde, die Vorlage mit 8). Womit man anfängt und welche eine Zeile man jeweils ändert, steht
 in `NOTIZEN.md`: Abschnitt 13 fürs Handy, Abschnitt 11.5 für den Desktop.
+
+**Die Werkzeuge nach dem Einbau (14.11., nachmittags):** Seit der Look in die App eingebaut ist, messen die Werkzeuge
+den eingebauten Look, statt die Vorlage daraufzulegen; `--look <Ordner>` setzt eine Kopie an seine Stelle; den Ton
+wählen sie über die Einstellung der App; ein falsch geschriebener Schalter beendet jedes Werkzeug. Neu ist
+`sollist.mjs` (zwei Stände der App, Bildpunkt für Bildpunkt). An der Vorlage geändert: `desktop.css` nennt die drei
+Klassen des Einbaus selbst (die Brücke `src/wasser/einbau.css` ist aufgelöst), dazu Kommentare. Die Vorschauseite
+beginnt mit der Tageskarte. Was dabei geprüft wurde: `docs/Wasser-Look.md`, Abschnitt 11.
+
+**Tempo und „klar“ (14.11., abends; Entscheidungen 7 und 8 – der Besitzer hat beides noch nicht gesehen):** Die
+wandernden Lichter laufen etwa 1,4-mal so schnell (17 / 24 / 29 / 33 s statt 24 / 34 / 40 / 46 s; die Stärke bleibt 1).
+Der Ton „klar“ ist durchsichtiger: weniger Tiefe in der Mitte der Karten und Panels, am Desktop dunkelt ein Panel die
+Landschaft weniger ab. Damit die Titel der Panels auch an einem Wintertag lesbar bleiben, liegt im Ton „klar“ ein
+weicher Schatten über dem Kopf jedes Panels (auf der Tageskarte unter Gruß, Uhr und Datum); Dock, Wetterzeichen und
+Suche behalten ihre Abdunkelung. Zwei neue Werte je Ton (`--wa-weit-grund-panel`, `--wa-weit-kopf`), „dunkel“ bleibt
+durch den Ton Bildpunkt für Bildpunkt gleich (nur das Tempo ändert dort hinter zwei Bögen das Wasser zweier Tropfen um
+1 von 255). Bilder vorher/nachher und der Film zum Tempo: `docs/wasser-look/entwurf/tempo-und-ton/`;
+Werte, Zahlen und wie man sie zurückdreht: `docs/Wasser-Look.md`, Abschnitt 8, Schritte 9 und 10.
+
+**Weiches Gehen und Abschluss (15.11., früh; Entscheidung 10 – der Besitzer hat es noch nicht gesehen):** Bögen,
+Schubladen und die Suche schließen weich, abgehakte oder entfernte Zeilen gehen weich, ein Hinweis ersetzt den anderen
+weich (Block „Gehen“ in `kern.css`; die App behält das gehende Element dafür kurz als Bild, `src/ui/gehen.ts`). Danach
+haben zwei Kontrollen nachgebessert (`NOTIZEN.md`, Abschnitt 17), und eine letzte, unabhängige Prüfung hat den ganzen
+Feinschliff gegen den Stand davor gehalten (`NOTIZEN.md`, Abschnitt 18): alle Prüfungen bestanden, keine Schrift unter
+ihrer Grenze, „dunkel“ in Ruhe Bildpunkt für Bildpunkt gleich, keine Insel neu verdeckt. Bilder und Filme für den
+Besitzer: `docs/wasser-look/entwurf/abschluss/`. Auf einem echten Handy, auf einer echten Grafikkarte und in Safari
+lief der Feinschliff noch nie.

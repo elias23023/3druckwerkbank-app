@@ -1,17 +1,19 @@
 # Wasser-Look: Anleitung
 
-Stand 14.11., 12:30 Uhr. Für alle, die den Wasser-Look ansehen, anwenden oder weiter in die App einbauen.
-**Am Handy ist der Look eingebaut und live** (seit 14.11.; Commit `c7e8299`, seither auf `main`). **Der Desktop ist in Arbeit** (Branch `welt/wasser-desktop`) und bleibt unverändert, bis der Besitzer ihn an seinem Bildschirm gesehen hat. Was getan ist und was als Nächstes kommt: Abschnitt 8. Der Stand bewegt sich – 8.1 sagt, wie man ihn nachsieht.
+Stand 15.11., früh morgens: **Der Feinschliff ist fertig und abschließend geprüft** (Schritte 8 bis 11, Abschnitt 8 und 11; nichts davon ist live, der Besitzer hat ihn noch nicht gesehen). Für alle, die den Wasser-Look ansehen, anwenden oder weiter an ihm bauen.
+**Der Look ist in die App eingebaut, am Handy und am Desktop** (`src/wasser/`), und live: das Handy seit 14.11. vormittags, der Desktop seit 14.11. gegen 13 Uhr (Entscheidung 13; Stand `9c4afa7`). Dieser Branch (`wasser-look`) trägt den Feinschliff danach; `main` ist inzwischen eigene Wege gegangen (8.1). Was getan ist und was als Nächstes kommt: Abschnitt 8. Der Stand bewegt sich – 8.1 sagt, wie man ihn nachsieht.
+**Die Werkzeuge messen seit dem Einbau den eingebauten Look** – nicht mehr die Vorlage, die sie obendrauf legen. Was `--look` jetzt heißt: 8.3.
 
 | Was | Wo |
 |---|---|
 | Die Vorlage (drei Stylesheets, ein Skript) | `docs/wasser-look/vorlage/`: `kern.css`, `mobil.css`, `desktop.css`, `wasser.js` |
-| Die Werkzeuge (ansehen, prüfen, messen) | `scripts/wasser/` – jede Datei erklärt sich in ihrem Kopf |
+| Die Kopien, die die App lädt | `src/wasser/` – nie von Hand ändern: `node scripts/wasser/uebernehmen.mjs` holt sie aus der Vorlage |
+| Die Werkzeuge (ansehen, prüfen, messen, vergleichen) | `scripts/wasser/` – jede Datei erklärt sich in ihrem Kopf. Ein falsch geschriebener Schalter beendet jedes Werkzeug mit einer Meldung |
 | Die Bilder | `docs/wasser-look/bilder/mobil/`, `…/desktop/`, `…/anleitung/` |
 | Die Entscheidungen des Besitzers | `docs/wasser-look/entwurf/entscheidungen.md` – gehen allem anderen vor |
 | Das Notizbuch der Erbauer (englisch, alle Zahlen) | `docs/wasser-look/vorlage/NOTIZEN.md` |
 
-Inhalt: [1 Was der Look ist](#1-was-der-look-ist) · [2 Entscheidungen](#2-entscheidungen-des-besitzers-binden-alle) · [3 Ansehen](#3-beide-vorlagen-ansehen-ohne-die-app-anzufassen) · [4 Bausteine](#4-die-bausteine) · [5 Dosierung](#5-dosierung) · [6 Töne](#6-töne-und-modi) · [7 Bewegung](#7-bewegung) · [8 Fahrplan](#8-fahrplan-der-look-in-der-app) · [9 Fallstricke](#9-fallstricke) · [10 Offen](#10-ungeprüft-und-offen) · [11 Geprüft](#11-was-an-dieser-anleitung-geprüft-wurde)
+Inhalt: [1 Was der Look ist](#1-was-der-look-ist) · [2 Entscheidungen](#2-entscheidungen-des-besitzers-binden-alle) · [3 Ansehen](#3-den-look-ansehen) · [4 Bausteine](#4-die-bausteine) · [5 Dosierung](#5-dosierung) · [6 Töne](#6-töne-und-modi) · [7 Bewegung](#7-bewegung) · [8 Fahrplan](#8-fahrplan-der-look-in-der-app) · [9 Fallstricke](#9-fallstricke) · [10 Offen](#10-ungeprüft-und-offen) · [11 Geprüft](#11-was-an-dieser-anleitung-geprüft-wurde)
 
 Alle Befehle laufen aus dem Projektordner. Ausgaben gehen nach `screenshots/` (nicht im Git).
 
@@ -38,10 +40,12 @@ Alle Befehle laufen aus dem Projektordner. Ausgaben gehen nach `screenshots/` (n
 | **Handy**, die kleinen Bausteine | [dunkel-alles](wasser-look/bilder/mobil/dunkel-alles.webp) | [klar-alles](wasser-look/bilder/mobil/klar-alles.webp) |
 | **Desktop**, 2000 × 993 | [Start](wasser-look/bilder/desktop/dunkel-1-start.webp) · [Heute](wasser-look/bilder/desktop/dunkel-2-heute.webp) · [Projekte](wasser-look/bilder/desktop/dunkel-3-projekte.webp) · [Innenwelt](wasser-look/bilder/desktop/dunkel-4-innenwelt.webp) · [3D-Druck](wasser-look/bilder/desktop/dunkel-5-druck.webp) · [Material](wasser-look/bilder/desktop/dunkel-6-material.webp) · [Wetter](wasser-look/bilder/desktop/dunkel-7-wetter.webp) · [Archiv](wasser-look/bilder/desktop/dunkel-8-archiv.webp) | [Heute bei Tag](wasser-look/bilder/desktop/klar-heute.webp) · [Heute bei Nacht](wasser-look/bilder/desktop/klar-heute-nacht.webp) · [Projekte](wasser-look/bilder/desktop/klar-projekte.webp) · [Wetter](wasser-look/bilder/desktop/klar-wetter.webp) |
 | **Desktop**, 1920 × 1080 | [Material](wasser-look/bilder/desktop/format-1920-material.webp) · [Innenwelt](wasser-look/bilder/desktop/format-1920-innenwelt.webp) | |
-| **Desktop**, heute gegen Vorlage | [Heute](wasser-look/bilder/desktop/vorher-nachher-heute.webp) · [Schublade](wasser-look/bilder/desktop/vorher-nachher-bogen.webp) | [bei Tag](wasser-look/bilder/desktop/vorher-nachher-tag.webp) |
+| **Desktop**, heute gegen Vorlage | [Heute](wasser-look/bilder/desktop/vorher-nachher-heute.webp) · [Schublade](wasser-look/bilder/desktop/vorher-nachher-bogen.webp) | [bei Tag](wasser-look/bilder/desktop/vorher-nachher-tag.webp) (unten noch das „klar“ vor dem 14.11. abends) |
+| **Handy**, „klar“ vorher / nachher (14.11. abends, Schritt 10) | | Mittag: [Start](wasser-look/entwurf/tempo-und-ton/handy-tag-start.webp) · [Heute](wasser-look/entwurf/tempo-und-ton/handy-tag-heute.webp) · [Projekte](wasser-look/entwurf/tempo-und-ton/handy-tag-projekte.webp) · [Bogen](wasser-look/entwurf/tempo-und-ton/handy-tag-bogen.webp) – Nacht: [Start](wasser-look/entwurf/tempo-und-ton/handy-nacht-start.webp) · [Heute](wasser-look/entwurf/tempo-und-ton/handy-nacht-heute.webp) · [Projekte](wasser-look/entwurf/tempo-und-ton/handy-nacht-projekte.webp) · [Bogen](wasser-look/entwurf/tempo-und-ton/handy-nacht-bogen.webp) |
+| **Desktop**, „klar“ vorher / nachher (14.11. abends, Schritt 10) | | Mittag: [Start](wasser-look/entwurf/tempo-und-ton/desktop-tag-start.webp) · [Heute](wasser-look/entwurf/tempo-und-ton/desktop-tag-heute.webp) · [Projekte](wasser-look/entwurf/tempo-und-ton/desktop-tag-projekte.webp) – Nacht: [Start](wasser-look/entwurf/tempo-und-ton/desktop-nacht-start.webp) · [Heute](wasser-look/entwurf/tempo-und-ton/desktop-nacht-heute.webp) · [Projekte](wasser-look/entwurf/tempo-und-ton/desktop-nacht-projekte.webp) |
 
 Bewegung als Bildstreifen: Handy [Reiterwechsel](wasser-look/bilder/mobil/film-tab.webp), [Knopfdruck mit Ring](wasser-look/bilder/mobil/film-druck.webp), [Bogen steigt](wasser-look/bilder/mobil/film-bogen.webp); Desktop [Dock, Schublade, Ruhe](wasser-look/bilder/desktop/film-1.webp), [Ring, Mauszeiger](wasser-look/bilder/desktop/film-2.webp), [Pfeil, Lauflinie](wasser-look/bilder/desktop/film-3.webp).
-Filme: [mobil.mp4](wasser-look/bilder/mobil/mobil.mp4), [desktop.mp4](wasser-look/bilder/desktop/desktop.mp4) – auf der Arbeitsmaschine aufgenommen, daher ruckelig.
+Filme: [mobil.mp4](wasser-look/bilder/mobil/mobil.mp4), [desktop.mp4](wasser-look/bilder/desktop/desktop.mp4) – auf der Arbeitsmaschine aufgenommen, daher ruckelig; sie zeigen noch das Tempo und das „klar“ vor dem 14.11. abends. Das Tempo der Lichter, bisher gegen neu (Schritt 9): [tempo.mp4](wasser-look/entwurf/tempo-und-ton/tempo.mp4), als Bildstreifen [tempo.webp](wasser-look/entwurf/tempo-und-ton/tempo.webp).
 
 ---
 
@@ -55,35 +59,43 @@ Quelle: `docs/wasser-look/entwurf/entscheidungen.md`. Bei Widerspruch gilt die E
 4. **Beide Töne bleiben, als die zwei Modi der App.** Dunkler Modus = Ton „dunkel“. Heller Modus = Ton „klar“. Die Einstellung „Erscheinungsbild“ wählt ihn, auf Handy und Desktop: Dunkel → „dunkel“, Hell → „klar“, Automatisch → nach dem Look der Stunde (`DARK_LOOKS` in `src/scene/looks.ts`). Das alte helle Thema der App (helle Flächen, dunkle Schrift, `:root[data-theme="hell"]`) ist **nicht** der helle Modus.
 5. **Alles ist bewegt, aber ruhig:** lebt in Ruhe, antwortet auf Berührung und Scrollen. Aus bei reduzierter Bewegung.
 6. **Erst die Vorlage.** Zwei Vorlagen zum Ansehen (Handy, Desktop) mit Anleitung; die App wird erst geändert, wenn er es sagt. (Fürs Handy hat er es gesagt: Nummer 9.)
-7. **Leben in Ruhe: Die Stärke bleibt 1, das Tempo wird ein wenig schneller** (14.11.). Ein wenig schneller als gebaut (24 / 34 / 40 / 46 s je Runde), deutlich weniger als der gezeigte 2,5-fache Versuch. Bauen und ihm zeigen, bevor es live geht.
-8. **Der helle Modus („klar“) wird ein wenig durchsichtiger** (14.11.). „Heller“ heißt: mehr von der Szene durch das Wasser, nicht eine hellere Farbe. Vorerst nur „klar“; „dunkel“ bleibt. Am Desktop, wahrscheinlich auch am Handy. Innerhalb der Grenzen der Lesbarkeit (Titel 7, Text 4,5, Platzhalter 3). Bauen und ihm zeigen.
+7. **Leben in Ruhe: Die Stärke bleibt 1, das Tempo wird ein wenig schneller** (14.11.). Ein wenig schneller als gebaut (24 / 34 / 40 / 46 s je Runde), deutlich weniger als der gezeigte 2,5-fache Versuch. Bauen und ihm zeigen, bevor es live geht. **Gebaut am 14.11. abends:** 17 / 24 / 29 / 33 s (etwa 1,4-mal so schnell; Schritt 9) – er hat es noch nicht gesehen.
+8. **Der helle Modus („klar“) wird ein wenig durchsichtiger** (14.11.). „Heller“ heißt: mehr von der Szene durch das Wasser, nicht eine hellere Farbe. Vorerst nur „klar“; „dunkel“ bleibt. Am Desktop, wahrscheinlich auch am Handy. Innerhalb der Grenzen der Lesbarkeit (Titel 7, Text 4,5, Platzhalter 3). Bauen und ihm zeigen. **Gebaut am 14.11. abends**, am Handy und am Desktop (Schritt 10) – er hat es noch nicht gesehen.
 9. **Die Handy-Version ist live** (14.11.). Der Desktop bleibt unverändert, bis er den Desktop-Einbau an seinem eigenen Bildschirm gesehen hat.
 10. **Weiches Gehen** (14.11.): Bögen und Schubladen sollen weich schließen, abgehakte oder entfernte Zeilen weich verschwinden. Das braucht kleine Änderungen in der App und wird nach den Einbauten gebaut, für Handy und Desktop.
 11. **Erster Lauf am echten Handy** (14.11., Baustelle): „läuft … alles sehr schön flüssig“. Offen: Nach dem Tipp auf einen Reiter dauert es einen Moment, bis der Bildschirm wechselt – ansehen und kürzen, oder wenigstens sofort unter dem Finger beantworten.
+12. **Die Tageskarte, am Handy und am Desktop** (14.11.): Begrüßung, Uhr, Datum, Wetter, Tageslicht, Jahreszeit, Solarfenster und Spruch stehen auf „Start“ in einer Karte statt in losen Zeilen über der Szene (`src/ui/Tageskarte.tsx`).
+13. **Der Desktop darf live gehen; der Feinschliff folgt am Abend** (14.11., 13:05): Tempo, „klar“ durchsichtiger, weiches Gehen und der Reiterwechsel kommen zuerst auf die Baustelle, dann live – mit Bildern vorher/nachher für ihn. Rückweg der Live-Seite: `65b1e44`.
 
 Dazu die Regeln des Projekts (`CLAUDE.md`): Nur der Hauptchat baut, deployt und führt `main` zusammen. Deutsche Oberfläche, englischer Code. Layout immer in 1920 × 1080 und 2000 × 993 prüfen. Neues muss in beiden Bereichen laufen, auch im leeren „Meine Werkstatt“. Bilder erzeugt nur der Besitzer – der Look braucht keine neuen.
 
 ---
 
-## 3. Beide Vorlagen ansehen, ohne die App anzufassen
+## 3. Den Look ansehen
 
-### Beide in der echten App (der beste Weg)
+Seit dem Einbau zeigt die App den Look selbst. Die Vorlage sieht man weiter auf der Vorschauseite und – an der Stelle des eingebauten Looks – in jedem Werkzeug mit `--look vorlage`.
+
+### In der echten App (der beste Weg)
+
+```
+npm run build && npm run preview
+```
+
+Dann http://localhost:4173 öffnen: breites Fenster = Desktop, schmales (unter 900 px) = Handy. Der Ton folgt der Einstellung „Erscheinungsbild“ (Zahnrad): Dunkel, Hell, oder Automatisch nach der Tageszeit.
+
+**Eine Kopie der Vorlage ausprobieren, ohne zu bauen** (4.1), oder die App ohne Look zum Vergleich:
 
 ```
 npm run build
-node scripts/wasser/desktop.mjs zeigen
+node scripts/wasser/desktop.mjs zeigen --look vorlage
 ```
 
-Dann http://localhost:4320 öffnen. Das ist die gebaute App mit der Vorlage obendrauf. Strg+C beendet.
-`zeigen` liefert `dist/` selbst aus und braucht keine laufende Vorschau. `npm run build` kann entfallen, wenn `dist/` aktuell ist (seit dem letzten Build nichts in `src/` geändert).
-Gedacht für einen Stand, in dem der Look noch nicht eingebaut ist (dieser Branch; auf `main` der Desktop). Wo er eingebaut ist, zeigt ihn `npm run preview` von selbst – am Handy auch die Live-Seite.
+Dann http://localhost:4320 öffnen. Das ist die gebaute App (`dist/`), in der die Vorlage – oder mit `--look <Ordner>` eine Kopie davon – **an der Stelle** des eingebauten Looks steht. Eine Änderung im Ordner zeigt sich nach dem Neuladen der Seite. Strg+C beendet. Ohne `--look` zeigt `zeigen` die App, wie sie gebaut ist.
 
-- Breites Fenster = Desktop-Vorlage. Schmales Fenster (unter 900 px) = Handy-Vorlage.
-- Am Desktop folgt der Ton der Einstellung „Erscheinungsbild“. Fest wählen: `?ton=klar` oder `?ton=dunkel` vor das `#` hängen, z. B. `http://localhost:4320/?ton=klar#/heute`.
-- Im schmalen Fenster ist der Ton „dunkel“, bis man `?ton=klar` anhängt (die mobile App verlangt heute immer das dunkle Thema).
-- `?ohne=1` – die App wie heute, zum Vergleichen. `?weich=aus` – die Vorlage ohne Weichzeichner. `?leben=1.5` – mehr Licht in Ruhe.
+- `?ohne=1` – die App ohne Look, zum Vergleichen. `?weich=aus` – der Look ohne Weichzeichner. `?leben=1.5` – mehr Licht in Ruhe.
+- `?ton=klar` oder `?ton=dunkel` vor das `#` hängen, z. B. `http://localhost:4320/?ton=klar#/heute`: Das stellt die Einstellung „Erscheinungsbild“ in diesem Browser um.
 
-### Die Handy-Vorschauseite (ein Nachbau des mobilen Bildschirms mit den echten Stylesheets)
+### Die Handy-Vorschauseite (ein Nachbau des mobilen Bildschirms mit den echten Stylesheets und der Vorlage)
 
 ```
 python3 -m http.server 4311
@@ -94,21 +106,23 @@ Dann im schmalen Fenster (oder Handy-Ansicht der Entwicklerwerkzeuge, 390 × 844
 - http://localhost:4311/scripts/wasser/mobil.html – Ton „dunkel“
 - http://localhost:4311/scripts/wasser/mobil.html?ton=klar – Ton „klar“
 - `&scene=start|heute|projekte|material|druck|wetter|archiv|innen` – das Bild dahinter
-- `&alles=1` – ein Bogen mit allen kleinen Bausteinen. `&nah=1` – Knöpfe aus der Nähe (breites Fenster). `&fallback=1` – ohne WebGL. `&ohne=1` – die App wie heute.
+- `&alles=1` – ein Bogen mit allen kleinen Bausteinen. `&nah=1` – Knöpfe aus der Nähe (breites Fenster). `&fallback=1` – ohne WebGL. `&ohne=1` – die App ohne Look.
 - `&vorlage=<Ordner>` – eine andere Kopie der Vorlage, z. B. eine, an der man gerade etwas ausprobiert (4.1). Der Ordner muss im Projektordner liegen; der Pfad zählt ab dort.
+
+Die Seite beginnt wie „Start“ in der App: mit der Tageskarte. Darunter stehen die Dinge, die „Start“ nicht auf einem Bildschirm hat: Knöpfe frei über der Szene, Knöpfe auf Karten, Etiketten, Zahlenkacheln. Sie ist damit länger als ein Handy; die zweite Karte erreicht man durch Rollen. Die Werte der Tageskarte stehen fest im Nachbau (17:42, 10 °C, Tageslicht 06:57 bis 16:18; der Spruch in der Handschrift der App). Die Kopfzeile hat drei runde Knöpfe, die App vier (das Zahnrad „Einstellungen“): Das bleibt so, damit die freigegebenen Bilder der Seite vergleichbar bleiben und Prüfung 7 von `pruefen.mjs` (drei Tropfen, wenn nur `.m-ico` lebt) stimmt.
 
 ### Bilder und Filme selbst erzeugen
 
-Die Werkzeuge spielen die Vorlage in die gebaute App ein. Dafür muss die Vorschau der App laufen (zweites Terminal):
+Dafür muss die Vorschau der App laufen (zweites Terminal):
 
 ```
 npm run build && npm run preview
 ```
 
-Läuft sie schon (Port 4173 ist belegt) und ist `dist/` aktuell, ist nichts zu tun.
+Läuft sie schon (Port 4173 ist belegt) und ist `dist/` aktuell, ist nichts zu tun. Die Vorschau endet auf der Arbeitsmaschine nach etwa 30 Minuten von selbst: vor einem langen Lauf nachsehen.
 
 ```
-node scripts/wasser/bild.mjs screenshots/wasser/mobil                    # Handy: acht Szenen, Nahaufnahmen, echte App, beide Töne
+node scripts/wasser/bild.mjs screenshots/wasser/mobil                    # Handy: Vorschauseite (acht Szenen, Nahaufnahmen), echte App, beide Töne
 node scripts/wasser/film.mjs screenshots/wasser/mobil-film               # Handy: Bewegung als Bildstreifen
 node scripts/wasser/clip.mjs screenshots/wasser/mobil.mp4                # Handy: kurzer Film
 node scripts/wasser/desktop.mjs bild screenshots/wasser/desktop --alles  # Desktop: Welten, Bögen, Suche, Hinweis, leere Werkstatt
@@ -116,10 +130,10 @@ node scripts/wasser/desktop.mjs film screenshots/wasser/desktop-film     # Deskt
 node scripts/wasser/desktop.mjs clip screenshots/wasser/desktop.mp4      # Desktop: Rundgang als Film
 ```
 
-Schalter der Desktop-Bilder: `--format 1920` (sonst 2000 × 993), `--ton klar`, `--zeit tag` (sonst Nacht), `--nur heute,wetter`, `--look ohne` (die App wie heute).
-Bewegung nie aus einem Standbild beurteilen: dafür sind die Bildstreifen da.
+Schalter der Desktop-Bilder: `--format 1920` (sonst 2000 × 993), `--ton klar`, `--zeit tag` (sonst Nacht), `--nur heute,wetter`, `--look ohne` (die App ohne Look). Die Bilder der App am Handy zeigen ohne `--zeit` die wirkliche Uhrzeit und das wirkliche Wetter; mit `--zeit tag` oder `--zeit nacht` steht die Uhr, das Wetter ist ein erfundener klarer Tag, und zwei Läufe zeigen dasselbe.
+Jedes Werkzeug sagt in seiner ersten Zeile, welchen Look es zeigt („Look: built in …“). Bewegung nie aus einem Standbild beurteilen: dafür sind die Bildstreifen da.
 
-Wer kein Browserfenster hat, sieht die Vorlagen über diese Bilder an. Ein einzelnes Bild, in Sekunden: `node scripts/wasser/stelle.mjs screenshots/wasser/heute.png --welt heute` (Desktop; mit `--mobil` das Handy, mit `--ton klar` der helle Modus; mehr in 4.7). Eine beliebige Adresse – auch eine von `zeigen` oder `mobil.html` – fotografiert `node scripts/shot.mjs '<Adresse>' <bild.png> 390 844`; bei schmalen Seiten wartet es 15 s und meldet „scene not ready“, das Bild stimmt trotzdem.
+Wer kein Browserfenster hat, sieht den Look über diese Bilder an. Ein einzelnes Bild, in Sekunden: `node scripts/wasser/stelle.mjs screenshots/wasser/heute.png --welt heute` (Desktop; mit `--mobil` das Handy, mit `--ton klar` der helle Modus; mehr in 4.7). Eine beliebige Adresse – auch eine von `zeigen` oder `mobil.html` – fotografiert `node scripts/shot.mjs '<Adresse>' <bild.png> 390 844`; bei schmalen Seiten wartet es 15 s und meldet „scene not ready“, das Bild stimmt trotzdem.
 
 ---
 
@@ -149,13 +163,17 @@ Fünf Regeln für Weg B:
 5. **Maße und Platz bleiben Sache der App** (Innenabstand, Breite, Höhe, `position`). Was eine Hülle an einem Baustein ändert, steht in `mobil.css` oder `desktop.css` – mit mindestens dem Gewicht der Liste (siehe 4.4).
    Fehlt einem Element der App, was sein Baustein „braucht“ (meist der Innenabstand): Die Hülle darf es dort geben. Dann rückt sein Inhalt – das ist eine sichtbare Änderung am Platz und gehört dem Besitzer als Bild vorher/nachher gezeigt. Nie an Panels, Titeln, Kopfzeile oder Inseln: Deren Platz bleibt wie in der App (`desktop.mjs pruefen`, „nichts ist verrückt“). Die Vorlage selbst gleicht bisher nur aus (etwa 1 px mehr Innenabstand, wo ein Rand von 1 px wegfällt).
 
-Nach jedem Rezept:
+Nach jedem Rezept – zuerst in die App holen und bauen, denn die Werkzeuge prüfen in der App den eingebauten Look:
 
 ```
-node scripts/wasser/vergleich.mjs bilder --alt git:HEAD   # nichts anderes darf sich geändert haben (Handy). Nur vor dem Commit richtig: Fallstrick 60
-node scripts/wasser/pruefen.mjs --app                     # 60 Prüfungen, etwa eine Minute
-node scripts/wasser/desktop.mjs pruefen                   # 24 Prüfungen, wenn der Desktop betroffen ist
+node scripts/wasser/uebernehmen.mjs && npm run build
+node scripts/wasser/vergleich.mjs bilder --alt git:HEAD   # die Vorschauseite: nichts anderes darf sich geändert haben. Nur vor dem Commit richtig: Fallstrick 60
+node scripts/wasser/sollist.mjs handy --soll git:HEAD     # die App am Handy: nichts anderes darf sich geändert haben (5 Minuten; ohne „handy“ auch der Desktop: 25 Minuten)
+node scripts/wasser/pruefen.mjs --app                     # 64 Prüfungen, etwa eine Minute
+node scripts/wasser/desktop.mjs pruefen                   # 27 Prüfungen, wenn der Desktop betroffen ist
 ```
+
+`git:HEAD` gilt nur, solange seit dem Stand davor nichts committet wurde – sonst den Commit davor nennen (`git:feinschliff-basis`, `git:9c4afa7`).
 
 **Ausprobieren, ohne die Vorlage zu ändern: in einer Kopie.**
 
@@ -163,7 +181,7 @@ node scripts/wasser/desktop.mjs pruefen                   # 24 Prüfungen, wenn 
 mkdir -p screenshots/wasser && cp -r docs/wasser-look/vorlage screenshots/wasser/probe    # screenshots/ ist nicht im Git
 ```
 
-In der Kopie ändern. Jedes Werkzeug mit einem Look nimmt sie mit `--look screenshots/wasser/probe` (ein Ordner außerhalb des Projekts geht auch, mit ganzem Pfad). Die drei Befehle heißen dann:
+In der Kopie ändern. Jedes Werkzeug mit einem Look nimmt sie mit `--look screenshots/wasser/probe` (ein Ordner außerhalb des Projekts geht auch, mit ganzem Pfad). Auf der Vorschauseite ersetzt die Kopie die Vorlage, in der App **den eingebauten Look** – ohne Bauen, und nie liegen zwei Looks übereinander (8.3). Die drei Befehle heißen dann:
 
 ```
 node scripts/wasser/vergleich.mjs bilder --alt docs/wasser-look/vorlage --look screenshots/wasser/probe   # die Kopie gegen die Vorlage
@@ -171,7 +189,8 @@ node scripts/wasser/pruefen.mjs --app --look screenshots/wasser/probe
 node scripts/wasser/desktop.mjs pruefen --look screenshots/wasser/probe
 ```
 
-Im eigenen Browser: `mobil.html?vorlage=screenshots/wasser/probe` und `node scripts/wasser/desktop.mjs zeigen --look screenshots/wasser/probe`. Taugt der Versuch, kommen dieselben Zeilen in die Vorlage (`diff -r docs/wasser-look/vorlage screenshots/wasser/probe` zeigt sie).
+Im eigenen Browser: `mobil.html?vorlage=screenshots/wasser/probe` und `node scripts/wasser/desktop.mjs zeigen --look screenshots/wasser/probe`. Taugt der Versuch, kommen dieselben Zeilen in die Vorlage (`diff -r docs/wasser-look/vorlage screenshots/wasser/probe` zeigt sie), dann `uebernehmen.mjs` und `npm run build`.
+Die Kopie in der App ist das ungebaute Stylesheet; der Build kürzt Farbwerte, und an runden Ecken können sich deshalb einzelne Bildpunkte um 1 von 255 vom später gebauten Stand unterscheiden. Den Beweis „nichts anderes hat sich geändert“ führt man darum am gebauten Stand (`sollist.mjs`).
 
 Ein zusätzliches Stylesheet statt der Kopie geht nicht: CSS kann die Liste eines Bausteins nicht aus einer anderen Datei erweitern. Eigene Regeln einer Hülle (4.4, 4.5) kommen ans Ende von `mobil.css` oder `desktop.css` der Kopie.
 
@@ -408,7 +427,7 @@ Die Regel muss unter `[data-wasser]` stehen, sonst gibt es die Werte nicht.
 2. Nennt der Baustein Optionen: denselben Selektor in `DESKTOP` in `wasser.js` eintragen (bei den acht ersetzten Optionen), sonst in `MOBIL`.
 3. Was es darüber hinaus braucht (Platz, Größe, Mauszeiger), kommt in `desktop.css` – mit dem Gewicht der Liste.
 4. Liegt es frei über der Bühne und trägt Text: `background: var(--wa-frei)`, kein Weichzeichner. Kann eine Insel dahinter liegen: nie ein lebender Tropfen.
-5. Prüfen: `node scripts/wasser/desktop.mjs pruefen`, Bilder in beiden Formaten und beiden Tönen (`desktop.mjs bild … --nur <welt>`; eine Stelle in einem Bogen: 4.7), `node scripts/wasser/desktop.mjs kontrast` (trägt das Element Schrift: Abschnitt 6, Punkt 5), und `node scripts/wasser/vergleich.mjs --alt git:HEAD` (das Handy darf sich nicht ändern; 32 Minuten – der Teil `bilder` allein braucht vier).
+5. Prüfen: `node scripts/wasser/desktop.mjs pruefen`, Bilder in beiden Formaten und beiden Tönen (`desktop.mjs bild … --nur <welt>`; eine Stelle in einem Bogen: 4.7), `node scripts/wasser/kontrast.mjs --css '<Selektor>' --desktop --welt <welt>` (trägt das Element Schrift: Abschnitt 6, Punkt 5), und `node scripts/wasser/sollist.mjs handy --soll git:HEAD` (das Handy darf sich nicht ändern; 5 Minuten, nach `uebernehmen.mjs` und `npm run build`).
 
 ### 4.7 Eine einzelne Stelle ansehen und ablesen
 
@@ -418,10 +437,10 @@ Für alles, was die anderen Werkzeuge nicht kennen (ein Bogen, der nicht in ihre
 node scripts/wasser/stelle.mjs screenshots/wasser/ueber.png --welt heute --bogen einstellungen --klick 'Über diesen Entwurf' --css '.sheet .field'
 ```
 
-Das öffnet die gebaute App mit der Vorlage, geht zur Welt, öffnet den Bogen, klickt den Knopf mit diesem Text, macht **ein** Bild und druckt, was der Selektor dort trifft: wie viele Elemente, in welcher Hülle, und von den ersten drei Klassen und `data-`Attribute, Hintergrund, Rand, Schatten, Weichzeichner, Radius, Innenabstand, Position, Schriftfarbe und ob ein lebender Tropfen darauf liegt.
+Das öffnet die gebaute App mit dem Look, den sie eingebaut hat, geht zur Welt, öffnet den Bogen, klickt den Knopf mit diesem Text, macht **ein** Bild und druckt, was der Selektor dort trifft: wie viele Elemente, in welcher Hülle, und von den ersten drei Klassen und `data-`Attribute, Hintergrund, Rand, Schatten, Weichzeichner, Radius, Innenabstand, Position, Schriftfarbe und ob ein lebender Tropfen darauf liegt.
 
 - `--mobil` – dasselbe am Handy (390 × 844). Sonst Desktop, 2000 × 993.
-- `--ton klar`, `--zeit tag`, `--format 1920`, `--look <Kopie>` oder `--look ohne` – wie bei den anderen Werkzeugen.
+- `--ton klar`, `--zeit tag`, `--format 1920`, `--look <Kopie>` (die Kopie an der Stelle des eingebauten Looks) oder `--look ohne` – wie bei den anderen Werkzeugen. `--ton auto`: was Einstellung und Uhrzeit wählen.
 - `--nah` – nur das erste getroffene Element im Bild. `--wert transform,water-under` – weitere Werte (eine eigene Eigenschaft ohne ihre zwei Striche).
 - `--klick` nimmt den Text eines Knopfs oder das Etikett eines Zeichenknopfs (`aria-label`); ein Teil genügt. Mehrere nacheinander: `--klick 'Einstellungen >> Über diesen Entwurf'`. Ein Selektor statt eines Texts beginnt mit `.`, `#` oder `[`.
 - Welche Bögen `--bogen` beim Namen kennt, steht im Kopf der Datei. Jeder andere ist ein Klick mehr.
@@ -481,7 +500,7 @@ Die Stufe eines Elements ist sein Baustein. Eine andere Stufe geben heißt: in e
 
 ## 6. Töne und Modi
 
-**Ein Ton ist ein Block von 57 Werten** in `kern.css`, Teil 1 – und nichts sonst. „dunkel“ steht auf `[data-wasser]` (Standard, kein Attribut). „klar“ steht auf `:root[data-wa-ton="klar"] [data-wasser]`. Beide Blöcke nennen dieselben Werte in derselben Reihenfolge. Keine andere Regel nennt `data-wa-ton`; das Skript hat keine Ton-Logik.
+**Ein Ton ist ein Block von 59 Werten** in `kern.css`, Teil 1 – und nichts sonst. „dunkel“ steht auf `[data-wasser]` (Standard, kein Attribut). „klar“ steht auf `:root[data-wa-ton="klar"] [data-wasser]`. Beide Blöcke nennen dieselben Werte in derselben Reihenfolge. Keine andere Regel nennt `data-wa-ton`; das Skript hat keine Ton-Logik.
 
 Was ein Ton festlegt:
 
@@ -497,11 +516,11 @@ Was ein Ton festlegt:
 | die Seite (Handy) | `--wa-page-1` bis `-4`, `--wa-page-ink-3` |
 | Leben in Ruhe | `--wa-glanz`, `--wa-glanz-linie`, `--wa-glanz-fern`, `--wa-glanz-fern-linie`, `--wa-boden` |
 | die Tropfen | `--wa-drop-red`, `--wa-drop-veil` |
-| die weite Bühne (nur Desktop) | `--wa-weit-tiefe`, `--wa-weit-grund` |
+| die weite Bühne (nur Desktop) | `--wa-weit-tiefe`, `--wa-weit-grund`, `--wa-weit-grund-panel`, `--wa-weit-kopf` |
 
 Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in Teil 3. Auch der Baustein „Perle“ (der kleine runde Knopf) hat nur Formwerte: `--wa-perle-*`, gebaut aus `--wa-core`.
 
-**Wie die App den Ton wählt** (am Handy eingebaut und live; am Desktop im Einbau – Abschnitt 8.2):
+**Wie die App den Ton wählt** (eingebaut am Handy und am Desktop – Abschnitt 8.2):
 
 | Einstellung „Erscheinungsbild“ (`settings.theme`) | Ton | Am `<html>` |
 |---|---|---|
@@ -509,7 +528,8 @@ Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in
 | Hell | „klar“ | `data-wa-ton="klar"` |
 | Automatisch (Tageszeit) | nach dem Look der Stunde: dunkler Look (`DARK_LOOKS`) → „dunkel“, sonst „klar“ | |
 
-`data-theme` bleibt überall „dunkel“, wo der Look an ist. Ein Wechsel wirkt sofort; die Tropfen folgen binnen einer Sekunde. „klar“ soll noch etwas durchsichtiger werden (Entscheidung 8): Schritt 10 im Fahrplan nennt die Stellschrauben.
+`data-theme` bleibt überall „dunkel“, wo der Look an ist. Ein Wechsel wirkt sofort; die Tropfen folgen binnen einer Sekunde.
+**Die Werkzeuge wählen den Ton über genau diese Einstellung:** `--ton klar` (oder `--toene`) schreibt „Hell“ in den gespeicherten Stand der App und lädt neu, `dunkel` schreibt „Dunkel“. So ist „dunkel“ auch bei Tag dunkel und „klar“ auch bei Nacht klar. Zeigt die App danach einen anderen Ton als verlangt, bricht das Werkzeug ab. `--ton auto` (wo ein Werkzeug es kennt) lässt die Einstellung in Ruhe. „klar“ ist seit 14.11. abends durchsichtiger (Entscheidung 8): Schritt 10 im Fahrplan nennt die Werte und wie man sie zurückdreht.
 
 **Eine Farbe sicher ändern:**
 
@@ -534,25 +554,20 @@ Formwerte (Radien, Maße; für beide Töne gleich) stehen in Teil 2, Bewegung in
    ```
 
    Jede Zeile: Median (schlechteste 5 % in Klammern). Grenzen: Text 4,5, Platzhalter 3, am Desktop Titel 7. Unter der Grenze endet das Werkzeug mit Fehler.
-   **Gemessen wird nur, was als Probe im Werkzeug steht.** Ein neues Element mit Schrift braucht dort eine Zeile, an der Stelle, an der sein Bildschirm oder Bogen offen ist. Am Desktop in `desktop.mjs`, Funktion `kontrast`, z. B. nach `await d.go('heute');`:
+   **Diese zwei Befehle messen nur ihre festen Proben.** Ein neues Element misst man mit einem Selektor, ohne ein Werkzeug zu ändern – dort, wo es steht (`--welt`, `--bogen`, `--klick` wie in 4.7):
 
-   ```js
-   await probe('Merkzettel: Zeile', '.merk__zeile b');
+   ```
+   node scripts/wasser/kontrast.mjs --css '.tk__date b' --welt start --name 'Tageskarte: Wochentag'                # Handy, beide Töne
+   node scripts/wasser/kontrast.mjs --css '.sheet .field > label' --bogen einstellungen --desktop --grenze 4.5     # Desktop, beide Töne, Nacht und Tag
    ```
 
-   Am Handy in `kontrast.mjs`, im Teil `if (a.app)`, z. B. nach `await h.go('#/heute'); await p.waitForTimeout(800);`:
-
-   ```js
-   await probe(p, col, 'Merkzettel: Zeile', S('.merk__zeile b'));
-   ```
-
-   Nur diese Zeile messen (Desktop): `node scripts/wasser/desktop.mjs kontrast --nur Merkzettel`.
-6. `node scripts/wasser/pruefen.mjs` – Prüfung 10 vergleicht die Listen der zwei Töne (57 und 57).
+   `--art platzhalter` oder `--art wert` für den Platzhalter oder den Text eines Felds; `--grenze 7` für einen Titel am Desktop. Trifft der Selektor nichts, endet das Werkzeug mit Fehler. Soll die Probe bleiben, kommt sie als Zeile in die feste Liste: am Desktop in `desktop.mjs`, Funktion `kontrast` (`await probe('Name', '<Selektor>');`), am Handy in `kontrast.mjs`, Teil `if (a.app)`.
+6. `node scripts/wasser/pruefen.mjs` – Prüfung 10 vergleicht die Listen der zwei Töne (59 und 59).
 7. Ansehen: `node scripts/wasser/bild.mjs screenshots/wasser/farbe` und `node scripts/wasser/desktop.mjs bild screenshots/wasser/farbe-desktop --ton klar --zeit tag`.
 
 Ein Etikett auf einem klaren Tropfen, das schwer zu lesen ist, heilt man mit `--wa-drop-veil` (0 bis 1; weniger = weniger Licht im Tropfen), nicht mit einer dunkleren Fläche.
 
-**Ein dritter Ton, oder einen streichen:** Ein Ton ist der Block `:root[data-wa-ton="<name>"] [data-wasser] { … }` mit allen 57 Werten. Sonst ist nichts zu tun.
+**Ein dritter Ton, oder einen streichen:** Ein Ton ist der Block `:root[data-wa-ton="<name>"] [data-wasser] { … }` mit allen 59 Werten. Sonst ist nichts zu tun.
 
 ---
 
@@ -570,7 +585,7 @@ Ein Etikett auf einem klaren Tropfen, das schwer zu lesen ist, heilt man mit `--
 | `--wa-t-wave` | 1,1 s | Licht läuft über eine Fläche | Ring, Kamm des Bogens |
 | `--wa-t-swing` | 1,6 s | bewegtes Wasser schwingt aus | Licht nach dem Scrollen, Licht einer neuen Fläche |
 | `--wa-t-step` | 40 ms | was zusammen ankommt, kommt kurz nacheinander | Karten eines neuen Bildschirms |
-| `--wa-t-ruhe-1` bis `-4`, `--wa-t-atem` | 24 / 34 / 40 / 46 s, 9 s | Schleifen in Ruhe: Randlicht, fernes Randlicht, Leisten und Bögen, Boden; Atem der Perle | mit `--wa-gang-*` |
+| `--wa-t-ruhe-1` bis `-4`, `--wa-t-atem` | 17 / 24 / 29 / 33 s, 9 s (bis 14.11.: 24 / 34 / 40 / 46 s) | Schleifen in Ruhe: Randlicht, fernes Randlicht, Leisten und Bögen, Boden; Atem der Perle | mit `--wa-gang-*` |
 | `--wa-ease-flow` / `-settle` / `-drain` / `-wave` / `-swing` | Kurven | läuft los und kommt weich an / ein wenig darüber hinaus / lässt langsam los / ein Ring breitet sich aus / schwingt gedämpft aus | |
 
 Was wann lebt: Tabelle in `NOTIZEN.md`, Abschnitt 6.
@@ -581,66 +596,70 @@ Was wann lebt: Tabelle in `NOTIZEN.md`, Abschnitt 6.
 node scripts/wasser/leben.mjs screenshots/wasser/leben --werte 1,1.5
 ```
 
-Der Unterschied zwischen 1 und 1,5 ist auf Handygröße kaum zu sehen ([leben-vergleich](wasser-look/bilder/mobil/leben-vergleich.png)). Entschieden ist darum (Nummer 7): Die Stärke bleibt 1, das Tempo wird ein wenig schneller – die vier Längen `--wa-t-ruhe-*` mit ihren Gangarten `--wa-gang-*`. Rezept: Fahrplan, Schritt 9.
+Der Unterschied zwischen 1 und 1,5 ist auf Handygröße kaum zu sehen ([leben-vergleich](wasser-look/bilder/mobil/leben-vergleich.png)). Entschieden ist darum (Nummer 7): Die Stärke bleibt 1, das Tempo wird ein wenig schneller – die vier Längen `--wa-t-ruhe-*` mit ihren Gangarten `--wa-gang-*`. Gebaut am 14.11. abends: Fahrplan, Schritt 9. Zwei Stände nebeneinander als Film: `leben.mjs … --looks 'Tempo bisher=git:<Stand>,Tempo neu=vorlage' --weg ruhe` (Kopf von `leben.mjs`).
 
 **Der Schalter zum Sparen ist ein anderer: `--wa-lauf`.** `[data-wasser] { --wa-lauf: paused; }` hält jede Schleife in Ruhe an, alles andere lebt weiter. `--wa-leben: 0` spart nichts: Die Schleifen laufen unsichtbar weiter.
 
-**Schlafen und Aufwachen.** Eine Uhr im Skript (Option `sleep`, 30000 ms; `0` = nie). Nach 30 s ohne Berührung, Scrollen, Taste oder bewegte Maus kommen die Tropfen zur Ruhe, und das Wurzelelement bekommt `data-wa-ruht`. Damit wird `--wa-lauf` zu `paused`. Die nächste Berührung weckt alles. Hinter einem offenen Bogen oder der Suche ruht die Seite ebenfalls (`mobil.css` Teil 7, `desktop.css` Teil 7; die Liste dort und die Option `modal` müssen gleich bleiben). Nie angehalten werden kurze Antworten auf eine Änderung: Ein Hinweis muss landen können, während das Wasser schläft.
+**Schlafen und Aufwachen.** Eine Uhr im Skript (Option `sleep`, 30000 ms; `0` = nie). Nach 30 s ohne Berührung, Scrollen, Taste oder bewegte Maus kommen die Tropfen zur Ruhe, und das Wurzelelement bekommt `data-wa-ruht`. Damit wird `--wa-lauf` zu `paused`. Die nächste Berührung weckt alles. Hinter einem offenen Bogen oder der Suche ruht die Seite ebenfalls (`mobil.css` Teil 7, `desktop.css` Teil 7; die Liste dort und die Option `modal` müssen gleich bleiben). Ein Tropfen, der gerade antwortet, klingt dabei erst aus (der Ring blendet in 0,3 s aus, nach spätestens 0,38 s steht er in Ruhelage), dann ruht er; schließt der Bogen, geht sein Wasser dort weiter, wo es stand (seit 14.11. abends; vorher blieb er mitten in der Antwort stehen – der Befund in `entwurf/stehenbleiben/`). Nie angehalten werden kurze Antworten auf eine Änderung: Ein Hinweis muss landen können, während das Wasser schläft, und der Ring einer Karte läuft hinter einem Bogen zu Ende.
 
 **Keine Bewegung.** Zwei Auslöser: die Systemeinstellung (`prefers-reduced-motion: reduce`) oder der Schalter der App (`data-motion="reduziert"` am `<html>`). Dann gibt es die Lichter gar nicht, nichts schwingt oder atmet, Zustände wechseln sofort, die Tropfen stehen. Jeder Baustein trägt die zwei Regeln selbst, am Ende seines Blocks. Ein neuer Block braucht beide.
 
-**Was der Look nicht allein kann** (die App entfernt das Element in einem Bild): ein Bogen, der weich geht; eine Zeile, die verschwindet; ein Hinweis, der einen anderen ersetzt. Der Besitzer will es (Entscheidung 10): Fahrplan, Schritt 11.
+**Was der Look nicht allein kann** (die App entfernt das Element in einem Bild): ein Bogen, der weich geht; eine Zeile, die verschwindet; ein Hinweis, der einen anderen ersetzt. Seit 15.11. tut es die App selbst (Entscheidung 10; `src/ui/gehen.ts`): Fahrplan, Schritt 11.
 
 ---
 
 ## 8. Fahrplan: der Look in der App
 
-### 8.1 Wo der Einbau steht (14.11., 11:10 Uhr)
+### 8.1 Wo der Einbau steht (15.11., früh morgens)
 
 | | Stand | Wo |
 |---|---|---|
-| **Handy** | eingebaut, auf `main`, **live** auf 3druckwerkbank.com | Commit `c7e8299` (Branch `welt/wasser-mobil`), seither in `main`. Nachgeprüft am 14.11. gegen 11 Uhr: Die CSS-Datei der Live-Seite war genau die dieses Commits |
-| **Desktop** | Einbau **in Arbeit** – nicht auf `main`, nicht live | Branch `welt/wasser-desktop`. Für diese Anleitung angesehen: der Zwischenstand `e6eb9ef`; der Branch geht weiter. Der Desktop bleibt, wie er ist, bis der Besitzer den Einbau an seinem Bildschirm gesehen hat (Entscheidung 9) |
-| **Dieser Branch** (`wasser-look`) | Vorlage, Werkzeuge, Bilder, Anleitung | Der App-Code ist hier noch der ohne Look |
+| **Handy** | eingebaut, auf `main`, **live** auf 3druckwerkbank.com | Einbau `c7e8299`; mit der Tageskarte live seit 14.11. vormittags (`65b1e44`) |
+| **Desktop** | eingebaut, auf `main`, **live** seit 14.11. gegen 13 Uhr (Entscheidung 13) | Einbau `a24ce60` bis `5132a10` (Branch `welt/wasser-desktop`), Tageskarte `9c4afa7`; live ist der Stand `9c4afa7`. Rückweg: `65b1e44` |
+| **Dieser Branch** (`wasser-look`) | alles zusammen, dazu der Feinschliff: Vorlage, Kopien in `src/wasser/`, Werkzeuge, Bilder, Anleitung | Der Feinschliff beginnt beim Commit mit dem Tag `feinschliff-basis` (`19447f6`): Das ist für jeden Vergleich das „Vorher“ |
+| **`main` seit 14.11. abends** | weiter als `9c4afa7`, ohne den Feinschliff | Am 15.11. um 5:20 stand `origin/main` auf `bd009ab` (unter anderem „Felder am Desktop“ und die installierbare App). Ein Zusammenführen von `wasser-look` mit diesem Stand hat Konflikte in `src/ui/Toast.tsx` und `src/ui/TopBar.tsx` (beide hat Schritt 11 geändert). Alle Prüfungen der Abschlussprüfung liefen auf `wasser-look` allein, **nicht** auf dem zusammengeführten Stand |
 
 Den Stand selbst nachsehen (nach `git fetch`):
 
 ```
 git ls-tree --name-only origin/main src/wasser/      # Dateien da: Der Look ist auf main eingebaut
-git log --oneline -5 origin/welt/wasser-desktop      # wie weit der Desktop-Einbau ist
+git log --oneline -5 origin/main                     # wie weit main ist
 ```
 
 | Schritt | | Stand |
 |---|---|---|
-| 1 | Dateien nach `src/wasser/` | erledigt (`c7e8299`) |
-| 2 | Das Handy einschalten | erledigt (`c7e8299`) |
-| 3 | Der Ton folgt der Einstellung | erledigt fürs Handy (`c7e8299`), für den Desktop in `e6eb9ef` |
+| 1 | Dateien nach `src/wasser/` | erledigt |
+| 2 | Das Handy einschalten | erledigt, live |
+| 3 | Der Ton folgt der Einstellung | erledigt, Handy und Desktop |
 | 4 | Baustelle, echtes Handy, live | erledigt fürs Handy (Entscheidungen 9 und 11) |
-| 5 | Drei kleine Absicherungen | a und b **offen** – ausprobiert, wenige Zeilen; c erledigt (dieser Branch) |
-| 6 | Den Desktop einschalten | **in Arbeit** (`welt/wasser-desktop`) |
-| 7 | Den Desktop Welt für Welt abnehmen, Baustelle, eigener Bildschirm, live | offen |
-| 8 | Die Wartezeit beim Reiterwechsel (Entscheidung 11) | offen – erste Messung liegt vor |
-| 9 | Das Tempo der Lichter (Entscheidung 7) | offen – Rezept ausprobiert |
-| 10 | „klar“ durchsichtiger (Entscheidung 8) | offen – Rezept ausprobiert |
-| 11 | Weiches Gehen (Entscheidung 10) | offen – nichts gebaut |
-| 12 | Das alte helle Thema | offen – nach dem Desktop |
+| 5 | Drei kleine Absicherungen | erledigt (14.11., `wasser-look`); in der Abschlussprüfung am 15.11. nachgeprüft: Reihenfolge gut, 16 und 16; der Ton über die Einstellung der App, in beide Richtungen |
+| 6 | Den Desktop einschalten | erledigt, live seit 14.11. (`9c4afa7`); `einbau.css` ist auf `wasser-look` aufgelöst (dort keine Datei und kein Import mehr). Offen bleiben die Inline-Innenabstände kleiner Auswahlfelder |
+| 7 | Den Desktop abnehmen, Baustelle, eigener Bildschirm, live | live seit 14.11. (Entscheidung 13); die Abnahme Welt für Welt gehört zum Feinschliff |
+| 8 | Die Wartezeit beim Reiterwechsel (Entscheidung 11) | gebaut und abschließend geprüft (15.11.: drei Läufe im Wechsel gegen `feinschliff-basis`, Abschnitt 11); nicht live, am echten Handy noch nicht gesehen |
+| 9 | Das Tempo der Lichter (Entscheidung 7) | gebaut und abschließend geprüft (15.11.: die Längen in der gebauten App nachgemessen, Film neu); nicht live, er hat es noch nicht gesehen |
+| 10 | „klar“ durchsichtiger (Entscheidung 8) | gebaut, mit zwei Reparaturen am Desktop, und abschließend geprüft (15.11.: Lesbarkeit beider Töne, Handy und Desktop; Bilder vorher/nachher neu); nicht live, er hat es noch nicht gesehen |
+| 11 | Weiches Gehen (Entscheidung 10), dazu der weiche Wechsel des Handy-Hintergrunds und das Suchfeld mittig auf Start | gebaut, nachgebessert und abschließend geprüft (15.11.: `rennen.mjs` 51 von 51, Film neu); nicht live, er hat es noch nicht gesehen. WebKit nicht geprüft |
+| 12 | Das alte helle Thema | offen – der Desktop ist jetzt live, die Regeln können gehen |
 | 13 | Eine Quelle | später |
 
 ### 8.2 So ist er eingebaut
 
-Zum Nachprüfen und für jeden, der daran weiterbaut. Stand `c7e8299` (Handy) und `e6eb9ef` (Desktop, Zwischenstand).
+Zum Nachprüfen und für jeden, der daran weiterbaut. Stand: dieser Branch nach Schritt 5, 6 und 8.
 
-- **`src/wasser/kern.css`, `mobil.css`, `desktop.css`, `wasser-skript.js`** sind Kopien der Vorlage, jede mit einer Kopfzeile „Kopie – nicht von Hand ändern“. Geholt werden sie mit `node scripts/wasser/uebernehmen.mjs`. Es schreibt nach `src/wasser/` und legt den Ordner an, wo er fehlt – auf einem Stand ohne Einbau (dieser Branch) also nur in einer Kopie des Projekts laufen lassen (8.3, „Probelauf“). Das Skript heißt in der App `wasser-skript.js`: Neben `wasser.ts` fände ein Import ohne Endung eine `wasser.js` zuerst.
-- **`src/wasser/wasser.ts`** lädt die Stylesheets und das Skript und stellt den Haken bereit. Die ganze Datei (Stand `e6eb9ef`, ohne die eine Zeile für `einbau.css`):
+- **`src/wasser/kern.css`, `mobil.css`, `desktop.css`, `wasser-skript.js`** sind Kopien der Vorlage, jede mit einer Kopfzeile „Kopie – nicht von Hand ändern“. Geholt werden sie mit `node scripts/wasser/uebernehmen.mjs`. Das Skript heißt in der App `wasser-skript.js`: Neben `wasser.ts` fände ein Import ohne Endung eine `wasser.js` zuerst.
+- **`src/wasser/wasser.ts`** lädt die Stylesheets und das Skript und stellt den Haken bereit. Die ganze Datei (ihre Kommentarzeilen am Kopf sind hier zu zwei Randbemerkungen gekürzt):
 
   ```ts
+  import '../styles/tokens.css';      // die Stylesheets der App zuerst: So steht der Look im gebauten CSS immer NACH ihnen,
+  import '../styles/global.css';      // gleich welches Modul wasser.ts als Erstes lädt (Schritt 5 a)
+  import '../mobile/mobile.css';
   import './kern.css';
   import './mobil.css';
   import './desktop.css';
   import './wasser-skript.js'; // Nebenwirkung: window.Wasser
   import { useEffect } from 'react';
 
-  declare global { interface Window { Wasser: { start(o?: Record<string, unknown>): unknown; stop(): unknown; DESKTOP: Record<string, unknown> } } }
+  declare global { interface Window { Wasser: { start(o?: Record<string, unknown>): unknown; stop(): unknown; warm?(img: HTMLImageElement | HTMLImageElement[]): unknown; DESKTOP: Record<string, unknown> } } }
 
   /** Startet das Skript des Looks, solange die Komponente steht. Genau einmal je Wurzel verwenden.
    *  on = false: Die Wurzel dieses Aufrufs steht gerade nicht (App() ruft den Hook für die Bühne immer auf, auch am Handy). */
@@ -649,8 +668,8 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand `c7e8299` (Handy) un
   }
   ```
 
-  Auf `main` (`c7e8299`, nur Handy) fehlen noch `DESKTOP` und `on`. Auf `welt/wasser-desktop` steht nach der Zeile für `desktop.css` vorläufig `import './einbau.css';` (Schritt 6).
-- **`src/mobile/Mobile.tsx`**, drei Zeilen (`c7e8299`). Der Import steht gleich nach `mobile.css`, weil die Stylesheets des Looks zuletzt kommen müssen. Wo der Aufruf unter den Hooks von `Mobile()` steht, ist gleich:
+  Die Zeile `eslint-disable-line` gehört dazu: Die Abhängigkeiten des Effekts sind mit Absicht nur `[on]` (die Optionen ändern sich nie).
+- **`src/mobile/Mobile.tsx`**, drei Zeilen für den Look. Wo der Aufruf unter den Hooks von `Mobile()` steht, ist gleich:
 
   ```diff
    import './mobile.css';
@@ -663,54 +682,114 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand `c7e8299` (Handy) un
   +    <div className="m-shell" data-wasser="mobil" data-look={look}>
   ```
 
-- **`src/App.tsx`, der Effekt fürs Thema**, drei Zeilen (`c7e8299`, Stand Handy). `mobile`, `look` und `DARK_LOOKS` gibt es dort schon; die Abhängigkeiten des Effekts bleiben:
+  Dazu seit Schritt 8 das Vorladen der Szenen (eine Sache der App, die dem Look die Bilder übergibt; ohne Look tut `warm` nichts):
 
-  ```diff
-     useEffect(() => {
-       const theme = mobile ? 'dunkel' : settings.theme === 'auto' ? (DARK_LOOKS.has(look) ? 'dunkel' : 'hell') : settings.theme;
-       document.documentElement.dataset.theme = theme;
-  +    // Wasser-Look (nur mobil): Das Thema bleibt dort „dunkel“, die Einstellung wählt den Ton des Looks. Dunkel = kein Attribut, Hell = „klar“
-  +    const klar = mobile && (settings.theme === 'auto' ? !DARK_LOOKS.has(look) : settings.theme === 'hell');
-  +    if (klar) document.documentElement.dataset.waTon = 'klar'; else delete document.documentElement.dataset.waTon;
-     }, [settings.theme, look, mobile]);
+  ```tsx
+  const sceneSrcSet = (k: string) => `/img/szene-${k}-640.webp 640w, /img/szene-${k}-1280.webp 1280w`;
+  const TAB_SCENES = ['start', 'heute', 'projekte', 'material', 'druck'];   // the scenes of the five tabs ("Mehr" opens on "druck")
+  function usePreloadScenes(current: string) {
+    useEffect(() => {
+      const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+      if (nav.connection?.saveData) return;
+      const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+      let idle = 0; const imgs: HTMLImageElement[] = [];
+      const load = () => {
+        for (const k of TAB_SCENES) {
+          if (k === current) continue;
+          const img = new Image(); img.decoding = 'async'; img.setAttribute('fetchpriority', 'low');
+          img.sizes = '100vw'; img.srcset = sceneSrcSet(k); img.src = `/img/szene-${k}-1280.webp`;   // (sizes before srcset, as the page has them)
+          imgs.push(img);
+        }
+        window.Wasser?.warm?.(imgs);
+      };
+      const t = window.setTimeout(() => { idle = w.requestIdleCallback ? w.requestIdleCallback(load, { timeout: 3000 }) : window.setTimeout(load, 0); }, 1200);   // after the first pictures of the start
+      return () => { window.clearTimeout(t); if (idle) { if (w.cancelIdleCallback) w.cancelIdleCallback(idle); else window.clearTimeout(idle); } };
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }
   ```
 
-- **Am Desktop** (`e6eb9ef`; die Zeilen selbst zeigt `git show e6eb9ef -- src/App.tsx src/scene/Stage.tsx`): `src/scene/Stage.tsx` trägt `data-wasser="desktop"` an `.stage`. `App()` ruft `useWasser(window.Wasser.DESKTOP, !mobile);` – **nach** dem Effekt für `--ui-scale`: Startet das Skript davor, messen die Tropfen im falschen Maßstab (so vermerkt im Code des Einbaus). Der Effekt fürs Thema setzt dort immer `data-theme = 'dunkel'` und den Ton ohne `mobile &&`. Der Import in `App.tsx` steht nach dem von `Mobile`.
-- **Klassen statt Inline-Stile** (`e6eb9ef`): das große Panel in 3D-Druck, Material, Wetter und Archiv trägt `panel--haupt`; die aktuelle Version in der Innenwelt `col--aktuell`; die Kachel „Nächstes“ in Projekte `thumb--naechstes`; das Zeichen eines schlichten Hinweises hat keine Inline-Farbe mehr. Ihr Aussehen ohne Look steht in `src/styles/global.css` (Block „Wasser-Look: Einbau“), ihr Aussehen mit Look vorläufig in `src/wasser/einbau.css` (Schritt 6).
+  In `Mobile()` steht `usePreloadScenes(scene);` gleich unter der Zeile, die `scene` bestimmt, und der Hintergrund nimmt `srcSet={sceneSrcSet(scene)}` – dieselbe Zeichenkette wie das Vorladen, sonst wählt der Browser vielleicht eine andere Größe und lädt doppelt. Seit Schritt 11 steht dort statt eines `<img key={scene}>` die Komponente `<SceneBg src=… srcSet=… />` (weiches Überblenden, Schritt 11). (Der Kommentar über der Funktion ist hier weggelassen.)
+
+- **`src/scene/Stage.tsx`**, ein Attribut an der Bühne:
+
+  ```diff
+  -    <div className="stage" ref={ref} data-scene-ready={…} …>
+  +    <div className="stage" data-wasser="desktop" ref={ref} data-scene-ready={…} …>
+  ```
+
+- **`src/App.tsx`**, der Import, der Aufruf und der Effekt fürs Thema. Der Import steht nach dem von `Mobile`. Der Aufruf steht **nach** dem Effekt für `--ui-scale`: Startet das Skript davor, messen die Tropfen im falschen Maßstab (Fallstrick 67). `App()` gibt am Handy früh `<Mobile />` zurück; darum ruft es den Hook immer auf und sagt ihm mit dem zweiten Wert, ob die Bühne steht:
+
+  ```diff
+   import { Mobile } from './mobile/Mobile';
+  +import { useWasser } from './wasser/wasser'; // nach Mobile (dort nach mobile.css): die Stylesheets des Looks kommen zuletzt
+   …
+     useEffect(() => { const on = () => document.documentElement.style.setProperty('--ui-scale', …); … }, []);
+  +  useWasser(window.Wasser.DESKTOP, !mobile);
+   …
+     useEffect(() => {
+  -    const theme = mobile ? 'dunkel' : settings.theme === 'auto' ? (DARK_LOOKS.has(look) ? 'dunkel' : 'hell') : settings.theme;
+  -    document.documentElement.dataset.theme = theme;
+  +    document.documentElement.dataset.theme = 'dunkel';
+  +    const klar = settings.theme === 'auto' ? !DARK_LOOKS.has(look) : settings.theme === 'hell';
+  +    if (klar) document.documentElement.dataset.waTon = 'klar'; else delete document.documentElement.dataset.waTon;
+  -  }, [settings.theme, look, mobile]);
+  +  }, [settings.theme, look]);
+  ```
+
+  (Die Zeile mit `waTon` gab es seit dem Handy-Einbau schon, dort mit `mobile &&` davor.)
+- **Klassen statt Inline-Stile:** das große Panel in 3D-Druck, Material, Wetter und Archiv trägt `panel--haupt` (`<Panel className="panel--haupt" …>`); die aktuelle Version in der Innenwelt `col--aktuell` (`src/worlds/ProjektInnen.tsx`); die Kachel „Nächstes“ in Projekte `thumb--naechstes` (`src/worlds/Projekte.tsx`); das Zeichen eines schlichten Hinweises hat keine Inline-Farbe mehr. Ihr Aussehen ohne Look steht in `src/styles/global.css` (Block „Wasser-Look: Einbau“), ihr Aussehen mit Look in `desktop.css`, Teil 2 – dort beim Namen genannt, ohne `!important`. Die Brücke `src/wasser/einbau.css` gibt es nicht mehr.
+- **Die Tageskarte** (`src/ui/Tageskarte.tsx`, Entscheidung 12) braucht nichts vom Look: Am Handy ist sie eine `.glass.m-card` mit `.m-row`-Kacheln, am Desktop ein `.glass.panel` mit `.item`-Kacheln – also Becken und Mulde.
 
 ### 8.3 Was für jeden weiteren Schritt gilt
 
 - **Wer:** der Hauptchat, oder ein Unterchat auf dem Branch, den der Hauptchat nennt. Nie auf `main` pushen, nie deployen (`CLAUDE.md`).
-- **Die Vorlage bleibt die Quelle.** Geändert wird in `docs/wasser-look/vorlage/`, dann geholt. Die Kopien in `src/wasser/` nie von Hand ändern. Grund: Alle Werkzeuge lesen die Vorlage dort, und sie laufen nur dann richtig gegen die gebaute App, wenn beide gleich sind.
+- **Die Vorlage bleibt die Quelle.** Geändert wird in `docs/wasser-look/vorlage/`, dann geholt und gebaut. Die Kopien in `src/wasser/` nie von Hand ändern.
 
   ```
   node scripts/wasser/uebernehmen.mjs && git status --short src/wasser
+  npm run build
   ```
 
-  Keine Zeile unter den vier „->“-Zeilen heißt: Die Kopien waren aktuell.
-- **Erst zeigen, dann live.** Was am Look geändert wird (Schritte 8 bis 11), sieht der Besitzer zuerst als Bild oder Film, dann auf der Baustelle, dann erst live. Das Handy ist schon live: Jede Änderung der Vorlage trifft es.
-- **Die Werkzeuge nach dem Einbau.** Sie spielen die Vorlage weiter ein – jetzt in eine App, die den Look schon hat. Das geht, solange beide gleich sind: Dieselben Regeln stehen doppelt da, das Skript läuft einmal. Ausprobiert gegen `e6eb9ef`: `pruefen.mjs --app` 60 von 60, `desktop.mjs pruefen` 24 von 24. Was sich ändert:
-  - `--look ohne` zeigt nicht mehr „die App wie heute“, sondern den eingebauten Look ohne Einspielen. Gut, um genau den zu sehen.
-  - „Nichts ist verrückt“ in `desktop.mjs pruefen` vergleicht dann den Look mit sich selbst und sagt nichts mehr.
-  - `vergleich.mjs app`, `film` und der App-Teil von `stile` brauchen eine App **ohne** Look. Gegen die eingebaute App sind sie nicht zu gebrauchen. `vergleich.mjs bilder` (die Vorschauseite; braucht die App nicht) bleibt gültig.
-  - `desktop.mjs zeigen` ist für eine Hülle, die den Look schon eingebaut hat, überflüssig und wählt dort den Ton nicht richtig. `npm run preview` zeigt den eingebauten Look.
-  - Die Handy-Werkzeuge nennen bei Tag „dunkel“, was in Wahrheit „klar“ ist – bis Schritt 5 b erledigt ist.
+  Keine Zeile unter den vier „->“-Zeilen heißt: Die Kopien waren aktuell. `pruefen.mjs` meldet, wenn Kopien und Vorlage auseinanderlaufen, und endet dann mit Fehler.
+- **Erst zeigen, dann live.** Was am Look geändert wird (Schritte 8 bis 11), sieht der Besitzer zuerst als Bild oder Film, dann auf der Baustelle, dann erst live. Handy und Desktop sind live: Jede Änderung der Vorlage trifft beide.
+- **Welchen Look ein Werkzeug misst** – der Schalter `--look`, bei allen Werkzeugen gleich (die Regeln stehen im Kopf von `scripts/wasser/lib.mjs`):
+
+  | `--look` | In der echten App | Auf der Vorschauseite |
+  |---|---|---|
+  | (nichts) oder `auto` | der Look, den die App **eingebaut** hat. Nichts wird eingespielt. Hat eine Hülle keinen Look (ein älterer Stand der App), bekommt sie die Vorlage eingespielt wie vor dem Einbau | die Vorlage |
+  | `eingebaut` | die App genau so, wie sie gebaut ist – mit oder ohne Look | die Vorlage |
+  | `vorlage`, ein Ordner, `git:<Commit>` | **diese Kopie an der Stelle des eingebauten Looks:** Die Regeln des Looks werden aus dem Stylesheet der App geschnitten, bevor die Seite es sieht, und durch die drei Stylesheets des Ordners ersetzt; das Skript des Ordners ist da, bevor die App startet, und die App startet es selbst | diese Kopie |
+  | `ohne` | die App ohne Look: Ein eingebauter Look wird ebenso herausgenommen | die App ohne Look |
+
+  Jedes Werkzeug nennt in seiner ersten Zeile, was es genommen hat („Look: built in …“, „Look: … IN PLACE OF the built-in copies“, „Look: none …“). Nie liegen zwei Looks auf einer Seite.
+  - „Nichts ist verrückt“ in `desktop.mjs pruefen` vergleicht den eingebauten Look mit derselben App ohne Look und behält so seinen Sinn.
+  - `vergleich.mjs` vergleicht **zwei Looks in einer App** (`--alt` gegen `--neu`); jede Seite nimmt in der App den Platz des eingebauten Looks ein. **Zwei Stände der App** – zwei Commits, zwei Adressen – vergleicht `sollist.mjs`.
+  - Ein unbekannter oder falsch geschriebener Schalter, ein fehlender Wert und ein Ordner, den es nicht gibt, beenden jedes Werkzeug mit einer Meldung (Ende mit Code 2). Bei `desktop.mjs` und `messen.mjs`, die mehrere Arten kennen, auch ein Schalter, den nur eine andere Art liest (`desktop.mjs pruefen --toene klar` prüfte sonst still „dunkel“: `pruefen` nimmt `--ton`, `kontrast` nimmt `--toene`).
+- **Der Ton in den Werkzeugen:** über die Einstellung der App, in beide Richtungen (Abschnitt 6).
 - **Der Prüfblock** nach jedem Schritt (Vorschau im zweiten Terminal: `npm run preview`):
 
   ```
   node scripts/wasser/uebernehmen.mjs && git status --short src/wasser
   npm run build
   node scripts/verify.mjs http://localhost:4173        # 69 Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code
-  node scripts/wasser/pruefen.mjs --app                # 60 Prüfungen
+  node scripts/wasser/pruefen.mjs --app                # 64 Prüfungen (bis 14.11. abends 60)
+  node scripts/wasser/desktop.mjs pruefen              # 27 Prüfungen (bis 14.11. abends 24)
   ```
 
-  und die Reihenfolge im gebauten CSS:
+  die Reihenfolge im gebauten CSS:
 
   ```
   node -e "const fs=require('fs');const f=fs.readdirSync('dist/assets').find(n=>/^index-.*\.css$/.test(n));const c=fs.readFileSync('dist/assets/'+f,'utf8');const look=c.slice(c.indexOf('[data-wasser]'));console.log(c.indexOf('[data-wasser]')>c.lastIndexOf('.m-shell .btn--sm')?'Reihenfolge gut':'FALSCH: der Look steht vor mobile.css','| Weichzeichner im Look:',(look.match(/-webkit-backdrop-filter:/g)||[]).length,'mit -webkit-,',(look.match(/[^-]backdrop-filter:/g)||[]).length,'ohne')"
   ```
 
-  Es muss „Reihenfolge gut“ melden und zweimal dieselbe Zahl (`c7e8299`: 6 und 6; `e6eb9ef`: 16 und 16).
+  Es muss „Reihenfolge gut“ melden und zweimal dieselbe Zahl (heute: 16 und 16). Die Werkzeuge prüfen die Reihenfolge bei jedem Lauf mit, in dem sie einen Look ersetzen oder herausnehmen, und brechen sonst ab: Hinter der ersten Regel des Looks darf keine Regel stehen, die weder `[data-wasser` noch `data-wa-ton` nennt (`lookStart` und `strangers` in `lib.mjs`; Keyframes ausgenommen, `@media` und `@supports` durchsucht). Sonst schnitte das Ersetzen Regeln der App mit weg.
+  Und der Beweis, dass sich sonst nichts geändert hat – gegen den Stand vor dem Schritt:
+
+  ```
+  node scripts/wasser/sollist.mjs --soll git:feinschliff-basis      # die App, 164 Bildschirme: Handy und Desktop, beide Töne, beide Bereiche; 25 Minuten
+  ```
+
+  Bildschirme, die sich ändern **sollen**, nennt man mit `--erwartet` (Teile ihrer Namen); alle anderen müssen punktgleich bleiben. `--liste` druckt die Namen.
 - **Probelauf in einer Kopie des Projekts** – für alles, was `src/` ändert und noch nicht in einen Branch soll. So wurden die Schritte dieser Anleitung nachgeprüft.
 
   ```
@@ -727,7 +806,7 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand `c7e8299` (Handy) un
   ```
 
   Meldet vite „Port 4175 is already in use“: einen anderen Port nehmen. Sonst prüfen die Werkzeuge, was immer dort antwortet.
-  Jeder Befehl dieser Anleitung läuft in der Kopie wie im Projekt. Nur die Adresse der App ist eine andere: `WASSER_APP=http://localhost:4175` vor jedes Werkzeug aus `scripts/wasser/`, und `node scripts/verify.mjs http://localhost:4175`. Die Kopie hat kein Git: statt `git status` ein `diff -r`, statt `--alt git:HEAD` der Ordner der Vorlage im Projekt (`--alt <Projekt>/docs/wasser-look/vorlage`).
+  Jeder Befehl dieser Anleitung läuft in der Kopie wie im Projekt. Nur die Adresse der App ist eine andere: `WASSER_APP=http://localhost:4175` vor jedes Werkzeug aus `scripts/wasser/`, und `node scripts/verify.mjs http://localhost:4175`. Die Kopie hat kein Git: statt `git status` ein `diff -r`, statt `--alt git:HEAD` der Ordner der Vorlage im Projekt (`--alt <Projekt>/docs/wasser-look/vorlage`), und `sollist.mjs` bekommt zwei Adressen (`--soll http://localhost:4173 --ist http://localhost:4175`).
 
 ### Schritt 1 – Die Dateien nach `src/wasser/` bringen (erledigt)
 
@@ -739,14 +818,14 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand `c7e8299` (Handy) un
 ### Schritt 2 – Das Handy einschalten (erledigt)
 
 - **Dateien:** `src/mobile/Mobile.tsx` (drei Zeilen, siehe 8.2).
-- **Prüfen:** der Prüfblock. Ansehen: http://localhost:4173 im schmalen Fenster – alle fünf Reiter, ein Projekt, ein Bogen, die Suche. Bilder des eingebauten Looks ohne Einspielen: `node scripts/wasser/bild.mjs screenshots/wasser/eingebaut app --look ohne`, mit dem Auge gegen [dunkel-app](wasser-look/bilder/mobil/dunkel-app.webp).
+- **Prüfen:** der Prüfblock. Ansehen: http://localhost:4173 im schmalen Fenster – alle fünf Reiter, ein Projekt, ein Bogen, die Suche. Bilder des eingebauten Looks: `node scripts/wasser/bild.mjs screenshots/wasser/eingebaut app`, mit dem Auge gegen [dunkel-app](wasser-look/bilder/mobil/dunkel-app.webp).
 - **Darf nicht passieren:** Der Desktop ändert sich. Ein Attribut `data-wasser` ohne den Aufruf `useWasser` (dann stehen die Flächen ohne Tropfen, Ring und Licht da).
 
-### Schritt 3 – Der Ton folgt der Einstellung (erledigt fürs Handy)
+### Schritt 3 – Der Ton folgt der Einstellung (erledigt, Handy und Desktop)
 
 - **Dateien:** `src/App.tsx` (drei Zeilen im Effekt fürs Thema, siehe 8.2).
-- **Heute:** `src/App.tsx` setzt `data-theme` und erzwingt am Handy „dunkel“. Das bleibt. Dazu wählt die Einstellung „Erscheinungsbild“ am Handy den Ton.
-- **Prüfen:** Im schmalen Fenster die Einstellungen öffnen und „Erscheinungsbild“ umschalten: Hell → `<html data-wa-ton="klar">`, Dunkel → kein Attribut, Automatisch → nach der Tageszeit. `data-theme` bleibt „dunkel“ (das prüft auch `verify.mjs`: „Mobile: dark theme forced“). So nachgeprüft an `c7e8299` und `e6eb9ef`. Ohne Browserfenster: `node scripts/wasser/stelle.mjs screenshots/wasser/ton.png --mobil --look ohne --bogen einstellungen --klick Hell --css html` druckt die Attribute des `<html>`; dasselbe mit `--klick Dunkel`.
+- **Heute:** `src/App.tsx` setzt `data-theme` überall auf „dunkel“. Die Einstellung „Erscheinungsbild“ wählt den Ton, am Handy und am Desktop.
+- **Prüfen:** Im schmalen Fenster die Einstellungen öffnen und „Erscheinungsbild“ umschalten: Hell → `<html data-wa-ton="klar">`, Dunkel → kein Attribut, Automatisch → nach der Tageszeit. `data-theme` bleibt „dunkel“ (das prüft auch `verify.mjs`: „Mobile: dark theme forced“). So nachgeprüft an `c7e8299` und `e6eb9ef`. Ohne Browserfenster: `node scripts/wasser/stelle.mjs screenshots/wasser/ton.png --mobil --ton auto --bogen einstellungen --klick Hell --css html` druckt die Attribute des `<html>`; dasselbe mit `--klick Dunkel`.
 - **Darf nicht passieren:** `data-theme="hell"` zusammen mit dem Look (dunkle Schrift auf Wasser).
 
 ### Schritt 4 – Baustelle, echtes Handy, live (erledigt fürs Handy)
@@ -766,59 +845,48 @@ Zum Nachprüfen und für jeden, der daran weiterbaut. Stand `c7e8299` (Handy) un
 
   Dazu: „klar“ bei Tageslicht; Auswahl und Datumswähler auf iOS; Trefferflächen der Kopfzeile und der Reiter mit dem Daumen.
 
-### Schritt 5 – Drei kleine Absicherungen (a und b offen, c erledigt)
+### Schritt 5 – Drei kleine Absicherungen (erledigt am 14.11., Branch `wasser-look`)
 
-Jede ist eine Stelle, die beim Probelauf dieser Anleitung aufgefallen ist. Alle drei sind ausprobiert.
+Jede ist eine Stelle, die beim Probelauf dieser Anleitung aufgefallen ist.
 
-- **a) `src/wasser/wasser.ts`: die Reihenfolge der Stylesheets festmachen.** Heute stimmt sie, weil `Mobile.tsx` zuerst `mobile.css` und dann den Look lädt und kein früheres Modul den Look lädt. Lädt ihn ein früheres – etwa `SheetHost.tsx` für Schritt 11 –, steht der Look im gebauten CSS **vor** `mobile.css` und verliert am Handy, ohne Meldung (nachgestellt an `e6eb9ef`). Darum über `import './kern.css';` einfügen:
+- **a) `src/wasser/wasser.ts` lädt zuerst die Stylesheets der App** (`tokens.css`, `global.css`, `mobile.css`; die Datei steht in 8.2). Damit steht der Look im gebauten CSS immer nach ihnen, gleich welches Modul `wasser.ts` als Erstes lädt. Vorher stimmte die Reihenfolge nur, weil `Mobile.tsx` zuerst `mobile.css` und dann den Look lud; ein früherer Import – etwa aus `SheetHost.tsx` für Schritt 11 – hätte den Look **vor** `mobile.css` gestellt, und er hätte am Handy ohne Meldung verloren.
+  Nachgeprüft: der Befehl für die Reihenfolge aus 8.3 („Reihenfolge gut“, 16 und 16). Gegenprobe in einer Kopie des Projekts, mit einem Import von `wasser.ts` als erster Zeile von `src/ui/SheetHost.tsx`: ohne die drei Zeilen „FALSCH“, mit ihnen „Reihenfolge gut“ (TypeScript ohne Fehler). Das gebaute Skript ist Byte für Byte dasselbe wie vorher.
+- **b) Die Werkzeuge wählen den Ton über die Einstellung der App, in beide Richtungen.** Die App wählt den Ton selbst – bei Tag „klar“. Die Werkzeuge setzten nur das Attribut, und der nächste Effekt der App überschrieb es: Bei Tag war ein Bild, das „dunkel“ hieß, in Wahrheit „klar“; am Desktop war bei Nacht „klar“ in Wahrheit „dunkel“. Jetzt schreiben `openApp` (`scripts/wasser/lib.mjs`) und `openDesktop` (`desktop-lib.mjs`) die Einstellung „Erscheinungsbild“ in den gespeicherten Stand der App und laden neu – wie ein Mensch, der sie umgestellt hat; am Handy auch dann, wenn ein Werkzeug den eingebauten Look durch einen früheren ersetzt (Fallstrick 63). Zeigt die App danach nicht den verlangten Ton, bricht das Werkzeug ab.
+  Gemessen: mittlere Helligkeit (0 bis 255) desselben Streifens derselben Karte („Aufgaben“ am Handy, das erste Panel links in „Heute“ am Desktop), feste Uhr, reduzierte Bewegung:
 
-  ```ts
-  // The look wins over the app's own rules by coming LATER. So the app's stylesheets are imported here first:
-  // whoever imports this module first, the order in the built CSS stays app -> kern -> mobil -> desktop.
-  import '../styles/tokens.css';
-  import '../styles/global.css';
-  import '../mobile/mobile.css';
-  ```
+  | verlangt | Handy, vorher | Handy, jetzt | Desktop, vorher | Desktop, jetzt |
+  |---|---|---|---|---|
+  | „dunkel“ bei Tag | 84 (war „klar“) | 47 | 52 (war „klar“) | 43 |
+  | „klar“ bei Tag | 84 | 84 | 52 | 52 |
+  | „dunkel“ bei Nacht | 47 | 47 | 35 | 35 |
+  | „klar“ bei Nacht | 84 | 84 | 35 (war „dunkel“) | 41 |
 
-  Prüfen: der Befehl für die Reihenfolge aus 8.3.
-- **b) `scripts/wasser/lib.mjs`: den Ton in beide Richtungen sagen.** Die App wählt den Ton jetzt selbst – bei Tag „klar“. Die Handy-Werkzeuge sagen ihn nur, wenn er „klar“ sein soll. Nachgemessen am Live-Stand: Bei Tag ist ein Bild, das „dunkel“ heißt, in Wahrheit „klar“ (Helligkeit eines Kartenstreifens 70 statt 33); `kontrast.mjs --app` misst dann zweimal „klar“. In `openApp` die Zeile
+  („Vorher“: die Werkzeuge vom Stand `feinschliff-basis` gegen dieselbe gebaute App. Am Desktop scheint die Landschaft durch ein Panel: Darum ist derselbe Ton bei Tag heller als bei Nacht.)
+- **c) `desktop.mjs pruefen` hält den wippenden Hinweis an.** Die Prüfung „Gedrückt: nichts verlässt seinen Platz“ maß das eigene Wippen des Hinweises „Scrollen zum Erkunden“ mit (die Animation `bob` der App) und meldete je nach Augenblick 5 oder 6 px (23 von 24). `pruefen` hält diese Animation an, bevor es drückt: 24 von 24.
+- **Darf nicht passieren:** dass diese Zeilen als Änderung am Look gelten – sie ändern kein Bild (`sollist.mjs` gegen `feinschliff-basis`: Abschnitt 11).
 
-  ```js
-  if (ton && ton !== 'dunkel') await page.evaluate((t) => { document.documentElement.dataset.waTon = t; }, ton);
-  ```
+### Schritt 6 – Den Desktop einschalten (erledigt; offen: Inline-Innenabstände)
 
-  ersetzen durch
-
-  ```js
-  await page.evaluate((t) => { if (t && t !== 'dunkel') document.documentElement.dataset.waTon = t; else delete document.documentElement.dataset.waTon; }, ton);   // (with the look built in the app sets the tone itself: say it both ways)
-  ```
-
-  Prüfen, bei Tag: `node scripts/wasser/bild.mjs screenshots/wasser/eingebaut app --look ohne --toene dunkel` – die Bilder müssen wirklich dunkel sein. Die Desktop-Werkzeuge sagen den Ton schon in beide Richtungen.
-- **c) `scripts/wasser/desktop.mjs`: der wippende Hinweis – erledigt in diesem Branch (`wasser-look`).** Die Prüfung „Gedrückt: nichts verlässt seinen Platz“ maß das eigene Wippen des Hinweises „Scrollen zum Erkunden“ mit (die Animation `bob` der App) und meldete je nach Augenblick 5 oder 6 px. `pruefen` hält diese Animation jetzt an, bevor es drückt. Ein Branch mit der älteren Fassung des Werkzeugs (`welt/wasser-desktop` bis `e6eb9ef`) kann noch 23 von 24 melden.
-- **Darf nicht passieren:** dass diese Zeilen als Änderung am Look gelten – sie ändern kein Bild. `vergleich.mjs bilder` bleibt ohne Abweichung.
-
-### Schritt 6 – Den Desktop einschalten (in Arbeit auf `welt/wasser-desktop`)
-
-- **Dateien** (Stand `e6eb9ef`): `src/scene/Stage.tsx` (das Attribut), `src/App.tsx` (der Aufruf, der Effekt fürs Thema), `src/wasser/wasser.ts`, `src/wasser/einbau.css`, `src/styles/global.css` (Block „Wasser-Look: Einbau“), `src/worlds/Archiv.tsx`, `Druck.tsx`, `Material.tsx`, `Wetter.tsx`, `ProjektInnen.tsx`, `Projekte.tsx` (je eine Klasse).
-- **Getan:** siehe 8.2.
-- **Nachgeprüft an `e6eb9ef`** (in einer Kopie, für diese Anleitung): `npm run build` läuft durch (CSS 108 KB, 22 KB gepackt); die Reihenfolge im CSS stimmt; der Look läuft im Handy- und im Desktop-Format; „Erscheinungsbild“ schaltet den Ton, `data-theme` bleibt „dunkel“; beim Wechsel über 900 px und zurück läuft immer genau eine Hülle, ohne Fehler; `verify.mjs` 68 von 69 (die eine: Open-Meteo antwortete mit „429“); `pruefen.mjs --app` 60 von 60; `desktop.mjs pruefen` 24 von 24.
-- **Noch zu tun:**
-  1. `src/wasser/einbau.css` auflösen. Sie überbrückt, dass die Vorlage zwei Stellen noch am Inline-Stil sucht, den die App nicht mehr setzt. In `docs/wasser-look/vorlage/desktop.css`, Teil 2, die Klassen nennen: `.panel .glass.col--aktuell` neben `.panel .glass:where(.col)[style*="solid"]`, `.panel .thumb.thumb--naechstes` neben `.panel .thumb[style*="124, 198, 255"]`, `.glass.panel.panel--haupt` neben `.ui > .glass.panel[style*="bottom:"]`. Beide Schreibweisen nebeneinander lassen, solange es noch eine App ohne diese Klassen gibt (`main` am Desktop, dieser Branch). Dann `uebernehmen.mjs`, `einbau.css` und ihren Import löschen.
-  2. Kleine Auswahlfelder mit Inline-Innenabstand (11 Stellen, auch in Bögen): den Inline-Innenabstand in der App streichen; dann entfallen in `desktop.css`, Teil 5, die zwei Regeln `.select[style*="padding"]`.
-  3. Schritt 5 hereinholen.
+- **Dateien:** `src/scene/Stage.tsx` (das Attribut), `src/App.tsx` (der Aufruf, der Effekt fürs Thema), `src/wasser/wasser.ts`, `src/styles/global.css` (Block „Wasser-Look: Einbau“), `src/worlds/Archiv.tsx`, `Druck.tsx`, `Material.tsx`, `Wetter.tsx`, `ProjektInnen.tsx`, `Projekte.tsx` (je eine Klasse).
+- **Getan:** siehe 8.2. Dazu am 14.11. auf diesem Branch:
+  1. **`src/wasser/einbau.css` ist aufgelöst.** `desktop.css`, Teil 2, nennt die drei Klassen selbst: `.glass.panel.panel--haupt`, `.panel .glass.col--aktuell`, `.panel .thumb.thumb--naechstes`. Die alten Schreibweisen, die den Inline-Stil suchten (`[style*="bottom:"]`, `[style*="solid"]`, `[style*="124, 198, 255"]`), und drei `!important` sind weg – es gibt keine App mehr ohne diese Klassen. Die Datei und ihr Import sind gelöscht.
+  2. Schritt 5 ist hereingeholt.
+- **Offen: kleine Auswahlfelder mit Inline-Innenabstand.** Es sind zehn Stellen mit fünf verschiedenen Abständen (`1px 4px` bis `4px 6px`): `Archiv.tsx`, `Druck.tsx` (zwei), `Material.tsx`, `ProjektInnen.tsx` in den Welten; `SpuleForm.tsx`, `ProjektDetail.tsx` (zwei), `GeraetForm.tsx`, `Werkstatt.tsx` in Bögen, die auch das Handy zeigt. `desktop.css`, Teil 5, gibt ihrem Pfeil am Desktop mit zwei `!important`-Regeln Platz (`.select[style*="padding"]`).
+  **Sie bleiben.** Den Inline-Abstand nur zu streichen, ändert beide Hüllen – gemessen am 14.11.: Jedes dieser Felder wird 12 bis 34 px breiter und 8 bis 13 px höher (am Desktop z. B. 144 × 25 → 156 × 33; eine Zeile der Warteschlange in „3D-Druck“ 17 → 30 px; am Handy im Bogen einer Rolle 220 × 27 → 254 × 39). Das ist eine sichtbare Änderung und keine Sache des Looks.
+  Wer es bereinigen will, braucht drei Dinge zusammen: (1) die Abstände als Klassen in der App (eine Marke wie `select--klein`, dazu die Abstände); (2) `src/mobile/mobile.css`: Die Regel `.m-shell .select` (10 px 12 px) darf ein solches Feld nicht treffen; (3) `kern.css`, Baustein „Feld“: `padding-right: 34px` darf ein solches Feld nicht treffen – dann nennt `desktop.css` die Marke statt `[style*="padding"]`, ohne `!important`. Beweis mit `sollist.mjs` (die Felder stehen in den Welten Material, Archiv, 3D-Druck, Innenwelt und in den Bögen „Rolle“, „Versionen“, „Werkzeuge“, „Geräte“) – nicht gebaut.
+- **Nachgeprüft** (dieser Branch, 14.11.): `npm run build`; die Reihenfolge im CSS (16 und 16); `verify.mjs` 64 von 69 (die fünf: Open-Meteo antwortete mit „429“ – wie am Stand davor); `pruefen.mjs --app` 60 von 60; `desktop.mjs pruefen` 24 von 24; `sollist.mjs` gegen `feinschliff-basis`: Abschnitt 11.
 - **Prüfen:** der Prüfblock, dazu
 
   ```
-  node scripts/wasser/desktop.mjs pruefen
   node scripts/wasser/desktop.mjs pruefen --format 1920 --ton klar
   node scripts/wasser/desktop.mjs kontrast
   ```
 
-- **Darf nicht passieren:** Ein Panel, ein Titel oder eine Insel steht anders als heute. `data-theme="hell"` irgendwo. Der Aufruf `useWasser(…)` vor dem Effekt für `--ui-scale`. Das Handy ändert sich (`node scripts/wasser/vergleich.mjs bilder --alt git:HEAD`, wenn die Vorlage angefasst wurde).
+- **Darf nicht passieren:** Ein Panel, ein Titel oder eine Insel steht anders als heute. `data-theme="hell"` irgendwo. Der Aufruf `useWasser(…)` vor dem Effekt für `--ui-scale`. Das Handy ändert sich (`node scripts/wasser/sollist.mjs handy --soll git:<Commit davor>`).
 
-### Schritt 7 – Den Desktop Welt für Welt abnehmen, dann Baustelle, eigener Bildschirm, live (offen)
+### Schritt 7 – Den Desktop Welt für Welt abnehmen (der Desktop ist live seit 14.11., Entscheidung 13)
 
-Eine Welt nach der anderen, in dieser Reihenfolge: Start, Heute, Projekte, Innenwelt eines Projekts, 3D-Druck, Material, Wetter, Archiv. Erst wenn eine Welt abgehakt ist, die nächste.
+Der Besitzer hat den Einbau auf der Baustelle an seinem Bildschirm gesehen und den Stand `9c4afa7` live gehen lassen; der Feinschliff folgt. Die Abnahme Welt für Welt bleibt die Art, den Feinschliff anzusehen. Eine Welt nach der anderen, in dieser Reihenfolge: Start, Heute, Projekte, Innenwelt eines Projekts, 3D-Druck, Material, Wetter, Archiv. Erst wenn eine Welt abgehakt ist, die nächste.
 
 - **Je Welt ansehen** (acht Bilder: zwei Formate, zwei Töne, Nacht und Tag):
 
@@ -832,97 +900,113 @@ Eine Welt nach der anderen, in dieser Reihenfolge: Start, Heute, Projekte, Innen
   und dieselben vier mit `--format 1920`. Gegen die Bilder in `docs/wasser-look/bilder/desktop/` halten. Namen der Welten für `--nur`: `start`, `heute`, `projekte`, `innen`, `druck`, `material`, `wetter`, `archiv`.
 - **Je Welt prüfen:** Keine Insel und kein Inselname ist von Text oder Panels verdeckt. Jeder Text ist lesbar, bei Tag und bei Nacht. Mit der Maus: jeder Knopf, jedes Panel, die Schublade, die Suche. Die leere Werkstatt („Meine Werkstatt“).
 - **In der Welt „Wetter“ zu entscheiden (Anordnung der App, nicht der Look):** Bei 2000 × 993 steht das Schild „Luftdruck“ auf dem Namen der kleinen Insel „Archiv“. Unter dem Wasser ist der Name ganz verdeckt. Das Schild oder die Insel braucht einen anderen Platz (`src/worlds/Wetter.tsx`, `src/scene/worldLayouts.ts`; Ursache in `NOTIZEN.md`, Abschnitt 10, Punkt 8). Der Besitzer entscheidet.
-- **Dann (Hauptchat):** auf die Baustelle einspielen wie in `CLAUDE.md` beschrieben (`VITE_API=node npm run build`, `dist/` nach `server/public/`, Archiv, `hosting_nodejs_start-build`; vorher `npm audit` in `server/`). Der Besitzer sieht es an seinem Rechner an (2000 × 993) – noch nie lief der Look auf einer echten Grafikkarte. Reihenfolge und „die eine Zeile“ je Befund: `NOTIZEN.md`, Abschnitt 11.5. Der erste Hebel, falls es ruckelt: weniger weichgezeichnete Flächen – in `desktop.css`, Teil 2, den Weichzeichner zuerst von `.bottom-row .glass.panel` nehmen. Erst nach seinem Ja: `main`, live (`domain: 3druckwerkbank.com`), `hosting_cache_clear`, Xmind-Mindmap.
-- **Darf nicht passieren:** Der Desktop geht live, bevor der Besitzer ihn an seinem Bildschirm gesehen hat (Entscheidung 9). Testvarianten auf der Hauptadresse. Eine Regel in `desktop.css` wird leichter als die Liste ihres Bausteins (4.4). Etwas springt beim Drücken (das prüft `desktop.mjs pruefen`).
+- **Dann (Hauptchat):** auf die Baustelle einspielen wie in `CLAUDE.md` beschrieben (`VITE_API=node npm run build`, `dist/` nach `server/public/`, Archiv, `hosting_nodejs_start-build`; vorher `npm audit` in `server/`). Der Besitzer sieht es an seinem Rechner an (2000 × 993). Reihenfolge und „die eine Zeile“ je Befund: `NOTIZEN.md`, Abschnitt 11.5. Der erste Hebel, falls es ruckelt: weniger weichgezeichnete Flächen – in `desktop.css`, Teil 2, den Weichzeichner zuerst von `.bottom-row .glass.panel` nehmen. Erst nach seinem Ja: `main`, live (`domain: 3druckwerkbank.com`), `hosting_cache_clear`, Xmind-Mindmap.
+- **Darf nicht passieren:** Eine Änderung am Look geht live, bevor der Besitzer sie gesehen hat (Entscheidung 13: erst Baustelle, dann live, mit Bildern vorher/nachher). Testvarianten auf der Hauptadresse. Eine Regel in `desktop.css` wird leichter als die Liste ihres Bausteins (4.4). Etwas springt beim Drücken (das prüft `desktop.mjs pruefen`).
 
-### Schritt 8 – Die Wartezeit beim Reiterwechsel (Entscheidung 11; offen)
+### Schritt 8 – Die Wartezeit beim Reiterwechsel (Entscheidung 11; gebaut am 14.11. abends, Branch `wasser-look`)
 
 Der Besitzer am Handy: Nach dem Tipp auf einen Reiter dauert es einen Moment, dann wechselt der Bildschirm – danach flüssig.
 
-- **Erste Messung** (Arbeitsmaschine, Chromium, Rechner viermal gebremst, Stand live `c7e8299`; je zwölf Tipps, Median, zwei Durchgänge). Zeit vom Klick bis das neue Bild einmal gezeichnet ist:
+- **Befund und Messung:** `docs/wasser-look/entwurf/reiterwechsel/BEFUND.md` (mit dem Abschnitt „Behoben am 14.11.“). Bei jedem Wechsel zeichnete das Skript das neue Szenenbild im Takt des Wechsels auf eine Fläche von 2048 × 1024, lud es hoch und baute die Verkleinerungsstufen – auch für eine Szene, die schon da war –, und es zeichnete das erste Wasserbild der neuen Knöpfe, bevor der neue Bildschirm zum ersten Mal zu sehen war.
+- **Gebaut** (`wasser.js`, Teil 1; `src/mobile/Mobile.tsx`; die Einzelheiten in `NOTIZEN.md`, Abschnitt 4, „The scene inside the drops“):
+  1. Ein Vorrat an Szenen-Texturen nach Bildadresse, höchstens sechs (`KEEP`; höchstens rund 67 MB auf dem Grafikchip). Der zweite Besuch kostet nur ein Umschalten.
+  2. Eine neue Szene wird außerhalb des Takts gemacht: dekodiert auf einem anderen Faden (`createImageBitmap` aus den Bytes im Cache), skaliert wie bisher, hochgeladen in vier Stücken, eins nach jedem Bild. Bis sie fertig ist, zeigen die Tropfen die alte; bei schnellem Tippen endet es immer mit der Szene des letzten Reiters.
+  3. Die Texturgröße bleibt 2048 × 1024 (1024 × 512 ist im Zahnrad-Tropfen auf „Projekte“ über den Blättern vergrößert sichtbar weicher – Zahlen im Befund).
+  4. Die App lädt die Szenen der anderen vier Reiter 1,2 s nach dem Start in einem ruhigen Moment vor (nicht bei „Daten sparen“) und gibt sie dem Look (`Wasser.warm`), der sie vorab zu Texturen macht: Auch der erste Besuch eines Reiters zeigt die Tropfen gleich mit der neuen Szene.
+  5. Das erste Bild einer neuen Seite geht ohne die Arbeit der Tropfen hinaus, ihr erstes Wasserbild folgt im nächsten Bild. Die neuen Knöpfe stehen dabei ein Bild lang als schlichtes Glas da – in Karten, die gerade erst aus der Durchsichtigkeit auftauchen. Bei reduzierter Bewegung wird sofort gezeichnet, wie bisher.
+- **Gemessen** (Arbeitsmaschine, `node scripts/wasser/reiter.mjs handy --app vorher=<Ordner>,nachher=<Ordner> --drossel 1,4 --laeufe 3 --ohne --gestoppt`, Median): das neue Bild steht nach 30 statt 88 bis 117 ms (ohne Look: 26), viermal gebremst nach 108 bis 123 statt 314 bis 367 ms (ohne Look: 38 bis 59; der Rest ist das fließende Wasser selbst, das hier in Software rechnet). Keine Aufgabe mehr, die Szenenarbeit ist – vorher bis 182 ms in einer. Die Tropfen zeigen Bildpunkt für Bildpunkt dasselbe wie vorher (reduzierte Bewegung, beide Töne, fünf Reiter, je der ganze Bildschirm). Desktop: Ein Weltwechsel lief nie durch diesen Weg (die Landschaft bleibt); ein Wechsel der Landschaft (Look der Stunde) läuft jetzt verteilt statt in einer Aufgabe von 55 ms (viermal gebremst 170 bis 256 ms).
+- **Prüfen:** `node scripts/wasser/reiter.mjs handy` (und `desktop`, `landschaft`) gegen den Stand davor; `pruefen.mjs --app`; `desktop.mjs pruefen`; `sollist.mjs` (in Ruhe darf sich kein Bildpunkt ändern).
+- **Was nur das echte Handy sagt:** Ist die Wartezeit dort weg? Auf der Baustelle zwischen den fünf Reitern tippen, erst alle einmal, dann noch einmal. Die Arbeitsmaschine rechnet WebGL ohne Grafikchip; ihre Zahlen sagen nur „vorher gegen nachher“. In der Konsole des angeschlossenen Handys: `Wasser.info.uploads` (Szenen gemacht), `.reused` (aus dem Vorrat), `.warmed` (vorab gemacht). Bleibt eine Wartezeit, ist der nächste Verdächtige das CSS des Looks (mit gestopptem Skript – `Wasser.stop()` – nachsehen) oder der erste Bildaufbau der neuen Karten (Weichzeichner, Entscheidung 14).
+- **Darf nicht passieren:** Tropfen, die nach einem Wechsel sichtbar „aufpoppen“ oder die alte Szene zeigen (beim ersten Besuch eines Unterbildschirms wie „Wetter“, „Archiv“ oder der Innenwelt eines Projekts zeigen die Tropfen der Kopfzeile noch einige Bilder lang die alte Szene – diese Szenen werden nicht vorgeladen). Ein schwarzer Tropfen (Fallstrick 47).
 
-  | | Klick → React fertig | Klick → neues Bild gezeichnet |
-  |---|---|---|
-  | die App ohne Look | 14 bis 17 ms | 45 bis 58 ms |
-  | mit Look, wie live | 39 bis 48 ms | **290 bis 314 ms** (größter Wert 590) |
-  | mit Look, ohne lebende Tropfen (`Wasser.start({ drops: '' })`) | 47 bis 52 ms | 108 bis 110 ms |
-  | mit Look, ohne Lichthelfer (`Wasser.start({ light: '' })`) | 36 bis 48 ms | 265 bis 291 ms |
-  | mit Look, Skript gestoppt (nur die Stylesheets) | 16 bis 17 ms | 68 bis 83 ms |
+### Schritt 9 – Das Tempo der Lichter (Entscheidung 7; gebaut am 14.11. abends, Branch `wasser-look`)
 
-  **Die Wartezeit kommt von den lebenden Tropfen:** Erscheinen die Knöpfe eines neuen Bildschirms, vermisst das Skript sie, lädt das neue Szenenbild und zeichnet das erste Wasserbild – alles, bevor der neue Bildschirm zum ersten Mal zu sehen ist. Die Lichthelfer kosten nichts Messbares, die Stylesheets allein 20 bis 30 ms. Die Arbeitsmaschine rechnet WebGL ohne Grafikkarte, sie übertreibt also; die Richtung stimmt mit dem überein, was er sieht.
-- **Dateien:** `docs/wasser-look/vorlage/wasser.js`, Teil 1 (dann `uebernehmen.mjs`).
-- **Tun:** Das erste Wasserbild neuer Tropfen darf den ersten Blick auf den neuen Bildschirm nicht aufhalten. Bis es da ist, zeigt der Knopf sein schlichtes Glas – so ist der Baustein gebaut (das Glas tritt erst zurück, wenn `data-w3="on"` gesetzt ist). Also: Vermessen und erstes Zeichnen neuer Tropfen auf nach dem nächsten gezeichneten Bild verschieben. Und sofort unter dem Finger antworten: Der gedrückte Reiter gibt heute schon in 60 ms nach (`--wa-tab-in`); die Perle fliegt erst los, wenn React fertig ist.
-- **Prüfen:** dieselbe Messung vorher und nachher; `node scripts/wasser/film.mjs screenshots/wasser/reiter --nur tab`; `pruefen.mjs --app`; `vergleich.mjs bilder --alt git:HEAD` (in Ruhe darf sich kein Bildpunkt ändern). Dann Baustelle und sein Handy.
-- **Darf nicht passieren:** Tropfen, die nach einem Wechsel sichtbar „aufpoppen“ oder kurz die alte Szene zeigen. Ein schwarzer Tropfen (Fallstrick 47).
-- **Am Handy selbst nachsehen** (Konsole des angeschlossenen Handys): `Wasser.start({ drops: '' })` – ist die Wartezeit weg, sind es die Tropfen. `Wasser.stop()` – nur noch die Stylesheets. Zurück: Seite neu laden.
+Die Stärke bleibt 1 (`--wa-leben`). Das Tempo ist ein wenig schneller als zuerst gebaut, deutlich weniger als der gezeigte 2,5-fache Versuch. **Der Besitzer hat es noch nicht gesehen.**
 
-### Schritt 9 – Das Tempo der Lichter (Entscheidung 7; offen)
+- **Gebaut** (`docs/wasser-look/vorlage/kern.css`, Teil 3 – vier Zeilen): die vier Längen etwa 1,4-mal so schnell, im selben Verhältnis zueinander, jede mit ihrer Gangart (`steps(N)` mit N = Sekunden: acht Bilder je Sekunde, wie bisher). Die Keyframes, der WebKit-Block (`linear`), der Atem der Perle (9 s) und die kurze Schleife (12 s) bleiben. `desktop.css` und `mobil.css` nennen keine eigene Länge (sie benutzen die vier, `mobil.css` verschiebt nur den Anfang um Bruchteile davon).
 
-Die Stärke bleibt 1 (`--wa-leben`). Das Tempo wird ein wenig schneller als gebaut, deutlich weniger als der gezeigte 2,5-fache Versuch.
-
-- **Dateien:** `docs/wasser-look/vorlage/kern.css`, Teil 3 – vier Zeilen.
-- **Tun:** die vier Längen ändern und zu jeder die Gangart: `steps(N)` mit N = Sekunden der Länge (so bleibt es bei acht Bildern je Sekunde). Die Längen sollen keinen gemeinsamen Takt haben. Die Keyframes bleiben, der WebKit-Block (`linear`) bleibt.
-
-  ```css
-  --wa-t-ruhe-1: 24s;  --wa-gang-1: steps(24);        /* heute */
-  --wa-t-ruhe-1: 17s;  --wa-gang-1: steps(17);        /* ein Versuch: etwa 1,4-mal so schnell */
-  ```
-
-- **Ausprobiert** mit 17 / 24 / 29 / 33 s statt 24 / 34 / 40 / 46 s: `pruefen.mjs` 54 von 54. `messen.mjs ruhe`: Von den Bildpunkten der Karten ändern sich binnen einer Sekunde 4,5 % um 4 von 255 oder mehr (wie gebaut: 3,2 %), binnen vier Sekunden 12,4 % (8,4 %); kein Buchstabe ändert sich um 4 oder mehr. Der Wert selbst ist seine Entscheidung – dieser Versuch wurde ihm nicht gezeigt.
-- **Prüfen und zeigen:** `node scripts/wasser/pruefen.mjs`, `node scripts/wasser/messen.mjs ruhe`, `node scripts/wasser/messen.mjs takt`, dann ein Film zum Zeigen: `node scripts/wasser/clip.mjs screenshots/wasser/tempo.mp4 --cast`. `vergleich.mjs` meldet danach im Teil `film` gewollt Abweichungen.
-- **Darf nicht passieren:** Text, der sich bewegt. Eine Länge ohne passende Gangart (dann wird das Licht öfter oder seltener gezeichnet als achtmal je Sekunde). Live, bevor er es gesehen hat.
-
-### Schritt 10 – „klar“ durchsichtiger (Entscheidung 8; offen)
-
-Nur der Ton „klar“, vorerst. Durchsichtiger heißt: mehr von der Szene durch das Wasser – nicht eine hellere Farbe. Am Desktop, wahrscheinlich auch am Handy. Die Grenzen bleiben: Titel 7, Text 4,5, Platzhalter 3.
-
-- **Dateien:** `docs/wasser-look/vorlage/kern.css`, Teil 1, Block „klar“.
-- **Die Stellschrauben:**
-
-  | Wo | Wert | Heute | Wirkt auf |
+  | Wert | wirkt auf | zuerst gebaut | jetzt |
   |---|---|---|---|
-  | Handy und Desktop | `--wa-shelf`, `--wa-deep` (die letzte Zahl: wie deckend) | .21, .25 | die Tiefe in der Mitte eines Beckens |
-  | Handy und Desktop | `--wa-under` | .56 | was den Tropfen gesagt wird, worauf sie liegen. Mitziehen: 1 − (1 − .28) × (1 − Stufe) × (1 − Tiefe) |
-  | Handy und Desktop | `--wa-still`, `--wa-dense`, `--wa-sheet` | .5, .66, .82 | kleine Flächen; Leiste, Hinweis, Suche; Bogen. Vorsicht: Ohne Weichzeichner scheinen hier Wörter der Seite durch (Schritt 4, Punkt 3) |
-  | nur Handy | `--wa-page-3`, `--wa-page-4` | .34, .52 | wie stark die Seite die Szene in der unteren Hälfte abdunkelt |
-  | nur Desktop | `--wa-weit-grund` | `brightness(.7)` | wie stark ein Panel die Szene dahinter abdunkelt |
+  | `--wa-t-ruhe-1` / `--wa-gang-1` | Licht am hellen Rand | 24 s / `steps(24)` | **17 s / `steps(17)`** |
+  | `--wa-t-ruhe-2` / `--wa-gang-2` | Licht am fernen Rand | 34 s / `steps(34)` | **24 s / `steps(24)`** |
+  | `--wa-t-ruhe-3` / `--wa-gang-3` | Leiste, Bogen, Hinweis, Suche | 40 s / `steps(40)` | **29 s / `steps(29)`** |
+  | `--wa-t-ruhe-4` / `--wa-gang-4` | Licht auf dem Boden eines Beckens | 46 s / `steps(46)` | **33 s / `steps(33)`** |
 
-- **Ausprobiert** (ein erster Versuch, ihm nicht gezeigt): `--wa-shelf` .16, `--wa-deep` .19, `--wa-under` .51, `--wa-weit-grund: brightness(.8)`. Kein Median unter einer Grenze. Handy, Kartentitel über acht Szenen: 7,8 bis 13,1 (wie gebaut 8,9 bis 13,8). Desktop, Paneltitel bei Tag: 7,9 bis 12,9 (9,6 bis 14,1). Die niedrigsten Einzelwerte sind die Etiketten kleiner klarer Tropfen auf Karten (schlechteste 5 %: 4,1 statt 4,6) – das heilt `--wa-drop-veil`, nicht die Fläche.
-- **Prüfen und zeigen:**
+- **Zurückdrehen oder weiter drehen:** dieselben vier Zeilen. Immer Länge und Gangart zusammen ändern (eine Länge ohne ihre Gangart zeichnet das Licht öfter oder seltener als achtmal je Sekunde). Ein anderes Tempo: die vier Längen durch denselben Faktor teilen und auf ganze Sekunden runden.
+- **Gemessen** (`node scripts/wasser/messen.mjs ruhe`, Vorschauseite, Ton „dunkel“, je drei Läufe abwechselnd mit dem Stand davor – `--look git:52dfff3`): Von den Bildpunkten der Karten ändern sich binnen einer Sekunde 3,8 / 4,6 / 4,0 % um 4 von 255 oder mehr (vorher 3,1 / 2,6 / 2,2 %), binnen vier Sekunden 14,6 / 15,5 / 14,7 % (vorher 9,3 / 8,4 / 9,0 %); in der Leiste binnen einer Sekunde 5,3 bis 6,4 % (vorher 3,3 bis 5,0 %). Kein Buchstabe ändert sich um mehr als 2 von 255 (Grenze: 4) – Text bewegt sich nicht. Bei reduzierter Bewegung gibt es die Lichter gar nicht (unverändert). Die Zahlen streuen von Lauf zu Lauf um etwa einen Prozentpunkt.
+- **Der Film für ihn:** `node scripts/wasser/leben.mjs <Ausgabe> --looks 'Tempo bisher=git:52dfff3,Tempo neu=vorlage' --weg ruhe --welt heute --sekunden 20` – zwei Handys nebeneinander, 20 s „Heute“ in Ruhe, Ton „dunkel“; jede Beschriftung trägt die vier Längen, die die Seite wirklich hat (aus ihrem berechneten Stil gelesen). Abgelegt: `docs/wasser-look/entwurf/tempo-und-ton/tempo.mp4` (und `tempo.webp` als Bildstreifen). Geprüft: Das Werkzeug las auf der linken Seite 24 / 34 / 40 / 46 s, auf der rechten 17 / 24 / 29 / 33 s. Auf der Arbeitsmaschine aufgenommen: Die Tropfen ruckeln dort, die Lichter nicht.
+- **Prüfen:** `node scripts/wasser/pruefen.mjs --app`, `node scripts/wasser/messen.mjs ruhe`, `node scripts/wasser/desktop.mjs pruefen`. `vergleich.mjs` meldet im Teil `film` gewollt Abweichungen (die Lichter stehen nach derselben Zeit woanders).
+- **Darf nicht passieren:** Text, der sich bewegt. Eine Länge ohne passende Gangart. Live, bevor er es gesehen hat.
 
-  ```
-  node scripts/wasser/kontrast.mjs --toene klar --szenen start,heute,projekte,material,druck,wetter,archiv,innen
-  node scripts/wasser/desktop.mjs kontrast --toene klar
-  node scripts/wasser/vergleich.mjs bilder --alt git:HEAD --toene dunkel
-  node scripts/wasser/bild.mjs screenshots/wasser/klarer --toene klar
-  node scripts/wasser/desktop.mjs bild screenshots/wasser/klarer-desktop --ton klar --zeit tag
-  ```
+### Schritt 10 – „klar“ durchsichtiger (Entscheidung 8; gebaut am 14.11. abends, Branch `wasser-look`)
 
-  „dunkel“ muss ohne Abweichung bleiben.
-- **Darf nicht passieren:** Ein Median unter der Grenze. Ein geänderter Wert im Block „dunkel“. Live, bevor er es gesehen hat.
+Nur der Ton „klar“. Durchsichtiger heißt: mehr von der Szene durch das Wasser – nicht eine hellere Farbe. Am Handy und am Desktop. Die Grenzen bleiben: Titel 7, Text 4,5, Platzhalter 3. **Der Besitzer hat es noch nicht gesehen.**
 
-### Schritt 11 – Weiches Gehen (Entscheidung 10; offen, nach den Einbauten)
+- **Gebaut** (`docs/wasser-look/vorlage/kern.css`, Teil 1, Block „klar“; am Desktop dazu `desktop.css`, Teil 2):
 
-Bögen und Schubladen sollen weich schließen, abgehakte oder entfernte Zeilen weich gehen – am Handy und am Desktop. Der Look kann nichts festhalten, was React in einem Bild entfernt: Die App selbst muss warten. **Nichts davon ist gebaut.**
+  | Wo | Wert | vorher | jetzt | wirkt auf |
+  |---|---|---|---|---|
+  | Handy und Desktop | `--wa-shelf`, `--wa-deep` (die letzte Zahl: wie deckend) | .21, .25 | **.16, .19** | die Tiefe in der Mitte eines Beckens (Karten, Panels) |
+  | Handy und Desktop | `--wa-under` | .56 | **.51** | was den Tropfen gesagt wird, worauf sie liegen: 1 − (1 − .28) × (1 − .16) × (1 − .19). Die Farbe (31, 35, 37) blieb; genau gemischt wäre sie (37, 43, 48) – ausprobiert, die Etiketten der Tropfen ändern sich damit um höchstens 0,1 |
+  | nur Desktop | `--wa-weit-grund-panel` (neu) | – (es war `--wa-weit-grund`, .7) | **`brightness(.8)`** | wie stark ein **Panel** die Szene dahinter abdunkelt |
+  | nur Desktop | `--wa-weit-grund` | `brightness(.7)` | `brightness(.7)` (bleibt) | Dock, Wetterzeichen auf der Insel, Suche |
+  | nur Desktop | `--wa-weit-kopf` (neu) | – | **`rgba(var(--wa-dark), .3)`** | ein weicher Schatten über dem Kopf eines Panels, wo sein Titel steht (`desktop.css`, Teil 2: `inset 0 64px 40px -36px`; auf der Tageskarte höher: `inset 0 var(--wa-tk-kopf) 80px -64px`, unter Gruß, Uhr, Datum und dem Tageslicht-Streifen; `--wa-tk-kopf` 215 px seit 15.11., war 150 px) |
 
-| Fall | Was bereitliegt | Was die App tun muss | Was fehlt |
-|---|---|---|---|
-| **Ein Bogen geht weich** | Klasse `wa-geht` auf `.sheet`: Er sinkt in 0,26 s um 68 px und wird durchsichtig (`wa-sinkt`), nimmt keine Klicks mehr, bei reduzierter Bewegung ist er sofort weg. Ausprobiert: Die Klasse allein genügt | Das Entfernen des Bogens um `--wa-t-leave` (260 ms) verzögern und ihm für diese Zeit die Klasse geben. Eine Stelle: dort, wo `{sheet ? <SheetHost sheet={sheet} /> : null}` steht (`src/App.tsx`, `src/mobile/Mobile.tsx`), den letzten Bogen 260 ms weiter zeigen. Öffnet in dieser Zeit ein neuer Bogen: die Klasse wieder wegnehmen | Am Desktop sinkt die Schublade damit nach **unten**, statt nach rechts hinauszufließen: `desktop.css` braucht eine eigene Bewegung (`animation-name`). Der Schleier (`.sheet-back`) verschwindet weiter in einem Bild |
-| **Eine Zeile geht weich** (abgehakte Aufgabe, entfernter Eintrag) | nichts | Die Zeile 260 ms mit einer Klasse stehen lassen | Eine Regel im Baustein „Mulde“ (nur `opacity` und `transform`). Die Zeilen darunter rücken danach trotzdem in einem Bild nach – eine Höhe weich zu ändern, verbietet die Regel „nichts, das Layout braucht“. Das ist mit dem Besitzer zu klären |
-| **Ein Hinweis ersetzt einen anderen** | Ein Hinweis, der ganz verschwindet, geht schon weich (das Skript hält eine Kopie) | Dem neuen Hinweis einen neuen `key` geben, damit React den alten wirklich entfernt | ausprobieren |
+  Im Block „dunkel“ stehen die zwei neuen Werte mit dem, was dort schon galt (`--wa-weit-grund-panel: brightness(.88)` wie `--wa-weit-grund`, `--wa-weit-kopf: transparent`): Die Änderung am Ton lässt „dunkel“ Bildpunkt für Bildpunkt gleich; das Tempo ändert dort das Wasser in zwei Tropfen-Gruppen um höchstens 1 von 255 (unten). Ein Ton hat damit 59 Werte statt 57.
+- **Warum die Reparatur am Desktop** (Auftrag: keine Grenze unterschreiten, und wenn doch, die Stelle reparieren statt den Ton wieder abzudunkeln): Der erste Versuch (`--wa-weit-grund` für alles auf `brightness(.8)`) hielt bei Tag im November alle Grenzen, an einem **Wintertag** (Schnee in der Landschaft: `desktop.mjs kontrast --zeiten 2027-01-15T12:40:00+01:00`) nicht: Paneltitel unten 6,4 (vorher 8,1), Paneltitel „Projekte“ 7,0 (8,8), Wetterzeichen klein 4,4 (4,8); auf der Tageskarte fiel die Uhr bei Tag von 7,1 auf 5,1 und das Datum im Winter auf 4,5. Repariert sind genau diese Stellen: Die Köpfe der Panels behalten ihren Grund (der Schatten), kleine Flächen mit kleiner Schrift (Wetterzeichen) und das Dock behalten ihre alte Abdunkelung. Die Mitte jedes Panels ist durchsichtiger.
+- **Gemessen** (Arbeitsmaschine, Chromium, reduzierte Bewegung; Median über die Bildpunkte der Buchstaben, vorher → nachher; der niedrigste Wert über alle Szenen):
+  - **Handy** (`kontrast.mjs --app --toene klar`, acht Szenen und die App): kein Median unter der Grenze. Kartentitel 10,6 → 9,6 (niedrigster), Zeile: Titel 11,2 → 10,2, Zähler 6,6 → 5,8, Tropfen auf Karte 7,4 → 6,7, Tropfen klein 6,8 → 6,1. Bögen, Felder, Suche, Hinweis: gleich (±0,2). Von Hand dazu (Start bei Tag – Schnee und Wolken hinter der Tageskarte): Uhr 10,2 → 9,1, Gruß 6,1 → 5,4, Datum 9,5 → 8,7; Einstellungen über „Start“: Titel 10,8 → 10,7; Platzhalter eines Felds auf einer Karte („Material“, „Projekt“) 6,8 → 6,6 und 6,7 → 6,5; kleine Schrift in Mulden 6,7 → 6,0.
+  - **Desktop** (`desktop.mjs kontrast --toene klar`, 2000 × 993; dazu ein Wintertag und 1920 × 1080 bei Tag): kein Median unter der Grenze, bei Nacht, bei Tag (13.11., 12:40) und an einem Wintertag (15.1., 12:40, Schnee), in 2000 × 993 und (Tag, Winter) 1920 × 1080. Bei Tag, 2000: Paneltitel 9,6 bis 14,2 (vorher 9,6 bis 14,1), Paneltitel „Projekte“ 8,8 → 8,7, Hauptpanel: Titel 9,5 → 7,8, Text auf offenem Wasser 9,1 → 7,6, Große Zahl 9,5 → 7,8. Im Winter, 2000: Paneltitel unten 8,1 → 8,1, „Projekte“ 8,8 → 8,6, Hauptpanel: Titel 9,1 → 7,4, Text auf offenem Wasser 6,8 → 5,3, Zeile „Projekte“ klein 5,9 → 4,6, klickbares Etikett 5,7 → 4,7, Wetterzeichen klein 4,8 → 4,8. Im Winter, 1920: klickbares Etikett 4,5 und Zeile „Projekte“ klein 4,6 – genau an der Grenze (vorher dort nicht gemessen). Bei Nacht ist der niedrigste Verlust 1,5 (Geist-Knopf im Panel 12,0 → 10,5). Dock, Wetterzeichen, Suche, Schublade, Hinweis: gleich (±0,4). Die Tageskarte von Hand (`kontrast.mjs --css … --desktop`): Nacht / Tag / Winter, vorher → nachher: Uhr (als Titel, Grenze 7) 14,5 → 14,8 / 7,1 → 7,1 / 7,2 → 7,1; Gruß 12,5 → 13,2 / 6,6 → 7,5 / 6,8 → 7,7; Datum 10,8 → 10,1 / 7,2 → 5,9 / 6,0 → 4,9; Tageslicht-Beschriftung 12,9 → 12,4 / 10,0 → 8,6 / 8,3 → 6,7; kleine Schrift 10,2 → 9,8 / 8,3 → 7,5 / 7,5 → 6,8. Ohne den Schatten über dem Kopf fiel die Uhr bei Tag auf 5,1, im Winter auf 5,2, und das Datum im Winter auf 4,5.
+- **Nachgebessert am 15.11.** (Kontrolle 2): Die zwei Zeiten unter dem Tageslicht-Streifen der Desktop-Tageskarte (`.tk-day__lbl`, gedämpfte Schrift, Grenze 4,5) fielen bei 1920 × 1080 an einem Wintertag (15.1., 12:40) auf 4,2 – der Schatten über dem Kopf der Karte endete knapp darüber. Jetzt reicht er tiefer: ein Wert, `--wa-tk-kopf` (`desktop.css`, Teil 1; in „dunkel“ wirkungslos, dort ist der Schatten durchsichtig). Gemessen mit `kontrast.mjs --css '.tk-day__lbl' --desktop --format 1920 --toene klar`, 150 → 215 px: Winter 12:40 4,2 → 5,1, Winter 8:40 5,6 → 6,5, Winter 15:50 5,6 → 6,6, „morgen“ 6,4 → 7,2; die zweite Zeit 7,6 (Winter 12:40); bei 2000 × 993 im Winter 7,6. Ausprobiert: 190 px gab 4,5 (genau die Grenze). Die schlechtesten 5 % der Buchstaben bleiben um 8:40 Uhr im Winter bei 4,0 und „morgen“ bei 4,2 (der Median hält). Geschmackssache: Die Karte ist oben etwas tiefer; von Hand nebeneinander kaum zu sehen.
+- **Ein Mangel, der schon vorher da war** (nicht von diesem Schritt, nicht repariert): Der Platzhalter des Suchfelds („Projekte, Versionen, …“) hat im Ton „klar“ 2,3 bis 2,6, am Desktop bei Tag 1,9 – unter 3, vorher wie nachher. Das Suchfeld trägt keine Klasse des Looks; sein Platzhalter hat die Farbe des Browsers. Eine Reparatur bräuchte einen eigenen Wert je Ton (in „dunkel“ hält er mit 4,0 die Grenze und darf sich nicht ändern).
+- **Zurückdrehen:** im Block „klar“ `--wa-shelf` .21, `--wa-deep` .25, `--wa-under` .56, `--wa-weit-grund-panel: brightness(.7)`, `--wa-weit-kopf: transparent` – dann ist „klar“ wieder, wie es war. Weiter drehen: dieselben Werte; danach `kontrast.mjs --app --toene klar --szenen start,heute,projekte,material,druck,wetter,archiv,innen` und `desktop.mjs kontrast --toene klar --zeiten nacht,tag,2027-01-15T12:40:00+01:00`.
+- **Bilder für ihn** (vorher = der Stand `feinschliff-basis`, der live ist; nachher = dieser Stand; Ton „klar“, Mittag 12:40 und Nacht 21:30, deviceScaleFactor 2, reduzierte Bewegung, damit nur das Wasser verglichen wird): `docs/wasser-look/entwurf/tempo-und-ton/` – je Bildschirm ein Bild „vorher | nachher“ (Handy: Start, Heute, Projekte, Bogen „Neues Projekt“; Desktop 2000 × 993: Start, Heute, Projekte) und die Einzelbilder im Unterordner `einzeln/`.
+- **„dunkel“ bleibt:** `node scripts/wasser/sollist.mjs --soll git:52dfff3 --toene dunkel` (Handy, Desktop in beiden Formaten, bei Nacht und bei Tag): 164 Bildschirme (Handy 56, Desktop 108; beide Bereiche): 148 gleich, 10 `ok*` (nur das Wasser im Inneren eines Tropfens), 6 abweichend. **Zwei davon sind echt, nicht Rauschen** (nachgeprüft am 15.11. nachts auf ruhiger Maschine): Handy „Neue Rolle“ und „Gerät“ (je bei Nacht und bei Tag) weichen in jedem Lauf gleich ab – 796 und 3571 Bildpunkte, höchstens 1 von 255, alle bis auf 3 bzw. 9 im Inneren der Tropfen hinter dem offenen Bogen (die Kopfzeile). Derselbe Stand gegen sich selbst ist gleich (`52dfff3` und `HEAD`, je einmal), und ein Build dieses Stands mit den **alten vier Längen** der Lichter ist gegen `52dfff3` gleich: Es kommt vom Tempo (Schritt 9, gilt in beiden Tönen), nicht vom Ton „klar“. Wie die Längen bei reduzierter Bewegung das Wasser eines Tropfens hinter einem Bogen erreichen, ist nicht gefunden (an „Start“ läuft bei reduzierter Bewegung keine einzige Animation). Die übrigen: Desktop 1920 „Start“ und „leer-start“ an der Insel „Projekte“ (derselbe Stand gegen sich selbst weicht dort ebenso ab: 3013 und 19142 Bildpunkte – Fallstrick 73). Desktop 2000 „Archiv“ bei Tag wich im ersten Lauf um 698 Bildpunkte ab, im zweiten nicht.
+- **Prüfen:** die Befehle unter „Zurückdrehen“, dazu `desktop.mjs pruefen`, `pruefen.mjs --app` (Prüfung 10: die zwei Töne haben dieselben 59 Werte) und `sollist.mjs --toene dunkel`.
+- **Darf nicht passieren:** Ein Median unter der Grenze – auch an einem Wintertag. Eine Abweichung in „dunkel“. Live, bevor er es gesehen hat.
 
-- **Dateien:** `src/App.tsx`, `src/mobile/Mobile.tsx`, `src/ui/SheetHost.tsx` oder `src/ui/Sheet.tsx`, die Listen, `src/ui/Toast.tsx`; in der Vorlage `kern.css` („Mulde“) und `desktop.css` (Teil 6).
-- **Vorher Schritt 5 a erledigen:** Sobald eine dieser Dateien etwas aus `wasser.ts` lädt, kippt sonst die Reihenfolge der Stylesheets.
-- **Prüfen:** Bildstreifen (`film.mjs`, Streifen `bogen` und `haken`; `desktop.mjs film`), Tastatur (Escape; der Fokus kehrt zum Auslöser zurück), `verify.mjs`, der Befehl für die Reihenfolge im CSS.
-- **Darf nicht passieren:** Ein Bogen, der beim schnellen Wieder-Öffnen unsichtbar bleibt. Ein Klick auf einen Knopf eines gehenden Bogens. Eine Verzögerung bei reduzierter Bewegung. Eine Löschung, die nicht mehr rückgängig zu machen ist (`wrap(…)` in `src/store.ts` bleibt, wie es ist).
+### Schritt 11 – Weiches Gehen (Entscheidung 10; gebaut am 15.11. nachts, Branch `wasser-look`)
 
-### Schritt 12 – Das alte helle Thema der App (offen, nach dem Desktop)
+Bögen, Schubladen und die Suche schließen weich, abgehakte oder entfernte Zeilen gehen weich, ein Hinweis ersetzt den anderen weich – am Handy und am Desktop. Dazu (Auftrag des Hauptchats) der weiche Wechsel des Handy-Hintergrunds und das Suchfeld mittig auf dem Desktop-Start. **Der Besitzer hat nichts davon gesehen.** Bilder, Prüfskripte und Protokolle: `docs/wasser-look/entwurf/gehen/`.
 
-Ist der Desktop eingebaut, ist `data-theme` immer „dunkel“. Die Regeln für `:root[data-theme="hell"]` greifen dann nie mehr: ein Block in `src/styles/tokens.css` (ab Zeile 29) und 17 Regeln in `src/styles/global.css` (Abschnitt „light theme refinements“).
+**Der Mechanismus** (`src/ui/gehen.ts`, Kopf der Datei): React 19 ruft das Aufräumen eines `ref` auf, solange das Element noch im Dokument steht – unmittelbar bevor React es entfernt. Dort merkt sich die App Eltern, Nachbarn und Bildlauf; eine Mikroaufgabe nach dem Commit (vor dem nächsten Bild) setzt **genau denselben Knoten** wieder an seinen Platz, mit der Klasse `wa-geht`, `inert` und `aria-hidden`. Er geht, wenn seine Gehen-Animation endet (ein Zeitgeber ist das Netz darunter). Der Store ist sofort die Wahrheit; React kennt den Knoten nicht mehr (keine Klicks, kein Neuzeichnen mit Daten, die es nicht mehr gibt); der Fokus ist schon beim Auslöser. Ohne Look (kein `data-wasser`, kein `--wa-t-leave`) und bei reduzierter Bewegung (Schalter der App oder System) wird nichts behalten und auf nichts gewartet.
 
-- **Tun:** Erst nachdem der Desktop live ist, diese Regeln löschen. Die Einstellung „Erscheinungsbild“ mit ihren drei Wahlmöglichkeiten bleibt, wie sie ist: Sie wählt jetzt den Ton. `settings.theme` und seine Werte bleiben (gespeicherte Stände).
+| Fall | So gebaut | Wo |
+|---|---|---|
+| **Bogen, Schublade, Suche** | `ref={gehtBogen}` auf `.sheet`, `.sheet-back`, `.cmd-back`. Handy: der Bogen sinkt (`wa-sinkt`), der Schleier klärt sich (`wa-klart`); Desktop: die Schublade fließt nach rechts hinaus (`wa-fliesst-weg`); die Suche taucht ab (`wa-taucht`; am Desktop bleibt ihr Schleier bis zum Ende, sonst sähe die Unschärfe des Felds nichts mehr). Ein neuer Bogen oder die Suche schneidet einen gehenden sofort ab – ein Bogen, der einen anderen im selben Augenblick ersetzt, verhält sich also wie bisher. Ein zweites Escape während des Gehens tut nichts (`leaving()` in `src/App.tsx`; seit 15.11. nur für Escape – die Tasten 0 bis 6 für die Welten wirken sofort wieder), ein zweiter Tipp auf den Schleier trifft die Seite darunter | `src/ui/Sheet.tsx`, `src/ui/CommandBar.tsx`, `src/App.tsx`; Vorlage `kern.css` „Gehen“, `desktop.css` 6 |
+| **Eine Zeile geht** | `{...weich(id)}` auf der Zeile: Sie sinkt und wird durchsichtig (bis zur Mitte unsichtbar), ab 30 % läuft ihre Höhe aus, die Zeilen und Karten darunter schließen die Lücke. Eine abgehakte Zeile zeigt dabei ihren Haken gefüllt. Kommt sie mit derselben Id zurück („Rückgängig“), verschwindet ihr Bild sofort. Geht die **letzte** Zeile, wartet der Leer-Text der Liste (`{...leer()}`, z. B. „Alles erledigt.“) unsichtbar, bis sie weg ist, und blendet dann ein (`.wa-leer-kommt`, Wert `--wa-leer-kommt`; seit 15.11. – vorher standen Zeile und Text gleichzeitig da, und der Text rutschte mit der Lücke nach oben) | Listen siehe unten; Vorlage `kern.css` „Gehen“ (`.wa-geht--zeile`) |
+| **Ein Hinweis ersetzt einen anderen** | `key={toast.id}` in `src/ui/Toast.tsx`: Der alte wird wirklich entfernt, das Skript legt seine Kopie an seinen alten Platz – unter den neuen, der landet. Die Kopie ist `inert` und `aria-hidden`; ihr „Rückgängig“ ist nicht erreichbar | `src/ui/Toast.tsx`; Vorlage `wasser.js` Teil 3 |
+
+**Welche Listen:** Handy – Heute: Aufgaben und fällige Wartung; Projekt: Aufgaben; Material: Einkaufsliste. Desktop – Heute: Aufgaben und fällige Wartung; Material: Einkaufsliste; Innenwelt: offene Aufgaben und Dateien; 3D-Druck: Warteschlange und Wartung. Beide – im Projekt-Bogen die Aufgabenliste und das Dateiraster (im Raster sinkt die Kachel nur, die anderen springen: Eine Höhe schließt dort keine Lücke). **Nicht:** Listen, die filtern oder blättern (Rollen nach Material, Archiv), Meilensteine (Abhaken entfernt sie nicht), Geräte- und Werkzeuglisten der Bögen (gelöscht wird im eigenen Formular, die Liste ist danach ein neuer Bogen), das Energie-Protokoll in „Über“, der Eingang in 3D-Druck. Wo eine Liste nur die ersten fünf (drei) zeigt, rückt die nächste Zeile ohne Bewegung nach. Eine Zeile, die dort nur **hinausgeschoben** wird (eine neue Aufgabe oder Datei davor, „Nach unten“ im Bogen), geht ohne Bild – seit 15.11.; vorher ging sie weich, obwohl es sie noch gab (Kontrolle 2).
+
+**Eine neue Liste weich machen:** an der Zeile `{...weich(<id>)}` (aus `src/ui/gehen.ts`), neben `key` – fertig, wenn die Zeile nur durch eine Handlung in dieser Liste verschwindet (abhaken, überspringen, löschen). Zeigt die Liste nur einen Teil (`.slice`, ein Zeitfenster), bekommt die Zeile ihren Test: `{...weich(t.id, () => !useStore.getState().tasks.some((x) => x.id === t.id && !x.done && !x.skipped))}` – sie geht nur weich, wenn ihr Ding wirklich weg ist (den Store lesen, nicht die Werte des Renderns; zwei Listen mit derselben Id müssen mit „weg“ dasselbe meinen). Hat die Liste einen Leer-Text, bekommt er `{...leer()}`. Nicht für Listen, die ein Filter oder eine Suche zeigt (sonst ginge beim Filtern jede Zeile weich). Ein neuer Bogen oder eine neue Überdeckung: `ref={gehtBogen}` auf das Element und auf seinen Schleier, und eine Gehen-Regel im Block „Gehen“ (`kern.css`) für seine Klasse.
+
+**Die Lücke schließt sich mit einer Höhe** – die zweite Ausnahme von „nur transform und opacity“ (die erste: die Wasserlinie eines Felds). Mit `transform` allein springt der Rand der Karte. Sie läuft einmal je Entfernung, 0,26 s, an einem Element, nie in Ruhe. Geschmackssache und ein Wert: `--wa-zeile-zu: none` (`kern.css`, Teil 2) lässt die Lücke stehen, bis die Zeile weg ist, dann schließt sie sich in einem Bild.
+
+**Der Hintergrund des Handys** (Auftrag des Hauptchats nach dem Wunsch des Besitzers vom 14.11., 14:40): `SceneBg` in `src/mobile/Mobile.tsx` blendet über, **sobald sich die Adresse des Bilds ändert** (heute beim Reiterwechsel, mit den neuen Bildern später beim Wechsel der Tageszeit). Das neue Bild liegt unsichtbar über dem alten, bis es geladen und dekodiert ist, blendet dann in `--wa-t-szene` (= `--wa-t-settle`, 0,62 s) mit `--wa-ease-szene` (= `--wa-ease-flow`) ein (`mobil.css` 2), erst dann geht das alte. Höchstens zwei Bilder; eine neuere Adresse ersetzt ein Bild, das noch unterwegs ist. Ohne Look oder bei reduzierter Bewegung: harter Wechsel, sobald das neue geladen ist – nie ein dunkles oder leeres Bild dazwischen. Die Tropfen mischen die zwei Szenen nach der Deckkraft des neuen Bilds (`wasser.js`, Option `scene`). `.m-bg img` steht jetzt `position: absolute`, sein Ankerpunkt ist `--m-bg-pos` (58 % 40 % für die acht Szenen).
+- **Für die neuen Hochformat-Bilder** (Branch `welt/neue-bilder`): `SceneBg` bekommt `src` und `srcSet` des Bilds der Tageszeit statt der Szene des Reiters – keine Änderung an `SceneBg`. Zu setzen: `--m-bg-pos` auf `.m-bg` (für Hochformat wohl `50% 50%` oder der Punkt, der beim Zuschneiden an schmalen Handys stehen bleiben soll); die Breiten in `scripts/optimize-scenes.mjs` (heute 1280 und 640; für Hochformat bei `sizes="100vw"` und 3-fachen Handys sind 1280 und 640 brauchbar, 828 dazwischen spart auf 2-fachen Handys) und dieselben in `sceneSrcSet`; die Abdunkelung sind die vier Tonwerte `--wa-page-1..4` (`kern.css`, Teil 1) – nur ändern, wenn die neuen Bilder unten heller sind als die alten (dann `kontrast.mjs --app` in beiden Tönen). `usePreloadScenes` lädt dann die Szenen der Reiter vor, die es nicht mehr gibt: Es sollte stattdessen das Bild der nächsten Tageszeit vorladen.
+
+**Das Suchfeld auf Start** (`src/ui/TopBar.tsx`, Klasse `topbar--start`; `src/styles/global.css` bei `.topbar__search`): Auf Start fehlen Uhr, Datum, Gruß und Wetter (sie stehen in der Tageskarte), das Feld stand darum 62 px rechts der Mitte. Jetzt steht es in der Mitte (2000: 1062 → 1000 px, 1920: 1022 → 960 px). Die anderen Welten tragen die Klasse nicht: Ihre Kopfzeile ist Bildpunkt für Bildpunkt gleich (Heute, 2000 und 1920, gegen den Stand davor).
+
+**Gemessen und geprüft** (Arbeitsmaschine, Chromium):
+- Bildstreifen bei 0 / 80 / 160 / 240 / 300 ms (`frames.mjs`: die Gehen-Animationen angehalten und auf die Zeit gesetzt, das Entfernen bis zum letzten Bild gehalten): Bogen am Handy in beiden Tönen, Schublade am Desktop, abgehakte Aufgabe am Handy und am Desktop, entfernter Eintrag der Einkaufsliste, ein Hinweis ersetzt einen anderen („Rückgängig“). Der Hintergrund bei 0 / 100 / 200 / 300 / 450 / 600 ms in beiden Tönen (`szene.mjs`).
+- `rennen.mjs`, 51 Prüfungen, alle bestanden: jedes Bild wird im ersten Bild nach dem Ende seiner Animation entfernt (Handy 9 bis 33 ms danach, Desktop 13 bis 190 ms – dort dauert hier ein Bild 130 bis 280 ms); zweimal Escape; Tipp auf den Schleier während des Gehens; Bogen B während A geht; fünf Haken in einer Sekunde (der Store genau fünfmal); „Rückgängig“ während die Zeile geht; Reiterwechsel, Weltwechsel, Bereichswechsel währenddessen; der leere Bereich „Meine Werkstatt“ am Handy und am Desktop; reduzierte Bewegung über die App und über das System; ohne Look; Tastatur (Fokus zurück auf den Auslöser, beide Desktop-Formate).
+- `szene.mjs`: nach dem Blenden ein Bild, die Tropfen darauf; zehn Reiterwechsel im Abstand von 70 ms enden auf dem Bild des letzten Reiters (Seite und Tropfen), nie mehr als zwei Bilder, nie keins sichtbar; reduzierte Bewegung ohne Blende; langsames Netz (400 ms, 400 kbit/s, kein Cache) – das alte Bild steht, bis das neue da ist (hier 5 s). Die Blende beginnt auf der Arbeitsmaschine 380 bis 430 ms nach dem Tipp (Laden aus dem Cache und Dekodieren; vorher stand in dieser Zeit ein leeres Bild).
+- `reiter.mjs handy --app vorher=…,nachher=… --drossel 1,4 --laeufe 3` (Median/größter Wert, ms): neues Bild erster Besuch 38/99 → 45/153, zweiter 34/119 → 43/133; viermal gebremst 124/214 → 139/216 und 85/193 → 93/261. Keine Aufgabe über 50 ms, die Szenenarbeit ist (vorher wie nachher 0). Das neue Bild steht im Median 7 bis 15 ms später – auf dieser Maschine; ob es am Handy zu merken ist, sagt nur das Handy.
+- `sollist.mjs alles --soll git:f001263` (164 Bildschirme, der Stand vor diesem Schritt): 154 gleich (12 davon `ok*`); anders der Desktop-Start in beiden Tönen und Formaten (das Suchfeld, gewollt), Desktop 1920 „klar“ „Archiv“ an der Beschriftung einer Insel (835 Bildpunkte, wohl Fallstrick 73, nicht allein wiederholt) und Handy „Neue Rolle“ bei Nacht in „dunkel“: 796 Bildpunkte, höchstens 1 von 255, in den Tropfen der Kopfzeile hinter dem offenen Bogen – dieselbe Stelle wie in Schritt 10, Ursache offen (`NACHSEHEN-FABLE.md`). Alle anderen 55 Handy-Bildschirme sind gleich: Das neue `position: absolute` des Hintergrundbilds ändert nichts.
+- `verify.mjs` (zwei Prüfungen minimal angepasst: Eine gehende Zeile ist 0,26 s lang ein Bild ohne Funktion und zählt nicht mehr als Zeile – `:not(.wa-geht)`), `pruefen.mjs --app`, `desktop.mjs pruefen`.
+
+**Was nur das echte Gerät sagt:** wie es sich anfühlt (Tempo 0,26 s, das Auslaufen der Höhe), ob Safari den Knoten ebenso zurücknimmt (WebKit nicht geprüft), ob ein Bildschirmleser den gehenden Bogen still übergeht.
+
+**Darf nicht passieren:** ein Bogen, der beim schnellen Wieder-Öffnen unsichtbar bleibt; ein Klick auf einen Knopf eines gehenden Bogens; ein Warten bei reduzierter Bewegung oder ohne Look; eine Löschung, die nicht mehr rückgängig zu machen ist (`wrap(…)` in `src/store.ts` ist unverändert); mehr als zwei Hintergrundbilder; ein dunkles oder leeres Bild beim Reiterwechsel.
+
+### Schritt 12 – Das alte helle Thema der App (offen; der Desktop ist jetzt live)
+
+Seit der Desktop eingebaut ist, ist `data-theme` immer „dunkel“. Die Regeln für `:root[data-theme="hell"]` greifen dann nie mehr: ein Block in `src/styles/tokens.css` (ab Zeile 29) und 17 Regeln in `src/styles/global.css` (Abschnitt „light theme refinements“).
+
+- **Tun:** Diese Regeln löschen (der Desktop ist live; vorher nachsehen, dass `main` den Einbau trägt: 8.1). Die Einstellung „Erscheinungsbild“ mit ihren drei Wahlmöglichkeiten bleibt, wie sie ist: Sie wählt jetzt den Ton. `settings.theme` und seine Werte bleiben (gespeicherte Stände).
 - **Prüfen:** der Prüfblock; `desktop.mjs bild … --zeit tag` in beiden Tönen sieht aus wie vorher.
-- **Darf nicht passieren:** Die Regeln löschen, solange der Desktop noch ohne Look live ist (er wäre bei Tag ohne sein helles Thema).
+- **Darf nicht passieren:** Die Regeln löschen und dann auf den Rückweg `65b1e44` gehen müssen (dort ist der Desktop ohne Look und braucht bei Tag sein helles Thema): Der Rückweg ist ein alter Commit und trägt die Regeln noch.
 
 ### Schritt 13 – Eine Quelle (später, nicht ausprobiert)
 
@@ -930,25 +1014,35 @@ Ist alles eingebaut und abgenommen, kann `src/wasser/` die einzige Quelle werden
 
 ### Alle Prüfungen auf einen Blick
 
+Die Vorschau der App muss laufen (`npm run build && npm run preview`), außer für `sollist.mjs` mit `git:` und `baum` (es baut selbst).
+
 | Befehl | Was er sagt | Dauer auf der Arbeitsmaschine |
 |---|---|---|
 | `npm run build` | TypeScript und Build sind fehlerfrei | 6 s |
 | `node scripts/verify.mjs http://localhost:4173` | 69 Prüfungen der App | 1,5 bis 2 min |
-| `node scripts/wasser/pruefen.mjs --app` | 60 Prüfungen: Tropfen, Ring, Markierung, jeder Baustein, Ruhe, Start/Stopp, Töne | 1 min |
-| `node scripts/wasser/vergleich.mjs` | Ist es noch der freigegebene Look? Bildpunkt für Bildpunkt, Stil für Stil | 32 min (nur `bilder`: 2 min je Ton) |
-| `node scripts/wasser/vergleich.mjs --alt git:HEAD` | dasselbe gegen die Vorlage vor der eigenen Änderung (vor dem Commit) | wie oben |
+| `node scripts/wasser/pruefen.mjs --app` | 64 Prüfungen: Tropfen, Ring, Markierung, jeder Baustein, Ruhe, Ruhe hinter einem Bogen, Start/Stopp, Töne – auf der Vorschauseite (die Vorlage) und in der App (der eingebaute Look); und dass die Kopien in `src/wasser/` die Vorlage sind | 1 min |
+| `node scripts/wasser/desktop.mjs pruefen` | 27 Prüfungen am Desktop, darunter der Tropfen hinter der Schublade, „nichts ist verrückt“ (gegen dieselbe App ohne Look) und „nichts springt beim Drücken“ | 2,5 min |
+| `node scripts/wasser/sollist.mjs --soll git:feinschliff-basis` | **Soll gegen Ist:** zwei Stände der App, dieselben 164 Bildschirme Bildpunkt für Bildpunkt – Handy und Desktop (beide Formate), beide Töne, beide Bereiche. Liste der Bildschirme, die abweichen, mit Bild | 25 min (`sollist.mjs handy …`: 5 min) |
+| `node scripts/wasser/vergleich.mjs bilder --alt git:feinschliff-basis` | zwei Stände der **Vorlage** auf der Vorschauseite, Bildpunkt für Bildpunkt (statt des Tags jeder Commit vor der eigenen Änderung) | 5 min |
+| `node scripts/wasser/vergleich.mjs` | Ist es noch der freigegebene Look? Vorschauseite, App, jeder berechnete Stil, Bewegung – die Vorlage gegen den am 13.11. freigegebenen Stand. „klar“ lässt es dabei seit 15.11. aus (es weicht seit Entscheidung 8 überall gewollt ab; `KNOWN`, Punkt 6) – „klar“ mit `--alt git:<Stand> --toene klar` | 35 min (nur `bilder`: 5 min) |
 | `node scripts/wasser/kontrast.mjs --app` | Lesbarkeit am Handy, beide Töne | 3 min (alle acht Szenen: 5,5 min) |
-| `node scripts/wasser/messen.mjs ruhe` | lebt es in Ruhe, und bleibt es ruhig? | 10 s |
-| `node scripts/wasser/messen.mjs takt` | Bilder je Sekunde: wie es ist, Lichter angehalten, ohne Tropfen | 20 s |
-| `node scripts/wasser/desktop.mjs pruefen` | 24 Prüfungen am Desktop, darunter „nichts ist verrückt“ und „nichts springt beim Drücken“ | 2,5 min |
-| `node scripts/wasser/desktop.mjs kontrast` | Lesbarkeit am Desktop, beide Töne, Nacht und Tag | 5 min |
-| `node scripts/wasser/desktop.mjs takt` | was der Look am Desktop kostet | 2 min |
+| `node scripts/wasser/kontrast.mjs --css '.tk__date b' --welt start` | Lesbarkeit **eines** Elements, über seinen Selektor (Abschnitt 6, Punkt 5); mit `--desktop` am Desktop | 15 s (Desktop: 40 s) |
+| `node scripts/wasser/desktop.mjs kontrast` | Lesbarkeit am Desktop, beide Töne, Nacht und Tag; der hellste Grund ist ein Wintertag: `--zeiten 2027-01-15T12:40:00+01:00` (Schnee) | 5 min |
+| `node scripts/wasser/messen.mjs ruhe` | lebt es in Ruhe, und bleibt es ruhig? (Vorschauseite) | 10 s |
+| `node scripts/wasser/messen.mjs takt` | Bilder je Sekunde in der App: wie es ist, Lichter angehalten, ohne Tropfen | 20 s |
+| `node scripts/wasser/desktop.mjs takt` | was der Look am Desktop kostet (gegen dieselbe App ohne Look) | 2 min |
+| `node scripts/wasser/reiter.mjs handy --app vorher=<Ordner>,nachher=<Ordner>` | **der Reiterwechsel in Zahlen:** wann das neue Bild steht, längste Aufgabe, Szenenarbeit in einer Aufgabe, wann die Tropfen die neue Szene zeigen; zwei Builds nebeneinander, mit den Cache-Kopfzeilen des Live-Servers ausgeliefert. `desktop` (Weltwechsel, beide Formate), `landschaft` (Look der Stunde wechselt), `profil` (CPU-Profil mit lesbaren Namen); `--drossel 1,4`, `--ohne`, `--gestoppt` | handy 3 Läufe: 15 min mit `--ohne --gestoppt` |
+| `node scripts/wasser/bogen.mjs` | **hinter einem Bogen:** ein lebender Tropfen, schlichtes Glas, eine Zeile und die Suche öffnen einen Bogen, echt angetippt; ab 600 ms steht alles, nichts antwortet mehr, bei reduzierter Bewegung ist es das Bild in Ruhe, nach dem Schließen lebt es wieder, ohne Sprung. `--app vorher=…,nachher=…`, `--bild` Bildstreifen | 15 min (beide Hüllen, beide Töne, zwei Apps) |
 | `node scripts/wasser/pruefen.mjs --regler` | der Regler der Tropfen (Herunterschalten bei Überlast) | 4 min |
-| `node scripts/wasser/stelle.mjs <bild.png> …` | eine Stelle: ein Bild und ihre berechneten Werte (4.7) | 6 bis 11 s |
+| `node scripts/wasser/stelle.mjs screenshots/wasser/stelle.png --welt heute --css '.glass.panel'` | eine Stelle: ein Bild und ihre berechneten Werte (4.7) | 6 bis 11 s |
 
-`vergleich.mjs` endet mit Fehler, wenn etwas abweicht, das nicht auf seiner Liste gewollter Abweichungen steht. Die Maschine bei allen Prüfungen sonst ruhig halten, nie zwei zugleich: Unter Last meldete der Teil `film` einmal eine Abweichung („klar“, Reiterwechsel), die im Wiederholungslauf (`node scripts/wasser/vergleich.mjs film --nur film-klar`) verschwand, und `desktop.mjs pruefen` einmal „Dock: die Perle steht auf der aktiven Welt“ mit 3,3 px (allein wiederholt: 0,1 px).
+`vergleich.mjs` und `sollist.mjs` enden mit Fehler, wenn etwas abweicht, das nicht als gewollt genannt ist (`vergleich.mjs`: seine Liste `KNOWN`; `sollist.mjs`: `--erwartet`). Die Maschine bei allen Prüfungen sonst ruhig halten, nie zwei zugleich: Unter Last meldete der Teil `film` einmal eine Abweichung („klar“, Reiterwechsel), die im Wiederholungslauf (`node scripts/wasser/vergleich.mjs film --nur film-klar`) verschwand, und `desktop.mjs pruefen` einmal „Dock: die Perle steht auf der aktiven Welt“ mit 3,3 px (allein wiederholt: 0,1 px). `sollist.mjs` sieht einen Bildschirm, der abweicht, selbst ein zweites und drittes Mal an.
 
-Bilder und Filme dauern auf der Arbeitsmaschine: `bild.mjs` 2 min, `film.mjs` 1 min, `clip.mjs` 0,5 min, `leben.mjs` 1 min, `desktop.mjs bild … --alles` 2 min, eine einzelne Welt 7 s, `desktop.mjs film` 1 min, `desktop.mjs clip` 3 min.
+**Was `sollist.mjs` für den Vergleich anhält** (auf beiden Seiten gleich): die Uhr, das Wetter (eine erfundene Antwort), die Bewegung („reduziert“), den Mauszeiger, die Wolkenbänke der App (sie ziehen auch bei reduzierter Bewegung), die Einfügemarke – und die Ebene jeder Insel: Der Browser zeichnet sie sonst in dem Maßstab, den sie beim Weltwechsel gerade hatte, und dieselbe Seite zeigte den Tagesring und die Beschriftung „Heute“ auf zwei Arten (das Rauschen, das beide Einbau-Helfer gemeldet haben). „Gleich“ heißt: gleich auf dieser Maschine in einem Lauf.
+**Das Wasser im Inneren eines Tropfens vergleicht `sollist.mjs` nicht.** Jeder lebende Tropfen nimmt sein Wasser nach einer laufenden Nummer – das hängt vom Augenblick ab, nicht vom Stand der App. (Bis 14.11. abends blieb außerdem ein Tropfen, der gerade antwortete, beim Öffnen eines Bogens mitten in der Antwort stehen; das ist behoben, `ok*` bleibt für die Nummern.) Ein Bildschirm, der nur **im Inneren** der Tropfen abweicht, heißt darum `ok*` und zählt als gleich, wenn die Tropfen selbst dieselben sind (gleich viele, am selben Platz, gleich groß, mit derselben Beschriftung); die Liste steht am Ende der Ausgabe. **Was auf dem Wasser liegt, wird aber verglichen** (seit 15.11.; vorher sah das Werkzeug eine andere Farbe eines Symbols oder Etiketts auf einem Tropfen nicht – Kontrolle 1): Ein solcher Bildschirm wird auf beiden Seiten noch einmal aufgenommen, mit unsichtbaren Leinwänden der Tropfen (`.w3-drop { visibility: hidden }`; ein lebender Tropfen hat sein schlichtes Glas schon abgelegt, es bleiben Etikett, Symbol und Zähler), und dieses Paar muss über das ganze Bild gleich sein – sonst `DIFF … ON a drop`. Wer die Tropfen selbst ändert, nimmt `--tropfen`: Dann zählt auch das Wasser.
+Ohne `--out <Ordner>` legt jedes Werkzeug seine Bilder in einen eigenen Ordner im Temp-Verzeichnis, nennt ihn und räumt ihn weg, wenn nichts abweicht – zwei Läufe zur selben Zeit schreiben nie in denselben Ordner.
+
+Bilder und Filme dauern auf der Arbeitsmaschine: `bild.mjs` 2,5 min, `film.mjs` 1 min, `clip.mjs` 0,5 min, `leben.mjs` 1 min, `desktop.mjs bild … --alles` 2 min, eine einzelne Welt 7 s, `desktop.mjs film` 1 min, `desktop.mjs clip` 3 min.
 
 Alle Werkzeuge nehmen `--engine webkit` (braucht Playwrights WebKit; auf der Arbeitsmaschine vorher die Umgebung laden, siehe `NOTIZEN.md`, Abschnitt 8). Die App unter einer anderen Adresse: `WASSER_APP=http://localhost:4174` davor.
 
@@ -956,7 +1050,7 @@ Alle Werkzeuge nehmen `--engine webkit` (braucht Playwrights WebKit; auf der Arb
 
 ## 9. Fallstricke
 
-Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau – oder die Probeläufe dieser Anleitung (1, 44, 63 bis 66, 69, 70). Nummern in Klammern: `NOTIZEN.md`, Abschnitt 7.
+Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau – oder die Probeläufe dieser Anleitung (1, 44, 63 bis 66, 69, 70) und der Feinschliff der Werkzeuge (71 bis 76). Nummern in Klammern: `NOTIZEN.md`, Abschnitt 7.
 
 **Listen und Gewicht**
 
@@ -1013,7 +1107,7 @@ Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau �
 41. Wenn ein Hinweis auf einen anderen folgt, dann benutzt React denselben Knoten: Keine Kopie geht weich. Die Kopie eines entfernten Hinweises bleibt 0,26 s stehen – ein Test, der `.toast` gleich danach zählt, sieht sie. (28)
 42. Wenn Dauern ins Skript kopiert werden, dann laufen sie auseinander. Das Skript liest sie mit `getComputedStyle`. (29)
 43. Wenn die Stylesheets des Looks nacheinander geladen werden, dann wird die Seite dazwischen einmal gezeichnet, und Chromium zeichnet weiche Schatten danach auf Dauer anders. Alle zusammen laden; der Build bündelt sie. (39)
-44. Wenn ein Modul, das vor `Mobile.tsx` geladen wird (`Stage.tsx`, `SheetHost.tsx` …), etwas aus `wasser.ts` lädt, dann steht der Look im gebauten CSS vor `mobile.css` und verliert am Handy – ohne Meldung (nachgestellt: Der Look begann bei Zeichen 41 489, `mobile.css` endete bei 107 942). Abhilfe: Schritt 5 a. Nach jedem Build den Befehl für die Reihenfolge laufen lassen (8.3).
+44. Wenn ein Modul, das vor `Mobile.tsx` geladen wird (`Stage.tsx`, `SheetHost.tsx` …), etwas aus `wasser.ts` lädt, dann steht der Look im gebauten CSS vor `mobile.css` und verliert am Handy – ohne Meldung (nachgestellt: Der Look begann bei Zeichen 41 489, `mobile.css` endete bei 107 942). Seit Schritt 5 a lädt `wasser.ts` die Stylesheets der App selbst zuerst; die Falle bleibt für jeden, der diese drei Zeilen entfernt oder ein Stylesheet des Looks an `wasser.ts` vorbei lädt. Nach jedem Build den Befehl für die Reihenfolge laufen lassen (8.3); die Werkzeuge brechen ab, wenn hinter dem Look noch Regeln der App stehen.
 45. Wenn `Wasser.stop()` fehlt, wenn eine Hülle verschwindet, dann bleiben Helfer, Lauscher und der WebGL-Kontext zurück. `useWasser` ruft es im Aufräumen des Effekts.
 46. Wenn die App ein Element umbaut, dann wirft React die Helfer des Looks (`canvas.w3-drop`, `i.wa-licht`, `i.wa-floor`) weg. Das ist vorgesehen; nichts darf von ihnen abhängen. Tests der App müssen mit ihnen rechnen: Jeder lebende Knopf hat ein `<canvas>` als erstes Kind, jede Karte ein `<i>` mehr.
 
@@ -1029,20 +1123,36 @@ Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau �
 54. Wenn Playwright am Desktop etwas anklickt, dann rollt es die Bühne dafür bis zu 40 px „ins Bild“. `desktop-lib.mjs` stellt sie vor jedem Bild zurück. (52)
 55. Wenn Elemente vor und nach einer Aktion verglichen werden, dann jedes mit sich selbst, nicht das n-te mit dem n-ten: Die App baut Elemente neu, während man schaut. (56)
 56. Wenn ein Ring geprüft wird, dann tippen, nicht halten: Er startet beim Loslassen. (33)
-57. Wenn die Vorschauseite `mobil.html` Scrollen oder den Auftritt der Karten zeigen soll: Sie scrollt bei 844 px Höhe nicht und schaltet den Auftritt ab. Beides in der echten App beurteilen (`film.mjs`). (34)
-58. Wenn `.m-head .ws-chip` mit Playwright geklickt wird, dann läuft `click()` in die Zeit; `evaluate(el => el.click())` nehmen. (36)
+57. Wenn die Vorschauseite `mobil.html` den Auftritt der Karten zeigen soll: Sie schaltet ihn ab. In der echten App beurteilen (`film.mjs`). Seit sie mit der Tageskarte beginnt, ist sie länger als ein Handy: Ihre zweite Karte (Zahlenkacheln, der rote Tropfen) liegt unter der Leiste und zeigt sich erst gerollt – `bild.mjs` und `vergleich.mjs bilder` nehmen darum auch das gerollte Bild auf. (34)
+58. Wenn `.m-head .ws-chip` mit Playwright geklickt wird, dann läuft `click()` in die Zeit; `evaluate(el => el.click())` nehmen. Der Wechsel des Bereichs braucht danach den Knopf „Zu … wechseln“ und lädt die Seite neu; ein Skript, das den Bereich bei jedem Laden setzt (`addInitScript`), macht den Wechsel wieder rückgängig. Die Werkzeuge wechseln mit `h.bereich('echt')` (ein Schlüssel im Speicher, dann neu laden). (36)
 59. Wenn ein Hinweis mit „Rückgängig“ gebraucht wird: Eine Aufgabe in „Heute“ abzuhaken zeigt keinen. Einen Einkauf in „Material“ entfernen. (37)
 60. Wenn `vergleich.mjs --alt git:HEAD` nach Zwischen-Commits benutzt wird, dann ist `HEAD` nicht mehr „vor dem Schritt“: Der Vergleich läuft gegen den eigenen Stand und meldet nichts. Das passiert auch ohne eigenes Zutun – der Hauptchat sichert Zwischenstände, während ein Schritt läuft. Vor dem Schritt den Commit notieren (`git rev-parse --short HEAD`) und `--alt git:<dieser Commit>` nehmen, oder eine Kopie des Ordners.
 61. Wenn für WebKit die Umgebung geladen wurde (`env.sh`), dann findet dieselbe Shell danach kein Chromium mehr. Für Chromium eine neue Shell. 
 62. Wenn die App bei Tag ihr helles Thema einschaltet, während der Look an ist, dann bleiben helle Etiketten, Zeilen und Knöpfe stehen. `data-theme` bleibt „dunkel“ (Schritte 3 und 6). (53)
-63. Wenn der Look eingebaut ist und die App den Ton selbst wählt, dann zeigen die Handy-Werkzeuge bei Tag unter dem Namen „dunkel“ den Ton „klar“ – bis `openApp` den Ton in beide Richtungen sagt (Schritt 5 b).
-64. Wenn `desktop.mjs pruefen` meldet, „Scrollen zum Erkunden“ habe sich 5 oder 6 px bewegt (23 von 24), dann ist das Werkzeug die ältere Fassung: Es misst das Wippen der App mit, kein Sprung beim Drücken (Schritt 5 c).
+63. Wenn ein Werkzeug den Ton am Attribut `data-wa-ton` setzt, während der Look eingebaut ist, dann überschreibt ihn der nächste Effekt der App: Bei Tag war „dunkel“ in Wahrheit „klar“. Der Ton geht über die Einstellung der App (Schritt 5 b); wer ein eigenes Skript schreibt, nimmt `s.app({ ton })` oder `setTheme()` aus `lib.mjs`. Das gilt auch, wenn ein Werkzeug den eingebauten Look herausnimmt und einen früheren einspielt (`vergleich.mjs` mit seiner Referenz): Die App setzt das Attribut trotzdem. Bis zum Abend des 14.11. stand dort im Bogen „Einstellungen“ der Referenz „Automatisch“, in der Vorlage „Dunkel“ – in einem vollen Lauf von `vergleich.mjs` waren 14 von 16 Abweichungen nur das (die zwei übrigen: die Schrift „8 aktiv“ auf der Vorschauseite, Szene „Wetter“, anders gerastert – allein wiederholt: keine).
+64. Wenn `desktop.mjs pruefen` meldet, „Scrollen zum Erkunden“ habe sich 5 oder 6 px bewegt (23 von 24), dann ist das Werkzeug eine ältere Fassung (vor dem 14.11.): Es misst das Wippen der App mit, kein Sprung beim Drücken (Schritt 5 c).
 65. Wenn `vergleich.mjs film` eine einzelne Abweichung meldet, während die Maschine anderes rechnet, dann zuerst allein wiederholen.
 66. Wenn `pruefen.mjs --app --engine webkit` bei Prüfung 9 „scrolling the sheet pulls its light“ ausfällt, dann wiederholen: Im WebKit-Testbrowser fiel genau diese Prüfung in 4 von 10 Läufen aus und bestand im nächsten (in Chromium in keinem Lauf). Der langsame Testbrowser liefert das Rollen manchmal zu spät.
 67. Wenn das Skript des Looks am Desktop startet, bevor `App()` den Maßstab `--ui-scale` gesetzt hat, dann messen die Tropfen im falschen Maßstab (auf „Start“ blieb die Beschriftung einer Insel unscharf). Darum steht der Aufruf `useWasser(…)` in `App()` nach diesem Effekt – nicht in `Stage()`: Der Effekt eines Kinds läuft vor dem seiner Eltern. (Aus dem Desktop-Einbau; hier nicht nachgestellt.)
 68. Wenn eine Kopie in `src/wasser/` von Hand geändert wird, dann überschreibt `uebernehmen.mjs` sie beim nächsten Holen. Die Kopien tragen eine Kopfzeile mehr als die Vorlage; sonst sind sie gleich.
 69. Wenn mit `npm run dev` am Skript gearbeitet wird, dann die Seite neu laden: Das Skript legt `window.Wasser` nur einmal an und ersetzt sich nicht selbst. (Stylesheets wechseln sofort. `npm run dev` mit eingebautem Look läuft; React startet den Look im Entwicklungsmodus zweimal, das ist vorgesehen.)
-70. Wenn ein Schalter falsch geschrieben ist oder ein Werkzeug ihn nicht kennt, dann sagt es nichts und nimmt, was es ohne ihn nähme – bei `--look` die Vorlage statt der Kopie. Die Schalter stehen im Kopf jeder Datei; `pruefen.mjs` und `stelle.mjs` nennen den Look, den sie genommen haben.
+70. Wenn ein Schalter falsch geschrieben war oder ein Werkzeug ihn nicht kannte, dann sagte es nichts und nahm, was es ohne ihn nahm – bei `--look` die Vorlage statt der Kopie. Seit 14.11. beendet jeder unbekannte Schalter, jeder fehlende Wert und jeder Ordner, den es nicht gibt, das Werkzeug mit einer Meldung (Code 2), und jedes Werkzeug nennt den Look, den es genommen hat. Die Schalter stehen im Kopf jeder Datei.
+71. Wenn die Vorlage in eine App eingespielt wird, die den Look schon eingebaut hat, dann stehen zwei Stylesheets übereinander und das eingespielte Skript startet gar nicht (`wasser.js` beginnt mit „wenn es `window.Wasser` schon gibt: nichts tun“) – gemessen wird das eingebaute Skript mit einem Gemisch aus beiden Stylesheets. Darum ersetzen die Werkzeuge den eingebauten Look, statt etwas daraufzulegen (8.3). Wer ein eigenes Skript schreibt: `s.app({ look })` und `openDesktop({ look })` nehmen, nie `addStyleTag` mit der Vorlage.
+72. Wenn eine Kopie der Vorlage in der App steht (`--look <Ordner>`), dann ist ihr Stylesheet das ungebaute. Der Build kürzt Farbwerte; einzelne Bildpunkte an runden Ecken können sich deshalb um 1 von 255 vom gebauten Stand unterscheiden. Beweise am gebauten Stand führen (`sollist.mjs`).
+73. Wenn zwei Aufnahmen desselben Desktop-Stands sich am Tagesring oder an der Beschriftung einer Insel unterscheiden (einige Hundert bis einige Tausend Bildpunkte), dann ist das die Ebene der Insel: `.island` trägt `will-change: transform` und einen Übergang von 600 ms, der Browser zeichnet die Ebene in dem Maßstab, den sie beim Weltwechsel gerade hatte. `sollist.mjs` nimmt beides für die Aufnahme weg; ein eigenes Skript braucht dieselbe Zeile (`.island { transition: none !important; will-change: auto !important; }`). Ganz weg ist das Rauschen damit nicht: Auf dem ersten Bildschirm nach dem Laden („Start“, „leer-start“) zeigte der weiche Schein um die Insel „Material“ bei 1920 × 1080 in einzelnen Läufen bis 26 von 255 Unterschied, auch zwischen zwei Seiten desselben Builds. Allein wiederholt war er gleich. Ein solcher Bildschirm ist erst eine Abweichung, wenn er wiederkommt.
+74. Wenn Bildschirme der echten App Bildpunkt für Bildpunkt verglichen werden, dann muss alles stehen, was von selbst läuft: die Uhr, das Wetter, die Wolkenbänke (`.cloudbank` zieht auch bei reduzierter Bewegung – die Regel der App nennt `.cloud`), die Einfügemarke in einem Feld mit Fokus. `sollist.mjs` hält sie an; die Liste steht in seinem Kopf. Nicht anhalten lässt sich das Wasser im Inneren eines Tropfens (laufende Nummer; bis 14.11. abends blieb außerdem ein Tropfen, der beim Öffnen eines Bogens gerade antwortete, mitten in der Antwort stehen – behoben): Zwei Aufrufe desselben Stands zeigten in „Bereich wechseln“, „Versionen“ und beim Hinweis anderes Wasser in den Tropfen, sonst keinen abweichenden Bildpunkt. Darum `ok*`.
+75. Wenn `npx vite preview` auf der Arbeitsmaschine im Hintergrund läuft, dann endet es nach etwa 30 Minuten (die Frist für Hintergrundbefehle). Vor jedem langen Lauf nachsehen (`curl -s -o /dev/null -w '%{http_code}' http://localhost:4173/`); `sollist.mjs` mit `git:` und `baum` braucht keine Vorschau.
+76. Wenn der Hauptchat Zwischenstände committet, während ein Schritt läuft, dann ist `git:HEAD` nicht „vorher“ (Fallstrick 60) – und ein Zwischenstand kann Kopien tragen, die nicht zur Vorlage passen. Vor einem Schritt ein Tag setzen (`feinschliff-basis`) und dagegen vergleichen.
+77. Wenn ein Werkzeug eine Anfrage abfängt (`page.route`, auch für das erfundene Wetter), dann schaltet Playwright den HTTP-Cache des Browsers ab: Jedes Bild wird neu geholt, und eine Messung des Ladens stimmt nicht. `reiter.mjs` fängt nichts ab (das Wetter ist dort unerreichbar). (59)
+78. Wenn die App unter `vite preview` läuft, dann schickt sie Bilder mit „no-cache“ – der Live-Server mit „immutable“. Jedes neue `<img>` fragt unter der Vorschau erst beim Server nach. Ladezeiten gegen einen Ordner messen, den `reiter.mjs` mit den Kopfzeilen des Live-Servers ausliefert (`--app name=<dist-Ordner>`). (60)
+79. Wenn ein Bild außerhalb des Takts dekodiert werden soll, dann nicht mit `createImageBitmap(img)` (Chromium dekodiert dabei auf dem Faden der Seite) und nicht mit `img.decode()` vor einem Canvas (Chromium dekodiert für den Canvas noch einmal), sondern `createImageBitmap(blob)`. Mit `resizeWidth` skaliert es auch – anders als ein Canvas: Die Tropfen wären dann nicht mehr bildpunktgleich. (61)
+80. Wenn in einem Teil von `wasser.js` zwei Funktionen denselben Namen tragen, dann gewinnt die spätere ohne Meldung (Teil 1 hat `next()` für die Bildschleife; ein zweites `next()` für die Szene ersetzte sie beim Umbau still). (62)
+81. Wenn auf der Arbeitsmaschine gemessen wird, wie lange ein Tipp braucht, dann landet er oft in einem Wasserbild, das gerade gerechnet wird (Software-WebGL: 60 bis 150 ms je Bild). Gegen dieselbe App mit gestopptem Skript vergleichen (`reiter.mjs --gestoppt`), nie gegen ein Handy. (63)
+82. Wenn ein Knoten, den React entfernt hat, wieder ins Dokument gesetzt wird (weiches Gehen, Schritt 11), dann beginnt jede CSS-Animation darin von vorn. Darum entscheiden über das Ende eines gehenden Bilds nur die Animationen des Elements selbst und seiner direkten Kinder (`src/ui/gehen.ts`) – eine tiefere (der Auftritt einer Karte im Bogen) darf es nicht festhalten.
+83. Wenn eine Zeile mit `overflow: hidden` in einer Flex-Spalte fester Höhe steht (ein Panel am Desktop) und die Liste überläuft, dann wird sie als erste zusammengedrückt: Die gehende Zeile trägt `flex-shrink: 0` (sonst stand sie am Desktop schon im ersten Bild halb zusammengefaltet da).
+84. Wenn ein Werkzeug die Uhr festhält (`zeit:`, `page.clock.setFixedTime`), dann ist auch `performance.now()` gefälscht: Zeiten von Animationen mit `document.timeline.currentTime` vergleichen.
+85. Wenn ein Werkzeug das Wetter mit einer Auflöser-Regel (`--host-resolver-rules=MAP api.open-meteo.com 127.0.0.1:9`) abschalten will, dann reicht das auf einer Maschine nicht, deren Browser über einen Proxy geht: Die echte Anfrage kam in manchen Läufen durch, mit Sonnenauf- und -untergang des ECHTEN Tages – bei einer festgehaltenen Uhr an einem anderen Tag nimmt die App dann den falschen Tag und zeigt „nacht“ (so maß `reiter.mjs landschaft` einen Landschaftswechsel, der nicht stattfand). `reiter.mjs` lässt darum `fetch()` der Seite jede Adresse von open-meteo.com ablehnen (ein Init-Skript, kein `page.route`: Fallstrick 77) und erklärt einen Lauf ohne den geplanten Wechsel für ungültig.
+86. Wenn eine Liste nur einen Teil zeigt (`.slice`) und ihre Zeilen weich gehen, dann geht auch eine Zeile weich, die nur hinausgeschoben wurde – es gibt sie noch. `weich(id, gone)` mit einem Test gegen den Store (Schritt 11).
 
 ---
 
@@ -1051,26 +1161,60 @@ Jede Zeile ist eine Falle, in die jemand getreten ist: die Erbauer, der Einbau �
 **Auf echten Geräten:**
 
 - **Ein Handy, ein Lauf.** Der Besitzer hat den Handy-Einbau auf der Baustelle an seinem Handy gesehen: flüssig, bis auf die kurze Wartezeit beim Reiterwechsel (Entscheidung 11). Die Sorge aus dem WebKit-Testbrowser (9 bis 12 Bilder je Sekunde mit Tropfen und Randlichtern zusammen) hat sich dort nicht bestätigt. Das ist ein Eindruck, kein Messprotokoll: Nicht einzeln angesehen sind das jeweils andere Gerät (iPhone und Android), das Bodenlicht auf einem OLED, der weichgezeichnete Schleier, Auswahl und Datumswähler auf iOS, Trefferflächen mit dem Daumen, „klar“ bei Tageslicht (Schritt 4).
-- **Auf keiner echten Grafikkarte.** Der Desktop mit Look lief nur auf der Arbeitsmaschine: Sie zeichnet den Desktop von heute mit 9 bis 11 Bildern je Sekunde, die Vorlage mit 8. Der Weichzeichner kostet dort 15 bis 29 % der Bilder; die Lichter kosten nichts.
+- **Am Desktop ist nichts gemessen.** Der Besitzer hat den Einbau auf der Baustelle an seinem Bildschirm gesehen und benutzt ihn seit 14.11. live (Entscheidung 13) – das ist ein Eindruck, kein Messprotokoll. Gemessen wurde nur auf der Arbeitsmaschine, ohne Grafikkarte: Sie zeichnet den Desktop ohne Look mit 9 bis 11 Bildern je Sekunde, mit Look mit 8. Der Weichzeichner kostet dort 15 bis 29 % der Bilder; die Lichter kosten nichts. Safari am Desktop hat niemand angesehen.
 - **Der Regler der Tropfen** wurde nur mit vorgetäuschten Kosten durchlaufen, nie von einem Gerät, das wirklich langsam und wieder schnell wurde.
 - **Firefox am Desktop** (sein Build hier hat kein WebGL: schlichtes Glas, alles andere ist CSS).
 
-**Vom Besitzer entschieden, noch nicht gebaut:**
+**Vom Besitzer entschieden, gebaut, von ihm noch nicht gesehen** (alles auf `wasser-look`, nichts davon live; abschließend geprüft am 15.11. früh, Abschnitt 11):
 
-- Das Tempo der Lichter ein wenig schneller (Entscheidung 7; Schritt 9). Ein Versuch ist ausprobiert, ihm aber nicht gezeigt.
-- „klar“ ein wenig durchsichtiger (Entscheidung 8; Schritt 10). Ebenso.
-- Weiches Gehen von Bögen, Schubladen und Zeilen (Entscheidung 10; Schritt 11). Nichts gebaut; offen ist, was mit den nachrückenden Zeilen geschieht.
-- Die Wartezeit beim Reiterwechsel (Entscheidung 11; Schritt 8). Die Ursache ist eingegrenzt (die lebenden Tropfen), die Abhilfe nicht gebaut.
+- Das Tempo der Lichter ein wenig schneller (Entscheidung 7; Schritt 9).
+- „klar“ ein wenig durchsichtiger (Entscheidung 8; Schritt 10).
+- Weiches Gehen von Bögen, Schubladen und Zeilen (Entscheidung 10; Schritt 11). Die nachrückenden Zeilen schließen die Lücke weich – mit einer Höhe, die läuft (die zweite Ausnahme der Regel „nur transform und opacity“; ein Wert schaltet sie ab).
+- Die Wartezeit beim Reiterwechsel (Entscheidung 11; Schritt 8), auf der Arbeitsmaschine gemessen; ob sie am Handy des Besitzers weg ist, sagt nur sein Handy.
+- Der stehende Tropfen hinter einem Bogen, den er an der Live-Seite gemeldet hat (unten, „Offen am Look“).
+
+**Was am neuen Stand niemand geprüft hat:**
+
+- **Ein echtes Handy.** Der Besitzer hat nur den Einbau vor dem Feinschliff (`c7e8299`) am Handy gesehen. Der Feinschliff (neuer Reiterwechsel, weiches Gehen, Überblenden des Hintergrunds, sechs Szenen im Speicher des Grafikchips, das Vorladen 1,2 s nach dem Start) lief nie auf einem Handy. Zuerst auf der Baustelle ansehen: fünf Reiter zweimal durchtippen, einen Bogen öffnen und schließen, eine Aufgabe abhaken, einen Eintrag der Einkaufsliste entfernen und „Rückgängig“ tippen, das Zahnrad antippen und den Tropfen ansehen, solange der Bogen offen ist.
+- **Der Desktop auf einer echten Grafikkarte.** Der Besitzer hat `9c4afa7` auf seiner RTX 4090 gesehen (Entscheidung 14), den Feinschliff nicht. Schwächere Rechner sind ganz ungeprüft.
+- **WebKit / Safari.** Am 15.11. lief in Playwrights WebKit (Software-Zeichnung, kein Safari) nur ein kurzer Rauchtest am Handy (`docs/wasser-look/entwurf/abschluss/webkit.cjs`): Der Tropfen hinter einem Bogen ruht, eine abgehakte Zeile geht und ist nach 1 s weg, der Hintergrund blendet über und endet mit einem Bild, ein Hinweis ersetzt den anderen, kein Seitenfehler. Auffällig: Das Bild eines geschlossenen Bogens stand dort 0,75 bis 1 s fast unverändert, bevor es ging (Chromium auf derselben Maschine: 0,3 bis 0,5 s) – ob Safari auf einem iPhone das ebenso tut, ist offen. Nicht in WebKit: `pruefen.mjs --app`, `desktop.mjs pruefen`, `sollist.mjs`, die Lesbarkeit, der Desktop.
+- **Der zusammengeführte Stand.** `main` ist seit dem 14.11. abends weiter (8.1); das Zusammenführen hat Konflikte. Alles oben ist an `wasser-look` allein geprüft.
 
 **Offen am Einbau:**
 
-- Der Desktop-Einbau ist ein Zwischenstand (`e6eb9ef`): `einbau.css` ist eine Brücke, die Auswahlfelder mit Inline-Innenabstand sind nicht bereinigt, der Besitzer hat ihn noch nicht gesehen (Schritte 6 und 7).
-- Von den drei Absicherungen aus Schritt 5 sind a und b in keinem Branch; c ist nur in `wasser-look`.
+- Kleine Auswahlfelder mit Inline-Innenabstand: zehn Stellen, sie bleiben (Schritt 6 nennt die Messung und was eine Bereinigung braucht).
 - Welt „Wetter“ bei 2000 × 993: das Schild „Luftdruck“ auf dem Inselnamen „Archiv“ (Schritt 7).
 - Das alte helle Thema ist noch im Code (Schritt 12).
+- Zwei alte Fehler der App, die nicht zum Look gehören und die die Werkzeuge nur umgehen: Die Wolkenbänke ziehen auch bei reduzierter Bewegung (`global.css` nennt `.cloud`, die Klasse heißt `.cloudbank`); `.glass` verliert im Build den Weichzeichner ohne Vorsilbe (Fallstrick 16).
+- Der Doppelstart des Looks unter Reacts `StrictMode` im Entwicklungsmodus ist vorgesehen, aber nie eigens geprüft.
+
+**Die 15 Anmerkungen der zwei Einbau-Helfer** (`docs/wasser-look/entwurf/einbau-mobil-anmerkungen.md`, `einbau-desktop-anmerkungen.md`) – was aus jeder geworden ist:
+
+| | Anmerkung | Stand |
+|---|---|---|
+| M1 | Ein Vergleich gegen die gebaute App geht doch (alten Build getrennt ausliefern); ein fertiges Werkzeug fehlt | **erledigt:** `sollist.mjs` – zwei Stände der App (Commits, Adressen), baut einen Commit selbst. `NOTIZEN.md`, Abschnitt 10, Punkt 5 berichtigt |
+| M2 | Der Ton: Die Werkzeuge setzen das Attribut, die App überschreibt es; sie müssten die Einstellung umstellen | **erledigt:** über die gespeicherte Einstellung der App, in beide Richtungen (Schritt 5 b, Fallstrick 63) |
+| M3 | `--look` gilt nicht überall; es fehlt „der Look ist schon eingebaut“ (doppeltes CSS) | **erledigt:** eingebaut / ersetzt / eingespielt / ohne, in allen Werkzeugen gleich (8.3, Fallstrick 71) |
+| M4 | `bild.mjs app` ist ohne feste Uhr nicht wiederholbar | **erledigt:** `bild.mjs … --zeit tag` |
+| M5 | Der Import in `Mobile.tsx` muss gleich nach `mobile.css` stehen; die ESLint-Zeile fehlt in der Beschreibung | **erledigt:** `wasser.ts` lädt die Stylesheets der App selbst (Schritt 5 a) – die Stelle des Imports ist nicht mehr entscheidend; 8.2 druckt die Zeile mit `eslint-disable-line` und sagt, warum |
+| M6 | Bereichswechsel: nach dem Chip der Knopf „Zu … wechseln“, die Seite lädt neu; ein `addInitScript` macht ihn rückgängig | **erledigt:** Fallstrick 58; `h.bereich('echt')` gibt es jetzt auch am Handy |
+| M7 | Zu `verify.mjs`: läuft unverändert durch | **erledigt:** steht so in `NOTIZEN.md`, Abschnitt 10; hier gemessen 64 von 69 bei „429“ von Open-Meteo, am Stand davor ebenso |
+| M – | Rauschen am Desktop (Start, Heute): zwei bis drei Läufe je Seite | **zum größten Teil erledigt:** Ursache gefunden (Fallstrick 73), `sollist.mjs` nimmt sie weg und sieht dreimal hin. Ein Rest bleibt: der Schein um die Insel „Material“ auf dem ersten Bildschirm nach dem Laden (1920 × 1080), in einzelnen Läufen |
+| M – | Nicht geprüft: WebKit, echtes Handy, StrictMode | **offen** (oben und in „Auf echten Geräten“) |
+| D1 | Klassen in `desktop.css` nennen ging nicht, solange die Vorlage tabu war | **erledigt:** `einbau.css` ist aufgelöst (Schritt 6). Regel dazu: Wer die Vorlage nicht ändern darf, meldet die Zeile dem Hauptchat; eine Brücke nur mit dem Vermerk, wer sie auflöst |
+| D2 | „11 Stellen“ Inline-Innenabstand stimmt nicht; ohne Ersatzregel ändert das Streichen beide Hüllen | **berichtigt, offen:** zehn Stellen, fünf Abstände; gemessen, was das Streichen ändert; sie bleiben (Schritt 6) |
+| D3 | „Hook in `App()` neben der Bühne“ sagt nicht, wie das mit `if (mobile) return <Mobile />` geht | **erledigt:** 8.2 druckt die echten Zeilen und erklärt den zweiten Wert des Hakens |
+| D4 | `pruefen` kann am eingebauten Stand keine Startoptionen setzen; „nichts ist verrückt“ vergleicht die App mit sich selbst | **erledigt:** Startoptionen über einen zweiten `Wasser.start()`; „nichts ist verrückt“ gegen dieselbe App ohne Look; zwei Stände: `sollist.mjs` |
+| D5 | Für punktgenaue Desktop-Bilder fehlt ein Werkzeug (stehende Uhr, Wolkenbänke, Fenster 1 px, zwei gleiche Aufnahmen) | **erledigt:** `sollist.mjs` tut genau das und hält dazu die Ebene der Inseln an (Fallstricke 73, 74). Den „Schatten der Insel Material“, den er nannte, sieht es in einzelnen Läufen noch (Fallstrick 73) |
+| D6 | Wolkenbänke ziehen bei reduzierter Bewegung (Fehler der App) | **offen** (Fehler der App, oben); die Werkzeuge halten sie an |
+| D7 | `vite preview` im Hintergrund endet nach 30 Minuten | **vermerkt:** Fallstrick 75; `sollist.mjs` braucht für `git:` und `baum` keine Vorschau |
+| D8 | `CLAUDE.md` verlangt im Commit „Claude Fable 5.1“, die Sitzung meldet 5.2 | **offen, nicht Sache des Looks:** für den Hauptchat (`CLAUDE.md`, Abschnitt „Git“) |
+| D – | Vorschläge: Bogen weich schließen; Inseln im Tropfenbild; Rückfall ohne Unschärfe (`@supports not (backdrop-filter)`) | **offen:** Schritt 11; „Offen am Look“ (erster und vierter Punkt) |
 
 **Offen am Look:**
 
+- **Ein gedrückter Tropfen blieb stehen, wenn sich ein Bogen öffnet** – vom Besitzer an der Live-Seite gemeldet (14.11., 13:30): **behoben am 14.11. abends** auf `wasser-look` (der Tropfen klingt aus und ruht dann), live erst mit dem nächsten Einspielen: `docs/wasser-look/entwurf/stehenbleiben/BEFUND.md`. Am 15.11. noch einmal nachgestellt, mit einem Finger, der 140 ms liegt (ein Tipp von Playwright ist augenblicklich und zeigt den Fehler am alten Stand **nicht**): Bild in `docs/wasser-look/entwurf/abschluss/`.
+- Die Szenen von „Wetter“, „Archiv“ und der Innenwelt eines Projekts werden nicht vorgeladen: Beim ersten Besuch zeigen die Tropfen der Kopfzeile dort einige Bilder lang noch die alte Szene (Schritt 8).
 - „klar“ braucht `backdrop-filter`. Ohne ihn (WebKit-Testbrowser) zeigen Flächen die Szene scharf, und kleiner Text wird bei Tag schwer lesbar. Jeder aktuelle Browser zeichnet ihn; ein Ersatz ist nicht gebaut. Durchsichtigeres „klar“ macht das nicht leichter.
 - Die Etiketten auf klaren Tropfen im Ton „klar“ sehen etwas anders aus als auf den am 13.11. freigegebenen Bildern (weniger Silber im Körper, `--wa-drop-veil: .3`).
 - Verblasste Hintergrund-Inseln, über die die App schon heute Panels legt, sieht man durch das Wasser weniger als durch das heutige Glas. Das ist das Material; dünner geht nur auf Kosten der Lesbarkeit.
@@ -1105,8 +1249,8 @@ Am 14.11., auf der Arbeitsmaschine (Chromium, ohne Grafikkarte), in Kopien auße
 | ein Komma weglassen (Fallstrick 1) | die Zeile verliert ihre Mulde, keine Meldung |
 | eine Kopie der Vorlage ausprobieren (`mobil.html?vorlage=…`, `--look <Ordner>`) | ein geänderter Wert (`--wa-drop-amber`) erscheint auf der Seite und in den Bildern |
 | eine Farbe ändern (Abschnitt 6, in einem Wegwerf-Klon mit Git) | „dunkel“ ohne Abweichung, „klar“ acht Bilder mit DIFF; Kontrast über acht Szenen: kein Median unter der Grenze |
-| das Tempo der Lichter ändern (Schritt 9) | `pruefen.mjs` 54 von 54; Zahlen in Schritt 9 |
-| „klar“ durchsichtiger (Schritt 10) | kein Median unter einer Grenze, Handy und Desktop; Zahlen in Schritt 10 |
+| das Tempo der Lichter ändern (Schritt 9) | der Versuch: `pruefen.mjs` 54 von 54. Gebaut am 14.11. abends (Schlussprüfung 15.11., 01 Uhr, auf dem Build dieses Stands): `pruefen.mjs --app` 64 von 64, `desktop.mjs pruefen` 27 von 27, `verify.mjs` 69 von 69; Zahlen in Schritt 9 |
+| „klar“ durchsichtiger (Schritt 10) | der Versuch: kein Median unter einer Grenze im November – an einem Wintertag am Desktop doch (darum die Reparatur). Gebaut am 14.11. abends: kein Median unter einer Grenze, Handy und Desktop, auch im Winter; „dunkel“ durch den Ton unverändert (das Tempo ändert hinter zwei Bögen am Handy das Wasser zweier Tropfen um 1 von 255). Zahlen in Schritt 10 |
 
 Aus dieser Probeseite stammen die Bilder in `docs/wasser-look/bilder/anleitung/`.
 
@@ -1150,4 +1294,69 @@ Dabei gefunden: der zweite Absatz von Fallstrick 16, die Ergänzung von Fallstri
 An der Vorlage selbst geändert: nur der Kommentar im Kopf von `wasser.js`. Danach `vergleich.mjs bilder --alt git:a81ee77` (der Commit davor): 32 Bildpaare, kein abweichender Bildpunkt; `pruefen.mjs --app` 60 von 60; die Welten „Heute“ (dunkel, Nacht, 2000 × 993) und „Wetter“ (klar, Tag, 1920 × 1080) angesehen.
 Nicht geschehen: ein neuer Lauf durch jemanden, der die Anleitung nicht kennt. Nachgegangen ist, wer sie geändert hat.
 
+**Feinschliff der Werkzeuge (14.11., nachmittags)** – auf diesem Branch, gegen die gebaute App mit eingebautem Look, Chromium auf der Arbeitsmaschine. Der Schritt lief zweimal: Ein erster Versuch (12:53 bis 15:00) brach an einer Nutzungsgrenze ab; er ließ die Befehle dieser Anleitung in zwei Reihen nebeneinander laufen, und vier Prüfungen fielen dabei aus. Der zweite (15:05 bis 18 Uhr) hat sie allein wiederholt – alle bestanden (`pruefen.mjs --regler`, `pruefen.mjs --app --look screenshots/wasser/probe`, `desktop.mjs pruefen --look screenshots/wasser/probe`, `desktop.mjs pruefen --format 1920 --ton klar`) – und danach jeden Befehl einzeln nacheinander laufen lassen.
+
+- **Die App ist dieselbe geblieben.** Das gebaute Skript ist Byte für Byte das von `feinschliff-basis` (`cmp`). Das gebaute Stylesheet unterscheidet sich Regel für Regel in genau den Regeln aus Schritt 6 (die drei Klassen statt der Inline-Stile, vier `!important` weniger). `sollist.mjs --soll git:feinschliff-basis` (gegen den Arbeitsstand, frisch gebaut) – Handy (beide Töne, 28 Bildschirme je Ton) und Desktop (2000 × 993 und 1920 × 1080, beide Töne, 27 Bildschirme je Ton und Format), beide Bereiche, 164 Bildschirme:
+  - erster Versuch (13:18): 164 gleich, 12 davon `ok*` (anderes Wasser im Inneren eines Tropfens: am Desktop „Bereich wechseln“, „Versionen“, der Hinweis).
+  - letzter Lauf (17:27 bis 17:53): 160 gleich (11 davon `ok*`), **4 abweichend, alle außerhalb des Looks**: „Start“ und „leer-start“ bei 1920 × 1080 (zweimal „klar“, einmal „dunkel“) – der weiche Schein um die Insel „Material“, höchstens 10 bis 21 von 255 –, und „Archiv“ 2000 „klar“ (697 Bildpunkte, höchstens 11). Die zwölf Bildschirme `start`, `archiv`, `leer-start` allein wiederholt: zehn gleich, zwei wieder am Schein der Insel; „Start“ 1920 „klar“ allein, viermal (davon einmal mit vertauschten Seiten): immer gleich; derselbe Build auf beiden Seiten zeigte „leer-start“ 1920 „klar“ ebenfalls abweichend (2370 Bildpunkte, höchstens 3). Das ist das Rauschen der Inselebene (Fallstrick 73), kein Unterschied der Stände: Skript gleich, Stylesheet nur am Desktop in Regeln, die keine Insel und keine Welt „Start“ treffen.
+  - Gegenprobe zu `ok*`: derselbe Build auf beiden Seiten mit `--tropfen` (`--nur bogen-bereich,bogen-versionen,hinweis`): 10 von 16 Bildschirmen mit anderem Wasser im Tropfen, sonst kein Bildpunkt.
+- **Das Werkzeug gegen sich selbst** (derselbe Build auf beiden Seiten): Handy 52 von 52 Bildschirmen gleich. Desktop: zuerst wichen „Start“ und „Heute“ ab (174 bis 6030 Bildpunkte am Tagesring und an den Beschriftungen der Inseln – das Rauschen, das beide Einbau-Helfer gemeldet hatten); seit die Ebene der Inseln für die Aufnahme angehalten wird, sind sie gleich (Fallstrick 73) – bis auf einzelne Läufe, in denen der erste Bildschirm nach dem Laden am Schein der Insel „Material“ abweicht (oben).
+- **Der Prüfblock** (zuletzt 17:20 bis 17:25, nach allen Änderungen): `VITE_API=node npm run build` und `npm run build` ohne Fehler; Reihenfolge im CSS gut, 16 und 16; `verify.mjs` 64 von 69 (die fünf: Open-Meteo antwortete mit „429“ – Netz; am Stand davor zur selben Stunde ebenso 64); `pruefen.mjs --app` 60 von 60; `desktop.mjs pruefen` 24 von 24, auch mit `--format 1920 --ton klar` (allein, 15:10).
+- **Schritt 5 a, Gegenprobe** in einer Kopie dieses Branches: mit einem Import von `wasser.ts` als erster Zeile von `src/ui/SheetHost.tsx` „Reihenfolge gut“; dieselbe Kopie ohne die drei Zeilen in `wasser.ts`: „FALSCH: der Look steht vor mobile.css“.
+- **Der Ton, vier Fälle:** die Tabelle in Schritt 5 b, um 17:27 nachgemessen – dieselben Zahlen.
+- **Welcher Look gemessen wird** (erster Versuch; der zweite hat davon diesen Branch nachgeprüft: eingebaut, ersetzt, ohne, die Marke kommt an) – jede Art gegen drei Stände der App: diesen Branch (Look in beiden Hüllen eingebaut), `65b1e44` (am Handy eingebaut, am Desktop nicht) und `a54b030` (ohne Look). Geprüft mit einer Kopie der Vorlage, die eine Marke trägt (ein eigener Wert im Stylesheet, eine andere Schlafzeit im Skript): eingebaut – keine Marke, 2 Regeln des gebauten Looks; ersetzt und eingespielt – Marke und Schlafzeit kommen an, 4 und 9 lebende Tropfen (Handy, Desktop) wie eingebaut; ohne – keine Regel des Looks, kein Tropfen. Nie zwei Looks auf einer Seite.
+- **`desktop.mjs zeigen`** gegen `dist/` mit eingebautem Look: wie gebaut, mit `--look vorlage` und mit einer Kopie; je am Desktop- und am Handy-Format mit `?ton=klar`, `?ton=dunkel`, `?ohne=1`, `?weich=aus&leben=1.5` – 30 Seiten ohne Fehler, „dunkel“ bei Tag ist dunkel.
+- **Falsche Schalter:** Alle 13 Werkzeuge und die sieben Arten von `desktop.mjs` beenden sich bei `--loook x` mit einer Meldung (Code 2); dazu ausprobiert: `--gibtsnicht`, `--toene klaar`, `--look <Ordner, den es nicht gibt>`, ein falsches Wort statt `pruefen`, und ein Schalter einer anderen Art (`desktop.mjs pruefen --toene klar`, `desktop.mjs clip … --ton klar`, `desktop.mjs zeigen --format 1920`, `messen.mjs ruhe --css x`).
+- **`kontrast.mjs --css`:** Handy `.tk__date b` 16,0 („dunkel“) und 9,3 („klar“); Desktop `.sheet .field > label` bei Tag 11,3 („dunkel“) und 7,7 („klar“), bei Nacht 11,5 und 8,5; ein Selektor, der nichts trifft: Fehler.
+- **WebKit:** Playwrights WebKit startet auf der Arbeitsmaschine nur mit der Umgebung aus `NOTIZEN.md`, Abschnitt 8. Damit laufen eingebaut, ersetzt und ohne sowie der Ton am Handy (beide Richtungen, Tag und Nacht) und am Desktop (`stelle.mjs … --engine webkit`). Eine volle Prüfung in WebKit (`pruefen.mjs --app --engine webkit`, `sollist.mjs --engine webkit`) lief nicht.
+- **Die Absicherung gegen eine falsche Reihenfolge im CSS** ist strenger geworden (8.3): Hinter der ersten Regel des Looks darf keine Regel der App mehr stehen. Ausprobiert am gebauten CSS dieses Branches und von `feinschliff-basis` (keine fremde Regel), an den drei Dateien der Vorlage und an zwei erfundenen Fällen (eine Regel der App hinter dem Look, auch in `@media`): beide gemeldet.
+- **Der Probelauf in einer Kopie (8.3)** wörtlich, nur mit Port 4180 statt 4175 (4175 gehörte nicht diesem Schritt): Build, Vorschau, `WASSER_APP=http://localhost:4180 node scripts/wasser/pruefen.mjs --app` 60 von 60, `sollist.mjs handy --soll http://localhost:4173 --ist http://localhost:4180 --nur start,bogen-einstellungen` sechs Bildschirme gleich.
+- **Zwei Abweichungen, die allein wiederholt verschwanden:** im vollen Lauf von `vergleich.mjs` die Schrift „8 aktiv“ auf der Vorschauseite (Szene „Wetter“, „dunkel“, 510 Bildpunkte, gleicher berechneter Stil – anders gerastert); in einem Lauf von `vergleich.mjs stile` ein Knopf im Bogen „Neue Rolle“ („klar“), der auf einer Seite ein lebender Tropfen war und auf der anderen nicht.
+- **Die Befehle dieser Anleitung:** Jeder Befehl in einem Codeblock und jeder `node scripts/wasser/…`-Befehl im Text (ohne Vorlagen mit `<…>`) lief am 14.11. wörtlich zwischen 13:31 und 17:30 (im zweiten Versuch einzeln nacheinander; viele in beiden Versuchen). Jeder endete ohne Fehler, außer `verify.mjs` (64 von 69, „429“) und einem vollen Lauf von `vergleich.mjs` (16 Abweichungen: 14 durch den Ton der Werkzeuge, behoben – Fallstrick 63 –, zwei Rauschen, oben; nach der Behebung `vergleich.mjs app` und `vergleich.mjs film` erneut: keine Abweichung). Dazu die beiden `git`-Befehle aus 8.1, die 30 Seiten von `desktop.mjs zeigen` und die acht Adressen der Vorschauseite hinter `python3 -m http.server` (alle ohne Fehler auf der Seite; eine Kopie mit geänderter Farbe kam in `zeigen --look <Kopie>` und `?vorlage=<Kopie>` an).
+
 **Nicht ausgeführt:** `npm run preview` selbst (der Port war von der laufenden Vorschau des Projekts belegt, gestartet mit demselben Befehl; die Kopien liefen unter anderen Ports mit `WASSER_APP`). `vergleich.mjs --alt git:HEAD` in voller Länge (nur der Teil `bilder`). Von Schritt 6 das, was „noch zu tun“ ist. Von Schritt 7 nur die Bildbefehle. Die Abhilfe aus Schritt 8. Die Schritte 11 bis 13 (von Schritt 11 nur die Klasse `wa-geht`). Nichts davon auf einem echten Gerät: Was dort gesehen wurde, hat der Besitzer gesehen (Entscheidung 11).
+
+**Reiterwechsel und Ruhe hinter einem Bogen (14.11., abends)** – Schritt 8 und der Befund vom 13:30 (Opus 5.5). Gegen `feinschliff-basis`, beide als Build ausgeliefert, Chromium auf der Arbeitsmaschine.
+
+- **Gemessen:** `reiter.mjs handy` (×1 und ×4, je drei Läufe, mit „ohne Look“ und „Skript gestoppt“), `reiter.mjs desktop` (beide Formate, ×1 und ×4), `reiter.mjs landschaft`, `reiter.mjs profil`; die Zahlen in Schritt 8 und im Befund `entwurf/reiterwechsel/BEFUND.md`.
+- **Die Tropfen bildpunktgleich:** reduzierte Bewegung, beide Töne, fünf Reiter, 390 × 844 @3x – vorher gegen nachher 0 abweichende Bildpunkte, innen wie außen (vorher gegen vorher ebenso 0).
+- **Texturgröße:** 2048 × 1024 gegen 1024 × 1024 und 1024 × 512, Bild `entwurf/reiterwechsel/texturgroesse.webp`.
+- **Hinter einem Bogen:** `bogen.mjs alles`, 28 Fälle je Stand – nachher alle bestanden; vorher steht der Tropfen sofort (Befund `entwurf/stehenbleiben/BEFUND.md`).
+- **Der Prüfblock:** `npm run build`, `VITE_API=node npm run build`, wieder `npm run build` ohne Fehler; Reihenfolge im CSS gut, 16 und 16; `verify.mjs` 65 und 64 von 69 (die fehlenden: Open-Meteo „429“, Netz); `pruefen.mjs --app` 64 von 64; `desktop.mjs pruefen` 27 von 27. Gegenprobe der neuen Prüfungen am alten Stand: `pruefen.mjs --app` fällt dort in „rings out … then rests“ (der Tropfen ändert sich nach dem Erscheinen des Bogens nicht mehr), `desktop.mjs pruefen` in beiden neuen Prüfungen – sie fassen den Fehler.
+- **`sollist.mjs --soll git:feinschliff-basis`** (alle 164 Bildschirme, 35 Minuten): 103 gleich (8 davon `ok*`), 61 abweichend. 57 davon sind Bildschirme mit offenem Bogen oder offener Suche, die Abweichung liegt zu 98 bis 99,9 % in den Leinwänden der Tropfen: Ein Tropfen hinter einem Bogen bekommt jetzt ein letztes Bild in Ruhelage, gezeichnet nach dem Öffnen – vorher blieb das Bild von davor stehen. Was sich darin unterscheidet, ist nicht Stück für Stück bewiesen; gesehen: am Handy weicht der Tropfen ab, über dem die Maus vom Bildschirm davor stand (Haltung „Maus darüber“, bis 5/255 unter dem Schleier), am Desktop die Form des Wassers in Tropfen hinter und in der Schublade (bis 56/255; vermutlich die Lage der Landschaft, die der Maus folgt, im Augenblick des Zeichnens). Gegenproben: derselbe alte Stand auf beiden Seiten gleich, derselbe neue ebenso; die Suche am Handy allein (ohne die Bildschirme davor) gleich, nach „Konto“ abweichend. Die übrigen 4: „Start“ und „leer-start“ bei 1920 × 1080 – das bekannte Rauschen um die Insel „Material“ (Fallstrick 73). Wer diesen Stand vergleicht, nennt die Bögen als gewollt: `sollist.mjs --soll git:feinschliff-basis --erwartet bogen,suche`.
+- **Nicht geprüft:** ein echtes Handy, ein echter Grafikchip, Safari (die WebKit-Teste liefen nur für das Dekodieren und die Streifen), `film.mjs` und `vergleich.mjs` (die Vorlage auf der Vorschauseite ist in Ruhe unverändert, das zeigt der Vergleich der Tropfen oben, nicht `vergleich.mjs`).
+
+### Abschlussprüfung des Feinschliffs (15.11., früh)
+
+Eine letzte, unabhängige Prüfung des ganzen Feinschliffs (Schritte 8 bis 11 und die Nachbesserungen danach), von jemandem, der nichts davon gebaut hat. Vorher = `feinschliff-basis`, in einer Kopie gebaut; nachher = dieser Branch. Arbeitsmaschine, Chromium, ohne Grafikkarte. Die Vorlage wurde dabei nicht geändert. Einzelheiten und alle Zahlen: `NOTIZEN.md`, Abschnitt 18; Bilder, Filme und Skripte: `docs/wasser-look/entwurf/abschluss/`.
+
+```
+node scripts/wasser/uebernehmen.mjs && git status --short                   # nichts geändert: die Kopien sind die Vorlage
+npm run build                                                               # dazu VITE_API=node npm run build, danach wieder npm run build
+node scripts/verify.mjs http://localhost:4173                               # 69 von 69, gegen beide Builds
+node scripts/wasser/pruefen.mjs --app                                       # 64 von 64
+node scripts/wasser/desktop.mjs pruefen                                     # 27 von 27
+node scripts/wasser/kontrast.mjs --app                                      # kein Median unter der Grenze
+node scripts/wasser/desktop.mjs kontrast                                    # ebenso
+node scripts/wasser/sollist.mjs --soll git:feinschliff-basis --toene dunkel # was sich in „dunkel“ geändert hat
+node scripts/wasser/reiter.mjs handy --app vorher=<Ordner>,nachher=<Ordner> --drossel 1,4 --laeufe 1   # dreimal, die zwei Apps im Wechsel zuerst
+node docs/wasser-look/entwurf/gehen/rennen.mjs                              # 51 von 51
+node docs/wasser-look/entwurf/abschluss/layout.mjs vorher=<Adresse> nachher=http://localhost:4173
+```
+
+(`<Ordner>`: ein gebauter Stand, z. B. `dist/` einer Kopie von `feinschliff-basis`; `<Adresse>`: derselbe Stand unter einer eigenen Vorschau. Gelaufen ist es hier mit eigenen Vorschauen auf 4180 und 4181 – `WASSER_APP=http://localhost:4180` vor den Werkzeugen.)
+
+| Was | Ergebnis |
+|---|---|
+| Kopien, Reihenfolge im CSS | `uebernehmen.mjs` ändert nichts; „Reihenfolge gut“, 16 und 16 |
+| Prüfblock | Build und Node-Build ohne Fehler; `verify.mjs` 69 von 69 gegen beide; `pruefen.mjs --app` 64 von 64; `desktop.mjs pruefen` 27 von 27 |
+| Lesbarkeit | Handy und Desktop, beide Töne, Nacht und Tag: kein Median unter der Grenze. Die schwächsten 5 % der Buchstaben: Handy 4,2 („Fußnote auf der Seite“, „dunkel“), Desktop 3,6 (Platzhalter eines Felds, „klar“ bei Tag; Grenze 3). Die Zeiten der Desktop-Tageskarte bei 1920 × 1080 an einem Wintertag: 5,1 (vor dem Feinschliff 5,7) |
+| „dunkel“ in Ruhe | Handy Start, Heute, Projekte, 21:30: kein Bildpunkt anders als vor dem Feinschliff |
+| `sollist.mjs` „dunkel“ gegen `feinschliff-basis` | 82 Bildschirme (Handy, Desktop in beiden Formaten, Nacht, beide Bereiche), 18 Minuten: 48 gleich (4 davon `ok*`), 34 abweichend. 29 davon zeigen einen offenen Bogen oder die Suche – die Tropfen dahinter stehen jetzt in ihrer Ruhelage (die Behebung des stehenden Tropfens, Schritt 8), 87 bis 99,9 % der abweichenden Bildpunkte in den Tropfen, der Rest (höchstens 420 je Bildschirm) gleich daneben. 4 sind der Desktop-Start und der leere Start in beiden Formaten (das Suchfeld mittig, Schritt 11). 1 war Rauschen (Desktop 1920 „Projekte“, 129 Bildpunkte, allein wiederholt gleich). Jeder Bildschirm ohne Bogen ist gleich |
+| Anordnung | jede Desktop-Welt, beide Formate, Tag und Nacht, beide Bereiche (60 Bildschirme je Stand): vorher und nachher genau dieselbe Liste von Dingen auf Inseln – keine Insel neu verdeckt, kein Inselname verdeckt, kein Text abgeschnitten. Was auf beiden Seiten steht, ist die Anordnung der App (blasse Hintergrund-Inseln unter Panels, die Wetterzeichen auf der Insel „Wetter“) |
+| Reiterwechsel (Handy) | bis das neue Bild steht, Median der drei Läufe: erster Besuch 81 → 25 ms, zweiter 95 → 29 ms; viermal gebremst 326 → 117 und 243 → 92 ms. Lange Aufgaben, die Szenenarbeit sind: 16 → 0 |
+| Weiches Gehen | `rennen.mjs` 51 von 51; die letzte Aufgabe auf „Heute“: Zeile und Leer-Text nie zugleich zu sehen |
+| Der stehende Tropfen | am alten Stand nachgestellt (Finger 140 ms), am neuen behoben – Bild 9 im Paket |
+| Leerer Bereich, reduzierte Bewegung, Fenstergröße | Handy „Meine Werkstatt“: sieben Bildschirme und ein Bogen, beide Töne, mit und ohne reduzierte Bewegung, kein Seitenfehler; siebenmal schmal und breit im Wechsel: jedes Mal die richtige Hülle mit Tropfen, kein Fehler in der Konsole |
+| WebKit | Playwrights WebKit startet. Kurzer Rauchtest am Handy bestanden (Abschnitt 10); das Bild eines geschlossenen Bogens blieb dort bis 1 s stehen |
+| Befunde der Kontrollen, Stichprobe | F1 (`sollist.mjs` sieht ein Zeichen auf einem Tropfen): ein eingepflanztes magentafarbenes Zeichen → „DIFF … ON a drop“; F12: 5,1; F13: 0 Bilder mit Zeile und Leer-Text zugleich |

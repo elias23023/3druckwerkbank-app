@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useStore, availableGrams, liveProjects } from '../store';
+import { weich } from '../ui/gehen';
 import { useShallow } from 'zustand/react/shallow';
 import { fmtDate, fmtGrams, fmtNum, fold } from '../lib/format';
 import { Weltkopf, Spruchfeld } from '../ui/Felder';
@@ -90,7 +91,7 @@ export function Material() {
         {low.map((s) => <div key={s.id} className="row small"><span className="pill pill--warn xs">wenig</span><span className="ellipsis grow">{s.label}</span><span className="xs muted">{fmtGrams(availableGrams(s))}</span></div>)}
         {shortages.length + low.length === 0 ? <p className="muted small">{spools.length ? 'Bestand reicht für alle geplanten Drucke.' : 'Noch kein Bestand erfasst.'}</p> : null}
         <div className="hr" />
-        {shopping.map((it) => <label key={it.id} className="row small" style={{ cursor: 'pointer' }}><input type="checkbox" checked={it.done} onChange={() => toggleShopping(it.id)} /><span className="grow" style={{ textDecoration: it.done ? 'line-through' : undefined }}>{it.title} <span className="muted">× {it.qty}</span></span>{it.price ? <span className="muted">{fmtNum(it.price, 2)} €</span> : null}{it.url && /^https?:\/\//i.test(it.url) ? <a href={it.url} target="_blank" rel="noreferrer noopener" className="xs">Link</a> : null}<button className="btn btn--icon btn--ghost" style={{ width: 20, height: 20 }} aria-label={`${it.title} von der Liste entfernen`} title="Entfernen" onClick={(e) => { e.preventDefault(); deleteShopping(it.id); }}><IX width={10} height={10} /></button></label>)}
+        {shopping.map((it) => <label key={it.id} {...weich(it.id)} className="row small" style={{ cursor: 'pointer' }}><input type="checkbox" checked={it.done} onChange={() => toggleShopping(it.id)} /><span className="grow" style={{ textDecoration: it.done ? 'line-through' : undefined }}>{it.title} <span className="muted">× {it.qty}</span></span>{it.price ? <span className="muted">{fmtNum(it.price, 2)} €</span> : null}{it.url && /^https?:\/\//i.test(it.url) ? <a href={it.url} target="_blank" rel="noreferrer noopener" className="xs">Link</a> : null}<button className="btn btn--icon btn--ghost" style={{ width: 20, height: 20 }} aria-label={`${it.title} von der Liste entfernen`} title="Entfernen" onClick={(e) => { e.preventDefault(); deleteShopping(it.id); }}><IX width={10} height={10} /></button></label>)}
         <input className="input" style={{ padding: '4px 8px', fontSize: 12 }} placeholder="Auf die Einkaufsliste … (Enter)" value={buy} maxLength={80} onChange={(e) => setBuy(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && buy.trim()) { addShopping({ title: buy.trim(), qty: '1' }); setBuy(''); } }} />
         <p className="xs faint">Produktlinks lösen keine Bestellung aus.</p>
       </Panel>

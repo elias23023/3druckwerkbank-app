@@ -1,10 +1,10 @@
 // ONE spot of the real app, looked at and read. For an element the other tools do not know (a sheet that is not in their
 // lists, something new) and for whoever has no browser window to read "computed" values in: opens the built app at desktop
-// or phone size with the template (or a copy of it) injected, goes where you say, takes ONE picture and prints what a
-// selector matches there - how many elements, inside which shell, and what the look made of the first three.
+// or phone size - with the look it has built in, or with a copy of the template in its place -, goes where you say, takes
+// ONE picture and prints what a selector matches there - how many elements, inside which shell, and what the look made of the first three.
 //
 //   node scripts/wasser/stelle.mjs <out.png> [--mobil] [--welt heute] [--bogen einstellungen] [--klick 'Über diesen Entwurf']
-//        [--css '.sheet .field'] [--wert transform,water-under] [--nah] [--look vorlage|ohne|<folder>] [--ton klar]
+//        [--css '.sheet .field'] [--wert transform,water-under] [--nah] [--look auto|eingebaut|vorlage|<folder>|ohne] [--ton klar]
 //        [--format 1920] [--zeit tag] [--engine webkit]
 //
 //   --mobil   phone size (390 x 844 @2x) instead of the desktop (2000 x 993; --format 1920: 1920 x 1080)
@@ -20,23 +20,22 @@
 //             here as "none"; --engine webkit shows it - docs/Wasser-Look.md, pitfall 16.)
 //   --wert    further properties to read, separated by commas; a custom property WITHOUT its two dashes (water-under = --water-under)
 //   --nah     the picture shows only the first match of --css, with 24 px around it
-//   --zeit, --format: desktop only (nacht | tag | morgen | abend; 2000 | 1920). --look ohne = the app as it is.
+//   --zeit   nacht | tag | morgen | abend or an ISO time. Desktop: default nacht. Phone: without it the real hour (with it the
+//            clock stands still and there is no weather).   --format: desktop only (2000 | 1920 | WxH).
+//   --look   head of lib.mjs. Default auto = the look the app has built in; a folder = that copy of the template in its
+//            place; ohne = the app with its look taken out.   --ton auto = what the app's own setting and the hour choose.
 // Needs npm run build && npm run preview (another address: WASSER_APP=...).
 import path from 'path';
-import { session, args, abs, mkdir } from './lib.mjs';
+import { session, args, abs, mkdir, lookArg, sayLook, geheZu, fail, ENGINES, ZEITEN } from './lib.mjs';
 import { openDesktop } from './desktop-lib.mjs';
-const a = args({ look: 'vorlage', ton: '', format: '2000', zeit: 'nacht', engine: 'chromium', welt: '', bogen: '', klick: '', css: '', wert: '' });
-if (!a._[0]) { console.log('usage: node scripts/wasser/stelle.mjs <out.png> [--mobil] [--welt heute] [--bogen einstellungen] [--klick "Text"] [--css ".selector"]  (see the head of this file)'); process.exit(1); }
-const out = abs(a._[0]); mkdir(path.dirname(out)); const look = a.look === 'ohne' ? '' : a.look;
+const a = args({ look: 'auto', ton: '', format: '2000', zeit: '', engine: 'chromium', welt: '', bogen: '', klick: '', css: '', wert: '' }, { flags: ['mobil', 'nah'], choices: { engine: ENGINES, ton: ['dunkel', 'klar', 'auto'], zeit: [...Object.keys(ZEITEN), '<iso>'], format: ['2000', '1920', '<WxH>'] } });
+if (a._.length !== 1) fail('usage: node scripts/wasser/stelle.mjs <out.png> [--mobil] [--welt heute] [--bogen einstellungen] [--klick "Text"] [--css ".selector"]  (see the head of this file)', 1);
+const out = abs(a._[0]); mkdir(path.dirname(out)); const look = lookArg(a.look);
 const s = a.mobil ? await session({ engine: a.engine }) : null;
-const d = a.mobil ? await s.app({ look, ton: a.ton }) : await openDesktop({ look, ton: a.ton, format: a.format, zeit: a.zeit, engine: a.engine });
-const p = d.page; let bad = 0;
+const d = a.mobil ? await s.app({ look, ton: a.ton, zeit: a.zeit || null }) : await openDesktop({ look, ton: a.ton, format: a.format, zeit: a.zeit || 'nacht', engine: a.engine });
+const p = d.page; let bad = 0; sayLook(d);
 try {
-  if (a.welt === 'innen') await d.project(); else if (a.welt) await d.go(a.welt.startsWith('#') ? a.welt : '#/' + a.welt);
-  if (a.bogen) await d.sheet(a.bogen);
-  for (const k of String(a.klick || '').split('>>').map((x) => x.trim()).filter(Boolean)) {
-    await (/^[.#[]/.test(k) ? p.locator(k).first() : p.getByRole('button', { name: k }).or(p.getByRole('link', { name: k })).last()).click({ timeout: 5000 }); await p.waitForTimeout(900);
-  }
+  await geheZu(d, a);
   let clip;
   if (a.css) {
     const more = String(a.wert || '').split(',').map((x) => x.trim()).filter(Boolean);
@@ -47,6 +46,7 @@ try {
   }
   if (!a.mobil) await d.park(); await p.waitForTimeout(750); await p.screenshot({ path: out, ...(clip && clip.width > 0 && clip.height > 0 ? { clip } : {}) });
   const errors = d.errors.filter((x) => !/open-meteo|Failed to load resource|ERR_|net::/i.test(x));
-  console.log(`${out}   (${a.mobil ? 'Handy' : 'Desktop ' + a.format}, ${look ? `Look ${a.look}, Ton ${a.ton || 'dunkel'}` : 'ohne Einspielen: die App, wie sie gebaut ist'})${errors.length ? '\npage errors: ' + errors.slice(0, 3).join(' | ') : ''}`);
+  const ton = await p.evaluate(() => document.documentElement.getAttribute('data-wa-ton') || 'dunkel');
+  console.log(`${out}   (${a.mobil ? 'Handy' : 'Desktop ' + a.format}, Look: ${d.look.mode}${d.look.mode === 'ohne' ? '' : ', Ton ' + ton})${errors.length ? '\npage errors: ' + errors.slice(0, 3).join(' | ') : ''}`);
 } catch (e) { bad = 1; console.log('!!', String(e).split('\n').slice(0, 3).join(' ')); }
 await d.close(); if (s) await s.close(); process.exit(bad);

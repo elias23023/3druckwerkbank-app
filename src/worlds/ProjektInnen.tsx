@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Project } from '../types';
 import { STAGES } from '../types';
 import { useStore, availableGrams, printProgress } from '../store';
+import { weich, leer } from '../ui/gehen';
 import { navigate } from '../router';
 import { Panel, Progress, Stack } from '../ui/Glass';
 import { Weltkopf, Spruchfeld } from '../ui/Felder';
@@ -79,7 +80,7 @@ export function ProjektInnen({ project: p }: { project: Project }) {
         ))}
       </Panel>
       <Panel title="Dateien" icon={<IFile />} right={<More t="dateien" />} style={{ right: '3.2%', top: '53%', width: '22%' }} delay={140}>
-        {p.files.length === 0 ? <p className="muted small">Noch keine Dateien.</p> : p.files.filter((f) => !f.dataUrl).slice(0, 3).map((f) => <div key={f.id} className="row small"><IFile width={14} height={14} className="muted" />{f.url ? <a className="grow ellipsis" href={f.url} download={f.name}>{f.name}</a> : <span className="grow ellipsis">{f.name}</span>}<span className="xs muted">{f.size ? `${(f.size / 1e6).toFixed(1)} MB` : f.kind}</span></div>)}
+        {p.files.length === 0 ? <p {...leer()} className="muted small">Noch keine Dateien.</p> : p.files.filter((f) => !f.dataUrl).slice(0, 3).map((f) => <div key={f.id} {...weich(f.id, () => !useStore.getState().projects.some((x) => x.files.some((y) => y.id === f.id)))} className="row small"><IFile width={14} height={14} className="muted" />{f.url ? <a className="grow ellipsis" href={f.url} download={f.name}>{f.name}</a> : <span className="grow ellipsis">{f.name}</span>}<span className="xs muted">{f.size ? `${(f.size / 1e6).toFixed(1)} MB` : f.kind}</span></div>)}
         <button className="btn btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => open('dateien')}>Dateien verwalten <IChevR width={12} height={12} /></button>
       </Panel>
 
@@ -87,8 +88,8 @@ export function ProjektInnen({ project: p }: { project: Project }) {
       <div className="bottom-row">
         <Panel title="Aufgaben" icon={<ICheck />} right={<More t="aufgaben" />} delay={180}
           foot={<input className="input" style={{ padding: '4px 8px', fontSize: 12 }} placeholder="Aufgabe hinzufügen … (Enter)" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newTask.trim()) { s.addTask({ projectId: p.id, title: newTask.trim(), kind: 'allgemein' }); setNewTask(''); } }} />}>
-          {tasks.filter((t) => !t.done && !t.skipped).slice(0, 3).map((t) => <div key={t.id} className="row small"><Check on={t.done} onClick={() => s.toggleTask(t.id)} /><span className="grow ellipsis">{t.title}</span>{t.due ? <span className="xs muted" style={{ flex: 'none' }}>{fmtDate(t.due).slice(0, 6)}</span> : null}</div>)}
-          {tasks.filter((t) => !t.done && !t.skipped).length === 0 ? <p className="muted small">Keine offenen Aufgaben.</p> : null}
+          {tasks.filter((t) => !t.done && !t.skipped).slice(0, 3).map((t) => <div key={t.id} {...weich(t.id, () => !useStore.getState().tasks.some((x) => x.id === t.id && !x.done && !x.skipped))} className="row small"><Check on={t.done} onClick={() => s.toggleTask(t.id)} /><span className="grow ellipsis">{t.title}</span>{t.due ? <span className="xs muted" style={{ flex: 'none' }}>{fmtDate(t.due).slice(0, 6)}</span> : null}</div>)}
+          {tasks.filter((t) => !t.done && !t.skipped).length === 0 ? <p {...leer()} className="muted small">Keine offenen Aufgaben.</p> : null}
         </Panel>
         <Panel title="Werkzeuge" icon={<IWrench />} right={<More t="werkzeuge" />} delay={220}>
           {tools.length === 0 ? <div className="col" style={{ gap: 4 }}><p className="muted small">Keine Werkzeuge zugeordnet.</p><button className="btn btn--sm" style={{ alignSelf: 'flex-start' }} onClick={() => open('werkzeuge')}><IPlus width={12} height={12} /> Werkzeug zuordnen</button></div> : tools.slice(0, 3).map((t) => <div key={t.id} className="row small"><IWrench width={14} height={14} className="muted" /><span className="grow ellipsis">{t.name}</span><span className="row xs" style={{ gap: 4 }}><i className="dot" style={{ background: toolCol[t.status] ?? '#8a8f96' }} />{t.status}</span></div>)}

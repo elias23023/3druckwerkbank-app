@@ -5,8 +5,13 @@
 //   node scripts/wasser/vergleich.mjs [bilder|app|stile|film|alles] [--engine chromium|webkit] [--toene dunkel,klar] [--alt <folder>] [--neu <folder|vorlage>] [--out <dir>] [--nur <name part>]
 //   (--look <folder> is the same as --neu <folder>: the name every other tool has for "another copy of the template")
 //
-//   bilder   the harness page with reduced motion (frozen water): all eight scenes and their close-ups, both tones.
-//            Pixel by pixel; counted apart: inside the boxes of the drop canvases, and everywhere else.
+// TWO LOOKS IN ONE APP is what this tool compares (--alt against --neu; each a folder, 'vorlage', 'git:<rev>', or 'eingebaut'
+// = the look the app has built in). In the real app each side takes the PLACE of the built-in look (head of lib.mjs), so the
+// parts app, stile and film work against an app with the look built in. TWO STATES OF THE APP (two addresses, two commits)
+// are compared by sollist.mjs.
+//
+//   bilder   the harness page with reduced motion (frozen water): all eight scenes (each as it opens and rolled to its end)
+//            and their close-ups, both tones. Pixel by pixel; counted apart: inside the boxes of the drop canvases, and everywhere else.
 //   app      the same for the REAL app (preview on :4173, clock standing still): main screens, a project, sheets, search, toast.
 //   stile    the computed style of EVERY element, ::before, ::after and ::placeholder (all properties, and the look's
 //            custom properties) on the harness page and in the app; with motion, with reduced motion and with the app's
@@ -19,15 +24,25 @@
 //   alles    all four (default).
 // Prints one line per comparison and a summary; exit code 1 when something differs that is not listed in KNOWN below.
 // ok = no pixel differs; ok* = pixels differ INSIDE the drop canvases only (never a DIFF: the water lives; and see KNOWN,
-// point 4); ok~ = a difference that is known and explained (the strip "scroll"; changed drops of "klar" behind a blur).
-// Pictures of what differs: <out>/*-diff.png (red = outside the drops, yellow = inside). Default out: scratch folder in the OS temp dir.
+// point 4); ok~ = a difference that is known and explained (the strip "scroll"; changed drops of "klar", and the rest pose of a drop behind a sheet, behind a blur).
+// Pictures of what differs: <out>/*-diff.png (red = outside the drops, yellow = inside). Without --out: a scratch folder of this
+// run's own in the OS temp dir, named in the last line and removed when nothing differs (the filmstrips are always kept).
 import fs from 'fs'; import os from 'os'; import path from 'path';
-import { session, diff, strip, args, mkdir, abs, lookDir, isTemplate, ALT, SZENEN } from './lib.mjs';
+import { session, diff, strip, args, outDir, lookDir, isTemplate, lookArg, sayLook, fail, TOENE, ENGINES, ALT, SZENEN } from './lib.mjs';
 import { film, STRIPS } from './film.mjs';
-const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', look: '', out: path.join(os.tmpdir(), 'wasser-vergleich'), nur: '' }); if (a.look) a.neu = a.look;
-const mode = a._[0] || 'alles'; const out = mkdir(abs(a.out)); const TONES = a.toene.split(','); const ZEIT = '2026-11-12T17:42:00+01:00';
+const a = args({ engine: 'chromium', toene: 'dunkel,klar', alt: ALT, neu: 'vorlage', look: '', out: '', nur: '' }, { choices: { engine: ENGINES, toene: TOENE } }); if (a.look) a.neu = a.look;
+const MODES = ['bilder', 'app', 'stile', 'film', 'alles']; if (a._.length > 1 || (a._[0] && !MODES.includes(a._[0]))) fail(`"${a._.join(' ')}": one of ${MODES.join(' | ')} (nothing = alles)`);
+for (const k of ['alt', 'neu']) { a[k] = lookArg(a[k]); if (!a[k] || a[k] === 'auto') fail(`--${k}: a folder, vorlage, git:<revision> or eingebaut`); }
+const dirOf = (l) => lookDir(l === 'eingebaut' ? 'vorlage' : l);   // (the files of a look: what is built in are the copies of the template)
+const mode = a._[0] || 'alles'; const od = outDir(a.out, 'vergleich'), out = od.dir; let TONES = a.toene.split(',');
+// 6. since 14.11. evening (owner's decision 8, guide step 10) the tone "klar" is MEANT to differ from the reference of 13.11. on
+//    every screen (more see-through). Against that reference "klar" is therefore left out unless --toene names it; compare
+//    "klar" against an earlier state of the template instead: --alt git:<revision> --toene klar.
+const klarSkipped = a.alt === lookArg(ALT) && !process.argv.some((x) => x.startsWith('--toene')) && TONES.includes('klar');
+if (klarSkipped) TONES = TONES.filter((t) => t !== 'klar'); const ZEIT = '2026-11-12T17:42:00+01:00';
 const only = (name) => !a.nur || name.includes(a.nur);
 const s = await session({ engine: a.engine }); let bad = 0; const lines = []; const say = (t) => { console.log(t); lines.push(t); };
+if (klarSkipped) say('tone "klar" left out: against the reference of 13.11. it differs everywhere on purpose since decision 8 (KNOWN, point 6) - for "klar": --alt git:<revision> --toene klar');
 
 // Deliberate differences between the reference and the template (everything else must be equal):
 // 1. two tokens were renamed (--w3-pad, --w3-halo);
@@ -43,12 +58,31 @@ const s = await session({ engine: a.engine }); let bad = 0; const lines = []; co
 //      shows the animations wa-schwappt-*; the pictures at the same moments are the same);
 //    - the tone token --wa-drop-veil: 1 in "dunkel" (as before), .3 in "klar" - there the drops on cards gather less light,
 //      so the pictures of "klar" differ INSIDE those drops (counted apart, never a DIFF) and nowhere else.
+// 5. since 14.11. evening (owner's bug report, docs/wasser-look/entwurf/stehenbleiben/BEFUND.md): a drop that opened a sheet
+//    finishes its answer and RESTS behind it; the reference keeps it standing in the middle of its answer. So a screen with a
+//    sheet that was opened by a tap on a drop (app: "bogen-einstellungen", the gear) differs INSIDE that drop, and through the
+//    sheet's blur by 1 of 255 just beyond it - "ok~", never a DIFF (the same rule as the drops of "klar" in point 4). And a
+//    drop BEHIND a sheet that had not been drawn yet when the sheet came (it was scrolled into view by the tap that opened the
+//    sheet) still gets its one picture in the template; the reference leaves it plain glass (stile: "bogen-neue-rolle").
+// 6. tone "klar" since decision 8: see TONES below (left out against this reference).
+// 7. since 14.11. evening (owner's decision 7, guide step 9): the lights at rest go round faster - --wa-t-ruhe-1..4 and the
+//    gaits --wa-gang-1..4 (left out of the comparison: inherited, every element would differ) and every animation that uses
+//    them (its duration and its steps() mapped from the old laps to the new: equal after that, or a DIFF); a negative delay
+//    that is a share of a lap (--wa-phase x lap) must be the old one times new lap / old lap.
 // Not a style: the drawing size of a drop's canvas (it follows the governor of the drops, which differs from run to run).
 // To check a change of YOUR OWN against the template as it was: --alt git:HEAD (the committed template), or --alt <a copy of
 // the folder made before the change>.
 const RENAMED = { '--w3-pad': '--wa-drop-pad', '--w3-halo': '--wa-drop-halo' };
-const SINCE_1411 = new Set(['--wa-zug-weit', '--wa-zug-boden', '--wa-drop-veil']);   // (these three are left out of the comparison altogether: custom properties are inherited, so EVERY element would differ in them)
-const KNOWN = (prop, x, y, key) => (prop === 'transition-duration' && /^0\.18s(, 0\.18s)*$/.test(x[prop] || '') && y[prop] === x[prop].replace(/0\.18s/g, '0.14s'))
+const SINCE_1411 = new Set(['--wa-zug-weit', '--wa-zug-boden', '--wa-drop-veil',
+  '--wa-t-ruhe-1', '--wa-t-ruhe-2', '--wa-t-ruhe-3', '--wa-t-ruhe-4', '--wa-gang-1', '--wa-gang-2', '--wa-gang-3', '--wa-gang-4']);   // (the last eight: point 7)
+// point 7: the four laps of the lights at rest, 24 / 34 / 40 / 46 s -> 17 / 24 / 29 / 33 s, and their gaits steps(n) alike
+const PACE = { 24: 17, 34: 24, 40: 29, 46: 33 };
+const RATIOS = Object.entries(PACE).map(([o, n]) => n / o);   // a negative delay that is a share of a lap (--wa-phase) shrinks with its lap
+const pacedDelay = (x, y) => { const a = String(x || '').split(','), b = String(y || '').split(','); return a.length === b.length && a.every((v, i) => { const p = parseFloat(v), q = parseFloat(b[i]); return v.trim() === b[i].trim() || (p < 0 && RATIOS.some((r) => Math.abs(p * r - q) < 0.002)); }); };
+const paced = (v) => String(v || '').replace(/\b(24|34|40|46)s\b/g, (m, n) => `${PACE[n]}s`).replace(/steps\((24|34|40|46)\b/g, (m, n) => `steps(${PACE[n]}`);   // (these three are left out of the comparison altogether: custom properties are inherited, so EVERY element would differ in them)
+const KNOWN = (prop, x, y, key) => (/^animation(-duration|-timing-function)?$/.test(prop) && x[prop] !== y[prop] && paced(x[prop]) === y[prop])   // point 7
+  || (prop === 'animation-delay' && pacedDelay(x[prop], y[prop]))
+  || (prop === 'transition-duration' && /^0\.18s(, 0\.18s)*$/.test(x[prop] || '') && y[prop] === x[prop].replace(/0\.18s/g, '0.14s'))
   || (prop === 'transition-property' && x['transition-duration'] === '0s' && y['transition-duration'] === '0s')
   || (prop === 'aspect-ratio' && /canvas:\d+\|/.test(key))
   || ((/^animation/.test(prop) || prop === '--wa-schwappt-oben') && /\|wa-(licht|boden)$/.test(key))   // (--wa-schwappt-oben: the helper of a bottom sheet says "no arrival" with this token; before, its animation list left the arrival out)
@@ -57,8 +91,12 @@ const KNOWN = (prop, x, y, key) => (prop === 'transition-duration' && /^0\.18s(,
 const sameMotion = (ref, neu) => { const set = (t) => [...new Set(t.replace(/::before:wa-schwappt-oben/g, '::before:scale').replace(/::after:wa-schwappt-unten/g, '::after:scale').replace(/:wa-schwappt-boden/g, ':translate').split(/\s+\|\s+|\s\s+/).map((v) => v.trim()).filter(Boolean))].sort().join('  '); return set(ref) === set(neu); };
 
 /* ------------------------------------------------------------------ pictures */
+// in the page: the boxes (CSS px, two decimals) of every element that meets the area [l, t, r, b], by its place in the tree
+const BOXES_IN = ([l, t, r, b]) => { const o = {}; const key = (el) => { const p = []; for (let e = el; e && e !== document.documentElement; e = e.parentElement) p.unshift(e.localName + ':' + [...e.parentElement.children].indexOf(e)); return p.join('>'); };
+  for (const el of document.body.querySelectorAll('*')) { const q = el.getBoundingClientRect(); if (!q.width || q.right < l || q.left > r || q.bottom < t || q.top > b) continue; o[key(el) + '|' + (el.className && el.className.baseVal === undefined ? String(el.className).split(' ')[0] : el.localName)] = [q.left, q.top, q.width, q.height].map((v) => v.toFixed(2)).join(','); }
+  return o; };
 async function pair(name, open, steps) {                           // open(look) -> handle; steps = [[label, async (h) => {}], ...]: one screenshot after each step
-  const hs = []; for (const look of [a.alt, a.neu]) hs.push(await open(look));
+  const hs = []; for (const look of [a.alt, a.neu]) hs.push(await open(look)); hs.forEach(sayLook);
   for (const [label, fn] of steps) {
     const files = [], boxes = [];
     for (let i = 0; i < 2; i++) { try { await fn(hs[i]); } catch (e) { say(`!! ${name} ${label}: ${String(e).split('\n')[0].slice(0, 140)}`); } files.push(`${out}/${name}${label ? '-' + label : ''}-${i ? 'neu' : 'alt'}.png`); await hs[i].page.screenshot({ path: files[i] }); boxes.push(await hs[i].drops()); }
@@ -68,18 +106,27 @@ async function pair(name, open, steps) {                           // open(look)
       for (let i = 0; i < 2; i++) { await hs[i].page.waitForTimeout(2500); await hs[i].page.screenshot({ path: files[i] }); boxes[i] = await hs[i].drops(); }
       sameBoxes = JSON.stringify(boxes[0]) === JSON.stringify(boxes[1]); d = await diff(files[0], files[1], boxes[1], files[1].replace('-neu.png', '-diff.png')); again = '   (second look)';
     }
-    const veil = /(^|-)klar/.test(name) && d.inside > 0 && d.maxOutside <= 1;   // KNOWN, point 4: the drops on cards of "klar" differ on purpose - and seen THROUGH A BLUR (behind the scrim of a sheet, under a toast) they spread 1 of 255 beyond their boxes
+    const veil = (/(^|-)klar/.test(name) || /^bogen-/.test(label)) && d.inside > 0 && d.maxOutside <= 1;   // KNOWN, points 4 and 5: the drops on cards of "klar" differ on purpose, and so does the rest pose of a drop behind a sheet - seen THROUGH A BLUR (behind the scrim of a sheet, under a toast) they spread 1 of 255 beyond their boxes
     const ok = (d.outside === 0 || veil) && sameBoxes; if (!ok) bad++; else if (!d.inside) fs.rmSync(files[1].replace('-neu.png', '-diff.png'), { force: true });
     say(`${ok ? (d.outside ? 'ok~' : d.inside ? 'ok*' : 'ok ') : 'DIFF'} ${(name + (label ? ' ' + label : '')).padEnd(34)} outside the drops ${String(d.outside).padStart(7)} px (largest ${String(d.maxOutside).padStart(3)})   inside ${String(d.inside).padStart(7)} px (largest ${String(d.maxInside).padStart(3)})   drops ${boxes[1].length}${sameBoxes ? '' : ' (BOXES DIFFER: ' + boxes[0].length + ' against ' + boxes[1].length + ')'}   of ${d.pixels}${again}`);
+    if (!ok && d.outside && d.box) {                               // which element stands elsewhere? (a layout shift of 1 px that comes and goes in long runs: name it)
+      const sc = hs[1].scale || 2, box = d.box.map((v) => v / sc), rects = [];
+      for (const h of hs) rects.push(await h.page.evaluate(BOXES_IN, box));
+      const moved = Object.keys(rects[1]).filter((k) => rects[0][k] && rects[0][k] !== rects[1][k]).slice(0, 5);
+      for (const k of moved) say(`     moved: ${k.split('|')[1]}  <${k.split('|')[0].split('>').slice(-3).join('>')}>   alt ${rects[0][k]}   neu ${rects[1][k]}`);
+      if (!moved.length) say('     moved: no element in that area has another box on the two sides (the difference is paint, not layout)');
+    }
     for (const h of hs) for (const e of h.errors.splice(0)) if (!/open-meteo|Failed to load resource|ERR_|net::/i.test(e)) say(`   page error (${h === hs[0] ? 'alt' : 'neu'}): ${e}`);
   }
   for (const h of hs) await h.close();
 }
+// the phone view is longer than a phone since it begins with the card of the day: its second half, the list rolled to its end
+const UNTEN = async (h) => { await h.page.locator('.m-main').evaluate((e) => { e.scrollTop = 99999; }); await h.page.waitForTimeout(700); };
 async function bilder() {
   say(`\n== harness page, reduced motion, ${a.engine} ==`);
   for (const ton of TONES) for (const nah of [false, true]) for (const scene of SZENEN) {
     const name = `${ton}-${scene}${nah ? '-nah' : ''}`; if (!only(name)) continue;
-    await pair(name, (look) => s.harness({ look, ton, scene, nah, reduced: true }), [['', async () => {}]]);
+    await pair(name, (look) => s.harness({ look, ton, scene, nah, reduced: true }), [['', async () => {}], ...(nah ? [] : [['unten', UNTEN]])]);
   }
 }
 async function app() {
@@ -119,15 +166,21 @@ const PAGE_LIB = `(() => {
   };
 })()`;
 const customNames = () => {                                        // every custom property the reference declares: [name in this look, name it is reported under]
-  const names = (look) => { const dir = lookDir(look); const css = fs.readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => fs.readFileSync(`${dir}/${f}`, 'utf8')).join('\n'); return new Set(css.match(/--[a-z0-9-]+(?=\s*:)/g) || []); };
-  const old = [...names(a.alt)].filter((n) => !SINCE_1411.has(n) || isTemplate(a.alt)), now = names(a.neu), neu = a.neu === 'vorlage';   // (against another copy of the template nothing is left out)
+  const names = (look) => { const dir = dirOf(look); const css = fs.readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => fs.readFileSync(`${dir}/${f}`, 'utf8')).join('\n'); return new Set(css.match(/--[a-z0-9-]+(?=\s*:)/g) || []); };
+  const old = [...names(a.alt)].filter((n) => !SINCE_1411.has(n) || isTemplate(dirOf(a.alt))), now = names(a.neu), neu = a.neu === 'vorlage';   // (against another copy of the template nothing is left out)
   return [old.map((n) => [n, n]), old.map((n) => [neu && RENAMED[n] && now.has(RENAMED[n]) ? RENAMED[n] : n, n])];
 };
 async function compare(name, pages, custom, scopeSel = null, quietIfEqual = false) {
   const maps = []; for (let i = 0; i < 2; i++) maps.push(await pages[i].evaluate(([c, sel]) => window.__vgl.all(c, sel ? window.__vgl.near(document.querySelector(sel)) : null), [custom[i], scopeSel || null]));
   const keys = new Set([...Object.keys(maps[0]), ...Object.keys(maps[1])]); let n = 0, known = 0; const shown = [];
+  // point 5: a button BEHIND an open sheet that had not been drawn yet when the sheet came - the template still gives it its one
+  // picture in the rest pose (a live drop), the reference leaves it plain glass. Its own styles and its canvas differ, nothing else
+  const behind = await Promise.all(pages.map((p) => p.evaluate(() => { const sh = document.querySelector('.sheet'); if (!sh) return []; const key = (el) => { const q = []; for (let e = el; e && e !== document.documentElement; e = e.parentElement) q.unshift(e.localName + ':' + [...e.parentElement.children].indexOf(e)); return q.join('>'); };
+    return [...document.querySelectorAll('[data-w3="on"]')].filter((b) => !sh.contains(b)).map(key); })));
+  const woke = behind[1].filter((k) => !behind[0].includes(k)), wokeKey = (k) => { const path = k.split('|')[0]; return woke.some((w) => path === w || path.startsWith(w + '>')); };
   for (const k of keys) {
     if (maps[0][k] === maps[1][k]) continue;
+    if (woke.length && maps[0][k] !== undefined && maps[1][k] !== undefined && wokeKey(k)) { known++; continue; }
     if (maps[0][k] === undefined || maps[1][k] === undefined) { n++; if (shown.length < 12) shown.push(`     only in the ${maps[0][k] === undefined ? 'template' : 'reference'}: ${k}`); continue; }
     const [x, y] = [await pages[0].evaluate(([c, k]) => window.__vgl.get(c, k), [custom[0], k]), await pages[1].evaluate(([c, k]) => window.__vgl.get(c, k), [custom[1], k])];
     const props = [...new Set([...Object.keys(x || {}), ...Object.keys(y || {})])].filter((p) => (x || {})[p] !== (y || {})[p]);
@@ -145,8 +198,15 @@ const TAPPABLE = 'button, a, input, select, textarea, [role="button"], .btn, .pi
 async function states(name, pages, custom) {
   if (a.engine !== 'chromium') return;
   const cdp = []; for (const p of pages) { const c = await p.context().newCDPSession(p); await c.send('DOM.enable'); await c.send('CSS.enable'); cdp.push(c); }
-  const counts = []; for (const p of pages) counts.push(await p.evaluate((sel) => { let i = 0; for (const el of document.querySelectorAll(sel)) if (el.getClientRects().length) el.setAttribute('data-vgl', i++); return i; }, TAPPABLE));
-  if (counts[0] !== counts[1]) { bad++; say(`DIFF ${name}: ${counts[0]} tappable elements in the reference, ${counts[1]} in the template`); return; }
+  // (what is leaving - a closed sheet, the search, a toast that was replaced: class wa-geht or a copy that is inert - is not tappable;
+  // the reference has no leaving at all, so it would count it on one side only)
+  const counts = []; for (const p of pages) counts.push(await p.evaluate((sel) => { let i = 0; for (const el of document.querySelectorAll(sel)) if (el.getClientRects().length && !el.closest('[inert], .wa-geht')) el.setAttribute('data-vgl', i++); return i; }, TAPPABLE));
+  if (counts[0] !== counts[1]) {                                    // which ones? (by class and label: a toast that has not gone yet on one side, ...)
+    const lab = await Promise.all(pages.map((p) => p.evaluate(() => [...document.querySelectorAll('[data-vgl]')].map((e) => `${String(e.className || e.localName).split(' ')[0]}:${(e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 24)}${e.closest('.sheet, .toast, .cmd') ? ' (in ' + e.closest('.sheet, .toast, .cmd').className.split(' ')[0] + ')' : ''}`))));
+    const only = (x, y) => { const rest = [...y]; return x.filter((v) => { const i = rest.indexOf(v); if (i < 0) return true; rest.splice(i, 1); return false; }); };
+    bad++; say(`DIFF ${name}: ${counts[0]} tappable elements in the reference, ${counts[1]} in the template   only in the reference: ${only(lab[0], lab[1]).join(' | ') || '-'}   only in the template: ${only(lab[1], lab[0]).join(' | ') || '-'}`);
+    for (const p of pages) await p.evaluate(() => document.querySelectorAll('[data-vgl]').forEach((e) => e.removeAttribute('data-vgl'))); return;
+  }
   let differ = 0;
   for (const state of [['active'], ['focus', 'focus-visible']]) {
     for (let i = 0; i < counts[0]; i++) {
@@ -168,6 +228,17 @@ async function states(name, pages, custom) {
   say(`${differ ? 'DIFF' : 'ok  '} ${(name + ' pressed / focused').padEnd(46)} ${counts[0]} elements x 2 states, ${differ} differ`);
   for (const p of pages) await p.evaluate(() => document.querySelectorAll('[data-vgl]').forEach((e) => e.removeAttribute('data-vgl')));
 }
+// a page whose drops have all been made (every drop canvas has its button marked data-w3="on") and whose leaving pictures
+// are gone, the same for 300 ms - at most 4 s. (A button that a sheet brings becomes a drop at the script's next look; one
+// side caught a moment earlier showed it as plain glass: "app bogen-neue-rolle", a flake of long runs)
+async function settled(page) {
+  let last = '', same = 0; const t0 = Date.now();
+  while (Date.now() - t0 < 4000) {
+    const now = await page.evaluate(() => [document.querySelectorAll('.w3-drop').length, document.querySelectorAll('[data-w3="on"]').length, document.querySelectorAll('.wa-geht').length].join('/'));
+    const [cv, on, geht] = now.split('/').map(Number); if (now === last && cv === on && !geht) { if (++same >= 3) return; } else same = 0;
+    last = now; await page.waitForTimeout(100);
+  }
+}
 async function stile() {
   say(`\n== computed styles, ${a.engine} ==`); const custom = customNames();
   for (const ton of TONES) {
@@ -183,7 +254,7 @@ async function stile() {
     }
     for (const [label, reduced] of [['motion', false], ['reduced motion', true]]) {
       const name = `stile-app-${ton}`; if (!only(name)) continue;
-      const hs = []; for (const look of [a.alt, a.neu]) hs.push(await s.app({ look, ton, reduced, zeit: ZEIT }));
+      const hs = []; for (const look of [a.alt, a.neu]) hs.push(await s.app({ look, ton, reduced, zeit: ZEIT })); hs.forEach(sayLook);
       for (const h of hs) await h.page.evaluate(PAGE_LIB);
       const screens = [['start', (h) => h.go('#/start')], ['heute', (h) => h.go('#/heute')], ['projekte', (h) => h.go('#/projekte')], ['projekt', (h) => h.project()], ['material', (h) => h.go('#/material')], ['mehr', (h) => h.go('#/druck')],
         ['bogen-projekt', (h) => h.sheet('projekt')], ['bogen-projekt 2', async (h) => { await h.page.locator('.sheet .input').first().fill('Halter'); await h.page.locator('.sheet__foot .btn', { hasText: 'Weiter' }).click(); await h.page.waitForTimeout(700); }],
@@ -192,6 +263,7 @@ async function stile() {
         ['suche', async (h) => { await h.closeSheet(); await h.sheet('suche'); await h.page.keyboard.type('sens'); await h.page.waitForTimeout(600); }], ['hinweis', async (h) => { await h.page.keyboard.press('Escape'); await h.page.waitForTimeout(300); await h.sheet('toast'); }]];
       for (const [scr, fn] of screens) {
         for (const h of hs) { try { await fn(h); } catch (e) { say(`!! ${scr}: ${String(e).split('\n')[0].slice(0, 140)}`); } }
+        for (const h of hs) await settled(h.page);
         await compare(`app ${scr} ${ton}, ${label}`, hs.map((h) => h.page), custom);
         if (!reduced) await states(`app ${scr} ${ton}, ${label}`, hs.map((h) => h.page), custom);
       }
@@ -227,6 +299,7 @@ if (mode === 'app' || mode === 'alles') await app();
 if (mode === 'stile' || mode === 'alles') await stile();
 if (mode === 'film' || mode === 'alles') await filme();
 await s.close();
-say(`\n${bad ? bad + ' comparison(s) differ' : 'no difference outside the drops and in no computed style'}  (reference ${a.alt}, engine ${a.engine}; pictures in ${out})`);
-fs.writeFileSync(`${out}/vergleich-${mode}-${a.engine}.txt`, lines.join('\n') + '\n');
+const kept = od.own && !bad && mode !== 'film' && mode !== 'alles' ? '' : out;   // (a scratch folder of its own is removed when nothing differs - the filmstrips are kept: they are worth a look either way)
+say(`\n${bad ? bad + ' comparison(s) differ' : 'no difference outside the drops and in no computed style'}  (reference ${a.alt}, engine ${a.engine}${kept ? '; pictures in ' + kept : ''})`);
+if (kept) fs.writeFileSync(`${out}/vergleich-${mode}-${a.engine}.txt`, lines.join('\n') + '\n'); else od.keep(false);
 process.exit(bad ? 1 : 0);

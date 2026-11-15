@@ -1,0 +1,17 @@
+vorher: built in (the app as it is built, nothing injected)
+nachher: built in (the app as it is built, nothing injected)
+
+Art          CPU  App                   Besuch          Bild    Aufgabe     Szene  Szene ges.  S>50    Tropfen        neu   n
+handy        x1   vorher                erster         38/99    183/348       0/0         0/0     0       0/64     54/107   15
+handy        x1   vorher                zweiter       34/119    174/301       0/0         0/0     0      0/110     46/128   15
+handy        x1   nachher               erster        45/153    173/300       0/0         0/0     0       0/95     53/166   15
+handy        x1   nachher               zweiter       43/133    187/299       0/0         0/0     0      0/111     51/147   15
+handy        x4   vorher                erster       124/214    177/328       0/0         0/0     0       0/86    140/241   15
+handy        x4   vorher                zweiter       85/193    174/307       0/0         0/0     0      0/112     95/218   15
+handy        x4   nachher               erster       139/216    183/404       0/0         0/0     0       0/92    157/231   15
+handy        x4   nachher               zweiter       93/261    175/306       0/0         0/0     0      0/157    107/285   15
+(median/largest over the changes of all runs; ms. S>50: count of long tasks that are mostly scene work, all runs together)
+
+real	4m28.982s
+user	0m3.276s
+sys	0m1.034s

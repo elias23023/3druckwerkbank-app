@@ -1,6 +1,6 @@
 # Wasser-Look, the template: notebook for whoever applies it
 
-State 14.11. (packed 13.11.; the corrections after the two checkers of the package are in: section 9, "What changed on
+State 15.11., early morning: the fine-tuning (sections 15 to 17) is finished and checked once more by an independent final check (section 18); none of it is live. Before that: state 14.11. (packed 13.11.; the corrections after the two checkers of the package are in: section 9, "What changed on
 14.11."; the DESKTOP template was added on 14.11.: section 11, and corrected after its checker the same day: 11.4,
 "After the checker"). Written for a helper who has not seen the look being built. German names of the building blocks are
 kept (they are the names the owner knows). Read `LIESMICH.md` first for what is where and how to look at it; the
@@ -23,7 +23,7 @@ a stylesheet and a script injected under `.m-shell`) by restructuring, plus the 
 |---|---|
 | Files | `kern.css` (the look), `mobil.css` (what only the mobile shell needs), `desktop.css` (what only the desktop shell needs), `wasser.js` (the script). Load order: the app's own stylesheets, then these three, then the script. |
 | Switch | The attribute `data-wasser` on a root element: `data-wasser="mobil"` on `.m-shell`, `data-wasser="desktop"` on `.stage`. Every rule of `kern.css` starts with `[data-wasser]`, every rule of `mobil.css` with `[data-wasser="mobil"]`, every rule of `desktop.css` with `[data-wasser="desktop"]`. The script looks only inside the root (option `root`, default `[data-wasser]`). No attribute: the app as it is. |
-| Tones | `dunkel` (default) = dark mode, `klar` (`<html data-wa-ton="klar">`) = light mode. One block of 57 tokens each in `kern.css`, part 1, same tokens in the same order (the last two, `--wa-weit-*`, are read by the desktop shell only). No other rule mentions `data-wa-ton`; the script has no tone logic. Text is light in BOTH tones. |
+| Tones | `dunkel` (default) = dark mode, `klar` (`<html data-wa-ton="klar">`) = light mode. One block of 59 tokens each in `kern.css`, part 1, same tokens in the same order (the last four, `--wa-weit-*`, are read by the desktop shell only; 57 until 14.11. evening). No other rule mentions `data-wa-ton`; the script has no tone logic. Text is light in BOTH tones. |
 | Tokens | Every colour, radius, gradient, shadow, duration and easing is a `--wa-*` custom property on `[data-wasser]` (`kern.css` parts 1 to 3; the mobile shell's own in `mobil.css` part 1). One more name is read by the drops: `--water-under` (set by sheets). |
 | Blocks | Each building block is ONE nested rule with ONE selector list (`kern.css` part 4). Apply a block by adding a selector to its list, or by giving an element the block's neutral class `.wa-...`. |
 | Script | `Wasser.start(options)` / `Wasser.stop()`; `Wasser.MOBIL` = the default options (the mobile shell), `Wasser.DESKTOP` = the options of the desktop shell; `Wasser.info` = state of the drops. One global, one instance. |
@@ -165,8 +165,13 @@ real pixels of the sheet, and what the sheet is "told" (`--water-under`) hardly 
 **Panels that appear together and have no entrance of their own:** `.wa-setzt` on each,
 `animation-delay: calc(var(--wa-t-step) * n)`.
 
-**A leaving sheet (not used yet):** when the app delays unmounting by `--wa-t-leave` (0.26 s), add class `wa-geht`
-to the sheet; the keyframes `wa-sinkt` are in "Bogen".
+**Something the app takes away (built 14.11., owner's decision 10):** the app keeps the element for `--wa-t-leave`
+(0.26 s) with the class `wa-geht`, inert and aria-hidden, and removes it on `animationend` (kern.css, block "Gehen").
+A sheet sinks (`wa-sinkt`; the desktop's drawer flows out to the right, `wa-fliesst-weg`), its scrim clears (`wa-klart`),
+the search panel dives (`wa-taucht`); a row gets `wa-geht wa-geht--zeile` plus `--wa-geht-h` (its height) and
+`--wa-geht-gap` (the row-gap of its list) in its style: it fades and sinks, and its height runs out so the rows below
+close the gap. In this app all of that is `src/ui/gehen.ts`: `ref={gehtBogen}` on a sheet, its scrim and the search,
+`{...weich(id)}` on a row. With no motion wanted nothing is kept (and nothing waits).
 
 **A new loop at rest:** transform and opacity only, on a layer of its own; eight equal keyframe intervals
 (`node scripts/wasser/keyframes.mjs` prints them); `animation: <name> var(--wa-t-ruhe-N) var(--wa-gang-N) infinite;
@@ -281,6 +286,64 @@ until reload). `Wasser.info.level` and `.wait` show it; `node scripts/wasser/pru
 of it in three minutes with pretended picture costs (start option `debug.cost`). The waits count the time of drawn
 pictures, at most 0.1 s each: at 12 pictures a second 20 s take about 25 s by the clock.
 
+**The scene inside the drops** (Teil 1, "landscape texture"; rebuilt 14.11. evening, finding
+`docs/wasser-look/entwurf/reiterwechsel/BEFUND.md`). Until then every change of tab drew the new scene image
+synchronously onto a 2048 x 1024 canvas, uploaded it and built its mipmaps - in the frame of the change, also for a scene
+seen before. Now:
+- **A store of scene textures**, by image address (`store`, at most `KEEP` = 6, the one used longest ago goes first,
+  never the one shown). A second visit is a bind: no decode, no upload. Memory: 2048 x 1024 RGB with mipmaps is 8.4 MB,
+  11.2 MB where the GPU keeps RGB as RGBA (likely on an iPhone): at most about 67 MB for six. Five tabs and one more
+  (a project's inner world, or Wetter / Archiv) fit; a ninth scene costs a decode and an upload again.
+- **Made away from the beat of the change** (`make()`): the bytes from the HTTP cache (`fetch`, `cache: 'force-cache'`)
+  and `createImageBitmap(blob)` - the decode runs on another thread in Chromium and in WebKit (measured: the page's
+  thread is free while it decodes). `createImageBitmap(img)` decodes on the page's thread in Chromium (14 ms, 4 x
+  throttled 60 ms), and `img.decode()` does not help a canvas there (the canvas decodes again): both measured. Fallback
+  where fetch or `createImageBitmap` is missing or fails: `img.decode()`, then the image itself.
+- **Scaled exactly as before, in four strips** (`STRIPS`, one after each frame: `later()` = rAF + setTimeout 0): a canvas
+  of one strip's height gets the whole picture drawn moved up, `texSubImage2D` puts it into a new texture, mipmaps after
+  the last one. Texels identical to the old one-piece upload (checked in Chromium for webp and avif; WebKit: webp
+  identical, the avif landscape 1/255 on 0.5 % of the texels). `createImageBitmap` with `resizeWidth` was NOT taken: it
+  scales differently (mean 0.45/255, up to 11/255) and the drops would no longer be pixel-identical.
+- **Until the new picture is ready the drops keep the old scene**; a scene that is being made for a page the user has
+  left is given up (`want`), so ten quick taps end with the scene of the last tab. A scene in the store is shown at once,
+  even before the page's new `<img>` has loaded (its `src` serves as the key until `currentSrc` is known).
+- **`Wasser.warm(imgs)`**: images the page will show later (the app hands in the scenes of the other tabs, loaded with
+  the same `srcset` and `sizes` in a quiet moment after the start: `usePreloadScenes` in `src/mobile/Mobile.tsx`). They
+  are made one at a time while nothing else is being made and the page's own scene is ready, and fill the store up to
+  `KEEP - 1`. Measured worth it: without it the first visit of a tab showed the old scene in the header drops for a
+  quarter of a second in the median, up to 1 s, on this machine (the guide's step 8 lists exactly that under "must not
+  happen"); with it 45 ms, as on a second visit.
+- **The texture size stays 2048 x 1024**: 1024 x 512 (and 1024 x 1024) were compared at 3x - the gear drop of
+  "Projekte" over leaves is visibly softer when enlarged (up to 27/255 on 0.5 % of its pixels); the drops over sky
+  differ by 1/255. Pictures and numbers: the finding.
+- **The WebKit guard** (an image whose `load` fired before it can be drawn gives an empty picture) is kept only on the
+  fallback path (the image itself): its middle sampled into one pixel, looked at again after the next frame, at most 30
+  times (`Wasser.info.blank`). A bitmap decoded from the bytes cannot be empty.
+- Lost context: the store is emptied with it and the current scene made again on restore. `stop()`: every texture,
+  the scene being made (bitmap closed, canvas set to 0 x 0, frame and timer cancelled), the image's load listener and
+  the `warm` queue go.
+- `Wasser.info`: `scene` (address shown), `scenes` (kept), `uploads`, `reused`, `warmed`.
+
+**The first frame of a new screen** (tab, world, a sheet: `scan()` found new drops) goes out without the drops' work;
+their first water picture follows in the next frame. The new buttons show their plain glass for that one frame - they
+arrive inside cards, panels and sheets that enter from opacity 0, so it is not seen. With reduced motion (no entrance)
+they are drawn at once, as before. Measured alone (the same app with and without this line): the new screen stands 30
+to 40 ms earlier unthrottled, 10 to 15 ms at four times throttled (on this machine the drops' picture is expensive:
+WebGL in software).
+
+**Behind a sheet** (`modal`; finding `docs/wasser-look/entwurf/stehenbleiben/BEFUND.md`). A drop that goes behind an
+open sheet finishes its answer first: the press springs back, a running ring fades within `RING_OUT` (300 ms), and at
+`SETTLE` (380 ms) at the latest the drop is set to its rest pose and drawn one last time - then it is `quiet`, not drawn
+any more, and costs nothing. Until 14.11. it was reset but never drawn again, so its canvas kept the picture of the
+moment: for the drop that opened the sheet always one in the middle of its answer (rings and all). Its water time stands
+still with it (`lag`): when the sheet goes, it goes on from its last picture instead of jumping to the page's water time.
+A press that reaches a resting drop wakes it for its answer; a hover does not (behind a sheet hover is ignored: the
+scrim covers the page, and the boundary events Chromium sends when the page changes under a still mouse put the drop
+back into its hover pose - seen in two of five runs of `bogen.mjs desktop`). `Wasser.info.resting` and `.settling`
+count them. The CSS side needed nothing: `--wa-lauf: paused` ("Ruhe hinter einem Bogen") holds only the
+loops at rest; the one-time answers (ring on the floor, `:active` of plain glass and rows, the bead's flight - Web
+Animations - and the Schwappen transitions) never read it.
+
 ---
 
 ## 5. Tokens: where to turn what
@@ -305,12 +368,17 @@ pictures, at most 0.1 s each: at 12 pictures a second 20 s take about 25 s by th
   rest), free labels (`--wa-frei`, `--wa-frei-ink-2`, `--wa-frei-feld`, `--wa-r-chip`), the dock (`--wa-r-dock`,
   `--wa-r-tab`, `--wa-tab-lens`), the drawer (the Bogen tokens re-declared, `--wa-bogen-zug`, `--wa-scrim`,
   `--wa-scrim-blur: none`), the pointer (`--wa-zeiger`, `--wa-zeiger-film`, `--wa-zeiger-licht`, `--wa-haken-hit`).
-- **The two tone tokens of a wide stage** (`kern.css` part 1, last two of each tone; read by `desktop.css` only):
-  `--wa-weit-tiefe` (how much of a basin's depth is left where the painted scene is the star: dunkel .7, klar 1) and
+- **The four tone tokens of a wide stage** (`kern.css` part 1, last four of each tone; read by `desktop.css` only):
+  `--wa-weit-tiefe` (how much of a basin's depth is left where the painted scene is the star: dunkel .7, klar 1),
   `--wa-weit-grund` (what a sheet does to the scene seen THROUGH it, a filter function added to its blur: dunkel
-  `brightness(.88)`, klar `brightness(.7)`). The second one is the desktop's stand-in for the page's darkening
+  `brightness(.88)`, klar `brightness(.7)`; used by the dock, the weather signs and the search panel),
+  `--wa-weit-grund-panel` (the same for the panels: dunkel `brightness(.88)`, klar `brightness(.8)` since the owner's
+  decision 8, 14.11. evening - it was `--wa-weit-grund`) and `--wa-weit-kopf` (the colour of a soft shade over the head
+  of a panel, where its title sits: dunkel `transparent`, klar `rgba(var(--wa-dark), .3)`; geometry in `desktop.css`
+  part 2, a taller one for the card of the day). The dimming is the desktop's stand-in for the page's darkening
   (`--wa-page-*`): without it light text has no ground by day in the tone "klar". Turn them with
-  `node scripts/wasser/desktop.mjs kontrast` open: lighter water costs contrast at once (numbers in section 11).
+  `node scripts/wasser/desktop.mjs kontrast` open (also on a winter day: `--zeiten 2027-01-15T12:40:00+01:00`):
+  lighter water costs contrast at once (numbers in sections 11 and 15).
 
 The motion language:
 
@@ -324,7 +392,7 @@ The motion language:
 | `--wa-t-wave` | 1.1 s | light travels over a sheet | `--wa-ring-time`, `--wa-kamm-t` |
 | `--wa-t-swing` | 1.6 s | water that was moved swings out | after scrolling, arrival of a sheet's light |
 | `--wa-t-step` | 40 ms | things that arrive together, one after the other | cards of a new screen |
-| `--wa-t-ruhe-1/-2/-3/-4`, `--wa-t-atem` | 24 / 34 / 40 / 46 s, 9 s | loops at rest: lit rim, far rim, bars and sheets, floor; breath of the bead | with `--wa-gang-*`: `steps(n)`, in WebKit `linear` |
+| `--wa-t-ruhe-1/-2/-3/-4`, `--wa-t-atem` | 17 / 24 / 29 / 33 s, 9 s (the four were 24 / 34 / 40 / 46 s until 14.11., owner's decision 7) | loops at rest: lit rim, far rim, bars and sheets, floor; breath of the bead | with `--wa-gang-*`: `steps(n)`, in WebKit `linear` |
 | `--wa-ease-flow` / `-settle` / `-drain` / `-wave` / `-swing` | cubic-beziers; swing = a damped `linear()` | runs off and arrives softly / a little past and rests / lets go slowly / a ring that spreads / 35 % past, 12 % back, 4 % past, still | |
 
 The script reads `--wa-t-flow`, `--wa-t-settle`, `--wa-t-leave`, `--wa-ease-flow`, `--wa-ease-settle` and the
@@ -366,10 +434,12 @@ timers of helpers.
 | Element | At rest | On touch | While scrolling | On a change of state |
 |---|---|---|---|---|
 | Drops | always alive: flowing outline, ripples (15 pictures a second); the glint under a drop on a sheet breathes | spreads, the glint flares, a ripple runs from the finger | the picture inside follows the scene | follows a card that slides in; a press ends when a sheet covers the drop |
-| Becken (cards) | a glint with a soft glow wanders along the lit rim and back (24 s), another along the far rim the other way (34 s); a large soft patch of light crosses the floor (46 s); every card at another place of the loop | ONE ring over the floor, when the finger lets go (1.1 s) | the lights lean (up to 90 % deeper / 70 % drawn back), the glints slide 24 px, the floor light stays 28 px behind; let go, all swings out (1.6 s) | the card arrives with the app's own entrance, one 40 ms after the other; its light arrives too deep and swings into place |
-| Tab bar | one glint along its top rim (40 s); the bead breathes (9 s) | icon and label of a tab give way and spring back | - | the marker flows to the new tab (0.46 s, 70 ms more per further tab) |
-| Bottom sheet | one soft glint on its top rim (40 s) | the ring, from its foot buttons only | its light leans with the scrolling of its body | rises like a wave and settles (0.62 s), a crest of light spreads and fades (1.1 s). Closing: gone in one frame |
-| Toast | one glint (the common Lichtlauf) | - | - | lands like a drop (0.62 s), leaves like one (0.26 s) |
+| Becken (cards) | a glint with a soft glow wanders along the lit rim and back (17 s), another along the far rim the other way (24 s); a large soft patch of light crosses the floor (33 s); every card at another place of the loop | ONE ring over the floor, when the finger lets go (1.1 s) | the lights lean (up to 90 % deeper / 70 % drawn back), the glints slide 24 px, the floor light stays 28 px behind; let go, all swings out (1.6 s) | the card arrives with the app's own entrance, one 40 ms after the other; its light arrives too deep and swings into place |
+| Tab bar | one glint along its top rim (29 s); the bead breathes (9 s) | icon and label of a tab give way and spring back | - | the marker flows to the new tab (0.46 s, 70 ms more per further tab) |
+| Bottom sheet | one soft glint on its top rim (29 s) | the ring, from its foot buttons only | its light leans with the scrolling of its body | rises like a wave and settles (0.62 s), a crest of light spreads and fades (1.1 s). Closing: sinks back and fades (0.26 s), its scrim clears |
+| Toast | one glint (the common Lichtlauf) | - | - | lands like a drop (0.62 s), leaves like one (0.26 s); a new one lands over the old one, which leaves under it |
+| Rows the app takes away (ticked, skipped, deleted) | - | - | - | fade and sink, their height runs out, the rows below close the gap (0.26 s) |
+| The phone's background | - | - | - | a new picture fades in over the old one (0.62 s) once it has loaded; the drops blend the two by its opacity |
 | Search panel | one glint along its top rim | the hit under the finger lights up | - | the app's own entrance |
 | Number tiles (free) | a short glint along the top rim | - | - | - |
 | Rows, tiles | - | a tappable row lights up at once and settles (not while a button inside it is pressed) | - | - |
@@ -380,8 +450,8 @@ timers of helpers.
 | Icon beads, per-row buttons, back link, brand | - | give way and spring back | - | - |
 | Text, icons, photos, charts, header, the scene | - | - | - | - |
 
-Dead on purpose or for lack of a hook: a closing sheet, a removed row (both need the app to delay the removal by
-`--wa-t-leave`), a toast that replaces another one, the header. The drops do not lean when the list is scrolled.
+Dead on purpose: the header. The drops do not lean when the list is scrolled. (Until 14.11. also a closing sheet, a
+removed row and a toast that replaced another one - built since, see section 16.)
 
 On the desktop the same table holds, with these differences: a side panel has ONE rim light at 60 % that becomes full
 under the pointer, only the one large panel of a world has the far light and the floor light; the dock is the bar (its
@@ -460,8 +530,10 @@ Motion
 Script and React
 25. **The drops do not notice a changed custom property at once.** They re-read once a second, and not at all while
     the water is frozen (reduced motion). After injecting CSS in a test, dispatch `resize` on `window`.
-26. **Anything that hides a drop without unmounting it must end its press** (done for `modal`; remember it for any
-    new way of covering the page).
+26. **Anything that hides a drop without unmounting it must let its answer END - and draw that end.** Resetting the
+    press without drawing again froze the drop in the middle of its answer behind every sheet (live from 14.11. 13:09
+    to the evening). Done for `modal` (render: ring out, rest pose, one last picture, then quiet); remember it for any new
+    way of covering the page.
 27. **React writes `name` and `type` on every input each time the app re-renders** (once a second while a print
     runs). An observer must filter by attribute name.
 28. **React reuses the toast node** when one toast follows another, so no copy leaves then. The copy carries the
@@ -482,7 +554,9 @@ Testing
     "klar" shows ghost words of the page behind it), drops the depth layers of small cards in the zoomed close-up,
     and needs more than 100 ms for the first frame of a new screen. Judge blur and depth in Chromium.
 36. **Playwright's `click()` on `.m-head .ws-chip` times out** (a span inside the brand button); use
-    `evaluate(el => el.click())`.
+    `evaluate(el => el.click())`. Changing the workspace then needs the button "Zu ... wechseln" and reloads the
+    page; an init script that sets the workspace on every load undoes the change. The tools switch with
+    `h.bereich('echt')` (the storage key, then a reload).
 37. **Ticking a task on "Heute" shows no toast** (the row goes, a ring runs). A real toast with "Rückgängig":
     remove a shopping entry on "Material" (`sheet('toast')` in `lib.mjs`).
 38. **In `vergleich.mjs` the app's clock stands still** (`page.clock.setFixedTime`) **and Open-Meteo is blocked**;
@@ -566,40 +640,60 @@ Desktop, found by its checker on 14.11.
 58. **React writes an inline colour into the attribute as `rgb(124, 198, 255)`**, whatever the source says (`#7cc6ff`,
     `rgba(124,198,255,.2)`): an attribute selector that has to find it spells it that way, with the spaces.
 
+Tab change, scene textures, measuring (14.11. evening)
+59. **Playwright switches the browser's HTTP cache off while a route is set** (`page.route`, also the made-up weather).
+    A measurement of loading then fetches every image anew - the script's `fetch(..., { cache: 'force-cache' })` went to
+    the network a second time. `reiter.mjs` sets no route (the weather service is made unreachable by a resolver rule).
+60. **vite preview sends `no-cache` for images; the live server `immutable`** (`server/index.js`). Under preview every new
+    `<img>` of a scene asks the server again (a round trip, `currentSrc` empty until then). Measure loading against a
+    folder served with the live headers (`reiter.mjs --app name=<dist folder>`).
+61. **`createImageBitmap(img)` decodes on the page's thread in Chromium**, and `img.decode()` does not help a canvas
+    there. Off the thread: `createImageBitmap(blob)`. With `resizeWidth` it also scales - differently from a canvas.
+62. **Two function declarations of one name in one scope: the later one wins without a word.** Teil 1 has `next()` for
+    the frame loop; a second `next()` for the scene silently replaced it during this rebuild (now `onward()`).
+63. **On this machine a drop's picture is a long task** (WebGL in software: copying the water into the drop canvases
+    waits for the shading, 60 to 150 ms per picture with five drops). A tap that lands in one waits for it. Compare the
+    app against itself with the script stopped (`reiter.mjs --gestoppt`), never against a phone.
+
 ---
 
 ## 8. Tools (`scripts/wasser/`, run from the repository root)
 
 | Tool | What it does |
 |---|---|
-| `mobil.html` | the harness page: a mock of the mobile screen with the real app stylesheets, the template on top. `?ton=klar`, `?scene=...`, `?nah=1`, `?alles=1`, `?fallback=1`, `?ohne=1`, `?alt=<folder>`, `?vorlage=<folder>`, `?schlaf=<ms>` |
-| `lib.mjs` | shared: `session({ engine })` -> `harness(options)`, `app(options)` (the REAL app, look injected once; `go`, `sheet`, `closeSheet`, `project`, `shot`), a file server for the repository, `diff`, `strip`, `stack`, and the screencast recorder `cast` / `encodeCast` |
-| `vergleich.mjs [bilder\|app\|stile\|film\|alles]` | template against the approved look: pixels (inside / outside the drops), computed styles incl. pressed and focused, motion at fixed times. Exit code 1 on a difference that is not on its list of deliberate ones (`KNOWN`). `--alt git:HEAD` or `--alt <a copy of the template folder>`: against the template as it was before YOUR change |
-| `pruefen.mjs [--app] [--regler]` | checks: start, marker, ring, every block by class alone, sleep, reduced motion, stop / start / options, no WebGL, the real app, pull and arrival of the light, the bounds of `--wa-leben`, the token lists of the two tones; `--regler`: the governor of the drops (three minutes) |
-| `bild.mjs <out> [szenen\|nah\|alles\|app]` | stills, both tones, contact sheets |
+| `mobil.html` | the harness page: a mock of the mobile screen with the real app stylesheets, the template on top. Since 14.11. it begins with the card of the day like the app's start tab and is therefore longer than a phone (the second card is reached by scrolling). `?ton=klar`, `?scene=...`, `?nah=1`, `?alles=1`, `?fallback=1`, `?ohne=1`, `?alt=<folder>`, `?vorlage=<folder>`, `?schlaf=<ms>` |
+| `lib.mjs` | shared: `session({ engine })` -> `harness(options)`, `app(options)` (the REAL app at phone size; `go`, `sheet`, `closeSheet`, `project`, `bereich`, `shot`), WHICH LOOK a page shows (`lookBefore` / `lookAfter`: built in, injected, replaced, none - section 14), the tone through the app's own setting (`setTheme`), made-up weather, a file server for the repository or a built app, `diff` (with the box around what differs), `strip`, `stack`, the screencast recorder `cast` / `encodeCast`, and the command line (`args`: an unknown option ends the tool) |
+| `sollist.mjs [handy\|desktop\|alles] --soll <state>` | SOLL GEGEN IST: two states of the APP (`git:<rev>`, `baum` = the working tree built now, an address, a folder with a built app), the same 164 screens pixel by pixel - phone and desktop in both formats, both tones, both workspaces, reduced motion, clock and weather standing still. Lists the screens that differ, with the box of the difference and a picture Soll / Ist / difference. `--erwartet <name parts>`: screens meant to differ. Builds a commit itself (cache: `<tmp>/wasser-sollist-staende`) |
+| `vergleich.mjs [bilder\|app\|stile\|film\|alles]` | TWO LOOKS in one app (in the real app each takes the place of the built-in look). Default: template against the approved look: pixels (inside / outside the drops), computed styles incl. pressed and focused, motion at fixed times. Exit code 1 on a difference that is not on its list of deliberate ones (`KNOWN`). `--alt git:HEAD` or `--alt <a copy of the template folder>`: against the template as it was before YOUR change |
+| `pruefen.mjs [--app] [--regler]` | checks (harness: the template; `--app`: the look the app has built in; fails when the copies in `src/wasser` are not the template): start, marker, ring, every block by class alone, sleep, reduced motion, stop / start / options, no WebGL, the real app (with: the drop that opened a sheet comes to rest behind it - with reduced motion its very picture at rest - and lives again after it), pull and arrival of the light, the bounds of `--wa-leben`, the token lists of the two tones; `--regler`: the governor of the drops (three minutes) |
+| `reiter.mjs handy\|desktop\|landschaft\|profil` | THE CHANGE OF SCREEN in numbers: a tab (phone), a world (desktop, both formats), a new landscape (desktop): ms until the new screen has gone out, the longest task, the scene work in one task, long tasks that are mostly scene work, the drops' copying before the new screen, ms until the drops show the new scene. `--app vorher=<url or dist folder>,nachher=...` side by side, `--drossel 1,4`, `--laeufe 3`, `--ohne` (look taken out), `--gestoppt` (script stopped: the CSS alone), `--netz langsam`; `profil`: CPU profile with readable names. A folder is served with the live server's cache headers |
+| `bogen.mjs [handy\|desktop]` | BEHIND A SHEET: a live drop, plain glass, a row and the search open a sheet with a real pointer (a finger held 90 ms; the mouse resting, then held). The drop's own canvas is sampled in the page at every frame: it finishes its answer after the sheet appeared and is still at most 600 ms later; nothing behind the sheet still answers; with reduced motion it is pixel for pixel the same drop at rest (sheet opened without a touch); after closing it lives again without a jump. Plain glass and rows: their own animations have ended at 600 ms. Pictures (stage held still, the sheet masked out). `--app vorher=…,nachher=…`, `--bild` strips |
+| `bild.mjs <out> [szenen\|nah\|alles\|app]` | stills, both tones, contact sheets; `--zeit tag\|nacht\|<ISO>`: the app's clock stands still (repeatable) |
 | `film.mjs <out>` | filmstrips from the real app: ruhe, tab, druck, scroll, bogen, haken (`--reduced`, `--fest`) |
 | `clip.mjs <out.mp4> [--cast]` | a recording of the real app (or `--seite mobil`). `--cast`: through the browser's screencast - use it whenever soft light is to be judged (pitfall 42) |
 | `leben.mjs <out> [--werte 1,1.5]` | how much life? The same walk through the real app once per value of `--wa-leben`, side by side as labelled phones: `<out>.mp4` and a filmstrip `<out>.png` |
-| `kontrast.mjs [--app]` | WCAG contrast of the texts - and of the labels on drops - against the pixels really behind the glyphs |
+| `kontrast.mjs [--app]` | WCAG contrast of the texts - and of the labels on drops - against the pixels really behind the glyphs. ONE element of your own without editing the tool: `--css '<selector>' [--welt] [--bogen] [--klick] [--art text\|platzhalter\|wert] [--grenze 4.5] [--desktop]` |
 | `messen.mjs ruhe\|takt` | alive but calm (pixels that change at rest, glyph pixels); frames a second coupled to the compositor (`--css '<rules>' --mal 3`: what does a change buy?) |
 | `keyframes.mjs` | prints the keyframes of the loops at rest |
-| `desktop.mjs zeigen` | THE DESKTOP TEMPLATE IN YOUR OWN BROWSER: a small server with the built app (`dist/`) and the template on top - `http://localhost:4320`. Wide window = desktop, narrow = phone. The tone follows the app's setting "Erscheinungsbild"; `?ton=klar`, `?ton=dunkel`, `?ohne=1` (the app as it is), `?weich=aus` (no blur), `?leben=1.5` |
-| `desktop.mjs bild <out>` | stills of the real app at desktop size: the eight worlds; `--alles`: sheets, forms, search, keyboard focus, toast, the empty workspace. `--format 2000\|1920`, `--zeit nacht\|tag\|morgen\|abend`, `--ton klar`, `--look ohne` (today's desktop) |
+| `desktop.mjs zeigen` | THE BUILT APP IN YOUR OWN BROWSER: a small server with `dist/` - `http://localhost:4320`. Wide window = desktop, narrow = phone. Without `--look`: the app as it is built; `--look vorlage\|<folder>`: that copy of the template in the place of the built-in look (a change in the folder shows after a reload). `?ton=klar`, `?ton=dunkel` (sets the app's own setting), `?ohne=1` (the app without the look), `?weich=aus` (no blur), `?leben=1.5` |
+| `desktop.mjs bild <out>` | stills of the real app at desktop size: the eight worlds; `--alles`: sheets, forms, search, keyboard focus, toast, the empty workspace. `--format 2000\|1920`, `--zeit nacht\|tag\|morgen\|abend`, `--ton klar`, `--look ohne` (the app with its look taken out) |
 | `desktop.mjs film <out>` | filmstrips: ruhe, dock, druck (press and ring), zeiger (hover), zeiger-panel, bogen (the drawer), pfeil (the arrow beside the island held down, a line marks its centre at rest), fluss (the running line of a print at fixed times) |
 | `desktop.mjs kontrast` | WCAG contrast of 50 kinds of text on the desktop, both tones, by night and by day |
-| `desktop.mjs pruefen` | 24 checks: live drops per world (3 to 12, none free over an island), nothing leaves its place while pressed (about 300 clickable elements forced into `:active`; Chromium only), the arrows beside the island under a real pointer, the marker, the drawer, the search, the toast, keyboard focus, sleep and waking by the mouse, reduced motion, stop / start, and "nothing has moved" against the app without the look |
-| `desktop.mjs takt` | what the look costs: pictures a second and work per picture - today's app, the template, the template without lights / drops / blur |
+| `desktop.mjs pruefen` | 27 checks: live drops per world (3 to 12, none free over an island), nothing leaves its place while pressed (about 300 clickable elements forced into `:active`; Chromium only), the arrows beside the island under a real pointer, the marker, the drawer, the search, the toast, keyboard focus, sleep and waking by the mouse, reduced motion, stop / start, the drop that opened a drawer comes to rest behind it and lives again (with reduced motion: its very picture at rest), and "nothing has moved" against the same app with its look taken out |
+| `desktop.mjs takt` | what the look costs: pictures a second and work per picture - the app without the look, with it, with it but without lights / drops / blur |
 | `desktop.mjs clip <out.mp4>` | a tour through the real app as a film (screencast, a drawn pointer) |
-| `desktop-lib.mjs` | `openDesktop({ look, format, ton, zeit, wetter, engine, reduced, start })`: the real app at 2000 x 993 or 1920 x 1080 with a fixed hour and made-up weather, the template injected once; `go`, `welt`, `project`, `sheet`, `search`, `toast`, `bereich`, `shot`, `park`, `still` |
-| `einspielen.js` | the browser script the desktop tools inject: root attribute for whichever shell is mounted, `Wasser.start()` with its options, the app's theme held at "dunkel", the tone from what the app wanted |
-| `stelle.mjs <out.png>` | ONE spot of the real app, looked at and read (desktop, or `--mobil`): `--welt`, `--bogen`, `--klick '<text>'`, then one picture and, for `--css '<selector>'`, how many elements it matches, in which shell, and the computed values a block sets (background, border, shadow, backdrop-filter, radius, padding, position, colour, live drop). For a sheet the other tools do not know and for whoever has no browser window |
-| `uebernehmen.mjs` | fetches the template into the app: copies the four files to `src/wasser/` (the script as `wasser-skript.js`), each with one head line. It CREATES `src/wasser/` where there is none - on a branch without the integration run it in a copy of the project only (guide, 8.3) |
+| `desktop-lib.mjs` | `openDesktop({ look, format, ton, zeit, uhr, wetter, engine, reduced, start, app })`: the real app at 2000 x 993 or 1920 x 1080 with a fixed hour (`uhr: 'steht'`: the clock does not run on) and made-up weather, with the look it has built in or another one in its place; `go`, `welt`, `project`, `sheet`, `search`, `toast`, `bereich`, `shot`, `park`, `still` |
+| `einspielen.js` | the browser script for a shell WITHOUT a built-in look (an older state of the app): root attribute for whichever shell is mounted, `Wasser.start()` with its options, the app's theme held at "dunkel", the tone from what the app wanted. In a shell that already carries `data-wasser` it does nothing |
+| `stelle.mjs <out.png>` | ONE spot of the real app (with its built-in look, or `--look <folder>` in its place), looked at and read (desktop, or `--mobil`): `--welt`, `--bogen`, `--klick '<text>'`, then one picture and, for `--css '<selector>'`, how many elements it matches, in which shell, and the computed values a block sets (background, border, shadow, backdrop-filter, radius, padding, position, colour, live drop). For a sheet the other tools do not know and for whoever has no browser window |
+| `uebernehmen.mjs` | fetches the template into the app: copies the four files to `src/wasser/` (the script as `wasser-skript.js`), each with one head line. Then `npm run build`: the tools measure the built-in look |
 
 All take `--engine chromium|webkit` (the screencast tools: Chromium only), most `--ton klar` or `--toene dunkel,klar`,
-and all but `keyframes.mjs` and `uebernehmen.mjs` take `--look <folder>` (another copy of the template, inside the
-repository or anywhere else; `vergleich.mjs` calls the same thing `--neu` and compares it with `--alt`; `desktop.mjs
-zeigen --look <folder>` serves it to your own browser). `--look ohne` = the app as it is, where a tool can show that.
-An option a tool does not know is ignored WITHOUT a word - a misspelt `--look` checks the template itself.
+and all but `keyframes.mjs` and `uebernehmen.mjs` take `--look`: nothing or `auto` = the look the app has BUILT IN (a
+shell without one gets the template injected), `eingebaut` = the app exactly as built, `vorlage` / a folder /
+`git:<rev>` = that copy of the template (in the app IN PLACE OF the built-in look), `ohne` = no look (a built-in one is
+taken out). `vergleich.mjs` calls its two looks `--alt` and `--neu`. Every tool prints which look it took.
+An option a tool does not know, a missing value, a value that is not allowed and a folder that does not exist END the
+tool with a message (exit code 2). Until 14.11. such an option was ignored without a word.
 The real app needs `npm run build && npm run preview` (port 4173; `WASSER_APP=<url>` for another address). WebKit
 needs Playwright's WebKit; on the work machine: `source <scratchpad>/judge-phone/env.sh` in the same shell first (and
 not for Chromium afterwards: it points Playwright at a folder without Chromium). Playwright is taken from
@@ -796,17 +890,19 @@ looked at.
 
 ## 10. Building it into the app (not done; the owner decides when)
 
-> Superseded as a to-do list by `docs/Wasser-Look.md`, section 8 ("Fahrplan"). State 14.11., 11:10: the look IS built
-> into the mobile shell (commit `c7e8299`, on `main`, live); the desktop is being built in on `welt/wasser-desktop`
-> (`e6eb9ef`, an intermediate state). What is different from the points below: (1) the copies are fetched by
-> `node scripts/wasser/uebernehmen.mjs` (they carry one head line more than the template); (2) the hook is called in
-> `Mobile()` and - with a flag - in `App()` AFTER the effect that sets `--ui-scale` (started before it, the drops are
-> measured at the wrong scale); the cleaned-up inline styles are bridged by `src/wasser/einbau.css` for now;
-> (6) `scripts/verify.mjs` has been run against builds with the look: 69 of 69. Three small safeguards found while
-> the guide was tested are listed in its step 5: `wasser.ts` should import the app's own stylesheets before the
-> look's (a module imported before `Mobile.tsx` that imports `wasser.ts` puts the look BEFORE `mobile.css` in the built
-> CSS) and `openApp` in `scripts/wasser/lib.mjs` must set the tone both ways now that the app sets it itself - both
-> still open; `desktop.mjs pruefen` no longer measures the app's own bobbing hint (done on the branch `wasser-look`).
+> Superseded as a to-do list by `docs/Wasser-Look.md`, section 8 ("Fahrplan"). State 14.11., afternoon: the look IS
+> built into both shells (phone `c7e8299`, desktop `a24ce60` .. `5132a10`), on `main` and live. What is different from
+> the points below: (1) the copies are fetched by `node scripts/wasser/uebernehmen.mjs` (they carry one head line more
+> than the template); (2) the hook is called in `Mobile()` and - with a second argument "the stage is mounted" - in
+> `App()`, which returns `<Mobile />` early on a phone and so cannot call a hook conditionally; it is called AFTER the
+> effect that sets `--ui-scale` (started before it, the drops are measured at the wrong scale); the three places that
+> were styled inline carry classes and `desktop.css` names them (the bridge `src/wasser/einbau.css` is gone); the
+> inline paddings of the small selects STAY (point 2 said "11 places": it is ten, with five different paddings, and
+> dropping them changes sizes in both shells - guide, step 6); (5) two states of the built app ARE compared pixel by
+> pixel: `scripts/wasser/sollist.mjs`; (6) `scripts/verify.mjs` runs unchanged against builds with the look; (7) all
+> tools measure the built-in look by default (section 14). The three safeguards of the guide's step 5 are in:
+> `wasser.ts` imports the app's own stylesheets first, the tools set the tone through the app's setting, and
+> `desktop.mjs pruefen` holds the app's bobbing hint.
 
 1. Copy the four files to `src/wasser/` (the script as `wasser-skript.js`), add `wasser.ts` (head of `wasser.js`).
    Import order: after `mobile.css` and `global.css`. Tried in a scratch project with the app's Vite 8 and target
@@ -1048,10 +1144,10 @@ was changed) and `desktop.mjs takt` (what the running line costs as a transform 
   swings (before 14.11. the swing ran during those frames, unseen).
 - **Life at rest is there by numbers and hard to find by eye** - at `--wa-leben` 1 and at 1.5 alike
   (`docs/wasser-look/bilder/mobil/leben-vergleich.mp4` / `.png`, numbers in section 9). What the eye finds is the
-  glint on the rim lines and the lean when a list stops; the light on the floor (at most +17 of 255, a loop of 46 s)
-  is not seen. 1.5 makes the lights brighter, not livelier: they move at the same pace (the glint about 8 px a
-  second). The owner decides; if more is wanted, the lever is the pace (`--wa-t-ruhe-*` with their `--wa-gang-*`),
-  not the strength - nothing was built for that.
+  glint on the rim lines and the lean when a list stops; the light on the floor (at most +17 of 255, a loop of 46 s,
+  33 s since 14.11.) is not seen. 1.5 makes the lights brighter, not livelier: they move at the same pace (the glint
+  about 8 px a second at the first pace). The owner decided (decision 7): strength 1, the pace a little faster - the
+  four loops are about 1.4 times faster since 14.11. (section 15). Not yet seen by him.
 - **The blur under the tab bar of "dunkel" stays** (tried on 14.11.: water of .93 opacity, does it need its blur?).
   Without it the picture inside the bar changes by 0.02 to 0.5 of 255 on average (largest 8), but rows that pass
   under the bar leave a faint sharp ghost of their words in it; and it buys nothing that can be told from the
@@ -1061,7 +1157,7 @@ was changed) and `desktop.mjs takt` (what the running line costs as a transform 
   phone.
 - **The toast's own light.** The motion step gave the toast a smaller, quicker light (8 px high, 28 % wide, a 12 s
   loop). Since the step after it that rule lost by weight (pitfall 1), so the approved state - and this template -
-  shows the common Lichtlauf on the toast (13 px, 30 %, 40 s). The rule is kept as a comment in "Tropfen-Hinweis";
+  shows the common Lichtlauf on the toast (13 px, 30 %, 40 s; 29 s since 14.11.). The rule is kept as a comment in "Tropfen-Hinweis";
   the tokens `--wa-t-ruhe-kurz`, `--wa-gang-kurz` are ready. The owner has only seen the toast as it is now.
 - **A sheet of "klar" without backdrop blur** shows the page behind it sharp at about a fifth of its strength, the
   search panel at about a third (its water is `--wa-dense`, .66): in the WebKit test build the clock, the greeting
@@ -1105,7 +1201,7 @@ Desktop (section 11):
   selects): section 10, point 2.
 - **The empty workspace** shows large empty basins in "3D-Druck" and "Material" (one line of text in 835 x 290 px of
   dark water): the app's layout; nothing was changed.
-- **Dead on the desktop:** a closing drawer (gone in one frame, as on the phone), panels that leave a world (the app
+- **Dead on the desktop:** panels that leave a world (the app
   unmounts them), the top bar's text chips at rest, the weather signs.
 - **Firefox** was not run for the desktop (its build here has no WebGL: plain glass buttons, everything else CSS).
 
@@ -1132,3 +1228,246 @@ itself goes into `kern.css` (the line is named).
 
 Then, in any order: whether the glints read as light on water at arm's length; "klar" in daylight; the select and
 the date picker on iOS; hit areas of the header drops and of the tabs with a thumb.
+
+---
+
+## 14. The tools after the integration (14.11., afternoon)
+
+Until the look was built in, every tool INJECTED the template into an app without a look. Against an app WITH the
+look that measured a mixture: two stylesheets on top of each other, and the injected script never started
+(`wasser.js` begins with `if (window.Wasser) return;`), so the bundled script ran with rules of both. What the tools
+do now (all of it in `lib.mjs`, used by `app()` and by `openDesktop()`):
+
+- **Built in** (`look: 'auto'`, the default; `'eingebaut'`): nothing is injected. The shell carries `data-wasser`,
+  the app's own hook started the script. Start options a tool needs (`sleep: 0` ...) go in by a second
+  `Wasser.start()` on top of the shell's own options.
+- **Replaced** (`look: 'vorlage'` / a folder / `git:<rev>` against a built-in look): BEFORE the page loads, a route on
+  the app's stylesheet cuts the look out - it is the tail of the bundle, from the first `[data-wasser` on (the app's
+  own rules never name the attribute; `lookStart()` throws when ANY top-level rule of that tail names neither
+  `[data-wasser` nor `data-wa-ton` - keyframes aside, `@media` / `@supports` looked into -, i.e. when rules of the app
+  follow because the build order is wrong: cutting would take them away) - and appends the folder's three stylesheets in one piece; an init script defines the folder's `wasser.js`
+  before the bundle runs, so the bundled copy steps back and THE APP'S OWN HOOK starts the folder's script with the
+  folder's `Wasser.DESKTOP`. Checked with a copy that carried a marker token and another sleep time: both arrive,
+  on the phone and on the desktop; `Wasser.info.state` is `gl`; the same number of live drops as built in.
+  The folder's CSS is the unbuilt one (nesting, colours not shortened): compared with the built look a few pixels at
+  round corners can differ by 1 of 255, so proofs of "nothing changed" are made on built states (`sollist.mjs`).
+- **Injected** (the same looks against a shell WITHOUT a look - an older commit, or the desktop of `65b1e44`): the
+  stylesheet goes in by the same route (appended to the app's), the script by the same init script; the tool then
+  sets the attribute and starts (`einspielen.js` on the desktop). Tried against `a54b030` (no look at all) and
+  `65b1e44` (phone built in, desktop not): 4 and 9 live drops, marker token and sleep time of the copy arrive.
+- **None** (`look: ''`, `--look ohne`): the look's rules are cut, the script is replaced by one that does nothing.
+  This is "the app without the look" for `desktop.mjs pruefen` ("nothing has moved") and `desktop.mjs takt`.
+- **The tone** is the app's business wherever its bundle carries a look (`settings.theme` and the hour) - also when a
+  tool has taken that look out and injected the earlier one (the reference of `vergleich.mjs`): the app's effect still
+  owns `data-wa-ton` there (until the evening of 14.11. the tools set the attribute in that case, and the sheet
+  "Einstellungen" showed "Automatisch" on one side and "Dunkel" on the other). The tools write the
+  setting into the stored state (`3druckwerkbank:v1`, or `...:echt:v1`), freeze `Storage.setItem` for the moment
+  (the app saves its state often) and reload - one more load of about a second - then read `data-wa-ton` back and
+  throw when it is not what was asked. A partial state cannot be planted BEFORE the first load: the store's `merge`
+  ignores a stored state without projects, devices and spools.
+- **Pixel-equal desktop pictures** needed one more thing than the helpers had found (clock, clouds, window nudge, two
+  equal shots): `.island` has `will-change: transform` and a 600 ms transition on `transform`, also with reduced
+  motion, so the browser rasters the island's layer at whatever scale it had while the world changed. The day ring and
+  the island labels then come out in two ways from one and the same page (174 to 6030 px on Start and Heute between two
+  loads of ONE build). With `.island { transition: none !important; will-change: auto !important; }` on both sides
+  the same build is equal to itself on all screens (`sollist.mjs`, its constant `STILL`).
+
+
+## 15. The pace and the tone "klar" (14.11., evening; owner's decisions 7 and 8 - he has seen neither)
+
+**The pace** (`kern.css` part 3): `--wa-t-ruhe-1..4` 24 / 34 / 40 / 46 s -> **17 / 24 / 29 / 33 s** (about 1.4 times; the
+proportions kept, the lengths share no common beat), gaits `steps(17)` / `steps(24)` / `steps(29)` / `steps(33)` (eight
+pictures a second, as before). `--wa-leben` stays 1; the breath of the bead (9 s), the short loop (12 s), the keyframes
+and the WebKit gait (`linear`) are unchanged. `desktop.css` and `mobil.css` declare no length of their own (`mobil.css`
+only offsets a start by fractions of `--wa-t-ruhe-3`).
+- `messen.mjs ruhe` (harness, "dunkel", three runs each, before = `--look git:52dfff3`, in turn): cards, share of pixels
+  that change by 4 or more within 1 s: 3.1 / 2.6 / 2.2 % -> 3.8 / 4.6 / 4.0 %; within 4 s: 9.3 / 8.4 / 9.0 % -> 14.6 /
+  15.5 / 14.7 %. Tab bar within 1 s: 3.3 to 5.0 % -> 5.3 to 6.4 %. "klar", one run each: cards 2.8 -> 5.2 % (1 s),
+  8.2 -> 12.8 % (4 s). No glyph pixel changes by more than 2 of 255 (floor 4).
+- Film for the owner: `leben.mjs` got `--looks 'Name=<look>,...'` (one recording per copy of the template, each label
+  carrying the four lengths READ FROM THE PAGE, so a label cannot silently name the wrong folder), `--weg ruhe`
+  (one screen at rest, the water woken once by a synthetic scroll event just before recording), `--welt`, `--sekunden`,
+  `--titel`. `docs/wasser-look/entwurf/tempo-und-ton/tempo.mp4` / `.webp`: "Heute", tone "dunkel", 20 s, left
+  `git:52dfff3` (read: 24 / 34 / 40 / 46 s), right the template (read: 17 / 24 / 29 / 33 s).
+
+**The tone "klar" more see-through** (`kern.css` part 1, block "klar"; `desktop.css` part 2):
+- Both shells: `--wa-shelf` alpha .21 -> .16, `--wa-deep` .25 -> .19, `--wa-under` .56 -> .51 (= 1 - .72 x .84 x .81;
+  its rgb 31, 35, 37 kept - the exact mix of the three layers would be 37, 43, 48: tried on the harness, the labels on
+  drops change by at most 0.1 with it, so it was left as the candidate had it).
+- Desktop: the candidate `--wa-weit-grund: brightness(.8)` for every sheet held all floors by a November day but NOT on
+  a winter day (`desktop.mjs kontrast --zeiten 2027-01-15T12:40:00+01:00`; that option takes ISO times since this step):
+  panel title of the bottom row 8.1 -> 6.4, panel title "Projekte" 8.8 -> 7.0, small text of a weather sign 4.8 -> 4.4;
+  and the clock of the day card fell from 7.1 to 5.1 by a November day. The places were repaired, not the tone darkened:
+  - `--wa-weit-grund` stays `brightness(.7)` in "klar" (dock, weather signs, search panel: unchanged);
+  - NEW `--wa-weit-grund-panel` (dunkel `brightness(.88)` = as before, klar `brightness(.8)`): the panels only;
+  - NEW `--wa-weit-kopf` (dunkel `transparent`, klar `rgba(var(--wa-dark), .3)`): the colour of an inset shadow over
+    the head of every panel (`inset 0 64px 40px -36px`) and, taller, of the card of the day (`inset 0 150px 80px -64px`,
+    under greeting, clock and date). The title keeps its ground; the middle of the panel is more see-through.
+  A tone now has 59 tokens (57 before); both blocks list the same ones (`pruefen.mjs`, check 10).
+- Contrast, phone (`kontrast.mjs --app --toene klar`, eight scenes + app): no median below its floor. Lowest card title
+  10.6 -> 9.6, row title 11.2 -> 10.2, count 6.6 -> 5.8, drop on a card 7.4 -> 6.7, small drop 6.8 -> 6.1 (worst 5 %:
+  5.1 -> 4.5); sheets, fields, search, toast within 0.2. By hand (Start, the start scene's snow and clouds behind the day
+  card): clock 10.2 -> 9.1, greeting 6.1 -> 5.4, date 9.5 -> 8.7; a placeholder in a field ON a card 6.8 -> 6.6.
+- Contrast, desktop (`desktop.mjs kontrast --toene klar`, built look; night, a November day, a winter day; 2000 x 993,
+  and day + winter at 1920 x 1080): no median below its floor. By day at 2000: panel titles 9.6 to 14.2 (before 9.6 to
+  14.1), main panel title 9.5 -> 7.8, text on open water 9.1 -> 7.6. Winter at 2000: bottom panel title 8.1 -> 8.1,
+  "Projekte" 8.8 -> 8.6, main panel title 9.1 -> 7.4, row "Projekte" small 5.9 -> 4.6, clickable label 5.7 -> 4.7.
+  Winter at 1920: clickable label 4.5 and row "Projekte" small 4.6 - at the floor. The day card by hand (night / day /
+  winter, before -> after): clock 14.5 -> 14.8 / 7.1 -> 7.1 / 7.2 -> 7.1, greeting 6.6 -> 7.5 by day, date 7.2 -> 5.9
+  by day and 6.0 -> 4.9 in winter. Dock, weather signs, search, drawer, toast: within 0.4.
+- Found, not caused by this step and not repaired: the placeholder of the search field has 2.3 to 2.6 in "klar" (1.9
+  on the desktop by day), below 3, before and after. The field carries no class of the look; its placeholder has the
+  browser's colour. In "dunkel" it has 4.0 and may not change, so a repair needs a tone token of its own.
+- "dunkel": `sollist.mjs --soll git:52dfff3 --toene dunkel --zeiten nacht,tag` (the state before this step; against
+  `feinschliff-basis` the step before differs in sheets): 164 screens, 148 equal, 10 `ok*`, 6 DIFF. CORRECTED 15.11., 01:30 (quiet
+  machine, after a restart): the phone pair is NOT noise. "neuerolle" / "geraet" differ the same way in every run (796
+  and 3571 px, largest 1 of 255, all but 3 resp. 9 inside the drop canvases of the head behind the open sheet); 52dfff3
+  against itself and HEAD against itself are equal; a build of HEAD with the OLD four lengths (24/34/40/46 s) is equal
+  to 52dfff3 on both screens. So the PACE causes it (decision 7, both tones), not the tone "klar". How a light length
+  reaches the water of a drop behind a sheet under reduced motion is not found (at rest on "Start" no animation runs at
+  all with reduced motion). The earlier "same build against itself shows it too" came from a run under load. Desktop 1920 "start" / "leer-start" at the island
+  "Projekte" (the same build against itself: 3013 and 19142 px there, pitfall 73). Desktop 2000 "archiv" by day differed
+  once (698 px) and was equal in the second run. The first run was stopped by a time limit after 122 screens; the desktop
+  by day was then run alone. The checker of this workflow ran its own sollist at the same time (load).
+
+## 16. Soft leaving and the phone's background (15.11., night; owner's decision 10 - he has seen neither)
+
+What the app takes away no longer vanishes in one picture. Built in the APP (the look cannot hold back what React removes)
+plus the leaving blocks in the template.
+
+- **The mechanism, `src/ui/gehen.ts`.** A stable ref callback; React 19 calls a ref's clean-up while the element is still
+  in the document, right before it removes it. The clean-up notes parent, neighbours and scroll offsets; a microtask
+  (after React's commit, before the next picture) puts the VERY SAME node back with `wa-geht`, `inert`, `aria-hidden`
+  (role and aria-modal removed), and it goes on `animationend` of its own leaving animation or that of a direct child,
+  with a timer as safety net that gives a late-started animation the rest of its time. Not a copy: field values, scroll
+  offsets and the drops' canvases are as they were, and the drops' script keeps its records (the node is back before
+  its next scan). React no longer knows the node: no handlers, no re-render with data that has gone. The store changes
+  at once; focus goes back to the opener at once (Sheet's own effect).
+  - `ref={gehtBogen}` on `.sheet`, `.sheet-back` (src/ui/Sheet.tsx) and `.cmd-back` (src/ui/CommandBar.tsx). A new one
+    that mounts cuts every leaving one at once (a sheet that replaces another in one commit therefore behaves as
+    before: no leaving picture). App.tsx swallows Escape while one leaves (`leaving()`), so a second Escape does not also
+    leave the world.
+  - `{...weich(id)}` on a row: phone - Heute's tasks and due maintenance, a project's tasks, the shopping list; desktop -
+    Heute's tasks and due maintenance, Material's shopping list, the inner world's open tasks and files, 3D-Druck's queue
+    and maintenance; both - the task list and the file grid of the project detail sheet. A row that comes back with the
+    same id (Rückgängig) cuts its leaving picture. A row whose check was just pressed shows that check ticked while it
+    leaves. In a grid or a row of tiles (the file grid) only the sink runs (`--wa-zeile-zu: none`), the tiles jump.
+  - Not covered: lists that filter or page (the spools by material, the archive), the milestones (ticking does not
+    remove them), the device and tool lists of the sheets (a device is deleted in its own form, the list is a new sheet),
+    the energy log in "Über", the inbox of 3D-Druck. Rows that leave because a list shows "the first five" make the sixth
+    arrive at once (Heute on the desktop, the inner world's three).
+  - No look (no `data-wasser` or no `--wa-t-leave`), reduced motion (the app's switch or the system's): nothing is kept,
+    nothing waits.
+- **The template:** kern.css block "Gehen" (scrim `wa-klart`, search panel `wa-taucht`, rows `.wa-geht--zeile` with
+  `wa-zeile-sinkt` and `wa-zeile-zu`, tokens `--wa-zeile-tief` and `--wa-zeile-zu`); desktop.css 6: the drawer flows out
+  (`wa-fliesst-weg`), the search's scrim keeps no animation when it leaves (the panel's blur would see nothing behind a
+  fading scrim; the scrim goes at the end). The rows' height animation is the SECOND exception to "only transform and
+  opacity" (a gap cannot close by transform without the card's edge jumping); `--wa-zeile-zu: none` restores the strict
+  rule. wasser.js: a toast's leaving copy is put where the toast stood, so a new one (the app gives each its own key)
+  lands on top; anything that starts a `wa-geht` animation makes the drops follow the layout for 0.7 s.
+- **The phone's background:** `SceneBg` in src/mobile/Mobile.tsx, keyed by the picture's ADDRESS (not the tab): a new
+  address is laid over the old picture invisible (`data-szene="laedt"`, mobile.css), fades in once loaded and decoded
+  (`data-szene="kommt"`, mobil.css 2: `--wa-t-szene` = `--wa-t-settle`, `--wa-ease-szene` = `--wa-ease-flow`), and the old
+  one goes on `animationend`. At most two pictures; a newer address replaces one on its way. No animation (no look,
+  reduced motion): the new one replaces the old one once loaded. wasser.js blends the two scene textures in the drops by
+  the newest picture's computed opacity (uniforms `uTex2`, `uImg2`, `uMix`; with `uMix` 1 the second texture is not read,
+  so a page with one picture is drawn exactly as before) and keeps drawing at its resting pace while it blends.
+  `.m-bg img` is now `position: absolute` (two pictures stack) and its anchor is `--m-bg-pos` (58% 40% for the eight
+  landscape scenes).
+- **Pitfalls found on the way:**
+  - Putting a node back into the document restarts every CSS animation inside it. So the ghost's end is decided only by
+    the animations of the element and its direct children - a deeper one (a card's entrance in a sheet) must not hold it.
+  - A row with `overflow: hidden` in a flex column of fixed height (a desktop panel) is squeezed first when the list
+    overflows: `flex-shrink: 0` on the leaving row.
+  - The tools' fixed clock (`page.clock.setFixedTime`, `zeit:`) fakes `performance.now()`: compare animation times with
+    `document.timeline.currentTime`.
+- **Verified** (work machine, Chromium; the proofs and their scripts are in `docs/wasser-look/entwurf/gehen/`):
+  frames at 0/80/160/240/300 ms of a phone sheet (both tones), a desktop drawer, a ticked task (phone and desktop), a
+  removed shopping entry, a toast replacing a toast; 51 scripted checks (`rennen.mjs`: removal in the first frame after
+  the leaving animation's end, Escape twice, backdrop tap, sheet B during A, five ticks in a second, undo during leaving,
+  change of tab and of world, change of workspace, the empty workspace on phone and desktop, reduced motion both ways, no look, keyboard
+  focus); the background: frames at 0/100/200/300/450/600 ms in both tones, ten quick tab changes, reduced motion, a slow
+  network (`szene.mjs`); `reiter.mjs handy` before/after; `sollist.mjs alles --soll git:f001263`: 154 of 164 equal, the
+  differences are the desktop Start (the search, meant), one island label at 1920 and one phone sheet with 1/255 inside
+  the head drops (cause open, `NACHSEHEN-FABLE.md`). NOT verified: WebKit/Safari, a real phone, a screen reader.
+
+## 17. Corrections after the two checkers (15.11., early morning; step "Nachbessern")
+
+What the two checkers of the four fine-tuning steps found, and what changed in the template (the app's side is named too):
+
+- **Warming (wasser.js, Teil 1, `warm`):** an image asked for ahead that failed to load stopped all further warming (its
+  wait listened for `load` only). It now also listens for `error`; a broken image is then skipped. The images already
+  taken from the list are kept (`taken`); after a lost and restored WebGL context they are queued again (`rewarm`), so the
+  first visit of a tab is quick again after a context loss. `Wasser.info.warmed` is now named in the file's head.
+  Probe: one preload fails after 5 s -> before: warmed 0 after 15 s; after: warmed 3 (the other three tabs). Context lost
+  and restored after the preload: warmed 4 -> 8, the next tab change served from the store.
+- **Drops at rest behind a sheet are drawn once more** when what their picture was made of changes: the tone or the
+  motion switch on `<html>`, the scene texture (`show`), the window size (`requiet`, flag `redo` per drop; drawn at the
+  water time they stand at, then quiet again). Before, a tone switched inside the settings sheet left the drops behind
+  in the old tone until the sheet closed. After: they change at once; 5 of 7 probed drops are pixel-equal to a fresh page
+  in the new tone, the other two differ by a mean of 0.4 and 0.8 of 255 (not explained).
+- **The empty text of a list (kern.css, block "Gehen", `.wa-leer-kommt`, token `--wa-leer-kommt`):** when the LAST row
+  leaves, the text the app puts in its place (`{...leer()}`, src/ui/gehen.ts) waits unseen for `--wa-t-leave` and then
+  fades in over `--wa-t-leave`. Before, the row and the text were both shown for 9 to 12 frames and the text slid up with
+  the closing gap. `--wa-leer-kommt: none` = the text stands at once (and beside the leaving row, as before).
+- **Rows of a list that shows only a part** (the app: `weich(id, gone)`): a row pushed out of a `.slice` (a new task
+  before it, "Nach unten" in the sheet) left softly although it still existed. With a test against the store it now goes
+  without a picture; a ticked or removed row still leaves softly (checked in the inner world, Druck and Heute).
+- **The day card on the desktop in "klar" (desktop.css, part 1, `--wa-tk-kopf`):** the shade over its head reaches 215 px
+  instead of 150 px, so the two times under the daylight track keep 4.5 at 1920 x 1080 on a winter day (4.2 -> 5.1).
+  "dunkel" is unchanged (its shade is transparent).
+- **App (not the template):** the world keys 0 to 6 are no longer swallowed for 0.26 s after a drawer closed (only a
+  second Escape is).
+- **Tools:** `sollist.mjs` compares what lies ON a drop (a second pair of stills with the drop canvases hidden) - only
+  the water itself is excused; `reiter.mjs` blocks the weather in the page (fetch) instead of trusting a resolver rule
+  and marks a landscape run VOID (exit 1) when the landscape did not change as planned, and prints "n/a" for a script
+  without `Wasser.info.scene`; `bogen.mjs` takes `--look`; `vergleich.mjs` names the element whose box moved when a
+  difference outside the drops remains, and counts the rest pose of a drop behind a sheet (seen through the blur, 1 of
+  255 beyond the drop) as known; the CSS-order guard of `lib.mjs` (`strangers`) accepts only `[data-wasser` / `[data-wa-ton`
+  followed by no further name character.
+
+## 18. Final check of the fine-tuning (15.11., early morning; step "Abschluss")
+
+An independent last look at the whole fine-tuning (steps 8 to 11 of the guide and the corrections of section 17), made
+by someone who built none of it. Before = the tag `feinschliff-basis` (`19447f6`; its app code equals `9c4afa7`, the
+state that went live on 14.11.), built in a scratch folder; after = this branch. Work machine, Chromium, no GPU. The
+template itself was not changed in this step.
+
+- **Copies:** `node scripts/wasser/uebernehmen.mjs` changes nothing (`git status` clean); `pruefen.mjs --app` says the
+  copies are the template. CSS order in the build: "Reihenfolge gut", 16 and 16.
+- **Standard checks:** `npm run build` and `VITE_API=node npm run build` without errors; `verify.mjs` 69 of 69 against
+  each of the two builds; `pruefen.mjs --app` 64 of 64; `desktop.mjs pruefen` 27 of 27.
+- **Contrast:** `kontrast.mjs --app` (phone, both tones) and `desktop.mjs kontrast` (2000 x 993, both tones, night and
+  day): no median below its floor. Lowest worst-5-% values: phone 4.2 ("Fußnote auf der Seite", dunkel), desktop 3.6
+  (field placeholder, klar by day; floor 3). The day card's times at 1920 on a winter day (`.tk-day__lbl`): 5.1 (worst
+  5 %: 5.0); at 08:40 6.5 (worst 5 %: 4.0); before the fine-tuning 5.7.
+- **"dunkel" at rest:** phone Start, Heute, Projekte at 21:30, reduced motion, deviceScaleFactor 2: 0 pixels differ
+  from the state before the fine-tuning.
+- **`sollist.mjs --toene dunkel` against `feinschliff-basis`** (both builds as folders): 82 screens (phone and desktop in both formats, night, both workspaces), 18 min: 48 equal (4 of them `ok*`), 34 differ. 29 are screens with an open sheet or the search: the drops behind it now show their rest pose (the fix of the owner's bug, step 8); 87 to 99.9 % of their differing pixels lie inside drop canvases; the rest (at most 420 px per screen) lies around those drops - presumably that rest pose seen through the blur (KNOWN 5 of vergleich.mjs), not checked pixel by pixel. 4 are the desktop Start and empty Start in both formats (the search is centred, step 11). 1 was noise: desktop 1920 Projekte, 129 px of at most 6/255 in a 3-px strip of water below the island "Bewässerungsclip", equal when repeated alone (pitfall 73). Every phone and desktop screen WITHOUT a sheet is equal - the resting picture of "dunkel" did not change. The sheet screens were not compared with `--tropfen` or judged one by one by eye; I trusted that "inside the drops" means the rest pose. Check: open two of the `-vergleich.png` pictures (phone `bogen-einstellungen`, largest 82/255; desktop `bogen-versionen`, largest 196/255) and confirm the difference is the drop that rests.
+- **Layout** (`docs/wasser-look/entwurf/abschluss/layout.mjs`): every desktop world, 2000 x 993 and 1920 x 1080, night
+  and day, both workspaces (60 screens per side): which text, panel or button lies on an opaque part of an island
+  picture or on an island's name, and which text leaves the window. Before and after give the SAME list on every screen
+  (no new covering); no island name is covered; no text is cut off. What the list holds on both sides: faded background
+  islands under panels (inner world, Projekte), the weather signs on the island "Wetter", the search field over the far
+  island "3D-Druck" / "Material" - the app's layout, not the look.
+- **Tab change** (`reiter.mjs handy`, three runs alternating the order of the two builds, `--drossel 1,4 --laeufe 1`;
+  ms, median of the three run medians): first visit 81 -> 25, second visit 95 -> 29; four times slowed down 326 -> 117
+  and 243 -> 92. Long tasks that are mostly scene work: 16 before, 0 after (all runs, x4). The drops show the new scene
+  27 to 34 ms after the tap (x4: 96 to 133 ms).
+- **Soft leaving:** `docs/wasser-look/entwurf/gehen/rennen.mjs` 51 of 51 on the final build; the last task on the phone's
+  Heute: leaving row and empty text never both visible (84 frames sampled; `abschluss/leer-probe.mjs`).
+- **The drop behind a sheet** (the owner's bug): reproduced on the old state with a finger held 140 ms - the drop
+  stands with its ring at 1 s and at 3 s (pixel-equal); on the new state it rests. A Playwright `tap()` (no frame
+  between touch and release) does NOT show the bug on the old state.
+- **Empty workspace, reduced motion, resizing:** phone "echt", seven screens and the settings sheet, both tones, with
+  and without system reduced motion: no page error, the sheet goes; the desktop worlds of "echt" in the layout check;
+  narrow and wide seven times in a row (390 / 1920 / 700 / 2000 / 390 / 1280 / 1920): the right shell each time, drops
+  drawn, no page or console error.
+- **WebKit** (Playwright's build, software GL, `abschluss/webkit.cjs`): the app loads (with `waitUntil: 'load'`; a
+  networkidle wait timed out for an earlier checker), the drop behind a sheet rests, a ticked row leaves and is gone,
+  the background crossfade ends with one picture and the drops on it, a toast replaces a toast, no page error. The
+  leaving picture of a closed sheet stood almost unchanged for 0.5 to 0.75 s and was gone after 0.75 to 1 s (Chromium,
+  same machine and load: gone after 0.3 to 0.5 s) - not explained; Safari on a phone not seen.
+- **Spot checks of the checkers' findings:** F1 (sollist.mjs blind to what lies on a drop): a magenta icon planted in a
+  copy of the build -> "DIFF ... ON a drop" on 3 of 3 screens; the unplanted copy -> equal. F12 (day card label in
+  "klar" under 4.5): 5.1. F13 (leaving row and empty text together): 0 frames.

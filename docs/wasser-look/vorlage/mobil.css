@@ -6,6 +6,8 @@
    WHICH BLOCK EACH MOBILE ELEMENT IS MADE OF is written in kern.css, in the selector list of the block (CSS cannot add
    to a list from another file). For orientation:
      .glass.m-card              Becken        (+ ring and light: wasser.js, options ringOn, light)
+     .glass.m-card.m-today      the card of the day on Start (src/ui/Tageskarte.tsx): a Becken like every card; its two
+                                tiles are .m-row (Mulde). Nothing of the look names it: it is made of the blocks.
      .glass.m-stat              stilles Wasser, Lichtlauf
      .m-card .m-row, .m-stat    Mulde;  .m-card .m-row--click  Mulde zum Tippen
      .m-tabs                    dichtes Wasser, Markierung, Lichtlauf
@@ -31,6 +33,8 @@
   --wa-tab-ease: var(--wa-ease-settle);
   --wa-tab-in: var(--wa-t-touch);               /* ... after giving way at once */
   --wa-tab-lens: 1.1;                           /* the icon under the bead is slightly magnified */
+  --wa-t-szene: var(--wa-t-settle);             /* a new picture behind the page fades in over the old one (section 2) ... */
+  --wa-ease-szene: var(--wa-ease-flow);         /* ... comes at once and arrives softly */
   /* (the bar's own padding and number of tabs are tokens of the block "Markierung", kern.css: --wa-bar-pad 5 px -
      5 + 52 + 5 = 62 px high - and --wa-bar-tabs 5) */
 }
@@ -45,6 +49,14 @@
 [data-wasser="mobil"] .m-bg::after {
   background: linear-gradient(180deg, rgba(var(--wa-page-dark), var(--wa-page-1)) 0%, rgba(var(--wa-page-dark), var(--wa-page-2)) 30%, rgba(var(--wa-page-dark), var(--wa-page-3)) 70%, rgba(var(--wa-page-dark), var(--wa-page-4)) 100%);
 }
+/* A new picture behind the page (the app lays it over the old one, data-szene="kommt" once it has loaded) fades in; the
+   app takes the old one away when this animation ends. The drops blend the two pictures by its opacity (wasser.js). */
+[data-wasser="mobil"] .m-bg img[data-szene="kommt"] {
+  animation: wa-szene-kommt var(--wa-t-szene) var(--wa-ease-szene) both;
+  @media (prefers-reduced-motion: reduce) { & { animation: none !important; } }
+  :root[data-motion="reduziert"] & { animation: none !important; }
+}
+@keyframes wa-szene-kommt { from { opacity: 0; } to { opacity: 1; } }
 /* faint text that stands directly on the page (the foot note of "Mehr"): the tone says how faint it may be */
 [data-wasser="mobil"] .m-main { --text-3: var(--wa-page-ink-3); }
 

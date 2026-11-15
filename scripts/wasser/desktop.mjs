@@ -1,44 +1,61 @@
-// The desktop template, looked at: the REAL app at desktop size with the template injected (nothing is built in).
+// The look on the desktop, looked at: the REAL app at desktop size - with the look it has built in, or with a copy of the
+// template in its place (--look; the rules are in the head of lib.mjs).
 // Needs the built app:  npm run build && npm run preview   (in a second terminal; "zeigen" only needs the build)
 //
 //   node scripts/wasser/desktop.mjs zeigen [--port 4320] [--look <folder>]
-//        A small server with the built app and the template on top - open it in YOUR browser and use the app:
-//        http://localhost:4320 (wide window = desktop template, narrow = mobile template). The tone follows the app's own
-//        setting "Erscheinungsbild" (Dunkel -> "dunkel", Hell -> "klar", Automatisch -> the hour); ?ton=klar or ?ton=dunkel
-//        fixes it, ?ohne=1 shows the app as it is today, ?weich=aus the template without any blur (to compare on a machine
-//        that stutters), ?leben=1.5 more light at rest.
+//        A small server with the built app (dist/) - open it in YOUR browser and use the app: http://localhost:4320 (wide
+//        window = desktop, narrow = phone). Without --look it shows the app as it is built (where a shell has no look built
+//        in, the look goes on top). With --look <folder> | vorlage that copy of the template takes the place of the
+//        built-in look - to try a change in your own browser without building. In the address: ?ohne=1 the app without
+//        the look, ?weich=aus the look without any blur (to compare on a machine that stutters), ?leben=1.5 more light at
+//        rest, ?ton=klar or ?ton=dunkel (it sets the app's own setting "Erscheinungsbild" in this browser).
 //   node scripts/wasser/desktop.mjs bild <out-dir> [--format 2000|1920] [--ton klar] [--zeit nacht|tag|morgen|abend] [--nur start,heute] [--alles]
 //        Stills: the eight worlds; with --alles also sheets, forms, settings, account, search, keyboard focus, a toast and the
 //        empty workspace. NN-name.png plus contact sheets uebersicht-N.png.
 //   node scripts/wasser/desktop.mjs film <out-dir> [--ton klar] [--nur dock,druck]
 //        Motion as filmstrips: a panel at rest, the dock's marker, a button on a panel pressed (ring), the pointer over a row
 //        of buttons, the drawer opening, the arrow beside the island pressed (pfeil), the running line of a print (fluss).
-//   node scripts/wasser/desktop.mjs kontrast [--toene dunkel,klar] [--zeiten nacht,tag] [--format 2000]
+//   node scripts/wasser/desktop.mjs kontrast [--toene dunkel,klar] [--zeiten nacht,tag] [--format 2000] [--nur <name part>]
 //        WCAG contrast of the texts against the pixels really behind the glyphs (as kontrast.mjs does for the phone).
+//        --zeiten also takes ISO times: 2027-01-15T12:40:00+01:00 is a winter day (snow in the landscape, the brightest ground).
+//        One element of your own, without editing this file:  node scripts/wasser/kontrast.mjs --css '<selector>' --desktop ...
 //   node scripts/wasser/desktop.mjs pruefen [--ton klar] [--format 1920]
 //        Checks: few live drops in every world and none free over an island, nothing leaves its place while it is pressed,
-//        the arrows beside the island, the dock's marker, the drawer, the search, a toast, the keyboard focus, sleep and
+//        the arrows beside the island, the dock's marker, the drawer (and the drop that opened it comes to rest behind it and
+//        lives again after it), the search, a toast, the keyboard focus, sleep and
 //        waking by the mouse, reduced motion, stop / start - and that no panel, title or island has moved against the app
-//        without the look.
+//        without the look (the same app with its look taken out).
 //   node scripts/wasser/desktop.mjs takt [--nur heute,wetter] [--sekunden 5]
-//        What the look costs: pictures a second and work per picture for today's app, the template, and the template
-//        without its lights / drops / blur.
-//   node scripts/wasser/desktop.mjs clip <out.mp4> [--ton klar] [--zeit nacht]
-//        A tour through the real app (about 80 s on the work machine), recorded through the browser's screencast; at its
-//        end the app's setting "Erscheinungsbild: Hell" switches the tone to "klar".
-// All take --look vorlage|ohne|<folder> (ohne = today's desktop), --engine chromium|webkit|firefox, --format, --reduced.
+//        What the look costs: pictures a second and work per picture for the app without the look, with it, and with it
+//        but without its lights / drops / blur.
+//   node scripts/wasser/desktop.mjs clip <out.mp4> [--zeit nacht] [--crf 27]
+//        A tour through the real app (about 80 s on the work machine), recorded through the browser's screencast; it starts
+//        with the app's setting "Erscheinungsbild" as it is (Automatisch: the hour decides) and at its end switches it to
+//        "Hell" - the tone "klar". (So it takes no --ton.)
+// All take --look auto|eingebaut|vorlage|<folder>|ohne (default auto = the look the app has built in; ohne = the app with its
+// look taken out); all but zeigen take --engine chromium|webkit|firefox and --format. An option that is not known ends the
+// tool, and so does one that the mode does not read (each mode's list: FOR below).
 import fs from 'fs'; import path from 'path'; import http from 'http';
-import { REPO, abs, mkdir, args, strip, sharp, lookDir, isTemplate } from './lib.mjs';
+import { REPO, abs, mkdir, outDir, args, strip, sharp, lookDir, isTemplate, lookArg, lookStart, sayLook, fail, TOENE, ENGINES, ZEITEN } from './lib.mjs';
 import { openDesktop, WELTEN } from './desktop-lib.mjs';
 
-const a = args({ look: 'vorlage', format: '2000', ton: '', zeit: 'nacht', engine: 'chromium', nur: '', port: '4320', toene: 'dunkel,klar', zeiten: 'nacht,tag' });
-const mode = a._[0]; const look = a.look === 'ohne' ? '' : a.look; const want = a.nur ? String(a.nur).split(',') : null; const only = (n) => !want || want.some((w) => n.includes(w));
-const open = (o = {}) => openDesktop({ look, format: a.format, ton: a.ton, zeit: a.zeit, engine: a.engine, reduced: !!a.reduced, ...o });
-const label = () => `${look ? 'Vorlage Desktop' : 'Desktop heute'}, ${a.format === '2000' ? '2000 x 993' : a.format === '1920' ? '1920 x 1080' : a.format}${look ? ', Ton ' + (a.ton || 'dunkel') : ''}, ${a.zeit}`;
+const MODES = ['zeigen', 'bild', 'film', 'kontrast', 'pruefen', 'takt', 'clip'];
+const a = args({ look: 'auto', format: '2000', ton: '', zeit: 'nacht', engine: 'chromium', nur: '', port: '4320', toene: 'dunkel,klar', zeiten: 'nacht,tag', out: '', sekunden: '5', crf: '' },
+  { flags: ['alles', 'reduced'], choices: { engine: ENGINES, ton: ['dunkel', 'klar', 'auto'], toene: TOENE, zeit: [...Object.keys(ZEITEN), '<iso>'], zeiten: [...Object.keys(ZEITEN), '<iso>'], format: ['2000', '1920', '<WxH>'] } });
+const mode = a._[0]; if (mode && !MODES.includes(mode)) fail(`"${mode}": one of ${MODES.join(' | ')}`); if (a._.length > (['bild', 'film', 'clip'].includes(mode) ? 2 : 1)) fail(`too many words: ${a._.slice(1).join(' ')}`);
+// the options each mode really reads: one that belongs to another mode ends the tool too (else "pruefen --toene klar" would
+// check "dunkel" without a word - pruefen takes --ton; kontrast takes --toene and --zeiten; clip chooses its tone itself)
+const FOR = { zeigen: ['look', 'port'], bild: ['look', 'format', 'ton', 'zeit', 'engine', 'nur', 'alles', 'reduced'], film: ['look', 'format', 'ton', 'zeit', 'engine', 'nur', 'reduced'],
+  kontrast: ['look', 'format', 'toene', 'zeiten', 'engine', 'nur', 'out'], pruefen: ['look', 'format', 'ton', 'zeit', 'engine'], takt: ['look', 'format', 'ton', 'zeit', 'engine', 'nur', 'sekunden'], clip: ['look', 'format', 'zeit', 'engine', 'crf'] };
+if (mode) for (const k of process.argv.slice(2).filter((x) => x.startsWith('--')).map((x) => x.slice(2).split('=')[0])) if (!FOR[mode].includes(k)) fail(`--${k} has no effect in "${mode}"${MODES.some((m) => FOR[m].includes(k)) ? ` (it belongs to ${MODES.filter((m) => FOR[m].includes(k)).join(', ')})` : ''}. "${mode}" takes: ${FOR[mode].map((x) => '--' + x).join(' ')}`);
+const look = lookArg(a.look); const want = a.nur ? String(a.nur).split(',') : null; const only = (n) => !want || want.some((w) => n.includes(w));
+if (!look && ['film', 'kontrast', 'pruefen', 'clip'].includes(mode)) fail(`--look ohne: "${mode}" looks at the look`);
+const open = async (o = {}) => { const d = await openDesktop({ look, format: a.format, ton: a.ton, zeit: a.zeit, engine: a.engine, reduced: !!a.reduced, ...o }); sayLook(d); return d; };
+const label = (d) => `${d.look.mode === 'ohne' ? 'Desktop ohne Look' : 'Wasser-Look am Desktop (' + d.look.mode + ')'}, ${a.format === '2000' ? '2000 x 993' : a.format === '1920' ? '1920 x 1080' : a.format}${d.look.mode === 'ohne' ? '' : ', Ton ' + (a.ton || 'dunkel')}, ${a.zeit}`;
 
 /* ------------------------------------------------------------------ bild */
 async function bild(out) {
-  mkdir(out); const d = await open(); const p = d.page; const made = []; let n = 0;
+  mkdir(out); const d = await open(); const p = d.page; const made = []; let n = 0; const title = label(d);
   const step = async (name, fn, after) => {
     n++; const id = String(n).padStart(2, '0') + '-' + name; if (!only(name)) return;
     try { await fn(); await d.shot(`${out}/${id}.png`); made.push({ file: `${out}/${id}.png`, label: id }); } catch (e) { console.log('!!', id, String(e).split('\n')[0].slice(0, 160)); }
@@ -69,7 +86,7 @@ async function bild(out) {
   }
   if (d.errors.length) console.log('page errors:', d.errors.slice(0, 6));
   await d.close();
-  for (let i = 0; i < made.length; i += 6) await strip(made.slice(i, i + 6), `${out}/uebersicht-${i / 6 + 1}.png`, { title: label(), scale: 0.33, cols: 3, palette: false });
+  for (let i = 0; i < made.length; i += 6) await strip(made.slice(i, i + 6), `${out}/uebersicht-${i / 6 + 1}.png`, { title, scale: 0.33, cols: 3, palette: false });
   console.log('ok', out, made.length, 'pictures');
 }
 
@@ -151,10 +168,10 @@ const lum = (r, g, b) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 const parseCol = (col) => { const v = (col.match(/[\d.]+/g) || []).map(Number); const f = col.startsWith('color(srgb') ? 255 : 1; return [v[0] * f, v[1] * f, v[2] * f, v.length > 3 ? v[3] : 1]; };
 const PROBE_CSS = '.__pt::placeholder{color:transparent!important;-webkit-text-fill-color:transparent!important} .__pm::placeholder{color:#ff00ff!important;-webkit-text-fill-color:#ff00ff!important;opacity:1!important} .__vt{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important} .__vm{color:#ff00ff!important;-webkit-text-fill-color:#ff00ff!important;text-shadow:none!important;caret-color:transparent!important} .__vt svg,.__vm svg,.__vt .pill,.__vm .pill,.__vt .badge,.__vm .badge{visibility:hidden!important}';
 async function kontrast() {
-  const out = mkdir(abs(a.out || path.join((await import('os')).tmpdir(), 'wasser-kontrast-desktop'))); const table = {}; const cols = []; const low = [];
+  const od = outDir(a.out, 'kontrast-desktop'), out = od.dir; const table = {}; const cols = []; const low = [];   // (--out <dir> keeps the small pictures and the table)
   const raw = async (file) => { const { data, info } = await sharp(file).removeAlpha().raw().toBuffer({ resolveWithObject: true }); return { data, w: info.width, h: info.height }; };
   for (const ton of String(a.toene).split(',')) for (const zeit of String(a.zeiten).split(',')) {
-    const col = `${ton} ${zeit}`; cols.push(col); const d = await openDesktop({ look, format: a.format, ton, zeit, engine: a.engine, reduced: true }); const p = d.page; await p.addStyleTag({ content: PROBE_CSS });
+    const col = `${ton} ${zeit}`; cols.push(col); const d = await openDesktop({ look, format: a.format, ton, zeit, engine: a.engine, reduced: true }); const p = d.page; sayLook(d); await p.addStyleTag({ content: PROBE_CSS });
     const probe = async (name, sel, { kind = 'text', text = null, nth = 0, floor = 4.5 } = {}) => {
       if (!only(name)) return;
       try {
@@ -208,15 +225,23 @@ async function kontrast() {
     await d.close();
   }
   const cell = (v) => (v ? `${v.median.toFixed(1).padStart(5)} (${v.worst.toFixed(1).padStart(4)})${v.median < v.floor ? '!' : ' '}` : '      -      ');
-  const lines = [`${label().split(',')[0]}, ${a.format}: median (worst 5 %)`, ''.padEnd(30) + cols.map((c) => c.padEnd(15)).join(''), ...Object.entries(table).map(([name, row]) => name.padEnd(30) + cols.map((c) => cell(row[c]).padEnd(15)).join(''))];
+  const lines = [`Wasser-Look am Desktop, ${a.format}: median (worst 5 %)`, ''.padEnd(30) + cols.map((c) => c.padEnd(15)).join(''), ...Object.entries(table).map(([name, row]) => name.padEnd(30) + cols.map((c) => cell(row[c]).padEnd(15)).join(''))];
   low.sort((x, y) => x[0] - y[0]); const under = low.filter((l) => l[1] < l[4]);
   lines.push('', 'lowest worst-5-% values: ' + low.slice(0, 6).map((l) => `${l[0].toFixed(1)} (${l[2]}, ${l[3]})`).join('; '), under.length ? `BELOW THE FLOOR (median; titles 7, text 4.5, placeholders 3): ${under.map((l) => `${l[2]}, ${l[3]}: ${l[1].toFixed(1)}`).join('; ')}` : 'no median below its floor (titles 7, text 4.5, placeholders 3)');
-  console.log(lines.join('\n')); fs.writeFileSync(`${out}/kontrast-desktop-${a.engine}${look ? '' : '-ohne'}.txt`, lines.join('\n') + '\n');
+  console.log(lines.join('\n')); if (od.own) od.keep(false); else fs.writeFileSync(`${out}/kontrast-desktop-${a.engine}.txt`, lines.join('\n') + '\n'); if (under.length) process.exitCode = 1;
 }
 
 /* ------------------------------------------------------------------ pruefen */
 // Does the desktop template do what it says? Run after every change to desktop.css, to the desktop entries of kern.css or to
 // Wasser.DESKTOP. Exit code 1 when a check fails. (Whether the PHONE still looks the same: vergleich.mjs, as before.)
+// a live drop of the desktop that opens a drawer and stays in view beside it, and what its canvas shows (size and a hash of its pixels)
+const EB = '.panel--haupt .btn--primary';
+// its canvas sampled at every frame (sampler), and what it did after the drawer appeared (settled): changes and ms to the last one
+const sampler = (p, sel, open) => p.evaluate(([sel, open]) => { const log = window.__probe = []; const t0 = performance.now();
+  const hash = () => { const c = document.querySelector(sel + ' > .w3-drop'); if (!c || c.width < 3) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0; return h; };
+  const f = () => { const t = performance.now() - t0; log.push([t, hash(), !!document.querySelector(open)]); if (t < 2500) requestAnimationFrame(f); }; requestAnimationFrame(f); }, [sel, open]);
+const settled = (p) => p.evaluate(() => { const log = window.__probe || [], i0 = log.findIndex((x) => x[2]); let n = 0, last = i0 >= 0 ? log[i0][0] : 0; for (let i = i0 + 1; i0 >= 0 && i < log.length; i++) if (log[i][1] !== log[i - 1][1]) { n++; last = log[i][0]; } return { changes: n, after: i0 >= 0 ? Math.round(last - log[i0][0]) : -1 }; });
+const sig = (p, sel) => p.evaluate((sel) => { const c = document.querySelector(sel + ' > .w3-drop'); if (!c || c.width < 3) return null; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0; return c.width + 'x' + c.height + ':' + h; }, sel);
 async function pruefen() {
   let bad = 0; const say = (ok, name, info = '') => { if (!ok) bad++; console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${info ? '   ' + info : ''}`); };
   const d = await open({ start: { sleep: 0 } }); const p = d.page;
@@ -268,8 +293,8 @@ async function pruefen() {
   // 2. the dock's marker stands on the active world, for all seven
   let worst = 0; for (let i = 0; i < 7; i++) { await p.locator('.dock button').nth(i).dispatchEvent('click'); await p.waitForTimeout(1100); worst = Math.max(worst, await p.evaluate(() => { const dk = document.querySelector('.dock'), cs = getComputedStyle(dk, '::before'), r = dk.getBoundingClientRect(), on = dk.querySelector('button.on').getBoundingClientRect(); const m = /matrix\(([^)]+)\)/.exec(cs.transform); const tx = m ? parseFloat(m[1].split(',')[4]) : 0; return Math.abs(r.left + parseFloat(cs.left) + tx + parseFloat(cs.width) / 2 - (on.left + on.width / 2)); })); }
   say(worst <= 1.5, 'Dock: die Perle steht auf der aktiven Welt', `größte Abweichung ${worst.toFixed(2)} px bei sieben Welten`);
-  // 3. the one large panel of a world is found (it is named by its inline style until the app gives it a class)
-  for (const w of ['druck', 'material', 'wetter', 'archiv']) { await d.go(w, 900); const k = await p.evaluate(() => [...document.querySelectorAll('.ui > .glass.panel[style*="bottom:"]')].filter((e) => getComputedStyle(e.querySelector(':scope > .wa-licht > .wa-boden') || e).display === 'block').length); say(k === 1, `Welt ${w.padEnd(9)} ein großes Becken mit Bodenlicht`, `${k} gefunden`); }
+  // 3. the one large panel of a world is found (the app marks it with the class panel--haupt; an older state of the app by its inline place)
+  for (const w of ['druck', 'material', 'wetter', 'archiv']) { await d.go(w, 900); const k = await p.evaluate(() => [...document.querySelectorAll('.glass.panel.panel--haupt, .ui > .glass.panel[style*="bottom:"]')].filter((e) => getComputedStyle(e.querySelector(':scope > .wa-licht > .wa-boden') || e).display === 'block').length); say(k === 1, `Welt ${w.padEnd(9)} ein großes Becken mit Bodenlicht`, `${k} gefunden`); }
   // 4. keyboard: the focus line is the Wasserlinie, never the app's blue ring
   await d.go('heute', 1200); const seen = []; for (let i = 0; i < 24; i++) { await p.keyboard.press('Tab'); seen.push(await p.evaluate(() => { const e = document.activeElement, cs = getComputedStyle(e); return cs.outlineStyle === 'none' ? 'none' : cs.outlineColor; })); }
   const blue = seen.filter((c) => /124, 198, 255/.test(c)).length; say(!blue && seen.some((c) => /255, 255, 255/.test(c)), 'Tastatur: Wasserlinie statt blauem Ring', `${seen.filter((c) => /255, 255, 255/.test(c)).length} von 24 Stationen mit weißer Linie, ${blue} blau`);
@@ -279,6 +304,14 @@ async function pruefen() {
   const sh = await p.evaluate(() => { const s = document.querySelector('.sheet'), st = document.querySelector('.stage'), cs = getComputedStyle(s), r = s.getBoundingClientRect(); return { lauf: getComputedStyle(document.querySelector('.dock')).getPropertyValue('--wa-lauf').trim(), own: getComputedStyle(s).getPropertyValue('--wa-lauf').trim(), scroll: st.scrollLeft, right: innerWidth - r.right, radius: cs.borderBottomRightRadius, behind: [...document.querySelectorAll('.topbar [data-w3="on"]')].length }; });
   sh.name = name0; say(sh.name === 'wa-fliesst' && sh.lauf === 'paused' && sh.own === 'running' && sh.scroll === 0 && Math.abs(sh.right - 14) < 1 && parseFloat(sh.radius) > 20, 'Schublade: fließt von rechts, vier runde Ecken, die Bühne dahinter ruht', JSON.stringify(sh)); await d.closeSheet();
   await d.search('sens'); const cm = await p.evaluate(() => { const c = document.querySelector('.cmd'), cs = getComputedStyle(c), b = getComputedStyle(c.parentElement); return { blur: cs.backdropFilter || cs.webkitBackdropFilter, scrim: b.backdropFilter || b.webkitBackdropFilter || 'none', anim: b.animationName }; }); say(/blur/.test(cm.blur) && !/blur/.test(cm.scrim) && cm.anim === 'none', 'Suche: das Feld ist weichgezeichnet, der Schleier dahinter nicht', JSON.stringify(cm)); await d.closeSearch();
+  // 5b. the drop that opened a drawer comes to rest behind it ("Ergebnis buchen" on the main panel of Druck: a live drop that stays in
+  //     view beside the drawer). Until 14.11. it stood still in the middle of its answer to the click for as long as the drawer was open
+  { await d.go('druck', 1200); const eb = p.locator(EB).first();
+    if (!(await eb.count())) say(false, 'Schublade: der Tropfen, der sie geöffnet hat, kommt zur Ruhe', `nichts trifft ${EB}`);
+    else { const bb = await eb.boundingBox(); await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2, { steps: 3 }); await p.waitForTimeout(300); await sampler(p, EB, '.sheet'); await p.mouse.down(); await p.waitForTimeout(70); await p.mouse.up(); await p.waitForTimeout(1400);
+      const i1 = await p.evaluate(() => ({ sheet: !!document.querySelector('.sheet'), settling: window.Wasser.info.settling, resting: window.Wasser.info.resting })); const g1 = await sig(p, EB); await p.waitForTimeout(400); const g2 = await sig(p, EB); const k = await settled(p);
+      say(i1.sheet && k.changes > 0 && k.after <= 600 && i1.settling === 0 && i1.resting >= 1 && g1 && g1 === g2, 'Schublade: der Tropfen, der sie geöffnet hat, klingt aus und ruht dann', JSON.stringify({ ...k, ...i1, steht: g1 === g2 }));
+      await d.closeSheet(); await p.waitForTimeout(900); const g3 = await sig(p, EB); say(g3 && g3 !== g2, 'Schublade zu: der Tropfen lebt wieder'); await d.park(); } }
   // 6. a toast stands in the middle
   await d.toast(); const tc = await p.evaluate(() => { const r = document.querySelector('.toast').getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - innerWidth / 2); }); say(tc < 1.5, 'Hinweis: mittig über dem Dock', `${tc.toFixed(1)} px neben der Mitte`);
   // 7. stop() leaves nothing behind, start() brings it back
@@ -293,9 +326,18 @@ async function pruefen() {
   // 9. reduced motion: no lights, nothing eases
   { const s = await open({ reduced: true }); const q = s.page; await s.go('heute', 1200); await q.locator('.topbar [aria-label="Einstellungen"]').dispatchEvent('click'); await q.waitForTimeout(500);
     const r = await q.evaluate(() => ({ lights: [...document.querySelectorAll('.wa-licht')].filter((e) => getComputedStyle(e).display !== 'none').length, sheet: getComputedStyle(document.querySelector('.sheet')).animationName, bead: getComputedStyle(document.querySelector('.dock'), '::before').animationName, panel: getComputedStyle(document.querySelector('.glass.panel')).animationName, running: document.getAnimations().filter((x) => x.effect && x.effect.target && x.effect.target.closest && x.effect.target.closest('.ui') && x.playState === 'running' && !(x.effect.getComputedTiming().duration <= 50)).map((x) => (x.animationName || x.transitionProperty || 'waapi') + '@' + String(x.effect.target.className).slice(0, 30)) }));
-    say(r.lights === 0 && r.sheet === 'none' && r.bead === 'none' && r.panel === 'none' && r.running.length === 0, 'Bewegung reduziert: keine Lichter, nichts läuft', JSON.stringify(r)); await s.close(); }
-  // 10. nothing has moved: the places of panels, dock, top bar, titles and islands with and without the look (the layout is the app's)
-  { const boxes = async (h) => { const o = {}; for (const w of WELTEN) { await h.welt(w); await h.page.waitForTimeout(1600); await h.park(); await h.page.waitForTimeout(300); o[w] = await h.page.evaluate(() => { const r = {}; let i = 0; for (const el of document.querySelectorAll('.panel, .dock, .topbar > *, .world-title, .heute-greet, .project-hero, .project-hero .btn, .island__img, .wchip, .carousel-nav, .hand, .start-clock, .island__cta')) { const b = el.getBoundingClientRect(); r[(i++) + ' ' + String(el.className).split(' ').slice(0, 3).join('.')] = [b.left, b.top, b.width, b.height]; } return r; }); } return o; };
+    say(r.lights === 0 && r.sheet === 'none' && r.bead === 'none' && r.panel === 'none' && r.running.length === 0, 'Bewegung reduziert: keine Lichter, nichts läuft', JSON.stringify(r));
+    // the water is one still picture here: the clicked drop behind the drawer must be the very picture of the same drop when the
+    // drawer is opened without touching anything (a click event: no pointer, no press)
+    await s.closeSheet(); await s.go('druck', 1200); const eb = q.locator(EB).first();
+    if (await eb.count()) { await eb.dispatchEvent('click'); await q.waitForTimeout(700); const ref = await sig(q, EB); await s.closeSheet(); await q.waitForTimeout(400);
+      const bb = await eb.boundingBox(); await q.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await q.waitForTimeout(200); await q.mouse.down(); await q.waitForTimeout(70); await q.mouse.up(); await q.waitForTimeout(700); const got = await sig(q, EB);
+      say(ref && got === ref, 'Bewegung reduziert: der geklickte Tropfen hinter der Schublade ist sein Bild in Ruhe', ref && got === ref ? 'dieselben Bildpunkte' : 'ANDERE Bildpunkte als in Ruhe'); }
+    else say(false, 'Bewegung reduziert: der geklickte Tropfen hinter der Schublade ist sein Bild in Ruhe', `nichts trifft ${EB}`);
+    await s.close(); }
+  // 10. nothing has moved: the places of panels, dock, top bar, titles and islands with and without the look (the layout is the app's).
+  //     "Without" is the same app with its look taken out (look: ''), so this check keeps its meaning where the look is built in.
+  { const boxes = async (h) => { const o = {}; for (const w of WELTEN) { await h.welt(w); await h.page.waitForTimeout(1600); await h.park(); await h.page.waitForTimeout(300); o[w] = await h.page.evaluate(() => { const r = {}; let i = 0; for (const el of document.querySelectorAll('.panel, .dock, .topbar > *, .world-title, .heute-greet, .project-hero, .project-hero .btn, .island__img, .wchip, .carousel-nav, .hand, .tk__clock, .island__cta')) { const b = el.getBoundingClientRect(); r[(i++) + ' ' + String(el.className).split(' ').slice(0, 3).join('.')] = [b.left, b.top, b.width, b.height]; } return r; }); } return o; };
     const A = await open({ look: '', reduced: true }), B = await open({ reduced: true }); const a0 = await boxes(A), b0 = await boxes(B); await A.close(); await B.close(); let maxPos = 0, maxSize = 0, who = '', n = 0;
     for (const w of WELTEN) for (const k of Object.keys(a0[w])) { const x = a0[w][k], y = b0[w][k]; if (!y) { n++; who = who || `${w}: ${k} fehlt`; continue; } if (/dock/.test(k)) continue; const text = /world-title|project-hero$/.test(k);   // (a block of loose text is as wide as its content: a filter select with its arrow is a few px wider - only its place and height count)
       const dp = Math.max(Math.abs(x[0] - y[0]), Math.abs(x[1] - y[1])), ds = Math.max(text ? 0 : Math.abs(x[2] - y[2]), Math.abs(x[3] - y[3])); if (dp > maxPos) { maxPos = dp; who = `${w}: ${k}`; } if (ds > maxSize) maxSize = ds; }
@@ -309,16 +351,16 @@ async function pruefen() {
 // and without any blur. The stage itself never rests (leaves, clouds, islands), so there is always something to draw.
 // A machine that renders in software (the work machine) shows only the RELATIONS between the rows. Chromium only.
 async function takt() {
-  const secs = Number(a.sekunden || 5), welten = want || ['heute', 'wetter'];
-  const V = [['die App heute (ohne Look)', '', null], ['Vorlage', look || 'vorlage', null], ['Vorlage, Lichter angehalten', look || 'vorlage', '[data-wasser] { --wa-lauf: paused !important; }'], ['Vorlage, ohne lebende Tropfen', look || 'vorlage', null, { drops: '' }], ['Vorlage, ohne Weichzeichner', look || 'vorlage', '[data-wasser] * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }']];
+  const secs = Number(a.sekunden || 5), welten = want || ['heute', 'wetter']; if (a.engine !== 'chromium') fail('takt: Chromium only');
+  const lk = look || 'auto'; const V = [['die App ohne Look', '', null], ['mit Look', lk, null], ['mit Look, Lichter angehalten', lk, '[data-wasser] { --wa-lauf: paused !important; }'], ['mit Look, ohne lebende Tropfen', lk, null, { drops: '' }], ['mit Look, ohne Weichzeichner', lk, '[data-wasser] * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }']];
   console.log(`${a.format}, ${a.zeit}${a.ton ? ', Ton ' + a.ton : ''}, ${secs} s je Zeile`); console.log('Welt'.padEnd(9) + 'Variante'.padEnd(34) + 'Weichz.  Fläche  Tropfen  Bilder/s  GPU-Prozess ms/Bild  Wasserbild ms');
-  for (const w of welten) for (const [name, lk, css, start] of V) {
-    const d = await openDesktop({ look: lk, format: a.format, ton: a.ton, zeit: a.zeit, start: start || {} }); const p = d.page; await d.welt(w); if (css) await p.addStyleTag({ content: css }); await d.park(); await p.waitForTimeout(2500);
+  for (const w of welten) for (const [name, lk1, css, start] of V) {
+    const d = await openDesktop({ look: lk1, format: a.format, ton: a.ton, zeit: a.zeit, start: start || {} }); const p = d.page; sayLook(d); await d.welt(w); if (css) await p.addStyleTag({ content: css }); await d.park(); await p.waitForTimeout(2500);
     const st = await p.evaluate(() => { const vis = (el) => { const r = el.getBoundingClientRect(); return r.width > 1 && r.height > 1; }; const bl = [...document.querySelectorAll('.stage *')].filter((el) => vis(el) && /blur/.test(getComputedStyle(el).backdropFilter || '')); return { n: bl.length, pct: Math.round(bl.reduce((s, el) => { const r = el.getBoundingClientRect(); return s + r.width * r.height; }, 0) / (innerWidth * innerHeight) * 100), drops: document.querySelectorAll('[data-w3="on"]').length }; });
     const cdp = await d.context.newCDPSession(p), bs = await d.browser.newBrowserCDPSession(); const cpu = async () => { const r = await bs.send('SystemInfo.getProcessInfo'); let g = 0; for (const x of r.processInfo) if (x.type === 'GPU') g += x.cpuTime; return g; };
     const ev = []; cdp.on('Tracing.dataCollected', (x) => ev.push(...x.value)); await cdp.send('Tracing.start', { transferMode: 'ReportEvents', traceConfig: { includedCategories: ['disabled-by-default-devtools.timeline.frame', 'cc', 'viz'] } });
     const c0 = await cpu(), t0 = Date.now(); await p.waitForTimeout(secs * 1000); const c1 = await cpu(), dt = (Date.now() - t0) / 1000;
-    const done = new Promise((ok) => cdp.once('Tracing.tracingComplete', ok)); await cdp.send('Tracing.end'); await done; const drawn = ev.filter((e) => e.name === 'DrawFrame').length; const ms = lk ? await p.evaluate(() => (window.Wasser && window.Wasser.info.ms) || 0) : 0;
+    const done = new Promise((ok) => cdp.once('Tracing.tracingComplete', ok)); await cdp.send('Tracing.end'); await done; const drawn = ev.filter((e) => e.name === 'DrawFrame').length; const ms = lk1 ? await p.evaluate(() => (window.Wasser && window.Wasser.info.ms) || 0) : 0;
     console.log(w.padEnd(9) + name.padEnd(34) + String(st.n).padStart(5) + (st.pct + ' %').padStart(9) + String(st.drops).padStart(8) + (drawn / dt).toFixed(1).padStart(10) + ((c1 - c0) * 1000 / Math.max(1, drawn)).toFixed(0).padStart(14) + (ms ? ms.toFixed(1) : '-').padStart(18)); await d.close();
   }
 }
@@ -357,26 +399,44 @@ async function clip(out) {
 }
 
 /* ------------------------------------------------------------------ zeigen */
-// The built app (dist/) with the template on top, for the owner's own browser. Nothing is written anywhere.
+// The built app (dist/) for the owner's own browser. Nothing is written anywhere. Three ways a page can come, chosen by the
+// address: as built ("eingebaut"), with a copy of the template in the place of the built-in look ("look"), without a look
+// ("ohne"). The stylesheet is cut and joined here the way lookBefore() in lib.mjs does it for the tools.
 const MIME = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8', json: 'application/json', webp: 'image/webp', avif: 'image/avif', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', woff2: 'font/woff2', woff: 'font/woff', ico: 'image/x-icon', webmanifest: 'application/manifest+json' };
 function zeigen() {
-  const dist = abs('dist'); if (!fs.existsSync(`${dist}/index.html`)) { console.log('dist/ fehlt: zuerst "npm run build"'); process.exit(1); }
-  const dir = lookDir(look || 'vorlage'); if (!isTemplate(look || 'vorlage')) { console.log(`--look ${look}: keine Kopie der Vorlage (kern.css fehlt)`); process.exit(1); }   // (--look <folder>: another copy of the template; "ohne" is ?ohne=1 in the address)
-  const own = { 'kern.css': `${dir}/kern.css`, 'mobil.css': `${dir}/mobil.css`, 'desktop.css': `${dir}/desktop.css`, 'wasser.js': `${dir}/wasser.js`, 'einspielen.js': 'scripts/wasser/einspielen.js' };
-  // the look goes in after the app's own stylesheets; "ohne" and "ton" are read from the address in the page itself
-  const tags = `<script>(function(){var q=new URLSearchParams(location.search);if(q.has('ohne'))return;window.__wasserVorschau={ton:q.get('ton')||'auto'};
-    document.write('<link rel="stylesheet" href="/__wasser/kern.css"><link rel="stylesheet" href="/__wasser/mobil.css"><link rel="stylesheet" href="/__wasser/desktop.css">'+(q.get('weich')==='aus'?'<style>[data-wasser] *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}</style>':'')+(q.get('leben')?'<style>[data-wasser]{--wa-leben:'+parseFloat(q.get('leben'))+'}</style>':'')+'<script src="/__wasser/wasser.js"><\\/script><script src="/__wasser/einspielen.js"><\\/script>');})();</script>`;
+  const dist = abs('dist'); if (!fs.existsSync(`${dist}/index.html`)) fail('dist/ fehlt: zuerst "npm run build"', 1);
+  if (!look) fail('--look ohne: im Browser ?ohne=1 an die Adresse hängen');
+  const html0 = fs.readFileSync(`${dist}/index.html`, 'utf8'); const link = (html0.match(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"[^>]*>/) || [])[0] || ''; const href = (link.match(/href="([^"]+)"/) || [])[1] || '';
+  if (!href) fail('dist/index.html nennt kein Stylesheet: ist das der Build der App?', 1);
+  const css0 = fs.readFileSync(path.join(dist, href), 'utf8'); const at = lookStart(css0), builtIn = at >= 0;
+  const wie = look === 'auto' || look === 'eingebaut' ? (builtIn ? 'eingebaut' : 'look') : 'look';   // what a page without ?ohne shows
+  const dir = lookDir(wie === 'look' && look !== 'auto' && look !== 'eingebaut' ? look : 'vorlage'); if (wie === 'look' && !isTemplate(dir)) fail(`--look ${a.look}: keine Kopie der Vorlage (kern.css fehlt)`);
+  const own = { 'wasser.js': `${dir}/wasser.js`, 'einspielen.js': abs('scripts/wasser/einspielen.js') };
+  const lookCss = () => ['kern.css', 'mobil.css', 'desktop.css'].map((f) => fs.readFileSync(`${dir}/${f}`, 'utf8')).join('\n');   // (read on every request: a change in the folder shows after a reload)
+  // in the head, in place of the stylesheet link: the stylesheet in the wanted form, and the look's script BEFORE the app's
+  // bundle runs (the bundled copy then steps back). ?ton=klar|dunkel writes the app's own setting (and reloads once if the
+  // app has only just stored its first state).
+  const head = `<script>(function(){var q=new URLSearchParams(location.search),wie=q.has('ohne')?'ohne':'${wie}',t=q.get('ton');
+    window.__waThema=function(){if(t!=='klar'&&t!=='dunkel')return false;try{var k=localStorage.getItem('3druckwerkbank:bereich')==='echt'?'3druckwerkbank:echt:v1':'3druckwerkbank:v1',j=JSON.parse(localStorage.getItem(k)||'null'),w=t==='klar'?'hell':'dunkel';if(!j||!j.state||!j.state.settings||j.state.settings.theme===w)return false;j.state.settings.theme=w;localStorage.setItem(k,JSON.stringify(j));return true;}catch(e){return false;}};
+    window.__waThema();
+    document.write('<link rel="stylesheet" href="${href}?wa='+wie+'">');
+    if(wie==='ohne'){window.Wasser={start:function(){return this;},stop:function(){return this;},MOBIL:{},DESKTOP:{},info:{state:'ohne'},ohne:true};return;}
+    window.__wasserVorschau={ton:t||'auto'};
+    document.write((q.get('weich')==='aus'?'<style>[data-wasser] *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}</style>':'')+(q.get('leben')?'<style>[data-wasser]{--wa-leben:'+parseFloat(q.get('leben'))+'}</style>':'')+(wie==='look'?'<script src="/__wasser/wasser.js"><\\/script>':''));})();</script>`;
+  const foot = `<script>if(!window.Wasser||!window.Wasser.ohne){document.write('<script src="/__wasser/einspielen.js"><\\/script>');window.addEventListener('load',function(){setTimeout(function(){if(window.__waThema())location.reload();},900);});}</script>`;
   http.createServer((req, res) => {
-    const name = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+    const url = new URL(req.url, 'http://x'), name = decodeURIComponent(url.pathname);
     const send = (file, type) => { res.writeHead(200, { 'content-type': type || MIME[path.extname(file).slice(1)] || 'application/octet-stream', 'cache-control': 'no-store' }); fs.createReadStream(file).pipe(res); };
-    if (name.startsWith('/__wasser/')) { const f = own[name.slice(10)]; if (f) return send(abs(f)); res.writeHead(404); return res.end(); }
+    if (name.startsWith('/__wasser/')) { const f = own[name.slice(10)]; if (f) return send(f); res.writeHead(404); return res.end(); }
+    if (name === href) { const wa = url.searchParams.get('wa'); res.writeHead(200, { 'content-type': MIME.css, 'cache-control': 'no-store' }); return res.end(wa === 'ohne' ? (builtIn ? css0.slice(0, at) : css0) : wa === 'look' ? (builtIn ? css0.slice(0, at) : css0) + '\n' + lookCss() : css0); }
     const file = path.join(dist, name);
     if (file.startsWith(dist) && fs.existsSync(file) && fs.statSync(file).isFile() && name !== '/index.html') return send(file);
     if (name.startsWith('/api/')) { res.writeHead(404, { 'content-type': 'application/json' }); return res.end('{}'); }   // (no account service in the preview)
-    res.writeHead(200, { 'content-type': MIME.html, 'cache-control': 'no-store' }); res.end(fs.readFileSync(`${dist}/index.html`, 'utf8').replace('</body>', tags + '</body>'));
-  }).listen(Number(a.port), () => console.log(`Vorschau der Vorlage in der gebauten App:  http://localhost:${a.port}\n  breites Fenster = Desktop, schmales (unter 900 px) = Handy\n  ?ton=klar  ?ton=dunkel  (sonst folgt der Ton der Einstellung "Erscheinungsbild")   ?ohne=1 = die App wie heute\n  ?weich=aus = ohne Weichzeichner (zum Vergleich, falls es ruckelt)   ?leben=1.5 = mehr Licht in Ruhe (0 bis 2)\n  Strg+C beendet.`));
+    res.writeHead(200, { 'content-type': MIME.html, 'cache-control': 'no-store' }); res.end(html0.replace(link, () => head).replace('</body>', () => foot + '</body>'));
+  }).on('error', (e) => fail(`Port ${a.port}: ${e.message} (anderen wählen: --port 4321)`, 1)).listen(Number(a.port), () => console.log(`Die gebaute App im eigenen Browser:  http://localhost:${a.port}\n  ${wie === 'eingebaut' ? 'Sie zeigt den Look, den sie EINGEBAUT hat (dist/). Eine Kopie der Vorlage an seiner Stelle: --look <Ordner> oder --look vorlage' : builtIn ? `Look: ${dir} AN DER STELLE des eingebauten (eine Änderung im Ordner zeigt sich nach dem Neuladen)` : `Look: ${dir}, eingespielt (dieser Build hat keinen Look eingebaut)`}\n  breites Fenster = Desktop, schmales (unter 900 px) = Handy\n  ?ton=klar  ?ton=dunkel  = die Einstellung "Erscheinungsbild" der App (sonst: was dort gewählt ist)   ?ohne=1 = die App ohne Look\n  ?weich=aus = ohne Weichzeichner (zum Vergleich, falls es ruckelt)   ?leben=1.5 = mehr Licht in Ruhe (0 bis 2)\n  Strg+C beendet.`));
 }
 
+if (['bild', 'film', 'clip'].includes(mode) && !a._[1]) fail(`usage: node scripts/wasser/desktop.mjs ${mode} <${mode === 'clip' ? 'out.mp4' : 'out-dir'}> [options]`, 1);
 if (mode === 'bild' && a._[1]) await bild(abs(a._[1]));
 else if (mode === 'kontrast') await kontrast();
 else if (mode === 'pruefen') await pruefen();

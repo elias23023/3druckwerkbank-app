@@ -5,7 +5,9 @@
 //
 // Das Skript heißt in der App wasser-skript.js (nicht wasser.js: neben wasser.ts fände ein Import ohne Endung
 // sonst die .js zuerst, siehe Kopf von wasser.js).
+// Danach: npm run build (die Werkzeuge messen den eingebauten Look erst nach dem Build) und  git status --short src/wasser
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
+if (process.argv.length > 2) { console.error(`!! uebernehmen.mjs kennt keine Schalter und keine Wörter: ${process.argv.slice(2).join(' ')}`); process.exit(2); }
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FROM = path.join(REPO, 'docs/wasser-look/vorlage'), TO = path.join(REPO, 'src/wasser');
 const HEAD = '/* Kopie – nicht von Hand ändern. Quelle: docs/wasser-look/vorlage. Neu holen: node scripts/wasser/uebernehmen.mjs */\n';

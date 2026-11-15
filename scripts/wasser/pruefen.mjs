@@ -1,9 +1,11 @@
-// Does the template WORK? One pass of checks on the harness page (scripts/wasser/mobil.html), and - with --app - in the
-// real app. Each line: ok / FAIL, what was checked, what was found. Exit code 1 when a check fails.
+// Does the look WORK? One pass of checks on the harness page (scripts/wasser/mobil.html: the TEMPLATE), and - with --app -
+// in the real app (the look it has BUILT IN). Each line: ok / FAIL, what was checked, what was found. Exit code 1 when a
+// check fails - or when the copies in src/wasser are not the template (then the two halves would check two different looks).
 //
-//   node scripts/wasser/pruefen.mjs [--look vorlage|<folder>] [--engine chromium|webkit] [--ton klar] [--app] [--bild <out.png>] [--regler]
+//   node scripts/wasser/pruefen.mjs [--look auto|vorlage|<folder>] [--engine chromium|webkit] [--ton klar] [--app] [--bild <out.png>] [--regler]
 //
-//   --look <folder>   check another copy of the template (kern.css, mobil.css, desktop.css, wasser.js) instead of docs/wasser-look/vorlage
+//   --look <folder>   check another copy of the template (kern.css, mobil.css, desktop.css, wasser.js): on the harness page
+//                     instead of docs/wasser-look/vorlage, in the app IN PLACE OF the built-in look (head of lib.mjs)
 //
 //   1 start        the script starts, draws the drops, reports no error
 //   2 Markierung   a tap on a tab starts the bead's flight; a class moved by script too; a second tap during a flight; a bar that was replaced
@@ -15,16 +17,21 @@
 //   6 reduziert    with reduced motion nothing runs and no light is shown
 //   7 stop/start   Wasser.stop() leaves no helper, attribute or listener behind; the bead still moves by CSS; start() brings all back; options are honoured
 //   8 ohne WebGL   the plain glass stays, the clock still runs
-//   9 App (--app)  a light per card, the page rests behind a sheet, a toast leaves like a drop, stop() cleans up (needs npm run preview)
+//   9 App (--app)  a light per card, the page rests behind a sheet, the drop that opened it comes to rest there (with reduced
+//                  motion: the very picture of that drop at rest) and lives again when the sheet goes, a toast leaves like a drop,
+//                  stop() cleans up (needs npm run preview)
 //  10 Zug, Töne    a new sheet's light arrives and swings into place, also when it is pulled at once; --wa-leben from 0 to 2 at
 //                  full pull: no light flips over its rim, slides or lags further than at 1; both tones list the same tokens
 //  11 Regler (--regler, about three minutes)  the governor of the drops, fed pretended slow pictures (start option debug.cost):
 //                  it steps down, climbs after the wait, a climb that fails doubles the wait, a climb that holds sets it back
 import fs from 'fs';
-import { session, args, abs, lookDir, isTemplate } from './lib.mjs';
-const a = args({ engine: 'chromium', ton: '', look: 'vorlage' }); if (!isTemplate(a.look)) { console.log(`--look ${a.look}: no copy of the template (kern.css is missing)`); process.exit(1); }
-const s0 = await session({ engine: a.engine }); let fails = 0; if (a.look !== 'vorlage') console.log('look: ' + lookDir(a.look));
-const s = { ...s0, harness: (o) => s0.harness({ look: a.look, ...o }), app: (o) => s0.app({ look: a.look, ...o }) };   // every page of this run gets the look that was asked for
+import { session, args, abs, lookDir, isTemplate, lookArg, sayLook, inSync, fail, ENGINES } from './lib.mjs';
+const a = args({ engine: 'chromium', ton: '', look: 'auto', bild: '' }, { flags: ['app', 'regler'], choices: { engine: ENGINES, ton: ['dunkel', 'klar'] } }); if (a._.length) fail(`this tool takes no word without "--": ${a._.join(' ')}`);
+const appLook = lookArg(a.look), hLook = lookArg(a.look, { harness: true }); if (!isTemplate(hLook)) fail(`--look ${a.look}: this tool checks a copy of the template (kern.css, mobil.css, desktop.css, wasser.js)`);
+const s0 = await session({ engine: a.engine }); let fails = 0; console.log(`harness page: ${hLook === 'vorlage' ? 'the template (docs/wasser-look/vorlage)' : lookDir(hLook)}`);
+const off = appLook === 'auto' || appLook === 'eingebaut' ? inSync() : null;   // the app half checks what is built in: that must be the template the harness half checks
+if (off && off.length) console.log(`!!   src/wasser differs from the template (${off.join(', ')}): node scripts/wasser/uebernehmen.mjs && npm run build`);
+const s = { ...s0, harness: (o) => s0.harness({ look: hLook, ...o }), app: async (o) => { const h = await s0.app({ look: appLook, ...o }); sayLook(h); return h; } };   // every page of this run gets the look that was asked for
 const check = (ok, name, found) => { if (!ok) fails++; console.log(`${ok ? 'ok  ' : 'FAIL'} ${name.padEnd(58)} ${typeof found === 'string' ? found : JSON.stringify(found)}`); };
 const noErr = (h, name) => { const e = h.errors.filter((x) => !/open-meteo|Failed to load resource|ERR_|net::/i.test(x)); check(!e.length, `${name}: no page error`, e.length ? e.slice(0, 3) : 'none'); };
 const centre = async (p, sel, i = 0) => { const r = await p.locator(sel).nth(i).boundingBox(); return [r.x + r.width / 2, r.y + r.height / 2]; };
@@ -32,6 +39,15 @@ const tap = async (p, sel, i = 0) => { const [x, y] = await centre(p, sel, i); a
 const flights = (p, sel = '.m-tabs') => p.evaluate((sel) => document.querySelector(sel).getAnimations({ subtree: true }).filter((an) => an.effect && an.effect.pseudoElement === '::before' && !(an instanceof CSSTransition) && !(an instanceof CSSAnimation)).length, sel);
 const rings = (p) => p.evaluate(() => document.querySelectorAll('.wa-floor .wa-ring').length);
 const CARD_BTN = '.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon):not(.btn--ghost)';
+const GEAR = '.m-head [aria-label="Einstellungen"]';
+// a drop's canvas sampled at every frame (sampler), and what it did after the sheet appeared (settled): how often it changed - a
+// drop frozen in the middle of its answer (the finding of 14.11.) does not change at all - and ms to its last change
+const sampler = (p, sel, open) => p.evaluate(([sel, open]) => { const log = window.__probe = []; const t0 = performance.now();
+  const hash = () => { const c = document.querySelector(sel + ' > .w3-drop'); if (!c || c.width < 3) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0; return h; };
+  const f = () => { const t = performance.now() - t0; log.push([t, hash(), !!document.querySelector(open)]); if (t < 2500) requestAnimationFrame(f); }; requestAnimationFrame(f); }, [sel, open]);
+const settled = (p) => p.evaluate(() => { const log = window.__probe || [], i0 = log.findIndex((x) => x[2]); let n = 0, last = i0 >= 0 ? log[i0][0] : 0; for (let i = i0 + 1; i0 >= 0 && i < log.length; i++) if (log[i][1] !== log[i - 1][1]) { n++; last = log[i][0]; } return { changes: n, after: i0 >= 0 ? Math.round(last - log[i0][0]) : -1 }; });
+// what a drop's canvas shows, in short: its size and a hash of its pixels (null: no canvas, or not drawn)
+const sig = (p, sel) => p.evaluate((sel) => { const c = document.querySelector(sel + ' > .w3-drop'); if (!c || c.width < 3) return null; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0; for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0; return c.width + 'x' + c.height + ':' + h; }, sel);
 
 /* 1 - 3: start, marker, ring */
 {
@@ -48,7 +64,7 @@ const CARD_BTN = '.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon):not(
   await tap(p, '.m-tabs button', 1); await p.waitForTimeout(60); check(await flights(p) === 1, '2 a bar that was replaced: its first tap flies', await flights(p)); await p.waitForTimeout(700);
 
   await tap(p, CARD_BTN); await p.waitForTimeout(150); check(await rings(p) === 1, '3 tap on a card button: one ring', await rings(p));
-  await p.evaluate(() => { const card = document.querySelector('.m-main > .m-card'); [...card.children].forEach((ch) => { if (ch.className === 'wa-floor') ch.remove(); else if (ch.className !== 'wa-licht') ch.replaceWith(ch.cloneNode(true)); }); }); await p.waitForTimeout(1800);
+  await p.evaluate(() => { const card = document.querySelector('.m-main > .m-card:not(.m-today)'); [...card.children].forEach((ch) => { if (ch.className === 'wa-floor') ch.remove(); else if (ch.className !== 'wa-licht') ch.replaceWith(ch.cloneNode(true)); }); }); await p.waitForTimeout(1800);
   check(await rings(p) === 0, '3 the card re-rendered meanwhile, 1.8 s later: no ring left', await rings(p));
   { const [x, y] = await centre(p, CARD_BTN); await p.mouse.move(x, y); await p.mouse.down(); await p.waitForTimeout(400); check(await rings(p) === 0, '3 finger held down: no ring yet', await rings(p)); await p.mouse.move(x, y - 40, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(150); check(await rings(p) === 0, '3 finger dragged away (40 px): no ring', await rings(p)); }
   await p.evaluate(() => { document.querySelector('.m-main > .m-card .btn--primary').disabled = true; }); await tap(p, '.m-main > .m-card .btn--primary'); await p.waitForTimeout(120); check(await rings(p) === 0, '3 disabled button: no ring', await rings(p));
@@ -59,7 +75,7 @@ const CARD_BTN = '.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon):not(
 {
   const h = await s.harness({ ton: a.ton }); const p = h.page;
   await p.evaluate(() => {
-    const main = document.querySelector('.m-main'); main.querySelectorAll(':scope > .m-card, :scope > .frei, :scope > .m-clock').forEach((el) => el.remove());
+    const main = document.querySelector('.m-main'); main.querySelectorAll(':scope > .m-card, :scope > .frei').forEach((el) => el.remove());
     main.insertAdjacentHTML('beforeend', `
       <section class="wa-becken" id="bk" style="padding:16px; display:flex; flex-direction:column; gap:10px">
         <b>Becken (.wa-becken)</b>
@@ -135,7 +151,7 @@ const CARD_BTN = '.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon):not(
   await tap(p, CARD_BTN); await p.waitForTimeout(120); check(await rings(p) === 0, '7 after stop(): a tap sends no ring', await rings(p));
   await tap(p, '.m-tabs button', 3); await p.waitForTimeout(700); check(await flights(p) === 0 && await p.evaluate(() => getComputedStyle(document.querySelector('.m-tabs')).getPropertyValue('--wa-tab').trim()) === '3', '7 after stop(): the bead still moves, by CSS alone', '');
   await p.evaluate(() => { window.Wasser.start(); window.Wasser.start(); }); await p.waitForTimeout(1500); const again = await left();
-  check(JSON.stringify(again) === JSON.stringify(first), '7 start() twice: one instance, everything is back as it was', again);   // (the page has 18 buttons and 3 cards, six and one of them in the hidden close-up)
+  check(JSON.stringify(again) === JSON.stringify(first), '7 start() twice: one instance, everything is back as it was', again);   // (the page has 18 buttons and 4 cards, six buttons and one card of them in the hidden close-up)
   await p.evaluate(() => window.Wasser.start({ drops: '.m-ico', light: '', ringOn: '' })); await p.waitForTimeout(1200); const opt = await left();
   check(opt.canvases === 3 && opt.lights === 0, '7 options: drops ".m-ico" only, no light', opt);
   await tap(p, CARD_BTN); await p.waitForTimeout(120); check(await rings(p) === 0, '7 options: ringOn "" switches the ring off', await rings(p));
@@ -157,16 +173,28 @@ if (a.app) {
   const h = await s.app({ ton: a.ton }); const p = h.page;
   await h.go('#/heute', 1500); const c = await p.evaluate(() => ({ cards: document.querySelectorAll('.m-main > .glass.m-card').length, lights: document.querySelectorAll('.m-main > .glass.m-card > .wa-licht').length, drops: document.querySelectorAll('[data-w3="on"]').length, state: window.Wasser.info.state }));
   check(c.cards > 0 && c.lights === c.cards && c.drops > 0, '9 app: a light helper in every card, drops drawn', c);
-  await h.sheet('einstellungen'); await p.waitForTimeout(900);
+  await sampler(p, GEAR, '.sheet'); await h.sheet('einstellungen'); await p.waitForTimeout(900);
   const b = await p.evaluate(() => ({ page: getComputedStyle(document.querySelector('.m-main')).getPropertyValue('--wa-lauf').trim(), sheet: getComputedStyle(document.querySelector('.sheet')).getPropertyValue('--wa-lauf').trim(), sheetLight: document.querySelectorAll('.sheet > .wa-licht').length, dropsOnSheet: document.querySelectorAll('.sheet [data-w3="on"]').length }));
   check(b.page === 'paused' && b.sheet === 'running' && b.sheetLight === 1 && b.dropsOnSheet > 0, '9 app: behind a sheet the page rests, the sheet lives', b);
+  // the drop that opened the sheet (the gear, tapped by sheet() above) finishes its answer and rests: no drop behind the sheet is
+  // still answering, its picture no longer changes (until 14.11. it stood still in the middle of its answer, rings and all)
+  { const i1 = await p.evaluate(() => ({ settling: window.Wasser.info.settling, resting: window.Wasser.info.resting })); const g1 = await sig(p, GEAR); await p.waitForTimeout(400); const g2 = await sig(p, GEAR); const k = await settled(p);
+    check(k.changes > 0 && k.after <= 600 && i1.settling === 0 && i1.resting >= 1 && g1 && g1 === g2, '9 app: the tapped drop rings out behind the sheet it opened, then rests', { ...k, ...i1, still: g1 === g2 }); }
   await p.locator('.sheet__body').evaluate((e) => new Promise((ok) => { const t0 = performance.now(); const f = (now) => { e.scrollTop += 22; if (now - t0 < 420) requestAnimationFrame(f); else ok(); }; requestAnimationFrame(f); })); const pull = await p.evaluate(() => document.querySelectorAll('[data-wa-zieht]').length); await p.waitForTimeout(700);
   check(pull >= 1 && await p.evaluate(() => document.querySelectorAll('[data-wa-zieht]').length) === 0, '9 app: scrolling the sheet pulls its light, and lets go', pull);
   await h.closeSheet(); await h.sheet('toast'); await p.waitForTimeout(300);
   check(await p.evaluate(() => { const t = document.querySelector('.toast'); return !!t && Math.abs(t.getBoundingClientRect().left + t.getBoundingClientRect().right - innerWidth) < 2; }), '9 app: a toast, centred', '');
   await p.locator('.toast__undo').click(); await p.waitForTimeout(700);
+  { await p.evaluate((sel) => document.querySelector(sel).click(), GEAR); await p.waitForTimeout(900); const g1 = await sig(p, GEAR); await h.closeSheet(); await p.waitForTimeout(900); const g2 = await sig(p, GEAR);
+    check(g1 && g2 && g1 !== g2, '9 app: when the sheet goes, the drop lives again', ''); }
   await p.evaluate(() => window.Wasser.stop()); const l = await p.evaluate(() => document.querySelectorAll('.w3-drop, .wa-licht, .wa-floor, [data-w3], [data-wa-ruht], .wa-geht').length);
   check(l === 0, '9 app: stop() leaves nothing behind', l); noErr(h, '9'); await h.close();
+  // with reduced motion the water is one still picture: the tapped drop behind the sheet must be the very picture of the same
+  // drop when the sheet is opened without touching anything (element.click(): no pointer, no press)
+  { const r = await s.app({ ton: a.ton, reduced: true }); const q = r.page;
+    await q.evaluate((sel) => document.querySelector(sel).click(), GEAR); await q.waitForTimeout(700); const ref = await sig(q, GEAR); await r.closeSheet(); await q.waitForTimeout(500);
+    await r.sheet('einstellungen'); await q.waitForTimeout(700); const tapped = await sig(q, GEAR);
+    check(ref && tapped === ref, '9 app: reduced motion: the tapped drop behind the sheet is its picture at rest', ref && tapped === ref ? 'the same pixels' : 'OTHER PIXELS than at rest'); noErr(r, '9'); await r.close(); }
 }
 /* 10: pull and arrival of the light, the bounds of the master token, the two tones */
 {
@@ -197,7 +225,7 @@ if (a.app) {
   const badLim = lim.filter(([lv, , lit, far, slide, lag]) => lit < 0.1 - 1e-6 || far < 0.1 - 1e-6 || lit > 2.4 + 1e-6 || far > 2.4 + 1e-6 || slide > 24.01 || lag > 28.01 || (lv === 0 && (lit !== 1 || far !== 1 || slide || lag)));
   check(!badLim.length && lim.length === 10, '10 --wa-leben 0 .. 2 at full pull: lean within 0.1 .. 2.4, slide at most 24 px, lag at most 28 px', lim.map((r) => `${r[0]}/${r[1] > 0 ? '+' : '-'}: ${r[2]} ${r[3]} ${r[4]}px ${+r[5].toFixed(1)}px`).join('  '));
   noErr(h, '10'); await h.close();
-  const css = fs.readFileSync(`${lookDir(a.look)}/kern.css`, 'utf8'); const bare = css.replace(/\/\*[^]*?\*\//g, '');
+  const css = fs.readFileSync(`${lookDir(hLook)}/kern.css`, 'utf8'); const bare = css.replace(/\/\*[^]*?\*\//g, '');
   const block = (from) => { const i = bare.indexOf(from), j = bare.indexOf('\n}', i); return i < 0 ? [] : bare.slice(i, j).match(/--[a-z0-9-]+(?=\s*:)/g) || []; };
   const dunkel = block('[data-wasser] {\n  --wa-drop-red'), klar = block(':root[data-wa-ton="klar"] [data-wasser] {'), named = (bare.match(/data-wa-ton/g) || []).length;
   check(dunkel.length > 40 && JSON.stringify(dunkel) === JSON.stringify(klar) && named === 1, '10 the two tones: the same tokens in the same order, one rule names the tone', `${dunkel.length} and ${klar.length} tokens, data-wa-ton in ${named} rule(s)`);
@@ -223,4 +251,5 @@ if (a.regler) {
   check(d3.took > 0 && d3.wait === 20000 && u5.took > 17 && u5.took < 32, '11 a later step down and up: the climb waits 20 s again (it was 40 s until reload)', { down: d3, up: u5 });
   console.log('     ' + log.join(' | ')); noErr(h, '11'); await h.close();
 }
-await s.close(); console.log(fails ? `\n${fails} check(s) FAILED` : '\nall checks passed'); process.exit(fails ? 1 : 0);
+await s.close(); console.log(fails ? `\n${fails} check(s) FAILED` : '\nall checks passed'); if (off && off.length) console.log('BUT src/wasser is not the template (see the first lines): the app half checked another look than the harness half.');
+process.exit(fails || (off && off.length) ? 1 : 0);

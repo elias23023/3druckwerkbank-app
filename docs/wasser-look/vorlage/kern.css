@@ -59,7 +59,7 @@
 }
 
 /* == 1. Töne ====================================================================================================== */
-/* A tone is one block of values. Both blocks list the SAME 57 tokens in the SAME order (also those with the same value),
+/* A tone is one block of values. Both blocks list the SAME 59 tokens in the SAME order (also those with the same value),
    so either tone can be read, changed or removed without looking at the other. No other rule in the look mentions
    data-wa-ton, and wasser.js has no tone logic: a drop reads what it needs from the sheet it lies on. */
 
@@ -140,6 +140,8 @@
   /* on a wide stage (the desktop), where the painted scene is the star and the page itself is not darkened */
   --wa-weit-tiefe: .7;                          /* how much of the depth of a basin is left there, 0 .. 1 (1 = a card on the phone): dark water over a dark scene may stay see-through */
   --wa-weit-grund: brightness(.88);             /* what a sheet does to the scene seen THROUGH it, in place of the page's darkening (a filter function, added to the sheet's blur) */
+  --wa-weit-grund-panel: brightness(.88);       /* ... the same for a PANEL (the basins of the stage); in this tone the same as for every other sheet */
+  --wa-weit-kopf: transparent;                  /* the shade over the head of a panel, where its title sits (desktop.css, part 2): none in this tone */
 }
 
 /* -- Ton "klar" (<html data-wa-ton="klar">; the light mode): clear water. No colour of its own - the scene stays
@@ -154,9 +156,9 @@
   --wa-warm: 255, 255, 255;
   --wa-dark: 0, 0, 0;
   --wa-clear: rgba(84, 94, 103, .28);           /* a veil of mid-grey: it lifts dark ground, lowers bright ground and takes the mottle out of foliage - calm, still see-through. A breath cool, against the brown of timber */
-  --wa-shelf: rgba(10, 14, 16, .21);            /* depth is neutral smoke in gentle steps */
-  --wa-deep: rgba(8, 12, 14, .25);
-  --wa-under: rgba(31, 35, 37, .56);
+  --wa-shelf: rgba(10, 14, 16, .16);            /* depth is neutral smoke in gentle steps. Owner's decision 8 (14.11.): more of the scene through the water, only in this tone - shelf and deep were .21 and .25 */
+  --wa-deep: rgba(8, 12, 14, .19);
+  --wa-under: rgba(31, 35, 37, .51);            /* (moves with them: 1 - (1 - .28) x (1 - shelf) x (1 - deep); was .56) */
   --wa-still: rgba(16, 20, 23, .5);
   --wa-dense: rgba(62, 66, 70, .66);            /* the light mode: bar, toast and search are smoke-grey water you can see through, not black */
   --wa-sheet: rgba(56, 60, 64, .82);            /* smoked-clear where text needs it: the page behind stays a soft presence, its words do not come through */
@@ -210,6 +212,8 @@
     2px 6px 11px -2px rgba(var(--wa-dark), .7);
   --wa-weit-tiefe: 1;                           /* clear water keeps its gentle depth ... */
   --wa-weit-grund: brightness(.7);              /* ... and the scene under it is dimmed as the page dims it on the phone (there: --wa-page-3, --wa-page-4) - without it light text has no ground by day */
+  --wa-weit-grund-panel: brightness(.8);        /* a PANEL lets more of the scene through (owner's decision 8, 14.11.: was .7 like every sheet) ... */
+  --wa-weit-kopf: rgba(var(--wa-dark), .3);     /* ... and keeps the ground of its title: a soft shade over its head (desktop.css, part 2). Without it panel titles fell below 7 on a winter day */
 }
 
 /* == 2. Form (the same in every tone; colours here are either neutral or built from the tone tokens) ============== */
@@ -344,6 +348,13 @@
   /* -- Setzen: a sheet that appears comes to rest -- */
   --wa-setzt-rise: 16px;                        /* it rises this far ... */
   --wa-setzt-swing: 2px;                        /* ... runs this far past its place and sinks back */
+  /* -- Gehen einer Zeile: a row that the app takes away (block below) -- */
+  --wa-zeile-tief: 8px;                         /* it sinks this far while it fades */
+  --wa-zeile-zu: wa-zeile-zu;                   /* the rows below close the gap meanwhile (keyframes of the block). A matter of taste and of a rule:
+                                                   "none" keeps the gap until the row is gone, then it closes in one picture - the strict
+                                                   "nothing that needs layout" (see the block) */
+  --wa-leer-kommt: wa-leer-kommt;               /* when the LAST row leaves, the list's empty text waits unseen until the row has gone, then
+                                                   fades in (keyframes of the block). "none": it stands at once, beside the leaving row */
   /* -- Tropfen-Hinweis: the toast -- */
   --wa-r-hinweis: 19px 24px 18px 22px / 22px 18px 24px 19px;
   --wa-hinweis-fall: 14px;                      /* it falls this far */
@@ -409,7 +420,7 @@
    - Crisp light (the glints) moves only in a strip along the rim, where no text is. The light on the floor is so soft
      that it has no edge anywhere, lies UNDER the deep middle, the rows and the text of a basin and keeps below its
      title row. Text itself never moves.
-   - Loops at rest take 9 to 46 s. Where the browser's compositor can do it (Chromium) they are drawn at a steady
+   - Loops at rest take 9 to 33 s. Where the browser's compositor can do it (Chromium) they are drawn at a steady
      beat of eight pictures a second (steps() as "gait"): every picture of a resting light makes the browser redo the
      backdrop blur of its sheet, and at these speeds no eye can tell eight pictures from sixty. Answers to a touch, to
      scrolling and to a change run at the full rate - they are short.
@@ -433,11 +444,14 @@
   /* loops at rest: length, and "gait" (the timing function between two keyframes). The keyframes have eight equal
      intervals; with the gait steps(N) for a loop of N seconds resting light is redrawn at a steady beat of eight
      pictures a second, and lights that started together are redrawn together. The lengths share no rhythm: the lights
-     never fall into step. (WebKit gets another gait, see below.) */
-  --wa-t-ruhe-1: 24s;  --wa-gang-1: steps(24);        /* the light on the lit rim of a sheet */
-  --wa-t-ruhe-2: 34s;  --wa-gang-2: steps(34);        /* the light on its far side */
-  --wa-t-ruhe-3: 40s;  --wa-gang-3: steps(40);        /* the light along a bar or a bottom sheet */
-  --wa-t-ruhe-4: 46s;  --wa-gang-4: steps(46);        /* the light on the floor of a basin */
+     never fall into step. (WebKit gets another gait, see below.)
+     The pace: owner's decision 7 (14.11.) - "a little faster", clearly less than 2.5 times. These four are about 1.4
+     times the pace first built (24 / 34 / 40 / 46 s, in the same proportions); to go back, set those four lengths and
+     their gaits again. A length always with its gait: steps(N) for N seconds. */
+  --wa-t-ruhe-1: 17s;  --wa-gang-1: steps(17);        /* the light on the lit rim of a sheet */
+  --wa-t-ruhe-2: 24s;  --wa-gang-2: steps(24);        /* the light on its far side */
+  --wa-t-ruhe-3: 29s;  --wa-gang-3: steps(29);        /* the light along a bar or a bottom sheet */
+  --wa-t-ruhe-4: 33s;  --wa-gang-4: steps(33);        /* the light on the floor of a basin */
   --wa-t-ruhe-kurz: 12s;  --wa-gang-kurz: steps(12);  /* for a light on something that stays only a moment (ready, not used: see the note in "Tropfen-Hinweis") */
   --wa-t-atem: 9s;  --wa-gang-atem: steps(9);         /* one breath of the bead that marks the active one of a bar */
   /* easings */
@@ -970,9 +984,8 @@
     transform-origin: 50% 0;
     animation: wa-kamm var(--wa-kamm-t) var(--wa-ease-flow) both;
   }
-  /* Leaving - READY BUT NOT USED: the app removes a sheet from one moment to the next, and the look does not hold it
-     back (a copy of a whole form would be fragile). When the app itself delays the removal by --wa-t-leave, it only has
-     to add the class wa-geht to the sheet: it sinks back like the wave it came as. */
+  /* Leaving: the APP keeps the sheet for --wa-t-leave with the class wa-geht (block "Gehen" below; in this app
+     src/ui/gehen.ts): it sinks back like the wave it came as. The look itself holds nothing back. */
   &.wa-geht { animation: wa-sinkt var(--wa-t-leave) var(--wa-ease-drain) both; pointer-events: none; }
   &.wa-geht::before { animation: none; }
 
@@ -1064,6 +1077,45 @@
 /* whatever leaves (a copy the script keeps, a sheet the app lets sink): with no motion wanted it is simply gone */
 @media (prefers-reduced-motion: reduce) { [data-wasser] .wa-geht { display: none !important; } }
 :root[data-motion="reduziert"] [data-wasser] .wa-geht { display: none !important; }
+@media (prefers-reduced-motion: reduce) { [data-wasser] .wa-leer-kommt { animation: none !important; } }
+:root[data-motion="reduziert"] [data-wasser] .wa-leer-kommt { animation: none !important; }
+
+/* -- Gehen (.wa-geht set by the APP): what the app takes away stays as a picture for --wa-t-leave and leaves like water.
+      The app keeps the very node (src/ui/gehen.ts in this app: a ref whose clean-up puts it back for that time with the
+      class wa-geht, inert and aria-hidden, and takes it out on animationend). The sheet sinks (block "Bogen", wa-sinkt;
+      the desktop's drawer flows out: desktop.css 6), and with it:
+      - its scrim: it clears (the page under it rests until the sheet is gone: its blur is computed once);
+      - the search: its scrim clears, the panel dives a little;
+      - a row of a list (.wa-geht--zeile with wa-geht; the app writes --wa-geht-h, its height, and --wa-geht-gap, the row-gap
+        of its list, into its style): it sinks and fades (gone from sight at 55 %), and from 30 % on its height runs to nothing, so the rows
+        below - and the cards below its card - close the gap. This is the second exception to "only transform and opacity"
+        (the first: the waterline of a field): a gap cannot close by a transform without the edge of the card jumping. It runs
+        once per removal, 0.26 s, on one element, never at rest. --wa-zeile-zu: none keeps the strict rule (the gap closes in
+        one picture at the end). In a grid or a row of tiles the app sets --wa-zeile-zu: none on the row itself.
+      - the empty text of a list (.wa-leer-kommt, set by the app on the text it shows in place of the LAST row that leaves):
+        unseen while that row leaves, then it fades in where it has landed (--wa-leer-kommt) - never two things at once in
+        the place of one, and the text never slides with the closing gap.
+      No motion wanted: gone at once (the two rules just above; the app does not wait either). -- */
+[data-wasser] :is(.sheet-back, .cmd-back).wa-geht { animation: wa-klart var(--wa-t-leave) var(--wa-ease-drain) both; pointer-events: none; }
+[data-wasser] .cmd-back.wa-geht > .cmd { animation: wa-taucht var(--wa-t-leave) var(--wa-ease-drain) both; }
+[data-wasser] .wa-geht--zeile {
+  box-sizing: border-box;
+  overflow: hidden;                             /* (its content, while its height runs out) */
+  flex-shrink: 0;                               /* (in a list that is a flex column of fixed height - a panel - a row with overflow: hidden would otherwise be squeezed first) */
+  pointer-events: none;
+  animation: wa-zeile-sinkt var(--wa-t-leave) var(--wa-ease-drain) both, var(--wa-zeile-zu) var(--wa-t-leave) var(--wa-ease-flow) both;
+}
+[data-wasser] .wa-leer-kommt { animation: var(--wa-leer-kommt) var(--wa-t-leave) var(--wa-ease-flow) var(--wa-t-leave) both; }
+@keyframes wa-klart { to { opacity: 0; } }
+@keyframes wa-leer-kommt { from { opacity: 0; } }
+@keyframes wa-taucht { to { opacity: 0; transform: translateY(var(--wa-setzt-rise)); } }
+@keyframes wa-zeile-sinkt {                    /* gone from sight by the middle: its height runs out behind it, never through its words */
+  55%, 100% { opacity: 0; transform: translateY(var(--wa-zeile-tief)) scale(.98); }
+}
+@keyframes wa-zeile-zu {                        /* holds its height for the first third (it begins to sink), then runs out: fast, arriving softly (--wa-ease-flow) */
+  0%, 30% { height: var(--wa-geht-h); }
+  100% { height: 0; min-height: 0; padding-top: 0; padding-bottom: 0; border-top-width: 0; border-bottom-width: 0; margin-top: 0; margin-bottom: calc(-1 * var(--wa-geht-gap, 0px)); }
+}
 
 /* ---------------------------------------------------------------------------------------------------- Stufe 1 --- */
 

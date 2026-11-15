@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../store';
 import { buildIndex, score } from '../lib/search';
 import { ISearch } from './Icons';
+import { gehtBogen } from './gehen';
 
 export function CommandBar() {
   const s = useStore();
@@ -16,7 +17,7 @@ export function CommandBar() {
   const run = (i: number) => { const h = hits[i]; if (!h) return; s.touchRecent(h.id); close(); h.action(); };
   const groups: string[] = []; hits.forEach((h) => { if (!groups.includes(h.group)) groups.push(h.group); });
   return (
-    <div className="cmd-back" onClick={close}>
+    <div className="cmd-back" ref={gehtBogen} onClick={close}>
       <div className="glass glass--strong cmd" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Suche">
         <div className="cmd__input"><ISearch /><input ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Projekte, Versionen, Aufgaben, Rollen, Geräte … oder „Gehe zu Wetter“" onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setSel((x) => Math.min(hits.length - 1, x + 1)); } if (e.key === 'ArrowUp') { e.preventDefault(); setSel((x) => Math.max(0, x - 1)); } if (e.key === 'Enter') run(sel); if (e.key === 'Escape') close(); }} /><kbd className="pill xs">Esc</kbd></div>
         <div className="cmd__list">

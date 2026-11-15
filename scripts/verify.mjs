@@ -235,7 +235,8 @@ check('Mobile: dark theme forced', (await pm.evaluate(() => document.documentEle
 await pm.locator('.m-tabs button', { hasText: 'Heute' }).click(); await pm.waitForTimeout(400);
 const openBefore = await pm.locator('.m-main .m-row .check').count();
 await pm.locator('.m-main .m-row .check').first().click(); await pm.waitForTimeout(300);
-check('Mobile: task toggle removes it from open list', (await pm.locator('.m-main .m-row .check').count()) < openBefore, `${openBefore} → ${await pm.locator('.m-main .m-row .check').count()}`);
+// (:not(.wa-geht): a row that leaves softly stays for 0.26 s as an inert picture - Wasser-Look, src/ui/gehen.ts - it is not a row of the list any more)
+check('Mobile: task toggle removes it from open list', (await pm.locator('.m-main .m-row:not(.wa-geht) .check').count()) < openBefore, `${openBefore} → ${await pm.locator('.m-main .m-row:not(.wa-geht) .check').count()}`);
 await pm.locator('.m-tabs button', { hasText: 'Projekte' }).click(); await pm.waitForTimeout(400);
 await pm.locator('.m-row--click').first().click(); await pm.waitForTimeout(500);
 check('Mobile: project card opens', /#\/projekte\/p-/.test(await pm.evaluate(() => location.hash)) && (await pm.locator('.m-hero h2').count()) === 1);
@@ -258,7 +259,7 @@ const added = await shopRow.count();
 await shopRow.locator('.check').click(); await pm.waitForTimeout(200);
 const ticked = await pm.evaluate(() => JSON.parse(localStorage.getItem('3druckwerkbank:v1')).state.shopping.find((x) => x.title === 'Testfilament Rot')?.done);
 await shopRow.locator('button[aria-label$="von der Liste entfernen"]').click(); await pm.waitForTimeout(250);
-const removed = await pm.locator('.m-main .m-shop', { hasText: 'Testfilament Rot' }).count();
+const removed = await pm.locator('.m-main .m-shop:not(.wa-geht)', { hasText: 'Testfilament Rot' }).count();   // (the leaving picture of the row does not count, see above)
 await pm.locator('.toast__undo').click(); await pm.waitForTimeout(250);
 const back = await pm.locator('.m-main .m-shop', { hasText: 'Testfilament Rot' }).count();
 check('Mobile: shopping list add, tick, remove, undo', added === 1 && ticked === true && removed === 0 && back === 1, `${added} ${ticked} ${removed} ${back}`);

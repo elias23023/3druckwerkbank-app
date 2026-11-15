@@ -346,6 +346,9 @@ p { margin: 0; }
 .badge { position: absolute; top: -3px; right: -3px; min-width: 17px; height: 17px; border-radius: 999px; background: #ff5f5f; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 4px; border: 2px solid rgba(12,19,33,.9); }
 .topbar .brand { text-align: left; }
 .topbar__search { margin-left: auto; margin-right: auto; width: min(520px, 32vw); justify-content: flex-start; }
+/* Start: clock, date, greeting and weather stand in the card of the day, so the bar is short on the right - the search is centred on the screen there, not between the two groups (the other worlds keep their bar as it is) */
+.topbar--start .topbar__search { position: absolute; left: 0; right: 0; margin: 0 auto; }
+.topbar--start .topbar__search + * { margin-left: auto; }
 .topbar__clock { margin-left: 0; }
 .topbar__user { display: flex; flex-direction: column; line-height: 1.15; text-align: left; color: #f4f6fb; text-shadow: 0 1px 8px rgba(0,0,0,.5); }
 .topbar__user .muted { color: rgba(244,246,251,.75); }

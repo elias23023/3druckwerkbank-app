@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import './mobile.css';
 import { useWasser } from '../wasser/wasser'; // nach mobile.css: die Stylesheets des Looks kommen zuletzt
 import { useStore, availableGrams, activeProjects, archivedProjects, printProgress, printRemainingMin, liveProjects } from '../store';
@@ -19,6 +19,7 @@ import { Tageskarte } from '../ui/Tageskarte';
 import { SheetHost } from '../ui/SheetHost';
 import { CommandBar } from '../ui/CommandBar';
 import { Toast } from '../ui/Toast';
+import { weich, leer } from '../ui/gehen';
 import { useHints } from '../ui/Hinweise';
 import { STAGES, type Project } from '../types';
 import { IHome, IClock, IFlag, ILayers, IList, ISearch, IBolt, IGear, IUser, IPrinter, ISun, IArchive, IArrowL, IChevR, IPlus, ISkip, IPlay, ISpool, IWrench, ICal, ICart, ITrash } from '../ui/Icons';
@@ -35,6 +36,74 @@ function Card({ title, icon, count, children, onMore }: { title?: string; icon?:
   return <section className="glass m-card">{title ? <h3>{icon}{title}{count !== undefined ? <span className="cnt pill xs">{count}</span> : null}{onMore ? <button className="btn btn--icon btn--ghost" style={{ marginLeft: count === undefined ? 'auto' : 0 }} onClick={onMore} aria-label={`${title}: alles anzeigen`}><IChevR /></button> : null}</h3> : null}{children}</section>;
 }
 
+/** The painted scene of a view: the same address in the page and in the preloading below (the browser picks one candidate of the srcset for both). */
+const sceneSrcSet = (k: string) => `/img/szene-${k}-640.webp 640w, /img/szene-${k}-1280.webp 1280w`;
+const TAB_SCENES = ['start', 'heute', 'projekte', 'material', 'druck'];   // the scenes of the five tabs ("Mehr" opens on "druck")
+/** Loads the scenes of the other tabs in a quiet moment after the start - once per start of the phone view, not when the connection asks to
+ *  save data - and hands them to the water look, which makes them ready for its drops (Wasser.warm). So the first visit of a tab waits
+ *  neither for the network nor for the picture inside the drops. */
+function usePreloadScenes(current: string) {
+  useEffect(() => {
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+    if (nav.connection?.saveData) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    let idle = 0; const imgs: HTMLImageElement[] = [];
+    const load = () => {
+      for (const k of TAB_SCENES) {
+        if (k === current) continue;
+        const img = new Image(); img.decoding = 'async'; img.setAttribute('fetchpriority', 'low');
+        img.sizes = '100vw'; img.srcset = sceneSrcSet(k); img.src = `/img/szene-${k}-1280.webp`;   // (sizes before srcset, as the page has them)
+        imgs.push(img);
+      }
+      window.Wasser?.warm?.(imgs);
+    };
+    const t = window.setTimeout(() => { idle = w.requestIdleCallback ? w.requestIdleCallback(load, { timeout: 3000 }) : window.setTimeout(load, 0); }, 1200);   // after the first pictures of the start
+    return () => { window.clearTimeout(t); if (idle) { if (w.cancelIdleCallback) w.cancelIdleCallback(idle); else window.clearTimeout(idle); } };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+type Bg = { src: string; srcSet?: string };
+/** CSS time ("0.62s", "620ms") in ms. */
+const cssMs = (v: string) => { const n = parseFloat(v); return !(n > 0) ? 0 : /ms\s*$/.test(v) ? n : n * 1000; };
+/** The picture behind the phone shell. A new ADDRESS (today another view's scene, later another time of day) is not cut in:
+ *  the new picture lies over the old one, invisible while it loads (data-szene="laedt", mobile.css), fades in once it is loaded
+ *  and decoded (data-szene="kommt": the look's --wa-t-szene and --wa-ease-szene, mobil.css), and only then the old one goes.
+ *  Never more than two pictures: a newer address replaces one that is still on its way. Where the fade has no animation (no
+ *  look, reduced motion) the new one replaces the old one as soon as it has loaded. Nothing shows dark or empty in between.
+ *  The look's drops take the newest picture and blend the two as the page does (wasser.js, option "scene"). */
+function SceneBg({ src, srcSet }: Bg) {
+  const [base, setBase] = useState<Bg>({ src, srcSet });
+  const [next, setNext] = useState<(Bg & { on: boolean; bad?: boolean }) | null>(null);
+  // follow the wanted address (state adjusted while rendering: React's way for state derived from props)
+  if (src === base.src) { if (next) setNext(null); }
+  else if (!next || next.src !== src) setNext({ src, srcSet, on: false });
+  const img = useRef<HTMLImageElement | null>(null);
+  const cur = useRef(next); cur.current = next;
+  const finish = (want: string) => { const n = cur.current; if (!n || n.src !== want) return; setBase({ src: n.src, srcSet: n.srcSet }); setNext(null); };
+  const ready = (el: HTMLImageElement, want: string) => {
+    const go = () => setNext((n) => (n && n.src === want && !n.on ? { ...n, on: true } : n));
+    (el.decode ? el.decode() : Promise.resolve()).then(go, go);
+  };
+  // already in the cache: no load event may come
+  useEffect(() => { const el = img.current; if (next && !next.on && el && el.complete && el.naturalWidth) ready(el, next.src); }, [next?.src]); // eslint-disable-line react-hooks/exhaustive-deps
+  // fading: wait for its end (at the latest its time and a little more); no fade at all: done at once
+  useLayoutEffect(() => {
+    const el = img.current; if (!next?.on || !el) return;
+    const cs = getComputedStyle(el), t = cssMs(cs.animationDuration) + cssMs(cs.animationDelay);
+    if (cs.animationName === 'none' || !t) { finish(next.src); return; }
+    const want = next.src, timer = window.setTimeout(() => finish(want), t + 250);
+    return () => window.clearTimeout(timer);
+  }, [next?.on, next?.src]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className="m-bg" aria-hidden>
+      <img key={base.src} src={base.src} srcSet={base.srcSet} sizes="100vw" alt="" />
+      {next && !next.bad ? <img key={next.src} ref={img} src={next.src} srcSet={next.srcSet} sizes="100vw" alt="" decoding="async" data-szene={next.on ? 'kommt' : 'laedt'}
+        onLoad={(e) => ready(e.currentTarget, next.src)} onError={() => setNext((n) => (n && n.src === next.src ? { ...n, bad: true } : n))}
+        onAnimationEnd={(e) => { if (e.target === e.currentTarget) finish(next.src); }} /> : null}
+    </div>
+  );
+}
+
 export function Mobile() {
   const route = useRoute();
   const now = useNow(1000);
@@ -49,11 +118,12 @@ export function Mobile() {
   const go = (t: Tab) => navigate({ world: t === 'mehr' ? 'druck' : t });
   // background: one of the eight painted scenes (island over the lake), chosen by tab / view
   const scene = project ? 'innen' : tab === 'mehr' ? (route.world === 'wetter' ? 'wetter' : route.world === 'archiv' ? 'archiv' : 'druck') : tab;
+  usePreloadScenes(scene);
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
     <div className="m-shell" data-wasser="mobil" data-look={look}>
-      <div className="m-bg" aria-hidden><img key={scene} src={`/img/szene-${scene}-1280.webp`} srcSet={`/img/szene-${scene}-640.webp 640w, /img/szene-${scene}-1280.webp 1280w`} sizes="100vw" alt="" /></div>
+      <SceneBg src={`/img/szene-${scene}-1280.webp`} srcSet={sceneSrcSet(scene)} />
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
         <span className="spacer" />
@@ -118,8 +188,8 @@ function MHeute({ now }: { now: Date }) {
   return (
     <>
       <Card title="Aufgaben" icon={<IClock />} count={`${open.length} offen`}>
-        {open.length === 0 ? <span className="muted small">{done ? `Alles erledigt (${done}).` : 'Noch keine Aufgaben. Aufgaben legst du im Projekt an.'}</span> : open.map((t) => (
-          <div key={t.id} className="m-row"><Check on={t.done} onClick={() => a.toggleTask(t.id)} /><div className="col grow" style={{ gap: 1 }}><span>{t.title}</span><span className="xs muted">{projects.find((p) => p.id === t.projectId)?.name ?? devices.find((d) => d.id === t.deviceId)?.name ?? t.kind}{t.due ? ` · ${relTime(t.due, now.getTime())}` : ''}</span></div><button className="btn btn--icon btn--ghost" onClick={() => a.skipTask(t.id)} aria-label="Überspringen"><ISkip width={16} height={16} /></button></div>
+        {open.length === 0 ? <span {...leer()} className="muted small">{done ? `Alles erledigt (${done}).` : 'Noch keine Aufgaben. Aufgaben legst du im Projekt an.'}</span> : open.map((t) => (
+          <div key={t.id} {...weich(t.id)} className="m-row"><Check on={t.done} onClick={() => a.toggleTask(t.id)} /><div className="col grow" style={{ gap: 1 }}><span>{t.title}</span><span className="xs muted">{projects.find((p) => p.id === t.projectId)?.name ?? devices.find((d) => d.id === t.deviceId)?.name ?? t.kind}{t.due ? ` · ${relTime(t.due, now.getTime())}` : ''}</span></div><button className="btn btn--icon btn--ghost" onClick={() => a.skipTask(t.id)} aria-label="Überspringen"><ISkip width={16} height={16} /></button></div>
         ))}
       </Card>
       <Card title="Drucker" icon={<IPrinter />}>
@@ -129,8 +199,8 @@ function MHeute({ now }: { now: Date }) {
       </Card>
       <Card title="Termine & Wartung" icon={<ICal />}>
         {upcoming.map((x) => <div key={x.id} className="m-row"><i className="dot" style={{ background: '#c59bff' }} /><span className="muted" style={{ width: 62 }}>{dayLabel(x.at, now)}</span><span className="grow ellipsis">{x.title}</span></div>)}
-        {due.map(({ d, m }) => <div key={m.id} className="m-row"><Check on={m.done} onClick={() => a.toggleMaintenance(d.id, m.id)} /><div className="col grow" style={{ gap: 1 }}><span>{d.name}: {m.title}</span><span className="xs muted">{new Date(m.due).getTime() < now.getTime() ? 'überfällig' : relTime(m.due, now.getTime())}</span></div></div>)}
-        {upcoming.length + due.length === 0 ? <span className="muted small">Nichts anstehend.</span> : null}
+        {due.map(({ d, m }) => <div key={m.id} {...weich(m.id)} className="m-row"><Check on={m.done} onClick={() => a.toggleMaintenance(d.id, m.id)} /><div className="col grow" style={{ gap: 1 }}><span>{d.name}: {m.title}</span><span className="xs muted">{new Date(m.due).getTime() < now.getTime() ? 'überfällig' : relTime(m.due, now.getTime())}</span></div></div>)}
+        {upcoming.length + due.length === 0 ? <span {...leer()} className="muted small">Nichts anstehend.</span> : null}
       </Card>
     </>
   );
@@ -174,7 +244,7 @@ function MProjekt({ p, now }: { p: Project; now: Date }) {
         <div className="m-ms">{ms.map((m) => <div key={m.id} className="m-row"><Check on={m.done} skip={m.skipped} onClick={() => st.setMilestone(p.id, m.id, { done: !m.done, skipped: false })} /><span className="grow" style={{ textDecoration: m.skipped ? 'line-through' : undefined, opacity: m.done ? .7 : 1 }}>{m.title}</span></div>)}</div>
       </Card>
       <Card title="Aufgaben" icon={<IClock />} count={tasks.filter((t) => !t.done && !t.skipped).length} onMore={() => st.openSheet({ kind: 'projektDetail', projectId: p.id, tab: 'aufgaben' })}>
-        {tasks.filter((t) => !t.done && !t.skipped).map((t) => <div key={t.id} className="m-row"><Check on={t.done} onClick={() => st.toggleTask(t.id)} /><span className="grow">{t.title}</span></div>)}
+        {tasks.filter((t) => !t.done && !t.skipped).map((t) => <div key={t.id} {...weich(t.id)} className="m-row"><Check on={t.done} onClick={() => st.toggleTask(t.id)} /><span className="grow">{t.title}</span></div>)}
         <input className="input" placeholder="Aufgabe hinzufügen …" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newTask.trim()) { st.addTask({ projectId: p.id, title: newTask.trim(), kind: 'allgemein' }); setNewTask(''); } }} />
       </Card>
       <Card title="Drucke" icon={<IPrinter />} count={prints.length} onMore={() => st.openSheet({ kind: 'projektDetail', projectId: p.id, tab: 'drucke' })}>
@@ -211,8 +281,8 @@ function MMaterial() {
         <button className="btn" onClick={() => openSheet({ kind: 'spule' })}><IPlus width={14} height={14} /> Neue Rolle</button>
       </Card>
       <Card title="Einkaufsliste" icon={<ICart />} count={openItems}>
-        {shopping.length === 0 ? <span className="muted small">Noch nichts auf der Liste.</span> : null}
-        {[...shopping].sort((a, b) => Number(a.done) - Number(b.done)).map((it) => <div key={it.id} className="m-row m-shop"><Check on={it.done} onClick={() => sh.toggle(it.id)} label={it.done ? `${it.title}: erledigt` : `${it.title}: offen`} /><div className="col grow" style={{ gap: 1, minWidth: 0 }}><span className="ellipsis" style={{ textDecoration: it.done ? 'line-through' : undefined, opacity: it.done ? .6 : 1 }}>{it.title}</span><span className="xs muted">{[it.qty && it.qty !== '1' ? `× ${it.qty}` : '', it.price ? `${fmtNum(it.price, 2)} €` : '', projects.find((p) => p.id === it.projectId)?.name ?? ''].filter(Boolean).join(' · ') || 'ohne Angaben'}</span></div>{it.url && /^https?:\/\//i.test(it.url) ? <a className="btn btn--sm btn--ghost" href={it.url} target="_blank" rel="noreferrer noopener">Link</a> : null}<button className="btn btn--icon btn--ghost" aria-label={`${it.title} von der Liste entfernen`} onClick={() => sh.remove(it.id)}><ITrash width={18} height={18} /></button></div>)}
+        {shopping.length === 0 ? <span {...leer()} className="muted small">Noch nichts auf der Liste.</span> : null}
+        {[...shopping].sort((a, b) => Number(a.done) - Number(b.done)).map((it) => <div key={it.id} {...weich(it.id)} className="m-row m-shop"><Check on={it.done} onClick={() => sh.toggle(it.id)} label={it.done ? `${it.title}: erledigt` : `${it.title}: offen`} /><div className="col grow" style={{ gap: 1, minWidth: 0 }}><span className="ellipsis" style={{ textDecoration: it.done ? 'line-through' : undefined, opacity: it.done ? .6 : 1 }}>{it.title}</span><span className="xs muted">{[it.qty && it.qty !== '1' ? `× ${it.qty}` : '', it.price ? `${fmtNum(it.price, 2)} €` : '', projects.find((p) => p.id === it.projectId)?.name ?? ''].filter(Boolean).join(' · ') || 'ohne Angaben'}</span></div>{it.url && /^https?:\/\//i.test(it.url) ? <a className="btn btn--sm btn--ghost" href={it.url} target="_blank" rel="noreferrer noopener">Link</a> : null}<button className="btn btn--icon btn--ghost" aria-label={`${it.title} von der Liste entfernen`} onClick={() => sh.remove(it.id)}><ITrash width={18} height={18} /></button></div>)}
         <div className="row" style={{ gap: 8 }}><input className="input grow" placeholder="Was fehlt? z. B. PETG Schwarz" aria-label="Auf die Einkaufsliste" value={buy} maxLength={80} onChange={(e) => setBuy(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addBuy(); }} /><button className="btn" disabled={!buy.trim()} onClick={addBuy}><IPlus width={14} height={14} /> Dazu</button></div>
         <span className="xs faint">Produktlinks lösen keine Bestellung aus.</span>
       </Card>
