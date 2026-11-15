@@ -1,25 +1,22 @@
 // Takes the user's Alpensee set (his own images) into assets-src, nothing is painted:
 //   <eingang>/Alpensee-Desktop/<season>/<NN-phase>.png    (1672x941)  -> assets-src/landschaft-<season>-<key>.png (copied as is)
-//   <eingang>/Alpensee-Hochformat/<season>/<NN-phase>.png (830x1896 or 852x1846) -> assets-src/szenen/szene-<season>-<key>.png
-//     one size for all portrait images, never upscaled: 830x1846. 852 wide: 11 px off each side; 1896 high: 50 px off the
-//     bottom (stones under water), so the peaks at the top stay whole.
+//   (the portrait set Alpensee-Hochformat is not taken any more: since 15.11. the phone shows one picture per page,
+//   assets-src/szenen/seite-<key>.png, scripts/optimize-scenes.mjs)
 // One retouch, nothing else: herbst/05-blaue-stunde (desktop) has a small pale blob in the sky (about x 1593-1629,
 // y 104-125, partly behind a larch top). The sky around it is fitted per channel (plane + curve over the rows); inside a
 // feathered ellipse a pixel that is pure veil becomes that sky plus the grain of the real sky 48 px further left in the
 // same row, a pixel that is (partly) larch only loses the lift of the veil, weighted by how blue it is - the tree stays.
-// Checked at 3x zoom (before | after); the other 23 desktop images and all portrait images are not retouched.
-// Then: node scripts/grade-regen.mjs, node scripts/optimize-landscapes.mjs, node scripts/optimize-scenes.mjs
+// Checked at 3x zoom (before | after); the other 23 desktop images are not retouched.
+// Then: node scripts/grade-regen.mjs, node scripts/optimize-landscapes.mjs
 // usage: node scripts/prepare-alpensee.mjs <eingang-ordner>
 import sharp from 'sharp';
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync } from 'node:fs';
 import path from 'node:path';
 
 const src = process.argv[2];
-if (!src) { console.error('usage: node scripts/prepare-alpensee.mjs <ordner mit Alpensee-Desktop und Alpensee-Hochformat>'); process.exit(1); }
+if (!src) { console.error('usage: node scripts/prepare-alpensee.mjs <ordner mit Alpensee-Desktop>'); process.exit(1); }
 const SEASONS = ['fruehling', 'sommer', 'herbst', 'winter'];
 const PHASES = { '01-morgendaemmerung': 'daemmerung', '02-morgen': 'morgen', '03-mittag': 'mittag', '04-abend': 'abend', '05-blaue-stunde': 'blau', '06-nacht': 'nacht' };
-const W = 830, H = 1846;
-mkdirSync('assets-src/szenen', { recursive: true });
 
 /** The one retouch (see above). Returns PNG data. */
 async function retouchHerbstBlau(file) {
@@ -83,9 +80,5 @@ async function retouchHerbstBlau(file) {
 for (const season of SEASONS) for (const [file, key] of Object.entries(PHASES)) {
   const d = path.join(src, 'Alpensee-Desktop', season, `${file}.png`), out = `assets-src/landschaft-${season}-${key}.png`;
   if (season === 'herbst' && key === 'blau') await sharp(await retouchHerbstBlau(d)).toFile(out); else copyFileSync(d, out);
-  const p = path.join(src, 'Alpensee-Hochformat', season, `${file}.png`);
-  const m = await sharp(p).metadata();
-  if (m.width < W || m.height < H) throw new Error(`${p}: ${m.width}x${m.height} is smaller than ${W}x${H}`);
-  await sharp(p).removeAlpha().extract({ left: Math.floor((m.width - W) / 2), top: 0, width: W, height: H }).png({ compressionLevel: 9 }).toFile(`assets-src/szenen/szene-${season}-${key}.png`);
-  console.log(season, key, `desktop ok, hochformat ${m.width}x${m.height} -> ${W}x${H}`);
+  console.log(season, key, 'desktop ok');
 }
