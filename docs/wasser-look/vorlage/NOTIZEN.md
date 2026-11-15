@@ -1312,9 +1312,13 @@ only offsets a start by fractions of `--wa-t-ruhe-3`).
   on the desktop by day), below 3, before and after. The field carries no class of the look; its placeholder has the
   browser's colour. In "dunkel" it has 4.0 and may not change, so a repair needs a tone token of its own.
 - "dunkel": `sollist.mjs --soll git:52dfff3 --toene dunkel --zeiten nacht,tag` (the state before this step; against
-  `feinschliff-basis` the step before differs in sheets): 164 screens, 148 equal, 10 `ok*`, 6 DIFF - all noise: phone
-  "neuerolle" / "geraet" (largest 1 of 255, nearly all inside drop canvases; equal when repeated; the same build
-  against ITSELF shows the same kind of difference on "geraet"), desktop 1920 "start" / "leer-start" at the island
+  `feinschliff-basis` the step before differs in sheets): 164 screens, 148 equal, 10 `ok*`, 6 DIFF. CORRECTED 15.11., 01:30 (quiet
+  machine, after a restart): the phone pair is NOT noise. "neuerolle" / "geraet" differ the same way in every run (796
+  and 3571 px, largest 1 of 255, all but 3 resp. 9 inside the drop canvases of the head behind the open sheet); 52dfff3
+  against itself and HEAD against itself are equal; a build of HEAD with the OLD four lengths (24/34/40/46 s) is equal
+  to 52dfff3 on both screens. So the PACE causes it (decision 7, both tones), not the tone "klar". How a light length
+  reaches the water of a drop behind a sheet under reduced motion is not found (at rest on "Start" no animation runs at
+  all with reduced motion). The earlier "same build against itself shows it too" came from a run under load. Desktop 1920 "start" / "leer-start" at the island
   "Projekte" (the same build against itself: 3013 and 19142 px there, pitfall 73). Desktop 2000 "archiv" by day differed
   once (698 px) and was equal in the second run. The first run was stopped by a time limit after 122 screens; the desktop
   by day was then run alone. The checker of this workflow ran its own sollist at the same time (load).

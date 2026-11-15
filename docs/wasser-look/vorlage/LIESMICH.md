@@ -237,6 +237,7 @@ wandernden Lichter laufen etwa 1,4-mal so schnell (17 / 24 / 29 / 33 s statt 24 
 Der Ton „klar“ ist durchsichtiger: weniger Tiefe in der Mitte der Karten und Panels, am Desktop dunkelt ein Panel die
 Landschaft weniger ab. Damit die Titel der Panels auch an einem Wintertag lesbar bleiben, liegt im Ton „klar“ ein
 weicher Schatten über dem Kopf jedes Panels (auf der Tageskarte unter Gruß, Uhr und Datum); Dock, Wetterzeichen und
-Suche behalten ihre Abdunkelung. Zwei neue Werte je Ton (`--wa-weit-grund-panel`, `--wa-weit-kopf`), „dunkel“ ist
-Bildpunkt für Bildpunkt gleich. Bilder vorher/nachher und der Film zum Tempo: `docs/wasser-look/entwurf/tempo-und-ton/`;
+Suche behalten ihre Abdunkelung. Zwei neue Werte je Ton (`--wa-weit-grund-panel`, `--wa-weit-kopf`), „dunkel“ bleibt
+durch den Ton Bildpunkt für Bildpunkt gleich (nur das Tempo ändert dort hinter zwei Bögen das Wasser zweier Tropfen um
+1 von 255). Bilder vorher/nachher und der Film zum Tempo: `docs/wasser-look/entwurf/tempo-und-ton/`;
 Werte, Zahlen und wie man sie zurückdreht: `docs/Wasser-Look.md`, Abschnitt 8, Schritte 9 und 10.
