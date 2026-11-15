@@ -42,8 +42,18 @@ Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store 
 - Bambu-Cloud (`server/bambu.js`, Versuch, nicht offiziell dokumentierte Schnittstelle): Eigentümer meldet das Bambu-Konto im Konto-Panel an (`src/ui/Werkstatt.tsx`, `BambuFeld`), der Server speichert nur den Zugangstoken, verschlüsselt mit `app_secret` (Tabelle `bambu`), hält je Werkstatt eine MQTT-Verbindung und meldet Änderungen über den Live-Kanal (`{printers:true}`). Nur lesen: kein Steuern, kein automatisches Buchen. Oberfläche: `src/lib/bambu.ts`, Zuordnung über `Device.bambuId` im Geräteformular, Anzeige in der Druckwelt. **Mit echtem Bambu-Konto und Drucker noch nie getestet**; Zwei-Faktor-Anmeldung wird nicht unterstützt.
 - Mails lassen sich aus der Testumgebung nicht lesen. Für Tests mit mehreren Konten eine Testvariante nur für den Upload bauen (`scripts/ws-testvariante.sh <ordner>`: direkte Registrierung, Einladungs-Token in der Antwort), dagegen `scripts/ws-api.mjs` (46 Tests der Schnittstelle, braucht `NODE_USE_ENV_PROXY=1`) und `scripts/ws-e2e.mjs` (24 Tests mit zwei Browsern) laufen lassen, danach wieder die saubere Fassung einspielen. Die Registrierung ist auf 10 Versuche je Anschluss in 15 Minuten begrenzt: in Tests nicht in einer Schleife registrieren. Nie an fremde echte Adressen mailen.
 
+## Wasser-Look (live seit 14.11., Feinschliff seit 15.11.)
+- Der Look der ganzen App (Tropfen, Becken, Lichter) kommt aus der Vorlage `docs/wasser-look/vorlage/` (`kern.css`, `mobil.css`, `desktop.css`, `wasser.js`). Die Kopien in `src/wasser/` nie von Hand ändern: Vorlage ändern, dann `node scripts/wasser/uebernehmen.mjs`. Anleitung: `docs/Wasser-Look.md`, Entscheidungen des Nutzers: `docs/wasser-look/entwurf/entscheidungen.md`.
+- Nach jeder Änderung an Oberfläche oder Look zusätzlich: `WASSER_APP=<adresse> node scripts/wasser/pruefen.mjs --app` (64 Prüfungen, Handy) und `node scripts/wasser/desktop.mjs pruefen` (27, Desktop). Nacheinander laufen lassen, nicht neben anderen schweren Jobs (unter Last fallen einzelne Zeitprüfungen durch).
+- Weiches Verschwinden: Zeilen in Listen bekommen `{...weich(id)}`, leere Texte `leer()` (`src/ui/gehen.ts`). Der Handy-Hintergrund (`SceneBg` in `src/mobile/Mobile.tsx`) richtet sich nach Jahreszeit und Tageszeit wie die Landschaft am Desktop.
+
+## Installierbare App (live seit 14.11.)
+- `public/manifest.webmanifest`, `public/sw.js` (Platzhalter füllt `vite.config.ts`), `src/lib/pwa.ts`, Beschreibung und Notausgang in `docs/PWA.md`. Der Server liefert `sw.js` mit `no-cache` und beantwortet fehlende Dateien unter `/assets`, `/img`, `/icons` mit 404 (nie mit der Startseite).
+- Das Hostinger-CDN bearbeitet `.jpg` und `.png` (ein 1920 px breites Vorschaubild kam mit 1600 px an); `.webp` und `.avif` bleiben unverändert. Bilder, deren Größe im Manifest steht, höchstens 1600 px breit liefern.
+- Playwright-Messungen, die Dateien ersetzen oder zählen, brauchen `serviceWorkers: 'block'` im Kontext.
+
 ## Prüfen
-- `npm run build` muss fehlerfrei sein. `npm run preview` + `node scripts/verify.mjs http://localhost:4173` (69 Playwright-Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code).
+- `npm run build` muss fehlerfrei sein. `npm run preview` + `node scripts/verify.mjs http://localhost:4173` (80 Playwright-Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code).
 - Screenshots: `node scripts/shot.mjs <url> <out.png> 1920 1080`, mit fester Uhrzeit `node scripts/shot-day.mjs <url> <out.png> 2026-11-06T13:40:00+01:00`, Mobil `node scripts/shot-mobile.mjs <base> <ordner>`. Playwright liegt unter `/opt/node-tools/node_modules/playwright/index.js`.
 - Layout immer in zwei Formaten prüfen: 1920×1080 und 2000×993 (Bildschirm des Nutzers, 2:1). Inseln dürfen nicht von Texten oder Panels überdeckt werden; Seitenpanels liegen in `PanelColumn`-Spalten.
 

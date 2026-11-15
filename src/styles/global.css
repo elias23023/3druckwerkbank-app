@@ -529,7 +529,7 @@ p { margin: 0; }
      taken from the look's tokens here, because the list of the block lives in the template (kern.css) and is not this branch's.
      Without the look (no tokens): plain smoke glass. The names of islands: switch with the ONE class island__label--feld
      (set in Island.tsx, LABEL_FIELD); without it they stand free as before. */
-.panel-col > .feld-kopf { gap: 7px; padding: 12px 16px 14px; }
+.panel-col > .feld-kopf { gap: 7px; padding: 12px 15px 14px; }
 .feld-kopf h1 { font-size: 30px; font-weight: 600; letter-spacing: -.02em; line-height: 1.08; overflow-wrap: anywhere; }
 .feld-kopf__sub { color: var(--text-2); font-size: 13.5px; line-height: 1.35; }
 .feld-kopf .back { margin-bottom: -2px; align-self: flex-start; }

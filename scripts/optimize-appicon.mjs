@@ -69,7 +69,7 @@ if (shotBase) {
   // screenshots of the running app (demo workshop) for the richer install dialog of Chromium; fixed time of day so the picture is repeatable
   const { chromium } = (await import('/opt/node-tools/node_modules/playwright/index.js')).default;
   const browser = await chromium.launch();
-  for (const [name, viewport, dpr] of [['screenshot-breit.jpg', { width: 1920, height: 1080 }, 1], ['screenshot-schmal.jpg', { width: 390, height: 844 }, 2]]) {
+  for (const [name, viewport, dpr] of [['screenshot-breit.jpg', { width: 1600, height: 900 }, 1], ['screenshot-schmal.jpg', { width: 390, height: 844 }, 2]]) {
     const ctx = await browser.newContext({ viewport, deviceScaleFactor: dpr, isMobile: dpr > 1, hasTouch: dpr > 1, timezoneId: 'Europe/Vienna', locale: 'de-AT', serviceWorkers: 'block' });
     const page = await ctx.newPage();
     await page.clock.install({ time: new Date('2026-11-14T11:20:00+01:00') });
