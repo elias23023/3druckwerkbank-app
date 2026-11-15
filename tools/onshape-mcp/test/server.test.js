@@ -4,7 +4,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 test('server starts without keys, lists tools and reports missing keys', async () => {
-  const transport = new StdioClientTransport({ command: process.execPath, args: ['src/index.js'], env: { PATH: process.env.PATH } });
+  const transport = new StdioClientTransport({ command: process.execPath, args: ['src/index.js'], env: { ...process.env, ONSHAPE_ACCESS_KEY: '', ONSHAPE_SECRET_KEY: '' } });
   const client = new Client({ name: 'test', version: '1' });
   await client.connect(transport);
   const { tools } = await client.listTools();
