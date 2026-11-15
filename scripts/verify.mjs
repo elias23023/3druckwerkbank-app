@@ -88,14 +88,37 @@ check('Reduced motion disables float', anim.length === 0, anim.join(','));
 await ctx3.close();
 // ---- seasonal landscapes by real sunrise/sunset (clock pinned to TODAY's date, because Open-Meteo only returns today onwards; November = Herbst) ----
 const TODAY = new Date().toISOString().slice(0, 10);
-for (const [iso, look, key] of [[`${TODAY}T06:05:00+01:00`, 'daemmerung', 'herbst-morgen'], [`${TODAY}T12:30:00+01:00`, 'mittag', 'herbst-mittag'], [`${TODAY}T16:50:00+01:00`, 'sonnenuntergang', 'herbst-abend'], [`${TODAY}T22:00:00+01:00`, 'nacht', 'herbst-nacht']]) {
+for (const [iso, look, key] of [[`${TODAY}T06:05:00+01:00`, 'daemmerung', 'herbst-daemmerung'], [`${TODAY}T12:30:00+01:00`, 'mittag', 'herbst-mittag'], [`${TODAY}T16:50:00+01:00`, 'sonnenuntergang', 'herbst-abend'], [`${TODAY}T22:00:00+01:00`, 'nacht', 'herbst-nacht']]) {
   const c = await browser.newContext(ctxOpts); const pg = await c.newPage();
   await pg.clock.install({ time: new Date(iso) });
   await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
   const dl = await pg.getAttribute('.stage', 'data-look');
-  // the exact look depends on today's sunrise/sunset; what matters is the seasonal image it maps to (grey weather shows the rain lake instead)
+  // the exact look depends on today's sunrise/sunset; what matters is the seasonal image it maps to (grey weather shows the graded <season>-regen image instead)
   check(`Landscape at ${iso.slice(11, 16)} (${look}) is ${key}`, (await pg.locator(`.land img[src*="landschaft-${key}-"]`).count()) >= 1 || /bedeckt|nebel|regen/.test(dl ?? ''), `${dl} ${await pg.locator('.land img').first().getAttribute('src') ?? ''}`);
   await c.close();
+}
+// ---- Alpensee backgrounds with a fixed sun and weather (Open-Meteo answered by the test: sunrise 07:00, sunset 16:20, 14.11. = Herbst) ----
+{
+  const meteo = (day, code) => {
+    const days = [...Array(7)].map((_, i) => new Date(Date.parse(`${day}T00:00:00Z`) + i * 864e5).toISOString().slice(0, 10));
+    const hours = days.flatMap((d) => [...Array(24)].map((_, h) => `${d}T${String(h).padStart(2, '0')}:00`)); const n = (v) => hours.map(() => v); const dd = (v) => days.map(() => v);
+    return { current: { time: `${day}T12:00`, temperature_2m: 6, relative_humidity_2m: 70, apparent_temperature: 4, is_day: 1, precipitation: 0, weather_code: code, cloud_cover: 50, wind_speed_10m: 8, surface_pressure: 1015 },
+      hourly: { time: hours, temperature_2m: n(6), precipitation_probability: n(10), precipitation: n(0), weather_code: n(code), cloud_cover: n(50), shortwave_radiation: n(100), is_day: n(1), wind_speed_10m: n(8), wind_gusts_10m: n(15), surface_pressure: n(1015), uv_index: n(1) },
+      daily: { time: days, weather_code: dd(code), temperature_2m_max: dd(9), temperature_2m_min: dd(2), sunrise: days.map((d) => `${d}T07:00`), sunset: days.map((d) => `${d}T16:20`), daylight_duration: dd(33600), precipitation_sum: dd(0), shortwave_radiation_sum: dd(6), wind_gusts_10m_max: dd(20), uv_index_max: dd(1) } };
+  };
+  const bg = async (time, code, mobile) => {
+    const c = await browser.newContext(mobile ? { ...devices['iPhone 13'], timezoneId: 'Europe/Vienna', locale: 'de-AT' } : ctxOpts);
+    await c.route('**/api.open-meteo.com/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(meteo('2026-11-14', code)) }));
+    const pg = await c.newPage(); await pg.clock.install({ time: new Date(`2026-11-14T${time}:00+01:00`) });
+    await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(1200);
+    const r = await pg.evaluate((sel) => ({ look: document.querySelector('[data-look]')?.getAttribute('data-look'), src: [...document.querySelectorAll(sel)].pop()?.getAttribute('src') ?? '' }), mobile ? '.m-bg img' : '.land img');
+    await c.close(); return r;
+  };
+  let r = await bg('06:00', 0); check('Alpensee: 06:00 shows the dawn image', /landschaft-herbst-daemmerung-/.test(r.src), `${r.look} ${r.src}`);
+  r = await bg('17:15', 0); check('Alpensee: blue hour shows its own image', /landschaft-herbst-blau-/.test(r.src), `${r.look} ${r.src}`);
+  r = await bg('12:30', 61); check('Alpensee: rain code shows the graded rain image', r.look === 'regen' && /landschaft-herbst-regen-/.test(r.src), `${r.look} ${r.src}`);
+  r = await bg('12:30', 0, true); check('Alpensee mobile: background is the portrait image of the season and look', /\/img\/szene-herbst-mittag-/.test(r.src), `${r.look} ${r.src}`);
+  r = await bg('21:00', 0, true); check('Alpensee mobile: night background', /\/img\/szene-herbst-nacht-/.test(r.src), `${r.look} ${r.src}`);
 }
 // ---- account sheet opens from the top bar (unconfigured install explains itself, configured one shows the login) ----
 {

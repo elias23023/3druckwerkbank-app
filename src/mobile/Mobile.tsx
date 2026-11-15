@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './mobile.css';
 import { useWasser } from '../wasser/wasser'; // nach mobile.css: die Stylesheets des Looks kommen zuletzt
 import { useStore, availableGrams, activeProjects, archivedProjects, printProgress, printRemainingMin, liveProjects } from '../store';
@@ -9,7 +9,8 @@ import { fmtTime, fmtNum, fmtGrams, fmtDuration, relTime, fmtDate, fmtDayShort }
 import { NotesField } from '../forms/ProjektDetail';
 import { STATUS_COLOR } from '../forms/GeraetForm';
 import { bestPvWindow, todayDaily, wmo, pvKw } from '../lib/weather';
-import { sceneLook, type Look } from '../scene/looks';
+import { sceneLook, landscapeKey, type Look } from '../scene/looks';
+import { resolveSeason, type Season } from '../lib/season';
 import { islandSrc } from '../scene/Island';
 import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { Logo } from '../ui/TopBar';
@@ -47,13 +48,12 @@ export function Mobile() {
   const tab: Tab = route.world === 'heute' ? 'heute' : route.world === 'projekte' ? 'projekte' : route.world === 'material' ? 'material' : route.world === 'start' ? 'start' : 'mehr';
   const project = route.world === 'projekte' && route.projectId ? s.projects.find((p) => p.id === route.projectId && !p.deletedAt) : undefined;
   const go = (t: Tab) => navigate({ world: t === 'mehr' ? 'druck' : t });
-  // background: one of the eight painted scenes (island over the lake), chosen by tab / view
-  const scene = project ? 'innen' : tab === 'mehr' ? (route.world === 'wetter' ? 'wetter' : route.world === 'archiv' ? 'archiv' : 'druck') : tab;
+  const season = resolveSeason(s.settings.season, now);
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
     <div className="m-shell" data-wasser="mobil" data-look={look}>
-      <div className="m-bg" aria-hidden><img key={scene} src={`/img/szene-${scene}-1280.webp`} srcSet={`/img/szene-${scene}-640.webp 640w, /img/szene-${scene}-1280.webp 1280w`} sizes="100vw" alt="" /></div>
+      <MobileBg look={look} season={season} />
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
         <span className="spacer" />
@@ -71,6 +71,33 @@ export function Mobile() {
       {s.sheet ? <SheetHost sheet={s.sheet} /> : null}
       {s.commandOpen ? <CommandBar /> : null}
       <Toast />
+    </div>
+  );
+}
+
+/** The background on every tab: the portrait Alpensee of the season in the light of the current look (same keys as the
+ *  desktop landscape). A new image is a NEW <img> (key = image), so the water look (option "scene": the last '.m-bg img')
+ *  picks it up; the previous one stays underneath until the new one has faded in. */
+function MobileBg({ look, season }: { look: Look; season: Season }) {
+  const key = landscapeKey(look, season);
+  // cur: the newest image; prev: the one under it while cur fades in; shown: cur has loaded and fades in (the first one shows at once)
+  const [st, setSt] = useState<{ cur: string; prev: string | null; shown: boolean }>({ cur: key, prev: null, shown: true });
+  if (st.cur !== key) {   // during render, so there is no frame without an image
+    const under = st.shown ? st.cur : (st.prev ?? st.cur);   // what is fully visible now
+    setSt(under === key ? { cur: key, prev: null, shown: true } : { cur: key, prev: under, shown: false });
+  }
+  useEffect(() => {
+    if (!st.prev) return;
+    const k = st.cur;
+    const t = window.setTimeout(() => setSt((x) => (x.cur === k ? { ...x, prev: null, shown: true } : x)), st.shown ? 2100 : 5000);   // after the fade (or should the image never load)
+    return () => window.clearTimeout(t);
+  }, [st.cur, st.prev, st.shown]);
+  const loaded = (k: string) => () => setSt((x) => (x.cur === k && !x.shown ? { ...x, shown: true } : x));
+  const img = (k: string, on: boolean) => <img key={k} src={`/img/szene-${k}-830.webp`} srcSet={`/img/szene-${k}-540.webp 540w, /img/szene-${k}-830.webp 830w`} sizes="100vw" alt="" style={{ opacity: on ? 1 : 0 }} decoding="async" onLoad={k === st.cur ? loaded(k) : undefined} />;
+  return (
+    <div className="m-bg" aria-hidden>
+      {st.prev && st.prev !== st.cur ? img(st.prev, true) : null}
+      {img(st.cur, st.shown)}
     </div>
   );
 }
