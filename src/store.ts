@@ -378,9 +378,13 @@ export const useStore = create<Store>()(
       partialize: (s) => ({ version: s.version, seededAt: s.seededAt, projects: s.projects, devices: s.devices, spools: s.spools, tasks: s.tasks, prints: s.prints, reports: s.reports, appointments: s.appointments, shopping: s.shopping, settings: s.settings, weather: s.weather, energy: s.energy, ui: { drafts: s.ui.drafts, recent: s.ui.recent } }) as unknown as Store,
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<Store>;
-        // demo projects created before the project-world islands existed: move them onto the new motifs once
-        const DEMO_ISLANDS: Record<string, [string, Project['island']['libraryId']]> = { 'p-sensorhalter': ['elektronik', 'projekt-garten'], 'p-zahnrad': ['werkstatt', 'projekt-haushalt'], 'p-schluesselhalter': ['ideen', 'projekt-haushalt'], 'p-pflanzgefaess': ['ideen', 'projekt-deko'] };
-        if (Array.isArray(p.projects)) p.projects = p.projects.map((pr) => { const m = DEMO_ISLANDS[pr?.id]; return m && pr.island?.kind === 'bibliothek' && pr.island.libraryId === m[0] ? { ...pr, island: { ...pr.island, libraryId: m[1] } } : pr; });
+        // demo projects saved with an older seed: move them onto the island the current seed gives them, but only while
+        // they still show one of the islands an older seed had (an island the visitor picked himself stays)
+        const DEMO_ISLANDS: Record<string, [string[], Project['island']['libraryId']]> = {
+          'p-sensorhalter': [['elektronik', 'projekt-garten'], 'bereich-garten'], 'p-bewaesserung': [['ideen'], 'art-halterung'], 'p-organizer': [['werkstatt'], 'art-organizer'],
+          'p-gehaeuse': [['elektronik'], 'art-gehaeuse'], 'p-zahnrad': [['werkstatt', 'projekt-haushalt'], 'art-reparatur'], 'p-schluesselhalter': [['ideen', 'projekt-haushalt'], 'bereich-haushalt'], 'p-pflanzgefaess': [['ideen'], 'projekt-deko'],
+        };
+        if (isDemo && Array.isArray(p.projects)) p.projects = p.projects.map((pr) => { const m = DEMO_ISLANDS[pr?.id]; return m && pr.island?.kind === 'bibliothek' && m[0].includes(pr.island.libraryId) ? { ...pr, island: { ...pr.island, libraryId: m[1] } } : pr; });
         if (!p.projects && !p.devices && !p.spools) return { ...current, ui: { ...current.ui, drafts: p.ui?.drafts ?? {}, recent: Array.isArray(p.ui?.recent) ? p.ui.recent : [] } };
         return { ...current, ...normalizeState(p), weather: p.weather && p.weather.data && Array.isArray(p.weather.data.hourly) ? p.weather : undefined, ui: { ...current.ui, drafts: p.ui?.drafts && typeof p.ui.drafts === 'object' ? p.ui.drafts : {}, recent: Array.isArray(p.ui?.recent) ? p.ui.recent : [] } };
       },

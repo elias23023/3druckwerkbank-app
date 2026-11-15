@@ -66,7 +66,10 @@ export const COLOR_REFS: { name: string; hex: string }[] = [
 
 export type LibraryIsland = 'werkstatt' | 'elektronik' | 'ideen' | 'rahmen' | 'staffelei' | 'heute' | 'projekte' | 'druck' | 'material' | 'wetter' | 'archiv' | 'drucker'
   | 'projekt-garten' | 'projekt-haushalt' | 'projekt-fahrzeug' | 'projekt-buero' | 'projekt-hobby' | 'projekt-technik' | 'projekt-deko' | 'projekt-modell'
-  | 'haus' | 'vitrine' | 'druckhuette' | 'pergola' | 'holz' | 'it' | 'labor' | 'spulen' | 'solar' | 'metall' | 'atelier' | 'observatorium' | 'planung' | 'garten-ring' | 'pavillon';
+  | 'haus' | 'vitrine' | 'druckhuette' | 'pergola' | 'holz' | 'it' | 'labor' | 'spulen' | 'solar' | 'metall' | 'atelier' | 'observatorium' | 'planung' | 'garten-ring' | 'pavillon'
+  // project islands by project type and by area (Nov 2026)
+  | 'art-gehaeuse' | 'art-halterung' | 'art-organizer' | 'art-reparatur'
+  | 'bereich-smarthome' | 'bereich-garten' | 'bereich-haushalt' | 'bereich-technik' | 'bereich-werkstatt';
 export interface IslandImageConfig {
   kind: 'bibliothek' | 'eigenes';
   libraryId: LibraryIsland;

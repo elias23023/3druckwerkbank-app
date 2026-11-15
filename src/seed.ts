@@ -46,7 +46,7 @@ export function makeSeed(now = new Date()): PersistedState {
     {
       id: 'p-sensorhalter', name: 'Sensorhalter Garten', description: 'Halterung für den Bodenfeuchtesensor am Hochbeet. Wetterfest, schnell abnehmbar, Kabelführung nach unten.',
       type: 'Halterung / Befestigung', areas: ['Garten & Outdoor', 'Elektronik & Smart Home'], tags: ['Hochbeet', 'ASA', 'Außen'], priority: 1, difficulty: 3, stage: 'Druck', progress: 68, favorite: true,
-      createdAt: d(-21, now), updatedAt: h(-3, now), island: { kind: 'bibliothek', libraryId: 'projekt-garten', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
+      createdAt: d(-21, now), updatedAt: h(-3, now), island: { kind: 'bibliothek', libraryId: 'bereich-garten', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [
         { id: 'ms-1', title: 'Idee & Maße', done: true, order: 0 }, { id: 'ms-2', title: 'Konstruktion v1', done: true, order: 1 }, { id: 'ms-3', title: 'Testdruck', done: true, order: 2 },
         { id: 'ms-4', title: 'Klemmung verbessern (v2)', done: true, order: 3 }, { id: 'ms-5', title: 'Finaldruck in ASA', done: false, order: 4 }, { id: 'ms-6', title: 'Montage am Hochbeet', done: false, order: 5 },
@@ -68,7 +68,7 @@ export function makeSeed(now = new Date()): PersistedState {
     {
       id: 'p-bewaesserung', name: 'Bewässerungsclip', description: 'Clip für den 6-mm-Tropfschlauch am Hochbeetrand, mit Abstandhalter.',
       type: 'Halterung / Befestigung', areas: ['Garten & Outdoor'], tags: ['Schlauch', 'Clip'], priority: 2, difficulty: 2, stage: 'Nacharbeit', progress: 80, favorite: false,
-      createdAt: d(-14, now), updatedAt: h(-1, now), island: { kind: 'bibliothek', libraryId: 'ideen', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
+      createdAt: d(-14, now), updatedAt: h(-1, now), island: { kind: 'bibliothek', libraryId: 'art-halterung', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [ { id: 'ms-b1', title: 'Maße nehmen', done: true, order: 0 }, { id: 'ms-b2', title: 'Konstruktion', done: true, order: 1 }, { id: 'ms-b3', title: 'Testdruck ×3', done: true, order: 2 }, { id: 'ms-b4', title: 'Grat entfernen', done: false, order: 3 }, { id: 'ms-b5', title: '12 Stück drucken', done: false, order: 4 } ],
       versions: [ { id: 'v-b-1', label: 'v1', status: 'final', createdAt: d(-10, now), changes: ['Grundform'], dims: '22 × 14 × 10 mm', material: 'PETG Schwarz', settings: '0,16 mm' } ],
       files: [ { id: 'f-b-1', name: 'clip_v1.3mf', kind: '3mf', createdAt: d(-10, now), size: 410_000 } ],
@@ -79,7 +79,7 @@ export function makeSeed(now = new Date()): PersistedState {
     {
       id: 'p-organizer', name: 'Werkzeug-Organizer', description: 'Einsatz für die Schublade: Bits, Inbus und Schraubendreher griffbereit.',
       type: 'Organizer / Aufbewahrung', areas: ['Werkstatt'], tags: ['Schublade', 'Gridfinity'], priority: 2, difficulty: 2, stage: 'Konstruktion', progress: 30, favorite: true,
-      createdAt: d(-5, now), updatedAt: d(-1, now), island: { kind: 'bibliothek', libraryId: 'werkstatt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
+      createdAt: d(-5, now), updatedAt: d(-1, now), island: { kind: 'bibliothek', libraryId: 'art-organizer', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [ { id: 'ms-o1', title: 'Schublade vermessen', done: true, order: 0 }, { id: 'ms-o2', title: 'Raster festlegen', done: true, order: 1 }, { id: 'ms-o3', title: 'Einsätze konstruieren', done: false, order: 2 }, { id: 'ms-o4', title: 'Probeeinsatz drucken', done: false, order: 3 } ],
       versions: [ { id: 'v-o-1', label: 'v1', status: 'aktuell', createdAt: d(-2, now), changes: ['Raster 42 mm'], dims: '252 × 168 × 40 mm', material: 'PLA Indigo' } ],
       files: [ { id: 'f-o-1', name: 'Schublade.jpg', kind: 'foto', createdAt: d(-5, now) } ], notes: '', experiences: [],
@@ -89,7 +89,7 @@ export function makeSeed(now = new Date()): PersistedState {
     {
       id: 'p-gehaeuse', name: 'ESP32-Wettergehäuse', description: 'Gehäuse für den Außensensor mit Lüftungsschlitzen und Dach.',
       type: 'Gehäuse / Elektronik', areas: ['Elektronik & Smart Home', 'Technik & Maschinen'], tags: ['ESP32', 'Außen', 'Lüftung'], priority: 3, difficulty: 4, stage: 'Planung', progress: 20, favorite: false,
-      createdAt: d(-9, now), updatedAt: d(-3, now), island: { kind: 'bibliothek', libraryId: 'elektronik', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'metall' } },
+      createdAt: d(-9, now), updatedAt: d(-3, now), island: { kind: 'bibliothek', libraryId: 'art-gehaeuse', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'metall' } },
       milestones: [ { id: 'ms-g1', title: 'Platine vermessen', done: true, order: 0 }, { id: 'ms-g2', title: 'Belüftung planen', done: false, order: 1 }, { id: 'ms-g3', title: 'Konstruktion', done: false, order: 2 }, { id: 'ms-g4', title: 'Testdruck', done: false, order: 3 } ],
       versions: [], files: [], notes: 'Stevenson-Screen-Prinzip für die Lüftung.', experiences: [],
       history: hist(now, [[-9, 'angelegt', 'Projekt angelegt'], [-3, 'notiz', 'Belüftung nach Stevenson-Prinzip']]),
@@ -98,7 +98,7 @@ export function makeSeed(now = new Date()): PersistedState {
     {
       id: 'p-zahnrad', name: 'Zahnrad Mixer', description: 'Ersatzzahnrad für den Küchenmixer, Modul 1, 24 Zähne.',
       type: 'Reparatur / Ersatzteil', areas: ['Haushalt'], tags: ['Ersatzteil', 'Zahnrad'], priority: 1, difficulty: 3, stage: 'Idee', progress: 5, favorite: false,
-      createdAt: d(-1, now), updatedAt: d(-1, now), island: { kind: 'bibliothek', libraryId: 'projekt-haushalt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'metall' } },
+      createdAt: d(-1, now), updatedAt: d(-1, now), island: { kind: 'bibliothek', libraryId: 'art-reparatur', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'metall' } },
       milestones: [ { id: 'ms-z1', title: 'Altes Zahnrad vermessen', done: false, order: 0 }, { id: 'ms-z2', title: 'Konstruktion', done: false, order: 1 }, { id: 'ms-z3', title: 'Testdruck PETG', done: false, order: 2 } ],
       versions: [], files: [], notes: '', experiences: [],
       history: hist(now, [[-1, 'angelegt', 'Projekt angelegt']]), requiredSpools: [],
@@ -106,7 +106,7 @@ export function makeSeed(now = new Date()): PersistedState {
     {
       id: 'p-schluesselhalter', name: 'Schlüsselhalter v2', description: 'Wandhalter für fünf Schlüssel mit Ablage.',
       type: 'Halterung / Befestigung', areas: ['Haushalt'], tags: ['Wand', 'Deko'], priority: 3, difficulty: 1, stage: 'Abgeschlossen', progress: 100, favorite: true,
-      createdAt: d(-70, now), updatedAt: d(-30, now), archivedAt: d(-30, now), island: { kind: 'bibliothek', libraryId: 'projekt-haushalt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
+      createdAt: d(-70, now), updatedAt: d(-30, now), archivedAt: d(-30, now), island: { kind: 'bibliothek', libraryId: 'bereich-haushalt', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } },
       milestones: [ { id: 'ms-s1', title: 'Konstruktion', done: true, order: 0 }, { id: 'ms-s2', title: 'Druck', done: true, order: 1 }, { id: 'ms-s3', title: 'Montage', done: true, order: 2 } ],
       versions: [ { id: 'v-s-1', label: 'v1', status: 'verworfen', createdAt: d(-60, now), changes: ['Zu schmal'] }, { id: 'v-s-2', label: 'v2', status: 'final', createdAt: d(-40, now), changes: ['Breiter', 'Ablage'] } ],
       files: [ { id: 'f-s-1', name: 'Montiert.jpg', kind: 'foto', createdAt: d(-30, now) } ], notes: '', experiences: ['Dübel 6 mm reichen.'],
