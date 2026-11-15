@@ -9,8 +9,7 @@ import { fmtTime, fmtNum, fmtGrams, fmtDuration, relTime, fmtDate, fmtDayShort }
 import { NotesField } from '../forms/ProjektDetail';
 import { STATUS_COLOR } from '../forms/GeraetForm';
 import { bestPvWindow, todayDaily, wmo, pvKw } from '../lib/weather';
-import { sceneLook, timeLook, landscapeKey, type Look } from '../scene/looks';
-import { resolveSeason, type Season } from '../lib/season';
+import { sceneLook, type Look } from '../scene/looks';
 import { islandSrc, ASSET_VERSION } from '../scene/Island';
 import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { Logo } from '../ui/TopBar';
@@ -37,61 +36,42 @@ function Card({ title, icon, count, children, onMore }: { title?: string; icon?:
   return <section className="glass m-card">{title ? <h3>{icon}{title}{count !== undefined ? <span className="cnt pill xs">{count}</span> : null}{onMore ? <button className="btn btn--icon btn--ghost" style={{ marginLeft: count === undefined ? 'auto' : 0 }} onClick={onMore} aria-label={`${title}: alles anzeigen`}><IChevR /></button> : null}</h3> : null}{children}</section>;
 }
 
-/** The picture behind the phone shell: the portrait Alpensee "<season>-<phase>" (landscapeKey). The same address in the page and
- *  in the preloading below (the browser picks one candidate of the srcset for both). Widths as in scripts/optimize-scenes.mjs;
- *  ?v= because the CDN and browsers keep /img/* for a year (ASSET_VERSION, Island.tsx). */
-const sceneSrc = (k: string) => `/img/szene-${k}-830.webp?v=${ASSET_VERSION}`;
-const sceneSrcSet = (k: string) => `/img/szene-${k}-540.webp?v=${ASSET_VERSION} 540w, ${sceneSrc(k)} 830w`;
-/** The landscape key of the NEXT time of day: the first look after now (in steps of 10 minutes, over one day, without the
- *  weather) whose picture differs from the current one. While the weather shows the grey picture, the picture of the time of
- *  day under it comes first (the weather may clear). */
-function nextSceneKeys(look: Look, season: Season, sunrise: string | undefined, sunset: string | undefined, now: Date): string[] {
-  const cur = landscapeKey(look, season), keys: string[] = [];
-  const plain = landscapeKey(timeLook(now, sunrise, sunset), season);
-  if (plain !== cur) keys.push(plain);
-  const day0 = new Date(now).setHours(0, 0, 0, 0);
-  const shift = (iso: string | undefined, d: number) => (iso && d ? new Date(new Date(iso).getTime() + d * 86400_000).toISOString() : iso);   // (today's sun times, moved to the day of the step)
-  for (let m = 10; m <= 24 * 60; m += 10) {
-    const t = new Date(now.getTime() + m * 60_000), d = Math.round((new Date(t).setHours(0, 0, 0, 0) - day0) / 86400_000);
-    const k = landscapeKey(timeLook(t, shift(sunrise, d), shift(sunset, d)), season);
-    if (k !== cur && k !== plain) { keys.push(k); break; }
-  }
-  return keys;
-}
-/** Loads the picture of the next time of day (and, under grey weather, the one of the hour) in a quiet moment - once per picture,
- *  not when the connection asks to save data - and hands it to the water look, which makes it ready for its drops
- *  (Wasser.warm). So the change of the time of day waits neither for the network nor for the picture inside the drops. */
-const preloaded = new Set<string>();
-function usePreloadScenes(look: Look, season: Season, sunrise: string | undefined, sunset: string | undefined, now: Date, on = true) {
-  const minute = Math.floor(now.getTime() / 60_000);   // (the next picture is looked for once a minute, not with every tick of the clock)
-  const want = useMemo(() => (on ? nextSceneKeys(look, season, sunrise, sunset, now).filter((k) => !preloaded.has(k)).join(',') : ''), [on, look, season, sunrise, sunset, minute]); // eslint-disable-line react-hooks/exhaustive-deps
+/** The picture behind the phone shell: one per page, whatever the time of day and the weather (the user's own portrait
+ *  pictures, 830x1896; scripts/optimize-scenes.mjs makes the widths). The same address in the page and in the preloading
+ *  below (the browser picks one candidate of the srcset for both). ?v= because the CDN and browsers keep /img/* for a year
+ *  (ASSET_VERSION, Island.tsx). Keys also in scripts/check-hintergruende.mjs. */
+type Scene = 'start' | 'heute' | 'projekte' | 'innen' | 'druck' | 'material' | 'wetter' | 'archiv';
+const sceneSrc = (k: Scene) => `/img/seite-${k}-830.webp?v=${ASSET_VERSION}`;
+const sceneSrcSet = (k: Scene) => `/img/seite-${k}-540.webp?v=${ASSET_VERSION} 540w, ${sceneSrc(k)} 830w`;
+const TAB_SCENES: Scene[] = ['start', 'heute', 'projekte', 'material', 'druck'];   // the pictures of the five tabs ("Mehr" opens on "druck")
+/** Loads the pictures of the other tabs in a quiet moment after the start - once per start of the phone view, not when the
+ *  connection asks to save data - and hands them to the water look, which makes them ready for its drops (Wasser.warm).
+ *  So the first visit of a tab waits neither for the network nor for the picture inside the drops. */
+function usePreloadScenes(current: Scene) {
   useEffect(() => {
-    if (!want) return;
     const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
     if (nav.connection?.saveData) return;
     const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
     let idle = 0;
     const load = () => {
       const imgs: HTMLImageElement[] = [];
-      for (const k of want.split(',')) {
-        if (preloaded.has(k)) continue; preloaded.add(k);
+      for (const k of TAB_SCENES) {
+        if (k === current) continue;
         const img = new Image(); img.decoding = 'async'; img.setAttribute('fetchpriority', 'low');
         img.sizes = '100vw'; img.srcset = sceneSrcSet(k); img.src = sceneSrc(k);   // (sizes before srcset, as the page has them)
         imgs.push(img);
       }
-      if (imgs.length) window.Wasser?.warm?.(imgs);
+      window.Wasser?.warm?.(imgs);
     };
     const t = window.setTimeout(() => { idle = w.requestIdleCallback ? w.requestIdleCallback(load, { timeout: 3000 }) : window.setTimeout(load, 0); }, 1200);   // after the first pictures of the start
     return () => { window.clearTimeout(t); if (idle) { if (w.cancelIdleCallback) w.cancelIdleCallback(idle); else window.clearTimeout(idle); } };
-  }, [want]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 type Bg = { src: string; srcSet?: string };
-/** Longest wait for the first weather answer before the phone picks its first background (Mobile). */
-const BG_WAIT = 1200;
 /** CSS time ("0.62s", "620ms") in ms. */
 const cssMs = (v: string) => { const n = parseFloat(v); return !(n > 0) ? 0 : /ms\s*$/.test(v) ? n : n * 1000; };
-/** The picture behind the phone shell. A new ADDRESS (today another view's scene, later another time of day) is not cut in:
+/** The picture behind the phone shell. A new ADDRESS (another page's picture) is not cut in:
  *  the new picture lies over the old one, invisible while it loads (data-szene="laedt", mobile.css), fades in once it is loaded
  *  and decoded (data-szene="kommt": the look's --wa-t-szene and --wa-ease-szene, mobil.css), and only then the old one goes.
  *  Never more than two pictures: a newer address replaces one that is still on its way. Where the fade has no animation (no
@@ -142,25 +122,14 @@ export function Mobile() {
   const tab: Tab = route.world === 'heute' ? 'heute' : route.world === 'projekte' ? 'projekte' : route.world === 'material' ? 'material' : route.world === 'start' ? 'start' : 'mehr';
   const project = route.world === 'projekte' && route.projectId ? s.projects.find((p) => p.id === route.projectId && !p.deletedAt) : undefined;
   const go = (t: Tab) => navigate({ world: t === 'mehr' ? 'druck' : t });
-  // background: the portrait Alpensee of the season in the light of the current look (same keys as the desktop landscape),
-  // on every tab the same picture; a new time of day fades in (SceneBg)
-  const season = resolveSeason(s.settings.season, now);
-  const scene = landscapeKey(look, season);
-  // first start without stored weather: the look would come from the fallback sun times and without the weather code, and
-  // its picture would be loaded and faded out again a moment later. So the picture waits for the first weather answer,
-  // at most BG_WAIT ms (offline, no place); the .m-bg layer (and its darkening) is there from the start
-  const [bgReady, setBgReady] = useState(() => !!useStore.getState().weather);
-  useEffect(() => {
-    if (bgReady) return;
-    if (s.weather) { setBgReady(true); return; }
-    const t = window.setTimeout(() => setBgReady(true), BG_WAIT); return () => window.clearTimeout(t);
-  }, [bgReady, s.weather]);
-  usePreloadScenes(look, season, today?.sunrise, today?.sunset, now, bgReady);
+  // background: one picture per page (tab, the open project, the worlds behind "Mehr"); a new one fades in (SceneBg)
+  const scene: Scene = project ? 'innen' : tab === 'mehr' ? (route.world === 'wetter' ? 'wetter' : route.world === 'archiv' ? 'archiv' : 'druck') : tab;
+  usePreloadScenes(scene);
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
     <div className="m-shell" data-wasser="mobil" data-look={look}>
-      {bgReady ? <SceneBg src={sceneSrc(scene)} srcSet={sceneSrcSet(scene)} /> : <div className="m-bg" aria-hidden />}
+      <SceneBg src={sceneSrc(scene)} srcSet={sceneSrcSet(scene)} />
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
         <span className="spacer" />

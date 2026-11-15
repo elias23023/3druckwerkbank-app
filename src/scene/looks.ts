@@ -27,7 +27,7 @@ export const LOOK_META: Record<Look, { sx: string; sy: string; glow: number; ray
 
 /** Landscape image for a look in a season: per season six painted phases of the Alpensee (dawn, morning, noon, evening,
  *  blue hour, night) plus a graded overcast variant of its noon image for grey weather (scripts/grade-regen.mjs).
- *  Files: public/img/landschaft-<season>-<phase>-*.{avif,webp} (desktop), szene-<season>-<phase>-*.webp (phone). */
+ *  Files: public/img/landschaft-<season>-<phase>-*.{avif,webp} (desktop) (the phone has one picture per page: Mobile.tsx). */
 export type LandscapePhase = 'daemmerung' | 'morgen' | 'mittag' | 'abend' | 'blau' | 'nacht' | 'regen';
 export const LANDSCAPE_PHASES: LandscapePhase[] = ['daemmerung', 'morgen', 'mittag', 'abend', 'blau', 'nacht', 'regen'];
 export const LOOK_PHASE: Record<Look, LandscapePhase> = {

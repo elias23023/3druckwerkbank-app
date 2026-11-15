@@ -14,7 +14,7 @@ node scripts/verify.mjs   # Playwright-Prüfungen gegen den Preview-Server
 
 ## Desktop und Mobil
 
-Die räumliche Inselwelt ist für Desktop und Tablet quer gebaut. Unter 900 px Breite (Handy, Tablet hochkant) rendert `src/App.tsx` stattdessen den mobilen Begleiter aus `src/mobile/Mobile.tsx`: fünf Reiter (Start, Heute, Projekte, Material, Mehr), je Reiter eine gemalte Szene als Hintergrund, keine Parallaxe, große Touchziele. Beide Ansichten nutzen denselben Store, dieselben Sheets und Formulare. Mobil-Screenshots: `node scripts/shot-mobile.mjs <url> <ordner>`.
+Die räumliche Inselwelt ist für Desktop und Tablet quer gebaut. Unter 900 px Breite (Handy, Tablet hochkant) rendert `src/App.tsx` stattdessen den mobilen Begleiter aus `src/mobile/Mobile.tsx`: fünf Reiter (Start, Heute, Projekte, Material, Mehr), je Seite ein eigenes Hochformat-Bild als Hintergrund (`assets-src/szenen/seite-<key>.png` → `node scripts/optimize-scenes.mjs`, unabhängig von Tageszeit und Wetter), keine Parallaxe, große Touchziele. Beide Ansichten nutzen denselben Store, dieselben Sheets und Formulare. Mobil-Screenshots: `node scripts/shot-mobile.mjs <url> <ordner>`.
 
 ## Tagesportal auf der Heute-Insel
 
