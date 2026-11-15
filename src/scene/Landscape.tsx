@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { LOOK_META, landscapeKey, type Look } from './looks';
 import type { Season } from '../lib/season';
+import { ASSET_VERSION } from './Island';
+
+/** ?v=: the CDN and browsers keep /img/* for a year, and some landscapes kept their names with a new picture (Alpensee, 15.11.). */
+const v = (f: string) => `/img/${f}?v=${ASSET_VERSION}`;
 
 function Layer({ name, on, onLoad }: { name: string; on: boolean; onLoad: () => void }) {
   return (
     <picture>
-      <source type="image/avif" srcSet={`/img/landschaft-${name}-1280.avif 1280w, /img/landschaft-${name}-1672.avif 1672w`} sizes="100vw" />
-      <img src={`/img/landschaft-${name}-1672.webp`} srcSet={`/img/landschaft-${name}-1280.webp 1280w, /img/landschaft-${name}-1672.webp 1672w`} sizes="100vw" alt="" style={{ opacity: on ? 1 : 0 }} fetchPriority={on ? 'high' : 'low'} decoding="async" onLoad={onLoad} />
+      <source type="image/avif" srcSet={`${v(`landschaft-${name}-1280.avif`)} 1280w, ${v(`landschaft-${name}-1672.avif`)} 1672w`} sizes="100vw" />
+      <img src={v(`landschaft-${name}-1672.webp`)} srcSet={`${v(`landschaft-${name}-1280.webp`)} 1280w, ${v(`landschaft-${name}-1672.webp`)} 1672w`} sizes="100vw" alt="" style={{ opacity: on ? 1 : 0 }} fetchPriority={on ? 'high' : 'low'} decoding="async" onLoad={onLoad} />
     </picture>
   );
 }

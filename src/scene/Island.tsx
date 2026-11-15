@@ -22,8 +22,9 @@ export const FRAME_BOX: Partial<Record<LibraryIsland, CSSProperties>> = {
   rahmen: { left: '25.5%', right: '22.5%', top: '6%', bottom: '64%' },
   staffelei: { left: '28%', right: '28%', top: '21.5%', bottom: '46.5%' },
 };
-/** Bump when island sprites change: the CDN and browsers cache /img/* for a year (immutable), so the URL must change. */
-export const ASSET_VERSION = '20261108a';
+/** Bump when an image under /img changes its content (islands, landscapes, phone backgrounds): the CDN and browsers cache
+ *  /img/* for a year (immutable), so the URL must change; it also names the image cache of the installed app (sw.js). */
+export const ASSET_VERSION = '20261115a';
 /** Desktop: name and subtitle under an island stand on a small label of smoke glass (block „Felder“ in global.css, class
  *  `island__label--feld`). false = the names stand free on the landscape as before (only the text shadow). */
 const LABEL_FIELD = true;

@@ -109,8 +109,12 @@
 </div>
 <script>
   const scene = q.get('scene') || 'start';
-  // the scene image: public/img when the repository root is served as files, /img under the vite dev server
-  const sceneSrc = (img, name) => { img.onerror = () => { img.onerror = null; img.src = `/img/szene-${name}-1280.webp`; }; img.src = `${ROOT}public/img/szene-${name}-1280.webp`; };
+  // the scene image: public/img when the repository root is served as files, /img under the vite dev server.
+  // Since 15.11. the phone shows the portrait Alpensee of the season and time of day on every tab (src/mobile/Mobile.tsx);
+  // the tools keep their eight scene names and each one stands for one Alpensee picture - the brightest at the top first
+  // (start, wetter, innen: the scenes kontrast.mjs measures by default), ?scene=<season>-<phase> picks any other.
+  const ALPENSEE = { start: 'herbst-mittag', wetter: 'sommer-abend', innen: 'sommer-mittag', heute: 'fruehling-morgen', projekte: 'winter-mittag', material: 'herbst-morgen', druck: 'winter-blau', archiv: 'fruehling-nacht' };
+  const sceneSrc = (img, name) => { const k = ALPENSEE[name] || name; img.onerror = () => { img.onerror = null; img.src = `/img/szene-${k}-830.webp`; }; img.src = `${ROOT}public/img/szene-${k}-830.webp`; };
   sceneSrc(document.getElementById('scene'), scene);
   if (q.get('nah')) document.body.classList.add('nah');
   if (q.get('ton')) document.documentElement.dataset.waTon = q.get('ton');   // the tone: data-wa-ton on <html> (no parameter = dunkel)
