@@ -2,7 +2,10 @@
 // App symbol for the installable app (PWA): assets-src/app-symbol.png -> public/icons/
 //   icon-192.png, icon-512.png                    purpose "any" (rounded corners, transparent outside)
 //   icon-maskable-192.png, icon-maskable-512.png  purpose "maskable" (full bleed, the picture scaled to 85 %, its edge pixels continued to the border)
-//   apple-touch-icon.png (180, no transparency), favicon-32.png, favicon-16.png
+//   apple-touch-icon.png (180, no transparency)
+//   favicon-32.png, favicon-16.png                the motif cut closer (SMALL), so printer and island stay readable in a browser tab
+//   src/assets/logo-96.webp                       the mark of the app in the interface (Logo in src/ui/TopBar.tsx): same closer cut, rounded tile;
+//                                                 kept under 4 kB so Vite inlines it into the script (it then also shows without network)
 // Input: square PNG, at least 1024 px, full-bleed background, motif in the centre (made by the user's image AI).
 // Without the input file the script renders a PLACEHOLDER: the hexagon logo of the app (Logo in src/ui/TopBar.tsx) on the dark ground of the app.
 // --screenshots <base> additionally takes the two screenshots for the install dialog from a running build (demo workshop).
@@ -16,6 +19,8 @@ const OUT = 'public/icons';
 const BG = '#0b1220'; // same as theme_color / background_color in public/manifest.webmanifest
 const MASKABLE_SCALE = Number(opt('--maskable-scale') ?? 0.85); // share of the canvas the picture keeps in the maskable icons
 const S = 1024;
+// closer cut for the small sizes: share of the picture kept and its centre (the motif of the symbol of 15 Nov 2026 spans about 13–84 % × 13–90 %)
+const SMALL = { side: 0.8, cx: 0.485, cy: 0.515 };
 fs.mkdirSync(OUT, { recursive: true });
 
 /** The hexagon logo (same drawing as Logo in src/ui/TopBar.tsx), centred on the dark ground; scale = share of the canvas. */
@@ -62,7 +67,15 @@ for (const size of [192, 512]) {
   await write(sharp(maskable).resize(size, size).removeAlpha(), `icon-maskable-${size}.png`);
 }
 await write(sharp(base).resize(180, 180).removeAlpha(), 'apple-touch-icon.png'); // iOS rounds the corners itself and shows transparency as black
-for (const size of [32, 16]) await write(await any(size), `favicon-${size}.png`);
+const side = Math.round(S * SMALL.side); const cut = { left: Math.max(0, Math.min(S - side, Math.round(S * SMALL.cx - side / 2))), top: Math.max(0, Math.min(S - side, Math.round(S * SMALL.cy - side / 2))), width: side, height: side };
+const small = fs.existsSync(INPUT) ? await sharp(base).extract(cut).png().toBuffer() : base;
+const anySmall = async (size) => sharp(await sharp(small).resize(size, size, { kernel: 'lanczos3' }).sharpen({ sigma: 0.6 }).ensureAlpha().toBuffer()).composite([{ input: rounded(size), blend: 'dest-in' }]);
+for (const size of [32, 16]) await write(await anySmall(size), `favicon-${size}.png`);
+{
+  const img = await anySmall(96); let q = 90; let buf;
+  do { buf = await img.clone().webp({ quality: q, alphaQuality: 100, effort: 6 }).toBuffer(); q -= 4; } while (buf.length > 4000 && q > 40);
+  fs.writeFileSync('src/assets/logo-96.webp', buf); written.push(`src/assets/logo-96.webp  96×96  ${(buf.length / 1024).toFixed(1)} kB (Qualität ${q + 4})`);
+}
 
 const shotBase = opt('--screenshots');
 if (shotBase) {

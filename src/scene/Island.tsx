@@ -5,8 +5,8 @@ import { IArrowR } from '../ui/Icons';
 export const ISLAND_META: Record<LibraryIsland, { w: number; h: number; disc?: { cx: number; cy: number; rx: number; ry: number } }> = {
   werkstatt: { w: 1098, h: 1227 }, elektronik: { w: 1098, h: 1226 }, ideen: { w: 1094, h: 1224 },
   rahmen: { w: 1094, h: 1190 }, staffelei: { w: 1203, h: 1123 },
-  // the six main islands (wide format, from the user's image package of 7 Nov 2026)
-  heute: { w: 1297, h: 876 }, projekte: { w: 1361, h: 841 }, druck: { w: 1483, h: 943 }, material: { w: 1506, h: 1003 }, wetter: { w: 1401, h: 939 }, archiv: { w: 1481, h: 881 },
+  // the six main islands (wide format; heute, projekte, druck, material, archiv from the user's image package of 15 Nov 2026, wetter of 7 Nov)
+  heute: { w: 1367, h: 953 }, projekte: { w: 1429, h: 1009 }, druck: { w: 1408, h: 965 }, material: { w: 1403, h: 1006 }, wetter: { w: 1401, h: 939 }, archiv: { w: 1348, h: 971 },
   drucker: { w: 1081, h: 1188 },
   'projekt-garten': { w: 1081, h: 1167 }, 'projekt-haushalt': { w: 1080, h: 1168 }, 'projekt-fahrzeug': { w: 1080, h: 1209 }, 'projekt-buero': { w: 1080, h: 1186 },
   'projekt-hobby': { w: 1079, h: 1204 }, 'projekt-technik': { w: 1086, h: 1208 }, 'projekt-deko': { w: 1081, h: 1196 }, 'projekt-modell': { w: 1080, h: 1195 },
@@ -24,7 +24,7 @@ export const FRAME_BOX: Partial<Record<LibraryIsland, CSSProperties>> = {
 };
 /** Bump when an image under /img changes its content (islands, landscapes, phone backgrounds): the CDN and browsers cache
  *  /img/* for a year (immutable), so the URL must change; it also names the image cache of the installed app (sw.js). */
-export const ASSET_VERSION = '20261115b';
+export const ASSET_VERSION = '20261115c';
 /** Desktop: name and subtitle under an island stand on a small label of smoke glass (block „Felder“ in global.css, class
  *  `island__label--feld`). false = the names stand free on the landscape as before (only the text shadow). */
 const LABEL_FIELD = true;

@@ -6,18 +6,14 @@ import { useAuth } from '../lib/cloud';
 import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { WeatherIcon } from './WeatherIcon';
 import { wmo } from '../lib/weather';
+import logoUrl from '../assets/logo-96.webp';
 import { navigate, useRoute } from '../router';
 import { useHints } from './Hinweise';
 
+/** The mark of the app: the user's app symbol (island with workbench and printer) as a small rounded tile. The file comes from
+ *  scripts/optimize-appicon.mjs and is small enough that Vite inlines it, so it also shows without network. */
 export function Logo({ size = 36 }: { size?: number }) {
-  return (
-    <svg className="brand__logo" width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-      <defs><linearGradient id="lg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="#9fd0ff" /><stop offset="1" stopColor="#3b7fd6" /></linearGradient></defs>
-      <path d="M32 4 58 18v28L32 60 6 46V18z" fill="url(#lg)" opacity=".9" />
-      <path d="M32 12 50 22v20L32 52 14 42V22z" fill="none" stroke="#fff" strokeWidth="2.5" opacity=".9" />
-      <path d="M32 12v40M14 22l18 10 18-10" fill="none" stroke="#fff" strokeWidth="2" opacity=".6" />
-    </svg>
-  );
+  return <img className="brand__logo" src={logoUrl} width={size} height={size} alt="" aria-hidden draggable={false} />;
 }
 
 export function TopBar() {

@@ -136,7 +136,7 @@ p { margin: 0; }
 /* top bar + dock */
 .topbar { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 14px; padding: 14px 22px; }
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand__logo { width: 36px; height: 36px; }
+.brand__logo { width: 36px; height: 36px; display: block; flex: none; }
 .brand b { font-size: 15px; display: block; line-height: 1.1; }
 .brand span { font-size: 11px; color: var(--text-2); }
 .topbar__clock { margin-left: auto; text-align: right; }
@@ -414,8 +414,10 @@ p { margin: 0; }
 /* ---------- Heute info ring: floating glass ring over the island platform ---------- */
 /* standing ring: laid into the painted gold ring of the Heute island (measured: centre 43.5 % / 30.7 %, height 37.4 % of the island) */
 
-/* ---- Tagesportal: light and scale laid into the painted wooden ring of the Heute island (ring measured: centre 44.45 % / 37.8 %, outer width 24.7 % of the sprite) ---- */
-.portal { position: absolute; left: 32.1%; top: 20.15%; width: 23.95%; aspect-ratio: 1; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; }
+/* ---- Tagesportal: light and scale laid onto the painted wooden ring of the Heute island. Ring measured in the sprite (1367 × 953, image of 15 Nov 2026):
+   centre 640.5 / 284.5 px, opening 370 × 380 px, outer edge 448 × 454 px, seen from the front (no turn, no lean). The box is the outer edge less 1 %: the sun's path (r 87)
+   and the scale (r 91.6 to 99) lie on the wood band, which reaches from 83 to 101 of the 100 units. ---- */
+.portal { position: absolute; left: 30.54%; top: 6.03%; width: 32.63%; height: 47.64%; pointer-events: none; animation: fade var(--t-mid) var(--ease) both; container-type: inline-size; }
 .portal__tilt { position: absolute; inset: 0; transform-origin: 50% 50%; }
 /* light of the ring spilling onto the pedestal and the terrace */
 .portal__pool { position: absolute; left: 10%; right: 10%; top: 84%; height: 34%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 45%, rgba(255,196,110,.3), rgba(255,170,80,.1) 45%, transparent 72%); filter: blur(5px); animation: portal-breathe 6s ease-in-out infinite; }

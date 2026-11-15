@@ -11,8 +11,8 @@ export const LABELS: Record<WorldId, [string, string]> = {
 /** Start world: six large islands in two rows. */
 export const START_POS: Record<WorldId, [number, number, number, number]> = {
   // Heute in the middle, the five others small on an ellipse around it (pentagon, point down)
-  heute: [50, 34, 38, 0], projekte: [22, 42.5, 14, 0.1], druck: [78, 42.5, 14, 0.1],
-  material: [23, 69, 14, 0.1], wetter: [50, 76, 9, 0.1], archiv: [77, 69, 14, 0.1],
+  heute: [50, 34, 38, 0], projekte: [22, 41.5, 14, 0.1], druck: [78, 41.5, 14, 0.1],
+  material: [23, 69.5, 14, 0.1], wetter: [50, 76, 9, 0.1], archiv: [77, 69.5, 14, 0.1],
 };
 export function startIslands(): Placement[] {
   return ORDER.map((w) => { const [x, y, size, depth] = START_POS[w]; return { key: `w-${w}`, x, y, size, depth, world: w, label: LABELS[w][0], sub: LABELS[w][1] }; });

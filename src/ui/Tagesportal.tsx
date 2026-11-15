@@ -18,8 +18,8 @@ function arc(from: number, to: number, r: number) {
 const STAR_HOURS = [0.6, 1.8, 3.1, 4.4, 20.4, 21.7, 22.9];
 
 /**
- * The Tagesportal: the wooden ring is painted in the Heute island image (wood band, slate channel inside, on a stand). The app only lays the
- * living part into it: the sun's path in the slate channel from sunrise (left) to sunset (right) glowing like amber, the passed part bright,
+ * The Tagesportal: the wooden ring is painted in the Heute island image (a plain wood band on a stone base, the opening is transparent). The app only lays the
+ * living part onto it: the sun's path on the inner half of the band from sunrise (left) to sunset (right) glowing like amber, the passed part bright,
  * the night side dark with small stars; a warm sun or a pale moon marks now; 24 notches and hour numbers engraved on the wood; the clock and
  * (not in compact mode) the next change of light in the centre. Position and size follow the painted ring (global.css .portal).
  */
@@ -38,7 +38,7 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
     <div className={`portal${compact ? ' portal--compact' : ''}`} data-testid="portal" data-kind={isDay ? 'sonne' : 'mond'} data-day={isDay ? 'true' : 'false'}>
       <div className="portal__pool" />
       <div className="portal__tilt" style={{ transform: `rotate(${lean}deg) rotateY(${turn}deg)` }}>
-        <svg viewBox="0 0 200 200" width="100%" height="100%" role="img" aria-label={`Tagesportal, jetzt ${fmtTime(now)}`} style={{ overflow: 'visible', position: 'relative' }}>
+        <svg viewBox="0 0 200 200" width="100%" height="100%" preserveAspectRatio="none" role="img" aria-label={`Tagesportal, jetzt ${fmtTime(now)}`} style={{ overflow: 'visible', position: 'relative' }}>
           <defs>
             <linearGradient id="portalDay" gradientUnits="userSpaceOnUse" x1={f(pt(sr, R)[0])} y1={f(pt(sr, R)[1])} x2={f(pt(ss, R)[0])} y2={f(pt(ss, R)[1])}><stop offset="0" stopColor="#ff9c7a" /><stop offset=".3" stopColor="#ffe08a" /><stop offset=".55" stopColor="#fff6cc" /><stop offset=".8" stopColor="#ffc872" /><stop offset="1" stopColor="#ff8a4a" /></linearGradient>
             <linearGradient id="portalNight" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#1b2a6b" /><stop offset="1" stopColor="#3b5bc4" /></linearGradient>
@@ -48,7 +48,7 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
             <filter id="portalGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
           </defs>
 
-          {/* the ring itself is painted in the island image (wood band with a slate channel inside); the app only lays light and scale into it */}
+          {/* the ring itself is painted in the island image (plain wood band); the app only lays light and scale onto it */}
           <circle cx="100" cy="100" r={R} fill="none" stroke={glow} strokeWidth="9" filter="url(#portalBloom)" opacity=".35" />
           <circle cx="100" cy="100" r="46" fill="url(#portalText)" />
 
@@ -56,7 +56,7 @@ export function Tagesportal({ compact = false, turn = 0, lean = 0 }: { compact?:
           {Array.from({ length: 24 }, (_, i) => { const major = i % 6 === 0; const mid = i % 3 === 0; const [x1, y1] = pt(i, 91.6); const [x2, y2] = pt(i, 91.6 + (major ? 3.8 : mid ? 2.8 : 1.7)); return <g key={i}><line x1={f(x1 + .3)} y1={f(y1 + .3)} x2={f(x2 + .3)} y2={f(y2 + .3)} stroke="rgba(255,245,215,.55)" strokeWidth={major ? .9 : .55} /><line x1={f(x1)} y1={f(y1)} x2={f(x2)} y2={f(y2)} stroke="rgba(45,25,6,.9)" strokeWidth={major ? .9 : .55} /></g>; })}
           {[0, 3, 6, 9, 12, 15, 18, 21].map((t) => { const [x, y] = pt(t, 96.2); const major = t % 6 === 0; return <g key={t} fontFamily="Georgia, 'Times New Roman', serif" fontSize={major ? 7.4 : 6.2} fontWeight="700" textAnchor="middle"><text x={f(x)} y={f(y + 2.6)} fill="#2a1605" stroke="rgba(255,243,215,.85)" strokeWidth=".9" strokeLinejoin="round" style={{ paintOrder: 'stroke' }}>{t}</text></g>; })}
 
-          {/* the sun's path in the painted slate channel: night side dark with stars, daylight glowing like amber, the passed part bright */}
+          {/* the sun's path on the inner half of the wood band: night side dark with stars, daylight glowing like amber, the passed part bright */}
           <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(10,14,28,.4)" strokeWidth="5" />
           <circle cx="100" cy="100" r={R} fill="none" stroke="#2b3447" strokeWidth="3.4" opacity=".8" />
           {STAR_HOURS.filter((s) => s < sr || s > ss).map((s) => { const [x, y] = pt(s, R); return <circle key={s} className="portal__star" cx={f(x)} cy={f(y)} r=".7" fill="#e8eefb" />; })}
