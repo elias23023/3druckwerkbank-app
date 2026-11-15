@@ -119,7 +119,7 @@ const NO_LOOK = 'window.Wasser = { start: function () { return this; }, stop: fu
 export function strangers(css) {
   const out = []; const bare = css.replace(/\/\*[^]*?\*\//g, '');
   const walk = (s) => { let i = 0; while (i < s.length) { const open = s.indexOf('{', i); if (open < 0) break; const head = s.slice(i, open).trim(); let d = 1, k = open + 1; for (; k < s.length && d; k++) { if (s[k] === '{') d++; else if (s[k] === '}') d--; }
-    if (/^@(media|supports|layer|container)\b/.test(head)) walk(s.slice(open + 1, k - 1)); else if (!/^@(-webkit-)?keyframes\b|^@property\b/.test(head) && !/data-wasser|data-wa-ton/.test(head)) out.push(head.replace(/\s+/g, ' ').slice(0, 80)); i = k; } };
+    if (/^@(media|supports|layer|container)\b/.test(head)) walk(s.slice(open + 1, k - 1)); else if (!/^@(-webkit-)?keyframes\b|^@property\b/.test(head) && !/\[data-wasser(?![\w-])|\[data-wa-ton(?![\w-])/.test(head)) out.push(head.replace(/\s+/g, ' ').slice(0, 80)); i = k; } };
   walk(bare); return out;
 }
 export function lookStart(css) {

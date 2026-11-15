@@ -1390,3 +1390,38 @@ plus the leaving blocks in the template.
   network (`szene.mjs`); `reiter.mjs handy` before/after; `sollist.mjs alles --soll git:f001263`: 154 of 164 equal, the
   differences are the desktop Start (the search, meant), one island label at 1920 and one phone sheet with 1/255 inside
   the head drops (cause open, `NACHSEHEN-FABLE.md`). NOT verified: WebKit/Safari, a real phone, a screen reader.
+
+## 17. Corrections after the two checkers (15.11., early morning; step "Nachbessern")
+
+What the two checkers of the four fine-tuning steps found, and what changed in the template (the app's side is named too):
+
+- **Warming (wasser.js, Teil 1, `warm`):** an image asked for ahead that failed to load stopped all further warming (its
+  wait listened for `load` only). It now also listens for `error`; a broken image is then skipped. The images already
+  taken from the list are kept (`taken`); after a lost and restored WebGL context they are queued again (`rewarm`), so the
+  first visit of a tab is quick again after a context loss. `Wasser.info.warmed` is now named in the file's head.
+  Probe: one preload fails after 5 s -> before: warmed 0 after 15 s; after: warmed 3 (the other three tabs). Context lost
+  and restored after the preload: warmed 4 -> 8, the next tab change served from the store.
+- **Drops at rest behind a sheet are drawn once more** when what their picture was made of changes: the tone or the
+  motion switch on `<html>`, the scene texture (`show`), the window size (`requiet`, flag `redo` per drop; drawn at the
+  water time they stand at, then quiet again). Before, a tone switched inside the settings sheet left the drops behind
+  in the old tone until the sheet closed. After: they change at once; 5 of 7 probed drops are pixel-equal to a fresh page
+  in the new tone, the other two differ by a mean of 0.4 and 0.8 of 255 (not explained).
+- **The empty text of a list (kern.css, block "Gehen", `.wa-leer-kommt`, token `--wa-leer-kommt`):** when the LAST row
+  leaves, the text the app puts in its place (`{...leer()}`, src/ui/gehen.ts) waits unseen for `--wa-t-leave` and then
+  fades in over `--wa-t-leave`. Before, the row and the text were both shown for 9 to 12 frames and the text slid up with
+  the closing gap. `--wa-leer-kommt: none` = the text stands at once (and beside the leaving row, as before).
+- **Rows of a list that shows only a part** (the app: `weich(id, gone)`): a row pushed out of a `.slice` (a new task
+  before it, "Nach unten" in the sheet) left softly although it still existed. With a test against the store it now goes
+  without a picture; a ticked or removed row still leaves softly (checked in the inner world, Druck and Heute).
+- **The day card on the desktop in "klar" (desktop.css, part 1, `--wa-tk-kopf`):** the shade over its head reaches 215 px
+  instead of 150 px, so the two times under the daylight track keep 4.5 at 1920 x 1080 on a winter day (4.2 -> 5.1).
+  "dunkel" is unchanged (its shade is transparent).
+- **App (not the template):** the world keys 0 to 6 are no longer swallowed for 0.26 s after a drawer closed (only a
+  second Escape is).
+- **Tools:** `sollist.mjs` compares what lies ON a drop (a second pair of stills with the drop canvases hidden) - only
+  the water itself is excused; `reiter.mjs` blocks the weather in the page (fetch) instead of trusting a resolver rule
+  and marks a landscape run VOID (exit 1) when the landscape did not change as planned, and prints "n/a" for a script
+  without `Wasser.info.scene`; `bogen.mjs` takes `--look`; `vergleich.mjs` names the element whose box moved when a
+  difference outside the drops remains, and counts the rest pose of a drop behind a sheet (seen through the blur, 1 of
+  255 beyond the drop) as known; the CSS-order guard of `lib.mjs` (`strangers`) accepts only `[data-wasser` / `[data-wa-ton`
+  followed by no further name character.

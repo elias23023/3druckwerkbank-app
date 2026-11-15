@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useBambu, bambuLine, STATUS_TEXT } from '../lib/bambu';
 import { useStore, printProgress, printRemainingMin, liveProjects } from '../store';
-import { weich } from '../ui/gehen';
+import { weich, leer } from '../ui/gehen';
 import { useShallow } from 'zustand/react/shallow';
 import { useNow } from '../lib/time';
 import { fmtDuration, fmtNum, relTime, fmtGrams, fold } from '../lib/format';
@@ -120,7 +120,7 @@ export function Druck() {
 
       <PanelColumn side="right" top="38%" bottom="10.5%" width="24%">
       <Panel title="Nächste Drucke" icon={<IList />} delay={140}>
-        {queue.length === 0 ? <p className="muted small">Keine Drucke in der Warteschlange.</p> : queue.map((q, i) => { const r = readiness(q); return (
+        {queue.length === 0 ? <p {...leer()} className="muted small">Keine Drucke in der Warteschlange.</p> : queue.map((q, i) => { const r = readiness(q); return (
           <div key={q.id} {...weich(q.id)} className="item" style={{ padding: '6px 8px', alignItems: 'flex-start' }}>
             <span className="xs faint" style={{ width: 14, marginTop: 2 }}>{i + 1}</span>
             <div className="grow col item--click" style={{ gap: 2 }} onClick={() => a.openSheet({ kind: 'druck', printId: q.id })}>
@@ -134,7 +134,7 @@ export function Druck() {
       </Panel>
 
       <Panel title="Wartung & Status" icon={<IWrench />} delay={200}>
-        {maint.length === 0 ? <p className="muted small">{devices.length ? 'Keine Wartung offen. Wartungen planst du am Gerät.' : 'Noch keine Geräte.'}</p> : maint.slice(0, 3).map(({ d, m }) => <div key={m.id} {...weich(m.id)} className="row small"><Check on={m.done} onClick={() => a.toggleMaintenance(d.id, m.id)} /><span className="grow ellipsis">{d.name}: {m.title}</span>{new Date(m.due).getTime() < now.getTime() ? <span className="pill pill--warn xs">überfällig</span> : <span className="xs muted">{relTime(m.due, now.getTime())}</span>}</div>)}
+        {maint.length === 0 ? <p {...leer()} className="muted small">{devices.length ? 'Keine Wartung offen. Wartungen planst du am Gerät.' : 'Noch keine Geräte.'}</p> : maint.slice(0, 3).map(({ d, m }) => <div key={m.id} {...weich(m.id, () => !useStore.getState().devices.some((x) => x.maintenance.some((y) => y.id === m.id && !y.done)))} className="row small"><Check on={m.done} onClick={() => a.toggleMaintenance(d.id, m.id)} /><span className="grow ellipsis">{d.name}: {m.title}</span>{new Date(m.due).getTime() < now.getTime() ? <span className="pill pill--warn xs">überfällig</span> : <span className="xs muted">{relTime(m.due, now.getTime())}</span>}</div>)}
       </Panel>
       <Panel title="Eingang" icon={<IDownload />} right={<div className="tabs" style={{ padding: 2 }}>{(['neu', 'zugeordnet', 'ignoriert'] as const).map((t) => <button key={t} className={inboxTab === t ? 'on' : ''} style={{ padding: '2px 8px' }} onClick={() => setInboxTab(t)}>{t === 'neu' ? `Neu ${inbox.filter((p) => !p.ignored).length}` : t === 'zugeordnet' ? 'Zugeordnet' : `Ignoriert ${inbox.filter((p) => p.ignored).length}`}</button>)}</div>} delay={280}>
         {inboxTab === 'zugeordnet' && !prints.some((p) => p.projectId && p.imported === false) ? <p className="muted small">Noch nichts zugeordnet.</p> : null}

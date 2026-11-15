@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CHECKLISTS, type FileRef, type Project } from '../types';
 import { liveMode } from '../lib/cloud';
 import { useStore, suggestedProgress, availableGrams, printProgress } from '../store';
-import { weich } from '../ui/gehen';
+import { weich, leer } from '../ui/gehen';
 import { Sheet } from '../ui/Sheet';
 import { Check, Progress, Stack } from '../ui/Glass';
 import { IPlus, IUp, IDown, IFlag, ICheck, IGit, IPrinter, IFile, ILayers, IHistory, ISkip, ISparkle, IImage, IWrench, ITrash } from '../ui/Icons';
@@ -46,7 +46,7 @@ export function TasksFull({ p }: { p: Project }) {
   return (
     <>
       <div className="list">
-        {tasks.length === 0 ? <p className="muted small">Keine Aufgaben.</p> : tasks.map((t, i) => (
+        {tasks.length === 0 ? <p {...leer()} className="muted small">Keine Aufgaben.</p> : tasks.map((t, i) => (
           <div key={t.id} {...weich(t.id)} className="item" style={{ padding: '6px 8px' }}>
             <Check on={t.done} skip={t.skipped} onClick={() => s.toggleTask(t.id)} />
             <span className="grow small ellipsis" style={{ textDecoration: t.skipped ? 'line-through' : undefined, opacity: t.done || t.skipped ? .6 : 1 }}>{t.title}{t.kind !== 'allgemein' ? <span className="xs faint"> · {t.kind}</span> : null}</span>

@@ -16,8 +16,14 @@
      sheet, scrim, search      ref={gehtBogen}   (Sheet.tsx, CommandBar.tsx). A new one that opens cuts any that is leaving.
      a row of a list           <div key={t.id} {...weich(t.id)} className="m-row">  - the row sinks, the rows below close the
                                gap. The id lets a row that comes back (Rückgängig) cut its own leaving picture.
-   Only for rows that leave because of the user's action on THAT list (ticked, skipped, deleted). Not for lists that are
-   filtered or paged (a filter would make every row leave softly). */
+   Only for rows that leave because of the user's action on THAT list (ticked, skipped, deleted). A list that shows only a
+   part (.slice, a time window) also loses rows that are NOT gone - pushed out by a new one, moved down: give such a row its
+   test, weich(t.id, () => !useStore.getState().tasks.some(...)): it leaves softly only when the test says its thing is
+   really gone, otherwise it goes at once as before. (The test is kept per id: two lists that show the same id must mean the
+   same by "gone".) Not for lists that a filter or search shows (a filter would make every row leave softly).
+   The empty text of a list:  <p {...leer()} className="muted small">Alles erledigt.</p>  - when the LAST row leaves, the
+   text the app puts in its place waits, unseen, until the row has gone and then comes softly (class wa-leer-kommt, kern.css),
+   instead of standing beside the leaving row and sliding up while the gap closes. */
 
 type Kind = 'bogen' | 'zeile';
 interface Ghost { el: HTMLElement; kind: Kind; id: string | null; parent: Node; timer: number; done: boolean; end: () => void }
@@ -25,6 +31,9 @@ interface Ghost { el: HTMLElement; kind: Kind; id: string | null; parent: Node; 
 const ghosts = new Set<Ghost>();
 const LEAVE = 'wa-geht';                 // the look's class of everything that leaves (kern.css)
 const ROW = 'wa-geht--zeile';            // ... of a leaving row (kern.css, "Gehen einer Zeile")
+const COMES = 'wa-leer-kommt';              // ... of the empty text that takes the place of the last row (kern.css, same block)
+const EMPTY = 'data-gehen-leer';         // the attribute that marks a list's empty text (leer())
+const tests = new Map<string, () => boolean>();   // weich(id, gone): is the thing of this row really gone?
 const TICK = '.check';                   // the app's check (src/ui/Glass.tsx) ...
 const TICKED = 'check--on';              // ... and its class when ticked
 const TICK_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="m5 12 4.5 4.5L19 7"></path></svg>';   // the mark of a ticked check (as Check renders it)
@@ -66,6 +75,8 @@ function leave(el: HTMLElement, kind: Kind) {
   if (kind === 'bogen') for (const x of [el, ...Array.from(el.querySelectorAll('*'))]) if (x.scrollTop || x.scrollLeft) scrolled.push([x, x.scrollTop, x.scrollLeft]);
   let h = 0, gap = 0, close = true, ticked: Element | null = null;
   if (kind === 'zeile') {
+    const id = el.getAttribute('data-gehen'), gone = id ? tests.get(id) : undefined;
+    if (gone && !gone()) return;                            // only pushed out of a list that shows a part (or moved): no picture
     h = el.offsetHeight;
     const ps = getComputedStyle(parent as Element);
     gap = parseFloat(ps.rowGap) || 0;
@@ -86,6 +97,9 @@ function leave(el: HTMLElement, kind: Kind) {
       el.style.setProperty('--wa-geht-h', `${h}px`); el.style.setProperty('--wa-geht-gap', `${gap}px`);
       if (!close) el.style.setProperty('--wa-zeile-zu', 'none');
       if (ticked && !ticked.classList.contains(TICKED)) { ticked.classList.add(TICKED); if (!ticked.firstElementChild) ticked.innerHTML = TICK_SVG; }
+      // the last row: the list's empty text (rendered by React in this same commit) waits until the row has gone
+      const kids = Array.from((parent as Element).children);
+      if (!kids.some((x) => x !== el && x.hasAttribute('data-gehen') && !x.classList.contains(LEAVE))) for (const x of kids) if (x.hasAttribute(EMPTY)) x.classList.add(COMES);
     }
     parent.insertBefore(el, next && next.parentNode === parent ? next : prev && prev.parentNode === parent ? prev.nextSibling : null);
     for (const [x, top, left] of scrolled) { x.scrollTop = top; x.scrollLeft = left; }
@@ -120,5 +134,8 @@ function attach(kind: Kind) {
 export const gehtBogen = attach('bogen');
 /** Ref for a row of a list; use it through weich(id). */
 export const gehtZeile = attach('zeile');
-/** Props for a row of a list that leaves softly: <div key={id} {...weich(id)} className="…">. */
-export function weich(id: string) { return { ref: gehtZeile, 'data-gehen': id }; }
+/** Props for a row of a list that leaves softly: <div key={id} {...weich(id)} className="…">. In a list that shows only a
+ *  part, gone() tells whether the row's thing is really gone (read the store, not the render's values). */
+export function weich(id: string, gone?: () => boolean) { if (gone) tests.set(id, gone); return { ref: gehtZeile, 'data-gehen': id }; }
+/** Props for the empty text of a list whose rows leave softly: it comes after the last row has gone. */
+export function leer() { return { [EMPTY]: '' }; }

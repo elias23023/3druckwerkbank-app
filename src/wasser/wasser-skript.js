@@ -26,6 +26,7 @@
                              next step up), drops, px, atlas, frames, ms, prof, blank (how often a scene image could not be
                              drawn yet), scene (the address of the scene the drops show), scenes (scene textures kept),
                              uploads (scenes made into a texture), reused (changes of scene served from the kept ones),
+                             warmed (scenes made ahead through Wasser.warm),
                              resting (drops at rest behind an open sheet), settling (drops behind a sheet still finishing
                              their answer to a touch)
 
@@ -177,7 +178,7 @@
     W3.scenes = 0; W3.uploads = 0; W3.reused = 0; W3.warmed = 0; W3.resting = 0; W3.settling = 0;
     var NO_SHADE = [0, 0, 0.3, 0, 0.7, 0, 1, 0];
     var grad = { col: [0, 0, 0], stops: NO_SHADE, key: '' };   // the page's darkening of the scene (colour, four stops); read from the page (readGradient) before the first picture
-    var raf = 0, timer = 0, lastFrame = 0, lastTick = 0, vt = 0, speed = 1, dirty = true, restyle = false, needOne = true;
+    var raf = 0, timer = 0, lastFrame = 0, lastTick = 0, vt = 0, speed = 1, dirty = true, restyle = false, retone = false, needOne = true;
     var followUntil = 0, nextStyle = 0, lastInput = performance.now(), slow = 0, nap = 0;
     var calm = 0, patience = UP_AFTER, upAt = -1e9, downAt = 0, held = 0;   // governor, the way up (held: ms of pictures drawn since the last climb)
     W3.wait = patience;
@@ -470,7 +471,7 @@
         gl = FORCED ? null : glc.getContext('webgl', opt) || glc.getContext('experimental-webgl', opt);
         if (!gl) throw new Error(FORCED ? 'forced' : 'no webgl');
         glc.addEventListener('webglcontextlost', function (e) { if (!alive) return; e.preventDefault(); lost = true; forget(); allOff(); W3.state = 'context lost'; });   // (not alive: stop() has given the context back itself. The textures went with the context: the store is emptied, the scene is made again on restore)
-        glc.addEventListener('webglcontextrestored', function () { if (!alive) return; lost = false; try { build(); loadScene(true); kick(); } catch (err) { fail(err); } });
+        glc.addEventListener('webglcontextrestored', function () { if (!alive) return; lost = false; rewarm(); try { build(); loadScene(true); kick(); } catch (err) { fail(err); } });   // (the scenes warmed before are queued again: they come after the shown one)
         build();
         return true;
       } catch (err) { fail(err); return false; }
@@ -529,7 +530,7 @@
       tex = e.tex; texReady = true; scene.src = src; scene.nw = e.nw; scene.nh = e.nh; scene.pos = null;
       store.delete(src); store.set(src, e);                       // (a Map keeps its order: the one used longest ago comes first)
       W3.scene = src; W3.scenes = store.size;
-      readGradient();
+      readGradient(); requiet();
     }
     // Make the texture of one scene in three steps, none of them in the beat of the change:
     //  1. decode: the image's bytes from the browser's cache (fetch, cache "force-cache": no second download) and
@@ -606,17 +607,22 @@
     // Scenes the page will show later (Wasser.warm, e.g. the other tabs): made in the same way, one at a time, only while the
     // page's own scene is ready and nothing else is being made, and only while the store has room for one more scene of the
     // page (KEEP - 1). An image that has not loaded yet is waited for.
-    var ahead = [];
+    // An image that fails to load ends its wait as well (its "error" comes back here too; it is then skipped), so one broken
+    // address never holds up the ones behind it. The images already taken from the list are kept in "taken": the textures
+    // go with a lost WebGL context, and on its restore they are asked for again (rewarm).
+    var ahead = [], taken = [];
     function warm(img) {
       if (!img || ahead.indexOf(img) >= 0 || !img.addEventListener) return;
-      ahead.push(img); if (!img.complete) img.addEventListener('load', warmNext);
+      ahead.push(img); if (!img.complete) { img.addEventListener('load', warmNext); img.addEventListener('error', warmNext); }
       warmNext();
     }
+    function unwait(img) { img.removeEventListener('load', warmNext); img.removeEventListener('error', warmNext); }
+    function rewarm() { taken.forEach(function (img) { if (ahead.indexOf(img) < 0) ahead.push(img); }); taken = []; }
     function warmNext() {
       if (!alive || job || !gl || lost || !texReady || scene.src !== want) return;
       while (ahead.length && store.size < KEEP - 1) {
         var img = ahead[0]; if (!img.complete) return;            // (its load event comes back here)
-        ahead.shift(); img.removeEventListener('load', warmNext);
+        ahead.shift(); unwait(img); if (taken.indexOf(img) < 0) taken.push(img);
         var src = img.currentSrc || img.src;
         if (!img.naturalWidth || store.has(src) || bad.has(src)) continue;
         make(img, src, true); return;
@@ -708,7 +714,7 @@
     function attach(btn) {
       var cv = document.createElement('canvas');
       cv.className = 'w3-drop'; cv.setAttribute('aria-hidden', 'true'); cv.width = 2; cv.height = 2;
-      var r = { btn: btn, cv: cv, ctx: cv.getContext('2d'), seed: (seedN++ * 0.6180339887) % 1, vis: true, painted: false, behind: false, quiet: false, since: 0, lag: 0, tLast: -1, stale: false,
+      var r = { btn: btn, cv: cv, ctx: cv.getContext('2d'), seed: (seedN++ * 0.6180339887) % 1, vis: true, painted: false, behind: false, quiet: false, redo: false, since: 0, lag: 0, tLast: -1, stale: false,
         w: 0, h: 0, cw: 0, ch: 0, rad: 0, tint: TINT[0], under: [0, 0, 0, 0, 0], light: [1, 1, 1, 0], sat: 1, veil: 1, ink: 1, lab: [0, 0, 6, 6], parent: null, rect: null, seen: -1, last: '',
         px: 0, py: 0, pv: 0, pvel: 0, ptarget: 0, hov: 0, ripT: -1, ripA: 0 };
       recs.set(btn, r);
@@ -777,12 +783,17 @@
         if (r.behind && !was) { r.ptarget = r.hov = 0; r.since = performance.now(); r.quiet = false; }
         else if (!r.behind && was) rouse(r);
       }
-      restyle = false;
+      restyle = false; if (retone) { retone = false; requiet(); }
       recs.forEach(function (rr, b) { if (!seen.has(b) || !b.isConnected) detach(rr); });
       if (fresh) followUntil = performance.now() + 700;         // new buttons may still slide in (card animation)
       loadScene(false);
       return fresh;
     }
+
+    // A drop at rest behind a sheet keeps its last picture - until what that picture was made of changes: the tone (or the
+    // motion switch) on <html>, the scene texture, the size of the window. Then it is drawn ONCE more in its rest pose, at the
+    // water time it stood still at (redo; render), and rests again - so the page under a sheet never shows the old tone.
+    function requiet() { var any = false; recs.forEach(function (r) { if (r.quiet) { r.redo = true; any = true; } }); if (any) needOne = true; }
 
     /* ------------------------------------------------------------------ frame */
     function next() { timer = 0; if (!raf && !document.hidden) raf = requestAnimationFrame(frame); }
@@ -882,7 +893,7 @@
       var list = [], total = 0, moved = false, key;
       frameNo++;
       recs.forEach(function (r) {
-        if (!r.vis || r.quiet || r.w < 6 || r.h < 6) return;      // (quiet: resting behind a sheet - its last picture stays)
+        if (!r.vis || (r.quiet && !r.redo) || r.w < 6 || r.h < 6) return;      // (quiet: resting behind a sheet - its last picture stays, unless it must be made again: requiet)
         var b = r.cv.getBoundingClientRect();
         if (b.width < 2 || b.height < 2 || b.bottom < 0 || b.top > vh || b.right < 0 || b.left > vw) return;
         r.rect = b; r.seen = frameNo;
@@ -971,7 +982,7 @@
           if (r.ptarget < 1 && (still || age >= SETTLE || (r.ripT < 0 && Math.abs(r.pv - r.ptarget) < 0.002 && Math.abs(r.pvel) < 0.01))) { r.pv = r.ptarget; r.pvel = 0; r.ripT = -1; r.quiet = true; }
         }
         var ripAge = r.ripT >= 0 ? r.ripT : 0, ripA = r.ripT >= 0 ? r.ripA * Math.exp(-r.ripT * 1.6) * Math.min(1, (2 - r.ripT) * 4) * fade : 0;
-        var tr = frozen ? time : time - r.lag; if (!frozen) r.tLast = tr;   // the drop's own water time: the shared one, less what it stood still behind a sheet
+        var tr = frozen ? time : r.redo && r.tLast >= 0 ? r.tLast : time - r.lag; if (!frozen && !r.redo) r.tLast = tr;   // the drop's own water time: the shared one, less what it stood still behind a sheet (redo: the time it stands at)
         gl.uniform1f(U.uTime, tr);
         var zoom = r.rect.width / r.cw, yTop = GH - r.ay, nL = neighbour(r, r.btn.previousElementSibling), nR = neighbour(r, r.btn.nextElementSibling);
         gl.viewport(r.ax, yTop - r.bh, r.bw, r.bh); gl.scissor(r.ax, yTop - r.bh, r.bw, r.bh);
@@ -1004,6 +1015,7 @@
         r.ctx.globalCompositeOperation = 'copy';
         r.ctx.drawImage(glc, r.ax, r.ay, r.bw, r.bh, 0, 0, r.bw, r.bh);
         if (!r.painted) { r.painted = true; r.btn.setAttribute('data-w3', 'on'); }
+        r.redo = false;
       }
       if (PROF) { var pD = performance.now(), k1 = 0.1; W3.prof = W3.prof || [0, 0, 0]; W3.prof[0] += (pB - pA - W3.prof[0]) * k1; W3.prof[1] += (pC - pB - W3.prof[1]) * k1; W3.prof[2] += (pD - pC - W3.prof[2]) * k1; }
       W3.drops = list.length; W3.px = Math.round(total * squeeze * squeeze); W3.atlas = glc.width + 'x' + glc.height; W3.frames = (W3.frames || 0) + 1;
@@ -1055,7 +1067,7 @@
       var rewire = false, i, m, r, own;
       for (i = 0; i < ms.length; i++) {
         m = ms[i];
-        if (m.type === 'attributes') { restyle = true; dirty = true; continue; }
+        if (m.type === 'attributes') { restyle = true; dirty = true; if (m.target === document.documentElement) retone = true; continue; }
         own = m.addedNodes.length + m.removedNodes.length === 1 && (m.addedNodes[0] || m.removedNodes[0]).className === 'w3-drop';
         // React reset the content of a button: put the helper back before the next paint (its picture is kept)
         r = recs.get(m.target);
@@ -1083,7 +1095,7 @@
       });
       mo = new MutationObserver(onMutations); wire();
       on(window, 'scroll', function () { followUntil = performance.now() + 160; wake(); }, cap);       // follow scrolling frame by frame
-      on(window, 'resize', function () { scene.pos = null; grad.key = ''; readGradient(); measureAll(); followUntil = performance.now() + 300; wake(); }, { passive: true });
+      on(window, 'resize', function () { scene.pos = null; grad.key = ''; readGradient(); measureAll(); requiet(); followUntil = performance.now() + 300; wake(); }, { passive: true });
       on(window, 'pointerdown', function (e) { var b = mine(e.target); if (b) press(b, e.clientX, e.clientY); wake(); }, cap);
       on(window, 'pointermove', function (e) { if (e.pointerType === 'mouse' && performance.now() - lastInput > 1000) wake(); }, cap);
       on(window, 'pointerover', function (e) { if (e.pointerType !== 'mouse') return; var b = mine(e.target); if (b && !(e.relatedTarget && b.contains(e.relatedTarget))) hover(b, e.clientX, e.clientY, true); }, cap);
@@ -1110,7 +1122,7 @@
       recs.forEach(function (r) { detach(r); });
       if (scene.wait) scene.wait.removeEventListener('load', onLoad); scene.wait = scene.el = null;
       forget();                                                   // every scene texture, the scene being made (its bitmap, canvas and timers)
-      ahead.forEach(function (img) { img.removeEventListener('load', warmNext); }); ahead = []; warmer = null;
+      ahead.forEach(unwait); ahead = []; taken = []; warmer = null;
       var ext = gl && gl.getExtension('WEBGL_lose_context'); lost = true; if (ext) ext.loseContext();
       gl = null; W3.state = 'stopped';
     }

@@ -43,7 +43,7 @@ Ergebnis (14.11. abends, letzter Lauf nach allen Änderungen; 28 Fälle je Stand
 
 | | vorher (`feinschliff-basis`) | nachher |
 |---|---|---|
-| Tropfen mit Bewegung: letzte Änderung nach dem ersten Bild mit dem Bogen | 0 ms – er steht sofort, mitten in der Antwort (die Bildstreifen zeigen die Ringe im Tropfen bis zum Schließen) | Handy 288–446 ms, Desktop 450–470 ms: Er klingt aus, dann steht er |
+| Tropfen mit Bewegung: letzte Änderung nach dem ersten Bild mit dem Bogen | 0 ms – er steht sofort, mitten in der Antwort (die Bildstreifen zeigen die Ringe im Tropfen bis zum Schließen) | Handy 288–446 ms, Desktop 450–470 ms: Er klingt aus, dann steht er. (Nachgemessen am 15.11. von der Kontrolle: auf dieser Maschine mit WebGL in Software, je Bild etwa 200 ms, Desktop 454–750 ms, 3 von 10 Fällen über 600 ms – das letzte Bild kommt hier spät, weil die Bilder langsam sind; auf einer echten Grafikkarte nicht gemessen.) |
 | … ändert sich nach dem Erscheinen des Bogens überhaupt noch | nein (6 von 6 Fällen) | ja (6 von 6) |
 | `Wasser.info.settling` 600 ms nach dem Tippen | (gibt es nicht) | 0 |
 | Sprung beim Aufwachen (Änderung vom letzten Bild hinter dem Bogen zum ersten danach, in Schritten der Ruhe) | Tropfen 5,2–6,8 (Suche am Handy 0,6–0,7) | 0,1–1,3 |

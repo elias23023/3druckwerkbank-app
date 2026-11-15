@@ -9,7 +9,8 @@
 //   desktop     2000 x 993 and 1920 x 1080 (--format), the dock: Heute, Projekte, 3D-Druck, Material, Wetter, Archiv, Start, twice
 //   landschaft  desktop 2000 x 993: the clock stands 15 s before the look of the hour changes (13.11., 16:09:45; without
 //               weather the app takes sunset 17:00, at 16:10 "nachmittag" turns "golden": the landscape goes from herbst-mittag
-//               to herbst-abend with the app's 2.5 s crossfade) and the 20 s around it are watched
+//               to herbst-abend with the app's 2.5 s crossfade) and the 20 s around it are watched. A run in which the landscape
+//               does not go from herbst-mittag to another one measured nothing: it is marked VOID and the exit code is 1
 //   profil      a CPU profile of two tab changes on the phone (each scene seen once before), the look's script being the
 //               template (--look vorlage, default) or a commit (--look git:feinschliff-basis), so its functions have their names:
 //               time under each function, the largest first
@@ -19,8 +20,10 @@
 //               server (server/index.js: images, scripts, styles and fonts "immutable", everything else "no-cache") - vite
 //               preview sends "no-cache" for images, so every new <img> of a scene is asked for again (a round trip)
 // The page is never intercepted (no page.route: Playwright switches the browser's HTTP cache off while a route is set, and the
-// cache is part of what is measured). The weather service is made unreachable instead (a resolver rule): no weather, the
-// app takes sunrise 7:00 and sunset 17:00.
+// cache is part of what is measured). The weather service is made unreachable instead: the page's fetch() refuses every
+// address of open-meteo.com (an init script; a resolver rule alone is not enough - on a machine whose browser goes through a
+// proxy the real weather came through on some runs, with the sunset of the REAL day, and the landscape at 16:09 on 13.11.
+// was "nacht"). No weather: the app takes sunrise 7:00 and sunset 17:00.
 //   --drossel   CPU slowdowns of Chromium (1 = as the machine is, 4 = four times slower), each a series of its own
 //   --laeufe    runs per app and slowdown, each in a fresh page (the tables give the median and, after the slash, the largest)
 //   --netz langsam   the page loads over a slow line (80 ms, 6.4 Mbit/s down) from the first byte: does the first visit of a tab
@@ -44,7 +47,7 @@
 //   neu       ms until the drops show the new scene (Wasser.info.scene equals the address of the page's scene image; - = the
 //             script has no info.scene, or the drops did not get there within 1.2 s)
 // The work machine draws WebGL in software and is shared: compare two apps measured in one run, never absolute numbers with
-// a phone. Exit code 0 always (a measurement, not a check).
+// a phone. Exit code 0 (a measurement, not a check) - except landschaft with a VOID run (above).
 import fs from 'fs'; import path from 'path'; import http from 'http';
 import { pw, args, fail, lookArg, lookBefore, lookAfter, abs, APP } from './lib.mjs';
 
@@ -108,6 +111,7 @@ async function open(url, { kind, lk, format = '2000', netz = '', zeit = 0, stopp
   const [w, h] = kind === 'handy' ? [390, 844] : format === '1920' ? [1920, 1080] : [2000, 993];
   const ctx = await browser.newContext(kind === 'handy' ? { viewport: { width: w, height: h }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, ...VIENNA } : { viewport: { width: w, height: h }, deviceScaleFactor: 1, ...VIENNA });
   if (zeit) await ctx.addInitScript((t) => { const R = Date, off = t - R.now(); class D extends R { constructor(...x) { if (x.length) super(...x); else super(R.now() + off); } static now() { return R.now() + off; } } window.Date = D; }, zeit);
+  await ctx.addInitScript(() => { const f = window.fetch; window.fetch = function (u, o) { if (/open-meteo\.com/.test(String(u && u.url || u))) return Promise.reject(new TypeError('weather blocked by reiter.mjs')); return f.call(this, u, o); }; });
   const page = await ctx.newPage(); const cdp = await ctx.newCDPSession(page); const errors = []; page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));
   if (netz) await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 80, downloadThroughput: 6.4e6 / 8, uploadThroughput: 750e3 / 8 });
   const root = kind === 'handy' ? '.m-shell' : '.stage';
@@ -157,7 +161,7 @@ if (was === 'handy' || was === 'desktop') {
   }
   table();
 } else if (was === 'landschaft') {
-  const T = +new Date('2026-11-13T16:09:45+01:00');
+  const T = +new Date('2026-11-13T16:09:45+01:00'); var voids = 0;
   for (const d of drossel) for (const [name, url] of apps) for (let run = 0; run < laeufe; run++) {
     const o = await open(url, { kind: 'desktop', lk: look, zeit: T }); if (!run) console.log(`${name}: ${o.look}`);
     await o.cdp.send('Emulation.setCPUThrottlingRate', { rate: d });
@@ -167,10 +171,11 @@ if (was === 'handy' || was === 'desktop') {
       requestAnimationFrame(poll);
       setTimeout(() => {
         const sum = (from, to) => rw.calls.filter((c) => c.k === 'szene' && c.s >= from && c.s < to).reduce((x, c) => x + c.d, 0); const long = rw.long.filter((l) => l.s >= t0);
-        resolve({ von: src0 && src0.split('/').pop(), nach: [...document.querySelectorAll('.land img')].pop().currentSrc.split('/').pop(), szeneGes: sum(t0, t0 + 20000), szeneTask: long.length ? Math.max(0, ...long.map((l) => sum(l.s, l.s + l.d))) : 0, s50: long.filter((l) => l.d > 50 && sum(l.s, l.s + l.d) > l.d / 2).length, aufgabe: long.length ? Math.max(...long.map((l) => l.d)) : 0, lang: long.length, neu: changed && shown ? shown - changed : null });
+        resolve({ hatSzene: !!(window.Wasser && window.Wasser.info && 'scene' in window.Wasser.info), von: src0 && src0.split('/').pop(), nach: [...document.querySelectorAll('.land img')].pop().currentSrc.split('/').pop(), szeneGes: sum(t0, t0 + 20000), szeneTask: long.length ? Math.max(0, ...long.map((l) => sum(l.s, l.s + l.d))) : 0, s50: long.filter((l) => l.d > 50 && sum(l.s, l.s + l.d) > l.d / 2).length, aufgabe: long.length ? Math.max(...long.map((l) => l.d)) : 0, lang: long.length, neu: changed && shown ? shown - changed : null });
       }, 20000);
     }));
-    console.log(`${name.padEnd(10)} x${d} run ${run + 1}: ${r.von} -> ${r.nach} | Szene ges. ${f0(r.szeneGes)} ms, in einer Aufgabe ${f0(r.szeneTask)} ms, S>50 ${r.s50} | längste Aufgabe ${f0(r.aufgabe)} ms (${r.lang} über 50 ms in 20 s) | Tropfen zeigen die neue Landschaft ${f0(r.neu)} ms nach dem Laden`);
+    const leer = !/herbst-mittag/.test(r.von || '') || r.von === r.nach; if (leer) voids++;
+    console.log(`${name.padEnd(10)} x${d} run ${run + 1}: ${r.von} -> ${r.nach}${leer ? '  VOID: the landscape did not go from herbst-mittag to another one, nothing below was measured' : ''} | Szene ges. ${f0(r.szeneGes)} ms, in einer Aufgabe ${f0(r.szeneTask)} ms, S>50 ${r.s50} | längste Aufgabe ${f0(r.aufgabe)} ms (${r.lang} über 50 ms in 20 s) | Tropfen zeigen die neue Landschaft ${r.hatSzene ? f0(r.neu) + ' ms nach dem Laden' : 'n/a (the script has no Wasser.info.scene)'}`);
     rows.push({ app: name, drossel: d, ...r });
     await o.ctx.close();
   }
@@ -194,3 +199,4 @@ if (was === 'handy' || was === 'desktop') {
 }
 if (a.json) fs.writeFileSync(a.json, JSON.stringify(rows, null, 1));
 await browser.close(); for (const s of servers) s.close();
+if (was === 'landschaft' && voids) { console.log(`!! ${voids} run(s) VOID: the landscape did not change as planned (see the head of this file)`); process.exit(1); }

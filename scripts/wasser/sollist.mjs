@@ -37,7 +37,10 @@
 // how often the app rebuilt a button before the picture was taken differs from page to page - on the desktop two loads of
 // ONE build showed three of 27 screens with other water in a drop. So a screen whose pixels differ only INSIDE the drop
 // canvases is "ok*" (listed at the end, not a failure) - provided the drops themselves are the same: as many, at the same
-// places, of the same size, with the same labels. --tropfen makes such a screen a DIFF (to judge a change of the drops).
+// places, of the same size, with the same labels, AND what lies on the water is the same: such a screen is taken once more on
+// both sides with the drop canvases hidden (only the label, icon and badge of each drop remain) and that pair is compared
+// over the whole picture - a changed colour of a label or icon on a drop is a DIFF ("ON a drop"); only the water itself is
+// excused. --tropfen makes such a screen a DIFF (to judge a change of the drops).
 // Every line: ok / ok* / DIFF, the screen, how many pixels differ and by how much (inside the drop canvases counted apart),
 // and the box around all of them in CSS px. For every DIFF a picture <out>/<name>-vergleich.png: Soll | Ist | where they differ (red;
 // yellow inside drops). At the end the list of the screens that differ. Exit code 1 when a screen differs that is not named in
@@ -58,6 +61,9 @@ const nur = parts(a.nur), erwartet = parts(a.erwartet); const only = (n) => !nur
 // held still for the pictures, on both sides: the cloud banks (they drift even with reduced motion); the caret; and the islands'
 // own transition and layer hint - an island is a layer that the browser rasters at whatever scale it had while the world
 // changed (600 ms, also with reduced motion), so one and the same page showed the day ring and the island labels in two ways
+// a screen whose pixels differ only inside the drops is taken once more with the drop canvases hidden (a living drop lets its
+// plain glass step aside, so the button's label, icon and badge stand alone): that pair must be equal over the whole picture
+const HIDE_WATER = '.w3-drop { visibility: hidden !important; }';
 const STILL = '.cloudbank { animation: none !important; } *, *::before, *::after { caret-color: transparent !important; } .island { transition: none !important; will-change: auto !important; }';
 
 /* ------------------------------------------------------------------ the two states */
@@ -125,11 +131,18 @@ async function pair(group, hs, screens, desk) {
       const dr = [await drops(hs[0], scale), await drops(hs[1], scale)]; const d = await diff(files[0], files[1], [...dr[0], ...dr[1]].map((x) => x.slice(0, 4)), `${out}/${id}-diff.png`); d.sameDrops = JSON.stringify(dr[0]) === JSON.stringify(dr[1]); d.drops = dr[1].length; return d; };
     let d = await look(false), looks = 1;
     while ((d.outside || !d.sameDrops || (d.inside && looks < 2)) && looks < 3) { await hs[0].page.waitForTimeout(1500); d = await look(looks === 2); looks++; }   // (other water in a drop does not go away by looking again: one more look, not two)
-    const n = d.outside + d.inside, onlyWater = !broke && !a.tropfen && d.outside === 0 && d.inside > 0 && d.sameDrops, same = (n === 0 || onlyWater) && !broke && d.sameDrops !== false;
+    let n = d.outside + d.inside, onlyWater = !broke && !a.tropfen && d.outside === 0 && d.inside > 0 && d.sameDrops;
+    if (onlyWater) {                                               // the water is excused, what lies ON it is not: the same screen once more with the drop canvases hidden
+      const dry = [`${out}/${id}-soll-ohne-wasser.png`, `${out}/${id}-ist-ohne-wasser.png`];
+      for (let i = 0; i < 2; i++) { const tag = await hs[i].page.addStyleTag({ content: HIDE_WATER }); await fest(hs[i], dry[i], desk); await tag.evaluate((e) => e.remove()); }
+      const e = await diff(dry[0], dry[1], [], `${out}/${id}-diff.png`);
+      if (e.outside) { onlyWater = false; n = e.outside; d.onTop = e; files.splice(0, 2, ...dry); } else for (const f of dry) fs.rmSync(f, { force: true });
+    }
+    const same = (n === 0 || onlyWater) && !broke && d.sameDrops !== false;
     if (onlyWater) water.push(`${full} (${d.inside} px in ${d.drops} drops)`);
     const where = d.box ? `  x ${Math.floor(d.box[0] / scale)}..${Math.ceil(d.box[2] / scale)}, y ${Math.floor(d.box[1] / scale)}..${Math.ceil(d.box[3] / scale)}` : '';
     if (same) { for (const f of [...files, `${out}/${id}-diff.png`]) fs.rmSync(f, { force: true }); }
-    else { if (!broke && d.size === undefined) await strip([{ file: files[0], label: 'Soll' }, { file: files[1], label: 'Ist' }, { file: `${out}/${id}-diff.png`, label: 'Unterschied (rot; gelb = in einem Tropfen)' }], `${out}/${id}-vergleich.png`, { title: full, scale: desk ? 0.5 : 0.5 }); differ.push({ full, n, expected: expected(full) && !broke, text: broke ? `STEP FAILED:${broke}` : `${n} px differ (largest ${Math.max(d.maxOutside, d.maxInside)}; ${d.inside} of them inside drops)${d.sameDrops ? '' : '; THE DROPS THEMSELVES DIFFER (number, place, size or label)'}${where}`, pic: broke ? '' : `${out}/${id}-vergleich.png` }); if (broke) failed++; }
+    else { if (!broke && d.size === undefined) await strip([{ file: files[0], label: 'Soll' }, { file: files[1], label: 'Ist' }, { file: `${out}/${id}-diff.png`, label: 'Unterschied (rot; gelb = in einem Tropfen)' }], `${out}/${id}-vergleich.png`, { title: full, scale: desk ? 0.5 : 0.5 }); differ.push({ full, n, expected: expected(full) && !broke, text: broke ? `STEP FAILED:${broke}` : d.onTop ? `${n} px differ ON a drop: its label, icon or badge (the water hidden on both sides; largest ${d.onTop.maxOutside})${d.onTop.box ? `  x ${Math.floor(d.onTop.box[0] / scale)}..${Math.ceil(d.onTop.box[2] / scale)}, y ${Math.floor(d.onTop.box[1] / scale)}..${Math.ceil(d.onTop.box[3] / scale)}` : ''}` : `${n} px differ (largest ${Math.max(d.maxOutside, d.maxInside)}; ${d.inside} of them inside drops)${d.sameDrops ? '' : '; THE DROPS THEMSELVES DIFFER (number, place, size or label)'}${where}`, pic: broke ? '' : `${out}/${id}-vergleich.png` }); if (broke) failed++; }
     say(`${same ? (onlyWater ? 'ok* ' : 'ok  ') : expected(full) && !broke ? 'diff' : 'DIFF'} ${full.padEnd(44)} ${same ? (onlyWater ? `equal outside the drops; other water in a drop (${d.inside} px inside ${d.drops} drops)` : `equal${looks > 1 ? ` (at the ${looks}. look)` : ''}`) : differ[differ.length - 1].text}`);
   }
   // page errors: the same on both sides, or it is a difference

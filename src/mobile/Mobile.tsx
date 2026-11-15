@@ -19,7 +19,7 @@ import { Tageskarte } from '../ui/Tageskarte';
 import { SheetHost } from '../ui/SheetHost';
 import { CommandBar } from '../ui/CommandBar';
 import { Toast } from '../ui/Toast';
-import { weich } from '../ui/gehen';
+import { weich, leer } from '../ui/gehen';
 import { useHints } from '../ui/Hinweise';
 import { STAGES, type Project } from '../types';
 import { IHome, IClock, IFlag, ILayers, IList, ISearch, IBolt, IGear, IUser, IPrinter, ISun, IArchive, IArrowL, IChevR, IPlus, ISkip, IPlay, ISpool, IWrench, ICal, ICart, ITrash } from '../ui/Icons';
@@ -188,7 +188,7 @@ function MHeute({ now }: { now: Date }) {
   return (
     <>
       <Card title="Aufgaben" icon={<IClock />} count={`${open.length} offen`}>
-        {open.length === 0 ? <span className="muted small">{done ? `Alles erledigt (${done}).` : 'Noch keine Aufgaben. Aufgaben legst du im Projekt an.'}</span> : open.map((t) => (
+        {open.length === 0 ? <span {...leer()} className="muted small">{done ? `Alles erledigt (${done}).` : 'Noch keine Aufgaben. Aufgaben legst du im Projekt an.'}</span> : open.map((t) => (
           <div key={t.id} {...weich(t.id)} className="m-row"><Check on={t.done} onClick={() => a.toggleTask(t.id)} /><div className="col grow" style={{ gap: 1 }}><span>{t.title}</span><span className="xs muted">{projects.find((p) => p.id === t.projectId)?.name ?? devices.find((d) => d.id === t.deviceId)?.name ?? t.kind}{t.due ? ` · ${relTime(t.due, now.getTime())}` : ''}</span></div><button className="btn btn--icon btn--ghost" onClick={() => a.skipTask(t.id)} aria-label="Überspringen"><ISkip width={16} height={16} /></button></div>
         ))}
       </Card>
@@ -200,7 +200,7 @@ function MHeute({ now }: { now: Date }) {
       <Card title="Termine & Wartung" icon={<ICal />}>
         {upcoming.map((x) => <div key={x.id} className="m-row"><i className="dot" style={{ background: '#c59bff' }} /><span className="muted" style={{ width: 62 }}>{dayLabel(x.at, now)}</span><span className="grow ellipsis">{x.title}</span></div>)}
         {due.map(({ d, m }) => <div key={m.id} {...weich(m.id)} className="m-row"><Check on={m.done} onClick={() => a.toggleMaintenance(d.id, m.id)} /><div className="col grow" style={{ gap: 1 }}><span>{d.name}: {m.title}</span><span className="xs muted">{new Date(m.due).getTime() < now.getTime() ? 'überfällig' : relTime(m.due, now.getTime())}</span></div></div>)}
-        {upcoming.length + due.length === 0 ? <span className="muted small">Nichts anstehend.</span> : null}
+        {upcoming.length + due.length === 0 ? <span {...leer()} className="muted small">Nichts anstehend.</span> : null}
       </Card>
     </>
   );
@@ -281,7 +281,7 @@ function MMaterial() {
         <button className="btn" onClick={() => openSheet({ kind: 'spule' })}><IPlus width={14} height={14} /> Neue Rolle</button>
       </Card>
       <Card title="Einkaufsliste" icon={<ICart />} count={openItems}>
-        {shopping.length === 0 ? <span className="muted small">Noch nichts auf der Liste.</span> : null}
+        {shopping.length === 0 ? <span {...leer()} className="muted small">Noch nichts auf der Liste.</span> : null}
         {[...shopping].sort((a, b) => Number(a.done) - Number(b.done)).map((it) => <div key={it.id} {...weich(it.id)} className="m-row m-shop"><Check on={it.done} onClick={() => sh.toggle(it.id)} label={it.done ? `${it.title}: erledigt` : `${it.title}: offen`} /><div className="col grow" style={{ gap: 1, minWidth: 0 }}><span className="ellipsis" style={{ textDecoration: it.done ? 'line-through' : undefined, opacity: it.done ? .6 : 1 }}>{it.title}</span><span className="xs muted">{[it.qty && it.qty !== '1' ? `× ${it.qty}` : '', it.price ? `${fmtNum(it.price, 2)} €` : '', projects.find((p) => p.id === it.projectId)?.name ?? ''].filter(Boolean).join(' · ') || 'ohne Angaben'}</span></div>{it.url && /^https?:\/\//i.test(it.url) ? <a className="btn btn--sm btn--ghost" href={it.url} target="_blank" rel="noreferrer noopener">Link</a> : null}<button className="btn btn--icon btn--ghost" aria-label={`${it.title} von der Liste entfernen`} onClick={() => sh.remove(it.id)}><ITrash width={18} height={18} /></button></div>)}
         <div className="row" style={{ gap: 8 }}><input className="input grow" placeholder="Was fehlt? z. B. PETG Schwarz" aria-label="Auf die Einkaufsliste" value={buy} maxLength={80} onChange={(e) => setBuy(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addBuy(); }} /><button className="btn" disabled={!buy.trim()} onClick={addBuy}><IPlus width={14} height={14} /> Dazu</button></div>
         <span className="xs faint">Produktlinks lösen keine Bestellung aus.</span>

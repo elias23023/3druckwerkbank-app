@@ -3,7 +3,7 @@
 // long as the sheet was open. Its first probe, probe.mjs beside the finding, is the record; this is the tool.)
 //
 //   node scripts/wasser/bogen.mjs [handy|desktop|alles] [--app name=address,...] [--toene dunkel,klar] [--faelle tropfen,glas,zeile,suche]
-//        [--bewegung an,aus] [--out <dir>] [--bild]
+//        [--bewegung an,aus] [--out <dir>] [--bild] [--look eingebaut|vorlage|<folder>|git:<rev>]
 //
 //   handy     390 x 844 @2x;  desktop  2000 x 993 @2x (the pictures are for people)
 //   Fälle (cases), each opened by a real pointer (phone: a touch; desktop: the mouse) on
@@ -17,6 +17,9 @@
 //   --bewegung  an = motion as it is, aus = reduced motion (the water is one still picture: then the rest pose can be compared
 //               pixel for pixel)
 //   --app     the apps (default jetzt=WASSER_APP or :4173); two of them (vorher=...,nachher=...) are put side by side in --bild
+//   --look    what each app shows (head of lib.mjs): eingebaut (default) = the look it has built in; vorlage, a folder with a copy
+//             of the template or git:<revision> = that look in place of the built-in one - a changed copy of the template is
+//             checked behind a sheet without building it into the app
 //
 // What is looked at, per case. The stage itself is held still (islands, clouds - not the look; a panel's blur shows them move),
 // the app's clock stands. The picture: the element and 26 px around it, without what the open sheet or search panel covers.
@@ -40,7 +43,13 @@
 //   bildSteht the picture at 1500 ms = the one at 2500 ms (the ring of light on a card's floor runs out within 1.1 s; nothing
 //             holds it); with --bewegung aus also bildWieRef: the pictures at 1000 and 2500 ms = REF. "=" allows 6 of 255
 //             (NOISE): the desktop once showed a whole clip 4 of 255 brighter between two stills of a page at rest - a blurred
-//             layer rastered anew; a ring or a press differs by tens. bildMax / refMax: the largest difference found
+//             layer rastered anew; a ring or a press differs by tens. bildMax / refMax: the largest difference found.
+//             In long runs the desktop's "klar" glass case showed the whole clip 23 of 255 apart from REF from about 0.6 s on
+//             (the blurred panel behind the button rastered anew; the same case alone: equal). When the pictures differ from
+//             REF, a second REF is taken after closing (opened again without touching, 2.5 s): equal to it = the tap left
+//             nothing behind (ref2Max). bildSteht (1500 = 2500 ms, with motion) has no such second look: there the same
+//             re-rastering failed once in a long run - repeat the case alone before believing it
+//             (--toene klar --faelle glas desktop)
 //   lebt      after the sheet closed the drop's canvas changes again within 1 s (with motion)
 //   Sprung    the change of the drop's canvas from its last picture behind the sheet to its first after it, against the change
 //             between two pictures at rest (mean of |difference| in 0..255; "x 1.4" = 1.4 times a step at rest). A drop that
@@ -50,11 +59,12 @@
 // otherwise, e.g. vorher, is only shown: "anders"). --bild: one strip per case (at rest, REF, the seven pictures, after
 // closing), apps one under the other, in --out (default: a scratch folder that is named, kept only with --bild).
 import fs from 'fs'; import path from 'path';
-import { pw, args, fail, mkdir, outDir, strip, stack, diff, lookBefore, lookAfter, setTheme, tonOf, wetterRoute, zeitOf, APP } from './lib.mjs';
+import { pw, args, fail, mkdir, outDir, strip, stack, diff, lookArg, lookBefore, lookAfter, setTheme, tonOf, wetterRoute, zeitOf, APP } from './lib.mjs';
 
-const a = args({ app: '', toene: 'dunkel,klar', faelle: 'tropfen,glas,zeile,suche', bewegung: 'an,aus', out: '' }, { flags: ['bild'], choices: { toene: ['dunkel', 'klar'], faelle: ['tropfen', 'glas', 'zeile', 'suche'], bewegung: ['an', 'aus'] } });
+const a = args({ app: '', toene: 'dunkel,klar', faelle: 'tropfen,glas,zeile,suche', bewegung: 'an,aus', out: '', look: 'eingebaut' }, { flags: ['bild'], choices: { toene: ['dunkel', 'klar'], faelle: ['tropfen', 'glas', 'zeile', 'suche'], bewegung: ['an', 'aus'] } });
 const WAS = ['handy', 'desktop', 'alles']; const was = a._[0] || 'alles'; if (!WAS.includes(was) || a._.length > 1) fail(`"${a._.join(' ')}": one of ${WAS.join(' | ')} (nothing = alles)`);
 const apps = (a.app || `jetzt=${APP}`).split(',').map((x) => { const i = x.indexOf('='); if (i < 1) fail(`--app ${x}: name=address`); return [x.slice(0, i), x.slice(i + 1).replace(/\/$/, '')]; });
+const look = lookArg(a.look); if (!look || look === 'auto') fail('--look: eingebaut, vorlage, a folder or git:<revision> (this tool looks at the look: not ohne, and not auto)');
 const list = (v) => v.split(',').filter(Boolean); const od = outDir(a.out, 'bogen'), out = od.dir;
 const TIMES = [60, 200, 400, 600, 1000, 1500, 2500];
 const NOISE = 6;   // of 255: what two pictures of the same still page may differ by (a blurred layer rastered anew)
@@ -88,7 +98,7 @@ async function open(kind, url, ton, reduced) {
   const page = await ctx.newPage(); const errors = []; page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));
   await page.clock.setFixedTime(new Date(t0)); await wetterRoute(page, 'klar', t0);
   const root = kind === 'handy' ? '.m-shell' : '.stage';
-  const st = await lookBefore(page, 'eingebaut'); await page.goto(url + '/#/start', { waitUntil: 'networkidle' }); await page.waitForSelector(root);
+  const st = await lookBefore(page, look); await page.goto(url + '/#/start', { waitUntil: 'networkidle' }); await page.waitForSelector(root);
   const got = await lookAfter(page, st, root);
   if (await setTheme(page, ton)) await page.waitForSelector(root);
   if (await tonOf(page) !== ton) throw new Error(`tone ${ton} not set`);
@@ -138,6 +148,11 @@ async function run(kind, name, url, ton, reduced, key, c) {
   if (c.close === 'escape') await p.keyboard.press('Escape'); else await p.evaluate(() => { const b = [...document.querySelectorAll('.sheet .sheet__head button')].pop(); if (b) b.click(); });
   let first = null; const tc = Date.now(); while (Date.now() - tc < 1200) { const x = await canvas(); if (x && frozen && diffMean(x, frozen) > 0) { first = x; break; } await p.waitForTimeout(16); }
   await p.waitForTimeout(1000); const later = await canvas(); await shot('3-danach');
+  // a second REF, opened again without touching (still water only): the desktop's blurred panels were seen to raster anew by
+  // 23 of 255 some time after a sheet opened, in long runs only (15.11.) - if the tapped pictures equal THIS one, the tap left
+  // nothing behind and the first REF was only taken before that re-rastering
+  let ref2 = false; if (reduced && Math.max(await (async () => { const d = await diff(`${dir}/2-1000.png`, `${dir}/1-ref.png`, covered); return d.outside ? d.maxOutside : 0; })()) > NOISE) {
+    await p.evaluate(() => document.querySelector('[data-bogen-ziel]').click()); await p.waitForSelector(c.open, { timeout: 4000 }).catch(() => {}); await p.waitForTimeout(2500); await shot('1-ref2'); ref2 = true; await closeIt(); }
   const drop = !!r1;
   const eq = (x, y) => x && y && diffMean(x, y) === 0;
   const picDiff = async (f1, f2) => { const d = await diff(`${dir}/${f1}.png`, `${dir}/${f2}.png`, covered); return d.outside ? d.maxOutside : 0; };   // largest difference outside what the sheet covers, 0..255
@@ -158,7 +173,8 @@ async function run(kind, name, url, ton, reduced, key, c) {
   // pictures: up to NOISE of 255 is the browser rastering a blurred layer anew (seen on the desktop over a whole clip at once);
   // a ring or a press differs by tens
   const d1 = await picDiff('2-1500', '2-2500'); res.bildSteht = d1 <= NOISE; res.bildMax = d1;
-  if (reduced) { const d2 = Math.max(await picDiff('2-1000', '1-ref'), await picDiff('2-2500', '1-ref')); res.bildWieRef = d2 <= NOISE; res.refMax = d2; }
+  if (reduced) { const d2 = Math.max(await picDiff('2-1000', '1-ref'), await picDiff('2-2500', '1-ref')); res.bildWieRef = d2 <= NOISE; res.refMax = d2;
+    if (!res.bildWieRef && ref2) { const d3 = Math.max(await picDiff('2-1000', '1-ref2'), await picDiff('2-2500', '1-ref2')); res.ref2Max = d3; res.bildWieRef = d3 <= NOISE; } }
   res.zeiten = Object.values(took).join('/');
   const must = ['opened', 'steht', 'endet', 'bildSteht', ...(reduced ? ['wieRef', 'bildWieRef'] : ['lebt', 'klingtAus'])].filter((k) => k in res);
   const bad = must.filter((k) => res[k] === false); const sprungBad = drop && !reduced && res.sprung !== null && res.sprung > 3;
