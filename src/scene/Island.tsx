@@ -13,6 +13,9 @@ export const ISLAND_META: Record<LibraryIsland, { w: number; h: number; disc?: {
   haus: { w: 1086, h: 1092 }, vitrine: { w: 1015, h: 1038 }, druckhuette: { w: 1193, h: 1245 }, pergola: { w: 1233, h: 1179 }, holz: { w: 1161, h: 1197 }, it: { w: 1086, h: 1106 },
   labor: { w: 1193, h: 1203 }, spulen: { w: 1149, h: 1150 }, solar: { w: 1157, h: 1124 }, metall: { w: 1179, h: 1128 }, atelier: { w: 1121, h: 1208 }, observatorium: { w: 1123, h: 1071 },
   planung: { w: 1141, h: 1147 }, 'garten-ring': { w: 1519, h: 997 }, pavillon: { w: 1519, h: 1022 },
+  // project islands by type and by area (wide format, waterfall fades out at the lower end)
+  'art-gehaeuse': { w: 1489, h: 1007 }, 'art-halterung': { w: 1442, h: 995 }, 'art-organizer': { w: 1476, h: 985 }, 'art-reparatur': { w: 1416, h: 1003 },
+  'bereich-smarthome': { w: 1473, h: 1010 }, 'bereich-garten': { w: 1479, h: 986 }, 'bereich-haushalt': { w: 1480, h: 998 }, 'bereich-technik': { w: 1453, h: 1005 }, 'bereich-werkstatt': { w: 1458, h: 1009 },
 };
 /** Where a photo goes on the two frame islands (percent of the sprite box): the board face / the opening of the easel frame. */
 export const FRAME_BOX: Partial<Record<LibraryIsland, CSSProperties>> = {
@@ -24,7 +27,10 @@ export const ASSET_VERSION = '20261108a';
 /** Desktop: name and subtitle under an island stand on a small label of smoke glass (block „Felder“ in global.css, class
  *  `island__label--feld`). false = the names stand free on the landscape as before (only the text shadow). */
 const LABEL_FIELD = true;
-export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${id}-${w}.webp?v=${ASSET_VERSION}`;
+/** Stored projects may name an island this build does not know (data from a newer or older app version): draw the
+ *  default island instead of a missing image or a crash. The stored id stays untouched, so nothing is overwritten. */
+export const knownIsland = (id: LibraryIsland): LibraryIsland => (Object.prototype.hasOwnProperty.call(ISLAND_META, id) ? id : 'werkstatt');
+export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${knownIsland(id)}-${w}.webp?v=${ASSET_VERSION}`;
 
 export interface IslandProps {
   image: LibraryIsland; x: number; y: number; size: number; depth: number; active?: boolean; opacity?: number;
@@ -32,9 +38,10 @@ export interface IslandProps {
   onClick?: () => void; cta?: string; children?: ReactNode; filter?: string; eager?: boolean; title?: string; halo?: string; spotlight?: boolean;
 }
 
-export function Island({ image, x, y, size, depth, active, opacity, label, sub, status, labelSize = 'big', onClick, cta, children, filter, eager, title, halo, spotlight }: IslandProps) {
+export function Island({ image: imageIn, x, y, size, depth, active, opacity, label, sub, status, labelSize = 'big', onClick, cta, children, filter, eager, title, halo, spotlight }: IslandProps) {
   const s = 1 - 0.35 * depth;
   const par = (1 - depth) * 26 + 6;
+  const image = knownIsland(imageIn);
   const meta = ISLAND_META[image];
   const style: CSSProperties = {
     left: `${x}%`, top: `${y}%`, width: `${size}cqw`, zIndex: Math.round((1 - depth) * 100),

@@ -11,7 +11,17 @@ import { IFlag, ITrash, IArrowR, IArrowL } from '../ui/Icons';
 type Draft = Pick<Project, 'name' | 'description' | 'type' | 'areas' | 'tags' | 'priority' | 'difficulty' | 'island' | 'requiredSpools' | 'plannedHours' | 'plannedStart' | 'plannedEnd' | 'difficultyReason'> & { printerId?: string; photoDataUrl?: string };
 const blank = (): Draft => ({ name: '', description: '', type: '', areas: [], tags: [], priority: 2, difficulty: 2, island: { kind: 'bibliothek', libraryId: 'ideen', frame: { ratio: 'quer', offsetX: 0, offsetY: 0, zoom: 1, style: 'holz' } }, requiredSpools: [], plannedHours: undefined });
 const TYPE_HINT: Record<string, string> = { 'Reparatur / Ersatzteil': 'Etwas Kaputtes wieder nutzbar machen', 'Halterung / Befestigung': 'Perfekt angepasst, überall einsetzbar', 'Organizer / Aufbewahrung': 'Ordnung für Schublade und Werkbank', 'Werkzeug / Hilfsmittel': 'Helfer für die Werkstatt', 'Gehäuse / Elektronik': 'Schützen, ordnen, möglich machen', 'Mechanisches Bauteil': 'Zahnräder, Lager, Gelenke', 'Prototyp / Testteil': 'Schnell ausprobieren', 'Deko / Geschenk': 'Schönes für dich und andere', 'Modell / Miniatur': 'Maßstab und Details', 'Experiment / Neue Idee': 'Etwas noch nie Gedrucktes', 'Sonstiges / Universal': 'Passt in keine Schublade' };
-const LIB: { id: LibraryIsland; name: string; hint: string; types: string[]; areas: string[] }[] = [
+/** `own`: the island was painted for exactly this project type (art-*) or this area (bereich-*); it then comes first. */
+const LIB: { id: LibraryIsland; name: string; hint: string; types: string[]; areas: string[]; own?: 'type' | 'area' }[] = [
+  { id: 'art-halterung', name: 'Halterungen', hint: 'Lochwand, Eckwinkel-Gestell, Messschieber', types: ['Halterung / Befestigung'], areas: [], own: 'type' },
+  { id: 'art-gehaeuse', name: 'Gehäusebau', hint: 'Glashütte mit Messplatz, Gehäuse auf dem Steintisch', types: ['Gehäuse / Elektronik'], areas: [], own: 'type' },
+  { id: 'art-organizer', name: 'Aufbewahrung', hint: 'Regal mit Kisten, Sortierkästen, Seerosenteich', types: ['Organizer / Aufbewahrung'], areas: [], own: 'type' },
+  { id: 'art-reparatur', name: 'Reparatur', hint: 'Reparaturhütte mit Zahnrädern, Steinbrücke', types: ['Reparatur / Ersatzteil'], areas: [], own: 'type' },
+  { id: 'bereich-werkstatt', name: 'Werkstatt am Bach', hint: 'Werkzeugwand, Standbohrmaschine, alte Eiche', types: [], areas: ['Werkstatt'], own: 'area' },
+  { id: 'bereich-garten', name: 'Garten & Outdoor', hint: 'Gewächshaus, Hochbeete, Seerosenteich', types: [], areas: ['Garten & Outdoor'], own: 'area' },
+  { id: 'bereich-haushalt', name: 'Haushalt', hint: 'Steinhaus mit Küche, Pergola, Kräuterbeet', types: [], areas: ['Haushalt'], own: 'area' },
+  { id: 'bereich-smarthome', name: 'Smart Home', hint: 'Gartenstudio mit Solardach, Leuchten, Sensor', types: [], areas: ['Elektronik & Smart Home'], own: 'area' },
+  { id: 'bereich-technik', name: 'Technik & Maschinen', hint: 'Wasserrad, Drehbank, Maschinenteile', types: [], areas: ['Technik & Maschinen'], own: 'area' },
   { id: 'werkstatt', name: 'Werkstatt', hint: 'Werkbank, Drucker, Werkzeuge', types: ['Werkzeug / Hilfsmittel', 'Mechanisches Bauteil', 'Reparatur / Ersatzteil', 'Organizer / Aufbewahrung'], areas: ['Werkstatt', 'Technik & Maschinen'] },
   { id: 'elektronik', name: 'Elektronik', hint: 'Platinen, Gehäuse, Sensoren', types: ['Gehäuse / Elektronik', 'Prototyp / Testteil'], areas: ['Elektronik & Smart Home', 'Prototyping & Entwicklung'] },
   { id: 'ideen', name: 'Ideen', hint: 'Skizzen, Pläne, Neues', types: ['Experiment / Neue Idee', 'Deko / Geschenk', 'Modell / Miniatur', 'Halterung / Befestigung'], areas: ['Hobby & Freizeit', 'Deko & Persönliches', 'Schule / Lernen', 'Haushalt', 'Garten & Outdoor'] },
@@ -63,7 +73,8 @@ export function ProjektForm({ projectId }: { projectId?: string }) {
   const upd = (patch: Partial<Draft>) => { const nd = { ...d, ...patch }; setD(nd); if (existing) return; if (draftTimer.current) clearTimeout(draftTimer.current); draftTimer.current = setTimeout(() => useStore.getState().setDraft(key, { ...nd, photoDataUrl: undefined, island: { ...nd.island, photoDataUrl: undefined, kind: nd.island.photoDataUrl ? 'bibliothek' : nd.island.kind } }), 500); };
   const close = () => s.closeSheet();
   const suggested = useMemo(() => {
-    const score = (l: typeof LIB[number]) => (l.types.includes(d.type) ? 2 : 0) + l.areas.filter((a) => d.areas.includes(a)).length;
+    // type match 2, each area match 1; an island painted for exactly this type or area gets 3 more, so it leads
+    const score = (l: typeof LIB[number]) => { const t = l.types.includes(d.type), a = l.areas.filter((x) => d.areas.includes(x)).length; return (t ? 2 : 0) + a + ((l.own === 'type' && t) || (l.own === 'area' && a) ? 3 : 0); };
     const used = new Map<string, number>(); s.projects.forEach((p) => used.set(p.island.libraryId, (used.get(p.island.libraryId) ?? 0) + 1));
     return [...LIB].filter((l) => l.id !== 'rahmen' && l.id !== 'staffelei').sort((a, b) => score(b) - score(a) || (used.get(b.id) ?? 0) - (used.get(a.id) ?? 0)).slice(0, 3);
   }, [d.type, d.areas, s.projects]);

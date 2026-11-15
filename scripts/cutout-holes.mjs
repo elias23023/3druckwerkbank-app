@@ -1,12 +1,19 @@
 // Removes enclosed near-white leftovers (background seen through frames, windows, between posts) from island sprites.
 // A region is cut when every pixel is near pure white (min channel >= 247), it is not reachable from the transparent
 // background and it has at least MIN px. Edge pixels are feathered. usage: node scripts/cutout-holes.mjs <png> [<png>...]
+// Not every such region is background: white objects (printed parts, a caliper), lamp light, glass and waterfall foam look
+// the same. scripts/cutout-holes-keep.json lists, per file name, boxes [x0, y0, x1, y1] (pixels of the sprite as the
+// cutout left it); a region lying completely inside one of them stays. The boxes were picked by eye for the project
+// islands of Nov 2026 and only fit the sprites exactly as cutout-islands.mjs --waterfall produces them.
 import sharp from 'sharp';
+import { readFileSync } from 'node:fs';
 const MIN = 40;
+const KEEP = JSON.parse(readFileSync(new URL('./cutout-holes-keep.json', import.meta.url), 'utf8'));
 for (const file of process.argv.slice(2)) {
   const { data: px, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const W = info.width, H = info.height, N = W * H;
   const white = new Uint8Array(N); for (let i = 0; i < N; i++) { const o = i * 4; if (px[o + 3] > 0 && px[o] >= 247 && px[o + 1] >= 247 && px[o + 2] >= 247) white[i] = 1; }
+  const keep = KEEP[file.split('/').pop()] ?? []; let kept = 0;
   const seen = new Uint8Array(N); const cut = new Uint8Array(N); let removed = 0, regions = 0;
   const stack = [];
   for (let s = 0; s < N; s++) {
@@ -19,7 +26,10 @@ for (const file of process.argv.slice(2)) {
         if (px[j * 4 + 3] === 0) touches = true; else if (white[j] && !seen[j]) { seen[j] = 1; stack.push(j); }
       }
     }
-    if (pts.length >= MIN) { for (const i of pts) cut[i] = 1; removed += pts.length; regions++; }
+    if (pts.length < MIN) continue;
+    let x0 = W, y0 = H, x1 = 0, y1 = 0; for (const i of pts) { const x = i % W, y = (i / W) | 0; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (keep.some(([a, b, c, d]) => x0 >= a && y0 >= b && x1 <= c && y1 <= d)) { kept++; continue; }
+    for (const i of pts) cut[i] = 1; removed += pts.length; regions++;
   }
   // feather: neighbours of cut pixels get alpha from luminance (bright fringe -> more transparent)
   for (let i = 0; i < N; i++) {
@@ -32,5 +42,5 @@ for (const file of process.argv.slice(2)) {
   }
   await sharp(px, { raw: { width: W, height: H, channels: 4 } }).png().toFile(file + '.tmp');
   await sharp(file + '.tmp').toFile(file); const { unlinkSync } = await import('node:fs'); unlinkSync(file + '.tmp');
-  console.log(file.split('/').pop(), 'regions', regions, 'px', removed);
+  console.log(file.split('/').pop(), 'regions', regions, 'px', removed, 'kept', kept);
 }
