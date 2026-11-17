@@ -57,11 +57,12 @@ export async function signInWithGoogleCredential(credential: string) { const r =
 export async function sendPasswordReset(email: string) { await call('/auth.php?a=reset-request', { json: { email } }); }
 export async function resetPassword(token: string, password: string) { const r = await call<{ user: CloudUser }>('/auth.php?a=reset', { json: { token, password } }); setAuth({ user: r.user }); return r.user; }
 /** Abmelden gilt erst, wenn der Server die Sitzung beendet hat (sonst wäre man nach dem Neuladen wieder angemeldet). */
-export async function signOut() { await flushSync(); await call('/auth.php?a=logout', { json: {} }); setAuth({ user: null }); stopSync(); }
+export async function signOut() { await flushSync(); const r = await call<{ private?: boolean }>('/auth.php?a=logout', { json: {} }); setAuth({ user: null }); stopSync(); if (r?.private) location.reload(); }
 
 /** Überall abmelden: beendet die Sitzungen auf allen Geräten (nur mit dem Node.js-Server). */
 export const canSignOutEverywhere = NODE_API;
-export async function signOutEverywhere() { await flushSync(); await call('/auth.php?a=logout-all', { json: {} }); setAuth({ user: null }); stopSync(); }
+export async function signOutEverywhere() { await flushSync(); const r = await call<{ private?: boolean }>('/auth.php?a=logout-all', { json: {} }); setAuth({ user: null }); stopSync(); if (r?.private) location.reload(); // private site: back to the sign-in page
+}
 
 /** Google Identity Services laden und den offiziellen Knopf in ein Element rendern. */
 export function renderGoogleButton(el: HTMLElement, clientId: string, onCredential: (c: string) => void): () => void {

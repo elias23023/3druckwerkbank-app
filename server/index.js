@@ -48,6 +48,30 @@ const MAX_PW_BYTES = 72; // bcrypt only looks at the first 72 bytes
 const MAX_STATE_BYTES = 12 * 1024 * 1024;
 const configured = !!(env.DB_NAME && env.DB_USER && env.DB_PASS);
 
+/**
+ * Private mode: with a file werkbank-private/privat.json next to this site's public_html (or WERKBANK_PRIVAT) the whole site is
+ * closed. Only the listed addresses can sign in, everybody else gets nothing but the sign-in page. The file is not in the repository:
+ *   { "emails": ["me@example.org", "friend@example.org"], "accounts": [{ "email": "friend@example.org", "password_hash": "$2b$12$..." }] }
+ * "accounts" are created at start when they do not exist yet (a test account without a mailbox). Remove the file and restart to open the site again.
+ */
+function loadPrivate() {
+  const here = path.dirname(fileURLToPath(import.meta.url)); const cut = here.indexOf('/domains/');
+  const own = cut >= 0 ? path.join(here.slice(0, cut), 'domains', here.slice(cut + 9).split('/')[0], 'werkbank-private', 'privat.json') : null;
+  for (const file of [process.env.WERKBANK_PRIVAT, own].filter(Boolean)) {
+    try {
+      if (!fs.existsSync(file)) continue;
+      const j = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const emails = new Set((Array.isArray(j.emails) ? j.emails : []).filter((e) => typeof e === 'string').map((e) => e.trim().toLowerCase()).filter(Boolean));
+      const accounts = (Array.isArray(j.accounts) ? j.accounts : []).filter((a) => a && typeof a.email === 'string' && /^\$2[aby]\$\d\d\$[./A-Za-z0-9]{53}$/.test(a.password_hash ?? '')).map((a) => ({ email: a.email.trim().toLowerCase(), hash: a.password_hash }));
+      // a file that is there but unreadable or empty still closes the site: never open by accident
+      return { on: true, emails, accounts: accounts.filter((a) => emails.has(a.email)) };
+    } catch { return { on: true, emails: new Set(), accounts: [] }; }
+  }
+  return { on: false, emails: new Set(), accounts: [] };
+}
+const PRIVATE = loadPrivate();
+const allowed = (email) => !PRIVATE.on || PRIVATE.emails.has(String(email ?? '').toLowerCase());
+
 const pool = configured ? mysql.createPool({ host: '127.0.0.1', port: 3306, database: env.DB_NAME, user: env.DB_USER, password: env.DB_PASS, charset: 'utf8mb4', connectionLimit: 5, timezone: 'Z', dateStrings: true }) : null;
 const q = async (sql, params = []) => (await pool.execute(sql, params))[0];
 const one = async (sql, params = []) => (await q(sql, params))[0] ?? null;
@@ -85,7 +109,8 @@ const cookieOpts = (req) => ({ path: '/', secure: !isLocal(req), httpOnly: true,
 const cookieOf = (req) => { const m = new RegExp(`(?:^|;\\s*)${cookieName(req)}=([a-f0-9]{64})`).exec(req.headers.cookie ?? ''); return m ? m[1] : ''; };
 async function currentUser(req) {
   const t = cookieOf(req); if (!t) return null;
-  return one('SELECT u.id, u.email, u.name, u.avatar_url, u.google_sub FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > NOW()', [sha256(t)]);
+  const u = await one('SELECT u.id, u.email, u.name, u.avatar_url, u.google_sub FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > NOW()', [sha256(t)]);
+  return u && allowed(u.email) ? u : null; // private mode: a session of an address that is not on the list counts as signed out
 }
 /** Sliding session: at most once a day the expiry moves forward and the cookie is sent again. Unused sessions end after SESSION_DAYS. */
 async function refreshSession(req, res) {
@@ -95,6 +120,7 @@ async function refreshSession(req, res) {
 }
 const requireUser = async (req) => (await currentUser(req)) ?? fail(401, 'Nicht angemeldet.', 'auth');
 async function setSession(req, res, userId) {
+  if (PRIVATE.on && !allowed((await one('SELECT email FROM users WHERE id = ?', [userId]))?.email)) fail(403, 'Diese Seite ist zurzeit privat.', 'private');
   const token = crypto.randomBytes(32).toString('hex');
   await q(`INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ${SESSION_DAYS} DAY))`, [sha256(token), userId]);
   await q('DELETE FROM sessions WHERE expires_at < NOW()');
@@ -205,12 +231,12 @@ api.use((req, _res, next) => (configured || req.path === '/health' ? next() : ne
 api.get('/health', wrap(async (req, res) => {
   if (!configured) return res.status(503).json({ ok: false, error: 'Konto-Dienst nicht eingerichtet (Konfiguration fehlt).', kind: 'not_configured' });
   let u = null; try { u = await currentUser(req); if (u) await refreshSession(req, res); } catch { u = null; }
-  res.json({ ok: true, configured: true, google: !!env.GOOGLE_CLIENT_ID, googleClientId: env.GOOGLE_CLIENT_ID || null, mail: mailReady, files: files.ready, bambu: bambu.ready, user: u ? userOut(u) : null });
+  res.json({ ok: true, configured: true, google: !!env.GOOGLE_CLIENT_ID, googleClientId: env.GOOGLE_CLIENT_ID || null, mail: mailReady, files: files.ready, bambu: bambu.ready, private: PRIVATE.on, user: u ? userOut(u) : null });
 }));
 api.get('/auth/me', wrap(async (req, res) => { const u = await currentUser(req); res.json({ ok: true, user: u ? userOut(u) : null }); }));
-api.post('/auth/logout', wrap(async (req, res) => { await clearSession(req, res); res.json({ ok: true }); }));
+api.post('/auth/logout', wrap(async (req, res) => { await clearSession(req, res); res.json({ ok: true, private: PRIVATE.on }); }));
 // ends every session of the account on all devices
-api.post('/auth/logout-all', wrap(async (req, res) => { const u = await requireUser(req); await q('DELETE FROM sessions WHERE user_id = ?', [u.id]); res.clearCookie(cookieName(req), cookieOpts(req)); res.json({ ok: true }); }));
+api.post('/auth/logout-all', wrap(async (req, res) => { const u = await requireUser(req); await q('DELETE FROM sessions WHERE user_id = ?', [u.id]); res.clearCookie(cookieName(req), cookieOpts(req)); res.json({ ok: true, private: PRIVATE.on }); }));
 
 api.post('/auth/register', wrap(async (req, res) => {
   const email = str(req.body?.email).trim().toLowerCase(); const pw = str(req.body?.password, 1000);
@@ -219,6 +245,7 @@ api.post('/auth/register', wrap(async (req, res) => {
   checkNewPassword(pw);
   const exists = async () => !!(await one('SELECT id FROM users WHERE email = ?', [email]));
   const hash = await hashPw(pw); // always computed, so the response time is the same for known and unknown addresses
+  if (!allowed(email)) { if (mailReady) return res.json({ ok: true, pending: true }); fail(403, 'Diese Seite ist zurzeit privat. Neue Konten sind nicht möglich.', 'private'); }
   if (!mailReady) {
     // no mail available: direct registration (an existing account never gets a password this way)
     if (await exists()) fail(409, 'Für diese E-Mail gibt es schon ein Konto. Bitte anmelden oder „Passwort vergessen“ nutzen.', 'exists');
@@ -260,7 +287,7 @@ api.post('/auth/login', wrap(async (req, res) => {
   const u = await one('SELECT id, password_hash FROM users WHERE email = ?', [email]);
   // always compare a hash, so the response time does not reveal whether the address exists
   const valid = pwBytes(pw) <= 1000 && await bcrypt.compare(pw, u?.password_hash ?? DUMMY_HASH);
-  if (!u || !u.password_hash || !valid) { await q('INSERT INTO attempts (ip, at) VALUES (?, NOW())', [mailKey]); fail(401, 'E-Mail oder Passwort stimmen nicht.', 'credentials'); }
+  if (!u || !u.password_hash || !valid || !allowed(email)) { await q('INSERT INTO attempts (ip, at) VALUES (?, NOW())', [mailKey]); fail(401, 'E-Mail oder Passwort stimmen nicht.', 'credentials'); }
   if (needsRehash(u.password_hash) && pwBytes(pw) <= MAX_PW_BYTES) await q('UPDATE users SET password_hash = ? WHERE id = ?', [await hashPw(pw), u.id]);
   await setSession(req, res, u.id);
   res.json({ ok: true, user: userOut(await userById(u.id)) });
@@ -379,11 +406,40 @@ app.use('/api', api);
 const pub = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 // sw.js is the one script without a hash in its name: never cache it for long, or the CDN keeps handing out an old service worker (the manifest and icons fall under 'no-cache' anyway).
 // .avif: express 4 does not know the type and would send application/octet-stream (the service worker only stores pictures with an image type)
-app.use(express.static(pub, { index: false, setHeaders: (res, file) => { res.set('Cache-Control', /\.(js|css|avif|webp|woff2?)$/.test(file) && path.basename(file) !== 'sw.js' ? 'public, max-age=31536000, immutable' : 'no-cache'); if (file.endsWith('.avif')) res.type('image/avif'); } }));
+// ---- private mode: without a session of a listed address there is only the sign-in page ----
+const GATE_HTML = `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><meta name="color-scheme" content="dark"><title>3Druckwerkbank – Anmelden</title><link rel="icon" type="image/png" href="/icons/favicon-32.png"><link rel="stylesheet" href="/privat.css"></head><body><main><img src="/icons/icon-192.png" alt="" width="72" height="72"><h1>3Druckwerkbank</h1><p>Diese Seite ist zurzeit privat. Bitte melde dich an.</p><form id="f" autocomplete="on"><label>E-Mail<input id="e" type="email" name="email" autocomplete="username" required></label><label>Passwort<input id="p" type="password" name="password" autocomplete="current-password" required></label><button type="submit">Anmelden</button><p id="m" role="alert"></p></form></main><script src="/privat.js"></script></body></html>`;
+const GATE_CSS = `*{box-sizing:border-box}html,body{height:100%;margin:0}body{background:#0b1220;color:#e8edf5;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:grid;place-items:center;padding:20px}main{width:100%;max-width:360px;text-align:center}img{border-radius:18px}h1{font-size:24px;margin:14px 0 4px}p{color:#aab4c5;margin:0 0 18px}form{display:grid;gap:12px;text-align:left}label{display:grid;gap:5px;font-size:13px;color:#aab4c5}input{font:inherit;color:#e8edf5;background:#131c30;border:1px solid #2a3654;border-radius:10px;padding:11px 12px}input:focus{outline:2px solid #6fa8ff;outline-offset:1px}button{font:inherit;font-weight:600;color:#1b1203;background:#f0b35a;border:0;border-radius:10px;padding:12px;cursor:pointer}button:disabled{opacity:.6;cursor:default}#m{min-height:1.4em;margin:0;color:#ff9c8f;font-size:14px;text-align:center}`;
+const GATE_JS = `(function(){var f=document.getElementById('f'),m=document.getElementById('m'),b=f.querySelector('button');f.addEventListener('submit',function(ev){ev.preventDefault();m.textContent='';b.disabled=true;fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('e').value,password:document.getElementById('p').value})}).then(function(r){return r.json().catch(function(){return {}}).then(function(j){if(r.ok&&j.ok){location.reload();return}m.textContent=j.error||'Anmelden hat nicht geklappt.';b.disabled=false})}).catch(function(){m.textContent='Keine Verbindung. Bitte noch einmal versuchen.';b.disabled=false})})})();`;
+// an installed app still has its old worker and its stored pages: this one takes its place, empties the stores and reloads the open windows, so they reach the sign-in page
+const GATE_SW = `self.addEventListener('install',function(){self.skipWaiting()});self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.map(function(n){return caches.delete(n)}))}).then(function(){return self.registration.unregister()}).then(function(){return self.clients.matchAll({type:'window'})}).then(function(cs){cs.forEach(function(c){try{c.navigate(c.url)}catch(_){}})}))});`;
+if (PRIVATE.on) app.use((req, res, next) => {
+  if (req.path === '/api' || req.path.startsWith('/api/')) return next();
+  const gate = () => {
+    res.set({ 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' });
+    if (req.method !== 'GET' && req.method !== 'HEAD') return res.status(401).type('text/plain').send('Bitte anmelden.');
+    if (req.path === '/privat.css') return res.type('text/css').send(GATE_CSS);
+    if (req.path === '/privat.js') return res.type('application/javascript').send(GATE_JS);
+    if (req.path === '/sw.js') return res.type('application/javascript').send(GATE_SW);
+    if (['/icons/icon-192.png', '/icons/favicon-32.png', '/icons/favicon-16.png', '/icons/apple-touch-icon.png'].includes(req.path)) return next(); // the mark on the sign-in page (served by the static files below)
+    if (/\.[a-z0-9]{1,12}$/i.test(req.path)) return res.status(401).type('text/plain').send('Bitte anmelden.');
+    return res.type('text/html').send(GATE_HTML);
+  };
+  if (!configured) return gate();
+  currentUser(req).then((u) => (u ? next() : gate())).catch(() => gate());
+});
+// private mode: 'private' keeps the files out of the CDN's store, so nobody gets them from there without a session
+const LONG = PRIVATE.on ? 'private, max-age=31536000, immutable' : 'public, max-age=31536000, immutable';
+app.use(express.static(pub, { index: false, setHeaders: (res, file) => { res.set('Cache-Control', /\.(js|css|avif|webp|woff2?)$/.test(file) && path.basename(file) !== 'sw.js' ? LONG : 'no-cache'); if (file.endsWith('.avif')) res.type('image/avif'); } }));
 // a missing file is a 404, not the start page: a script or picture that is gone must never be answered with HTML (second guard for the service worker and for pages loaded during a deploy)
 app.get(/^\/(assets|img|icons)\//, (_req, res) => res.status(404).set('Cache-Control', 'no-store').type('text/plain').send('Nicht gefunden'));
-app.get('*', (_req, res) => { const index = path.join(pub, 'index.html'); if (!fs.existsSync(index)) return res.status(404).type('text/plain').send('3Druckwerkbank-Server läuft; die Oberfläche ist noch nicht ausgeliefert.'); res.set('Cache-Control', 'no-cache').sendFile(index); });
+app.get('*', (_req, res) => { const index = path.join(pub, 'index.html'); if (!fs.existsSync(index)) return res.status(404).type('text/plain').send('3Druckwerkbank-Server läuft; die Oberfläche ist noch nicht ausgeliefert.'); res.set('Cache-Control', PRIVATE.on ? 'private, no-store' : 'no-cache').sendFile(index); });
 
 const server = http.createServer(app);
-if (configured) migrate().then(() => bambu.startAll()).catch((e) => console.error('migrate failed:', e?.code ?? e?.name ?? 'error'));
+async function ensurePrivateAccounts() {
+  for (const a of PRIVATE.accounts) {
+    if (!validEmail(a.email) || await one('SELECT id FROM users WHERE email = ?', [a.email])) continue;
+    await q('INSERT INTO users (email, password_hash, name, email_verified) VALUES (?, ?, ?, 1)', [a.email, a.hash, a.email.split('@')[0].slice(0, 120)]);
+  }
+}
+if (configured) migrate().then(ensurePrivateAccounts).then(() => bambu.startAll()).catch((e) => console.error('migrate failed:', e?.code ?? e?.name ?? 'error'));
 server.listen(Number(env.PORT) || 3000, () => console.log(`3druckwerkbank server on ${Number(env.PORT) || 3000}, configured=${configured}`));
