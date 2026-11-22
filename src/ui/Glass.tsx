@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { HAKEN_SVG } from './haken';
 
 export function Panel({ title, icon, children, style, foot, className, delay = 0, strong, right }: { title?: string; icon?: ReactNode; children: ReactNode; style?: CSSProperties; foot?: ReactNode; className?: string; delay?: number; strong?: boolean; right?: ReactNode }) {
   return (
@@ -21,9 +22,7 @@ export function Stack({ parts }: { parts: { value: number; color: string; title?
 
 export function Check({ on, skip, onClick, label }: { on: boolean; skip?: boolean; onClick?: () => void; label?: string }) {
   return (
-    <button className={`check${on ? ' check--on' : ''}${skip ? ' check--skip' : ''}`} onClick={onClick} aria-label={label ?? (on ? 'Erledigt' : 'Offen')} aria-pressed={on}>
-      {on ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"><path d="m5 12 4.5 4.5L19 7" /></svg> : null}
-    </button>
+    <button className={`check${on ? ' check--on' : ''}${skip ? ' check--skip' : ''}`} onClick={onClick} aria-label={label ?? (on ? 'Erledigt' : 'Offen')} aria-pressed={on} dangerouslySetInnerHTML={on ? { __html: HAKEN_SVG } : undefined} />
   );
 }
 

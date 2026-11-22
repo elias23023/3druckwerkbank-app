@@ -79,13 +79,24 @@ for (const size of [32, 16]) await write(await anySmall(size), `favicon-${size}.
 
 const shotBase = opt('--screenshots');
 if (shotBase) {
-  // screenshots of the running app (demo workshop) for the richer install dialog of Chromium; fixed time of day so the picture is repeatable
+  // screenshots of the running app (demo workshop) for the richer install dialog of Chromium; fixed time of day and a fixed
+  // answer of the weather service (as meteo in scripts/verify.mjs), so the picture is repeatable and never without weather
+  // (Open-Meteo answers 429 at times)
+  const DAY = '2026-11-14';
+  const meteo = (code) => {
+    const days = [...Array(7)].map((_, i) => new Date(Date.parse(`${DAY}T00:00:00Z`) + i * 864e5).toISOString().slice(0, 10));
+    const hours = days.flatMap((d) => [...Array(24)].map((_, h) => `${d}T${String(h).padStart(2, '0')}:00`)); const n = (v) => hours.map(() => v); const dd = (v) => days.map(() => v);
+    return { current: { time: `${DAY}T11:15`, temperature_2m: 7, relative_humidity_2m: 68, apparent_temperature: 5, is_day: 1, precipitation: 0, weather_code: code, cloud_cover: 20, wind_speed_10m: 8, surface_pressure: 1018 },
+      hourly: { time: hours, temperature_2m: n(7), precipitation_probability: n(5), precipitation: n(0), weather_code: n(code), cloud_cover: n(20), shortwave_radiation: hours.map((h) => { const x = +h.slice(11, 13); return x >= 8 && x <= 15 ? 260 : 0; }), is_day: hours.map((h) => { const x = +h.slice(11, 13); return x >= 7 && x < 17 ? 1 : 0; }), wind_speed_10m: n(8), wind_gusts_10m: n(15), surface_pressure: n(1018), uv_index: n(1) },
+      daily: { time: days, weather_code: dd(code), temperature_2m_max: dd(9), temperature_2m_min: dd(2), sunrise: days.map((d) => `${d}T07:00`), sunset: days.map((d) => `${d}T16:20`), daylight_duration: dd(33600), precipitation_sum: dd(0), shortwave_radiation_sum: dd(6), wind_gusts_10m_max: dd(20), uv_index_max: dd(1) } };
+  };
   const { chromium } = (await import('/opt/node-tools/node_modules/playwright/index.js')).default;
   const browser = await chromium.launch();
   for (const [name, viewport, dpr] of [['screenshot-breit.jpg', { width: 1600, height: 900 }, 1], ['screenshot-schmal.jpg', { width: 390, height: 844 }, 2]]) {
     const ctx = await browser.newContext({ viewport, deviceScaleFactor: dpr, isMobile: dpr > 1, hasTouch: dpr > 1, timezoneId: 'Europe/Vienna', locale: 'de-AT', serviceWorkers: 'block' });
+    await ctx.route('**/api.open-meteo.com/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(meteo(1)) }));
     const page = await ctx.newPage();
-    await page.clock.install({ time: new Date('2026-11-14T11:20:00+01:00') });
+    await page.clock.install({ time: new Date(`${DAY}T11:20:00+01:00`) });
     await page.goto(`${shotBase}/#/start`, { waitUntil: 'networkidle' });
     await page.clock.runFor(3000); await page.waitForTimeout(1500);
     const info = await sharp(await page.screenshot()).jpeg({ quality: 82, mozjpeg: true }).toFile(`${OUT}/${name}`);

@@ -46,13 +46,21 @@ Deutsche Oberfläche, englischer Code. Vite + React + TypeScript, Zustand-Store 
 
 ## Wasser-Look (live seit 14.11., Feinschliff seit 15.11.)
 - Der Look der ganzen App (Tropfen, Becken, Lichter) kommt aus der Vorlage `docs/wasser-look/vorlage/` (`kern.css`, `mobil.css`, `desktop.css`, `wasser.js`). Die Kopien in `src/wasser/` nie von Hand ändern: Vorlage ändern, dann `node scripts/wasser/uebernehmen.mjs`. Anleitung: `docs/Wasser-Look.md`, Entscheidungen des Nutzers: `docs/wasser-look/entwurf/entscheidungen.md`.
-- Nach jeder Änderung an Oberfläche oder Look zusätzlich: `WASSER_APP=<adresse> node scripts/wasser/pruefen.mjs --app` (64 Prüfungen, Handy) und `node scripts/wasser/desktop.mjs pruefen` (27, Desktop). Nacheinander laufen lassen, nicht neben anderen schweren Jobs (unter Last fallen einzelne Zeitprüfungen durch).
-- Weiches Verschwinden: Zeilen in Listen bekommen `{...weich(id)}`, leere Texte `leer()` (`src/ui/gehen.ts`). Der Handy-Hintergrund (`SceneBg` in `src/mobile/Mobile.tsx`) wechselt mit der Seite und blendet weich über.
+- Nach jeder Änderung an Oberfläche oder Look zusätzlich: `WASSER_APP=<adresse> node scripts/wasser/pruefen.mjs --app` (68 Prüfungen, Handy) und `node scripts/wasser/desktop.mjs pruefen` (32, Desktop). Nacheinander laufen lassen, nicht neben anderen schweren Jobs (unter Last fallen einzelne Zeitprüfungen durch).
+- Weiches Verschwinden: Zeilen in Listen bekommen `{...weich(id)}`, leere Texte `leer()` (`src/ui/gehen.ts`). Der Handy-Hintergrund (`SceneBg` in `src/mobile/Mobile.tsx`) wechselt mit der Seite und blendet weich über. Das weiche Verschwinden hängt an der Reihenfolge, in der React 19 aufräumt und entfernt (Kopf von `gehen.ts`); beide Standardprüfungen sehen nach (Bogen, Suche, Zeile per Finger und Tastatur, Hinweis). Nach einem React-Update zusätzlich `node docs/wasser-look/entwurf/gehen/rennen.mjs`, `spaet.mjs` und `sonde.mjs`.
 
 ## Installierbare App (live seit 14.11.)
 - `public/manifest.webmanifest`, `public/sw.js` (Platzhalter füllt `vite.config.ts`), `src/lib/pwa.ts`, Beschreibung und Notausgang in `docs/PWA.md`. Der Server liefert `sw.js` mit `no-cache` und beantwortet fehlende Dateien unter `/assets`, `/img`, `/icons` mit 404 (nie mit der Startseite).
 - Das Hostinger-CDN bearbeitet `.jpg` und `.png` (ein 1920 px breites Vorschaubild kam mit 1600 px an); `.webp` und `.avif` bleiben unverändert. Bilder, deren Größe im Manifest steht, höchstens 1600 px breit liefern.
 - Playwright-Messungen, die Dateien ersetzen oder zählen, brauchen `serviceWorkers: 'block'` im Kontext.
+
+## Privater Modus (seit 17.11.)
+- Schalter ist eine Datei, kein Code: `werkbank-private/privat.json` neben dem `public_html` der jeweiligen Website (`domains/<Domain>/werkbank-private/privat.json`, nicht im Git; `server/index.js`: `loadPrivate`, `PRIVATE`, das Tor darunter). Aufbau: `{ "emails": ["…"], "accounts": [{ "email": "…", "password_hash": "$2b$12$…" }] }`. Ist die Datei da, aber unlesbar oder leer, bleibt die Seite trotzdem zu (nie aus Versehen offen).
+- Wirkung: Nur die Adressen aus `emails` können sich anmelden; eine Sitzung einer anderen Adresse zählt als abgemeldet, neue Konten gibt es nur für gelistete Adressen. Ohne Sitzung einer gelisteten Adresse liefert der Server nur die Anmeldeseite (eigenes kleines HTML mit `/privat.css`, `/privat.js` und vier Symbolen); alles andere mit Dateiendung (Bilder, `/assets`, Manifest) antwortet 401, `/sw.js` ist dann ein Wächter, der alte Zwischenspeicher der installierten App leert. Mit Sitzung tragen die Dateien `Cache-Control: private`, damit das CDN sie nicht für Fremde vorhält.
+- `accounts` sind Testkonten ohne Postfach: Sie werden beim Start des Servers angelegt, wenn es sie noch nicht gibt (nur Adressen, die auch in `emails` stehen; Passwort als bcrypt-Hash, nie im Klartext).
+- Öffnen: Datei löschen und neu einspielen (der Server liest sie nur beim Start).
+- **Live und Baustelle sind zurzeit privat.** Prüfkonto der Baustelle: `pruefung@3druckwerkbank.com` (Passwort nicht im Repo). `scripts/verify.mjs` und die Wasser-Werkzeuge laufen deshalb nur noch lokal (`npm run preview` oder `sollist.mjs` mit `git:`/`baum`), nicht gegen Live oder Baustelle.
+- Lokal testen: Server mit `WERKBANK_PRIVAT=<datei>` starten. Keine Passwörter und keine echten privaten Adressen ins Repo, in Skripte oder in diese Datei schreiben.
 
 ## Prüfen
 - `npm run build` muss fehlerfrei sein. `npm run preview` + `node scripts/verify.mjs http://localhost:4173` (80 Playwright-Prüfungen; Open-Meteo-Ausfälle sind Netz, nicht Code).

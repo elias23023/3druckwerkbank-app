@@ -22,7 +22,8 @@
 //   node scripts/wasser/desktop.mjs pruefen [--ton klar] [--format 1920]
 //        Checks: few live drops in every world and none free over an island, nothing leaves its place while it is pressed,
 //        the arrows beside the island, the dock's marker, the drawer (and the drop that opened it comes to rest behind it and
-//        lives again after it), the search, a toast, the keyboard focus, sleep and
+//        lives again after it), the search, a toast, soft leaving (toast, drawer, search, a row ticked by mouse and by
+//        keyboard: each stays as a picture and is gone after --wa-t-leave), the keyboard focus, sleep and
 //        waking by the mouse, reduced motion, stop / start - and that no panel, title or island has moved against the app
 //        without the look (the same app with its look taken out).
 //   node scripts/wasser/desktop.mjs takt [--nur heute,wetter] [--sekunden 5]
@@ -36,7 +37,7 @@
 // look taken out); all but zeigen take --engine chromium|webkit|firefox and --format. An option that is not known ends the
 // tool, and so does one that the mode does not read (each mode's list: FOR below).
 import fs from 'fs'; import path from 'path'; import http from 'http';
-import { REPO, abs, mkdir, outDir, args, strip, sharp, lookDir, isTemplate, lookArg, lookStart, sayLook, fail, TOENE, ENGINES, ZEITEN } from './lib.mjs';
+import { REPO, abs, mkdir, outDir, args, strip, sharp, lookDir, isTemplate, lookArg, lookStart, sayLook, fail, abschied, TOENE, ENGINES, ZEITEN } from './lib.mjs';
 import { openDesktop, WELTEN } from './desktop-lib.mjs';
 
 const MODES = ['zeigen', 'bild', 'film', 'kontrast', 'pruefen', 'takt', 'clip'];
@@ -205,7 +206,7 @@ async function kontrast() {
     await probe('Dock: Welt', '.dock button:not(.on) span'); await probe('Dock: aktive Welt', '.dock button.on span');
     await probe('Kopf: Suche', '.topbar__search .muted'); await probe('Kopf: Wetter', '.topbar .chip:not(.topbar__search):not(.ws-chip):not(.btn--icon) span'); await probe('Kopf: Bereich', '.topbar .ws-chip');
     await d.go('projekte');
-    await probe('Filter gewählt (frei)', '.world-title .pills .pill--on'); await probe('Filter andere (frei)', '.world-title .pills .pill:not(.pill--on)'); await probe('Filter-Auswahl (frei)', '.world-title .select', { kind: 'value' });
+    await probe('Filter gewählt (Kopffeld)', '.feld-kopf .pills .pill--on'); await probe('Filter andere (Kopffeld)', '.feld-kopf .pills .pill:not(.pill--on)'); await probe('Filter-Auswahl (Kopffeld)', '.feld-kopf .select', { kind: 'value' });
     await probe('Chip unter der Insel', '.project-hero .chip'); await probe('Tropfen frei: klar', '.project-hero .btn:not(.btn--primary):not(.btn--icon)'); await probe('Tropfen frei: Bernstein', '.project-hero .btn--primary');
     await probe('Paneltitel Projekte', '.side-panel-l .panel__head h3', { floor: 7 }); await probe('Zeile Projekte klein', '.side-panel-l .panel__body .xs');
     await d.go('druck');
@@ -314,6 +315,22 @@ async function pruefen() {
       await d.closeSheet(); await p.waitForTimeout(900); const g3 = await sig(p, EB); say(g3 && g3 !== g2, 'Schublade zu: der Tropfen lebt wieder'); await d.park(); } }
   // 6. a toast stands in the middle
   await d.toast(); const tc = await p.evaluate(() => { const r = document.querySelector('.toast').getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - innerWidth / 2); }); say(tc < 1.5, 'Hinweis: mittig über dem Dock', `${tc.toFixed(1)} px neben der Mitte`);
+  // 6b. soft leaving (src/ui/gehen.ts rests on React's order of clean-up and removal; lib.mjs, abschied): what the app takes
+  //     away stays as a picture and is gone after --wa-t-leave - the toast, the drawer, the search, a row ticked by mouse and by keyboard
+  { const G = abschied, ROWS = '.panel [data-gehen]:not(.wa-geht)', TICK = `${ROWS} .check:not(.check--on)`; const rows = () => p.locator(ROWS).count();
+    const to = await G(p, '.toast.wa-geht', () => p.locator('.toast:not(.wa-geht) .toast__undo').click());
+    say(G.good(to) && await p.locator('.toast.wa-geht').count() === 0, 'Gehen: der Hinweis bleibt als Abschiedsbild und ist nach --wa-t-leave weg', G.text(to));
+    await d.go('heute', 1200); await p.locator('.topbar [aria-label="Einstellungen"]').dispatchEvent('click'); await p.waitForSelector('.sheet'); await p.waitForTimeout(900);
+    const sh = await G(p, '.sheet.wa-geht', () => p.evaluate(() => document.querySelector('.sheet .sheet__head button[aria-label="Schließen"]').click()));
+    say(G.good(sh) && /wa-fliesst-weg/.test(sh.anim) && await p.locator('.sheet').count() === 0, 'Gehen: die geschlossene Schublade bleibt als Abschiedsbild und ist nach --wa-t-leave weg', G.text(sh));
+    await d.search('sens'); const cm = await G(p, '.cmd-back.wa-geht', () => p.keyboard.press('Escape'));
+    say(G.good(cm) && /wa-taucht/.test(cm.anim) && await p.locator('.cmd').count() === 0, 'Gehen: die geschlossene Suche bleibt als Abschiedsbild und ist nach --wa-t-leave weg', G.text(cm));
+    const n0 = await rows(); const zeile = async (how) => { const r = await G(p, '.panel .wa-geht.wa-geht--zeile', how); r.rows = await rows(); return r; }; const hk = (r) => (r.haken ? '' : ', HAKEN IM BILD NICHT GESETZT');
+    const z1 = await zeile(async () => { const b = await p.locator(TICK).first().boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 3 }); await p.mouse.down(); await p.mouse.up(); }); await d.park();
+    say(G.good(z1) && z1.haken && /wa-zeile-sinkt/.test(z1.anim) && z1.rows <= n0, 'Gehen: die abgehakte Zeile bleibt als Abschiedsbild (Haken gesetzt) und ist nach --wa-t-leave weg', `${G.text(z1)}${hk(z1)}`);
+    const key = (k) => async () => { await p.locator(TICK).first().focus(); await p.keyboard.press(k); };
+    const z2 = await zeile(key('Space')), z3 = await zeile(key('Enter'));
+    say(G.good(z2) && z2.haken && G.good(z3) && z3.haken, 'Gehen: mit der Tastatur abgehakt (Leertaste, dann Enter): genauso', `Leertaste: ${G.text(z2)}${hk(z2)}; Enter: ${G.text(z3)}${hk(z3)}`); }
   // 7. stop() leaves nothing behind, start() brings it back
   const st = await p.evaluate(() => { window.Wasser.stop(); const left = document.querySelectorAll('.w3-drop, .wa-licht, .wa-floor, [data-w3], [data-wa-ruht]').length; window.Wasser.start(window.Wasser.DESKTOP); return left; }); await p.waitForTimeout(1200);
   say(st === 0 && (await census()).live >= 3, 'stop() räumt alles ab, start() bringt es zurück', `${st} Reste`);
@@ -337,9 +354,9 @@ async function pruefen() {
     await s.close(); }
   // 10. nothing has moved: the places of panels, dock, top bar, titles and islands with and without the look (the layout is the app's).
   //     "Without" is the same app with its look taken out (look: ''), so this check keeps its meaning where the look is built in.
-  { const boxes = async (h) => { const o = {}; for (const w of WELTEN) { await h.welt(w); await h.page.waitForTimeout(1600); await h.park(); await h.page.waitForTimeout(300); o[w] = await h.page.evaluate(() => { const r = {}; let i = 0; for (const el of document.querySelectorAll('.panel, .dock, .topbar > *, .world-title, .heute-greet, .project-hero, .project-hero .btn, .island__img, .wchip, .carousel-nav, .hand, .tk__clock, .island__cta')) { const b = el.getBoundingClientRect(); r[(i++) + ' ' + String(el.className).split(' ').slice(0, 3).join('.')] = [b.left, b.top, b.width, b.height]; } return r; }); } return o; };
+  { const boxes = async (h) => { const o = {}; for (const w of WELTEN) { await h.welt(w); await h.page.waitForTimeout(1600); await h.park(); await h.page.waitForTimeout(300); o[w] = await h.page.evaluate(() => { const r = {}; let i = 0; for (const el of document.querySelectorAll('.panel, .dock, .topbar > *, .project-hero, .project-hero .btn, .island__img, .wchip, .carousel-nav, .tk__clock, .island__cta')) { const b = el.getBoundingClientRect(); r[(i++) + ' ' + String(el.className).split(' ').slice(0, 3).join('.')] = [b.left, b.top, b.width, b.height]; } return r; }); } return o; };
     const A = await open({ look: '', reduced: true }), B = await open({ reduced: true }); const a0 = await boxes(A), b0 = await boxes(B); await A.close(); await B.close(); let maxPos = 0, maxSize = 0, who = '', n = 0;
-    for (const w of WELTEN) for (const k of Object.keys(a0[w])) { const x = a0[w][k], y = b0[w][k]; if (!y) { n++; who = who || `${w}: ${k} fehlt`; continue; } if (/dock/.test(k)) continue; const text = /world-title|project-hero$/.test(k);   // (a block of loose text is as wide as its content: a filter select with its arrow is a few px wider - only its place and height count)
+    for (const w of WELTEN) for (const k of Object.keys(a0[w])) { const x = a0[w][k], y = b0[w][k]; if (!y) { n++; who = who || `${w}: ${k} fehlt`; continue; } if (/dock/.test(k)) continue; const text = /project-hero$/.test(k);   // (a block of loose text is as wide as its content: a filter select with its arrow is a few px wider - only its place and height count)
       const dp = Math.max(Math.abs(x[0] - y[0]), Math.abs(x[1] - y[1])), ds = Math.max(text ? 0 : Math.abs(x[2] - y[2]), Math.abs(x[3] - y[3])); if (dp > maxPos) { maxPos = dp; who = `${w}: ${k}`; } if (ds > maxSize) maxSize = ds; }
     say(maxPos <= 2 && maxSize <= 3 && !n, 'Nichts ist verrückt: Orte und Größen wie in der App ohne Look', `größte Verschiebung ${maxPos.toFixed(1)} px, größte Größenänderung ${maxSize.toFixed(1)} px (${who}); das Dock ist 21 px breiter (sieben gleich breite Welten) und bleibt mittig`); }
   console.log(bad ? `\n${bad} Prüfung(en) fehlgeschlagen` : '\nalle Prüfungen bestanden'); process.exit(bad ? 1 : 0);

@@ -19,13 +19,15 @@
 //   8 ohne WebGL   the plain glass stays, the clock still runs
 //   9 App (--app)  a light per card, the page rests behind a sheet, the drop that opened it comes to rest there (with reduced
 //                  motion: the very picture of that drop at rest) and lives again when the sheet goes, a toast leaves like a drop,
-//                  stop() cleans up (needs npm run preview)
+//                  stop() cleans up; what the app takes away leaves softly (src/ui/gehen.ts): a closed sheet, a row ticked by
+//                  finger, by Space and by Enter, a toast - each stays as a picture and is gone after --wa-t-leave
+//                  (needs npm run preview)
 //  10 Zug, Töne    a new sheet's light arrives and swings into place, also when it is pulled at once; --wa-leben from 0 to 2 at
 //                  full pull: no light flips over its rim, slides or lags further than at 1; both tones list the same tokens
 //  11 Regler (--regler, about three minutes)  the governor of the drops, fed pretended slow pictures (start option debug.cost):
 //                  it steps down, climbs after the wait, a climb that fails doubles the wait, a climb that holds sets it back
 import fs from 'fs';
-import { session, args, abs, lookDir, isTemplate, lookArg, sayLook, inSync, fail, ENGINES } from './lib.mjs';
+import { session, args, abs, lookDir, isTemplate, lookArg, sayLook, inSync, fail, abschied, ENGINES } from './lib.mjs';
 const a = args({ engine: 'chromium', ton: '', look: 'auto', bild: '' }, { flags: ['app', 'regler'], choices: { engine: ENGINES, ton: ['dunkel', 'klar'] } }); if (a._.length) fail(`this tool takes no word without "--": ${a._.join(' ')}`);
 const appLook = lookArg(a.look), hLook = lookArg(a.look, { harness: true }); if (!isTemplate(hLook)) fail(`--look ${a.look}: this tool checks a copy of the template (kern.css, mobil.css, desktop.css, wasser.js)`);
 const s0 = await session({ engine: a.engine }); let fails = 0; console.log(`harness page: ${hLook === 'vorlage' ? 'the template (docs/wasser-look/vorlage)' : lookDir(hLook)}`);
@@ -187,6 +189,19 @@ if (a.app) {
   await p.locator('.toast__undo').click(); await p.waitForTimeout(700);
   { await p.evaluate((sel) => document.querySelector(sel).click(), GEAR); await p.waitForTimeout(900); const g1 = await sig(p, GEAR); await h.closeSheet(); await p.waitForTimeout(900); const g2 = await sig(p, GEAR);
     check(g1 && g2 && g1 !== g2, '9 app: when the sheet goes, the drop lives again', ''); }
+  // soft leaving (src/ui/gehen.ts rests on React's order of clean-up and removal; lib.mjs, abschied): sheet, row, toast
+  { const G = abschied, ROWS = '.m-main [data-gehen]:not(.wa-geht)', TICK = `${ROWS} .check:not(.check--on)`; const rows = () => p.locator(ROWS).count();
+    await h.go('#/heute', 900); await h.sheet('einstellungen'); await p.waitForTimeout(700);
+    const sh = await G(p, '.sheet.wa-geht', () => p.evaluate(() => { window.__schleier = 0; document.querySelector('.sheet [aria-label="Schließen"]').click(); requestAnimationFrame(() => { window.__schleier = document.querySelectorAll('.sheet-back.wa-geht').length; }); }));
+    check(G.good(sh) && /wa-sinkt/.test(sh.anim) && await p.evaluate(() => window.__schleier) === 1 && await p.locator('.sheet').count() === 0, '9 app: a closed sheet leaves as a picture (with its scrim), then it is gone', G.text(sh));
+    const n0 = await rows(); const zeile = async (how) => { const r = await G(p, '.m-main .wa-geht.wa-geht--zeile', how); r.rows = await rows(); return r; };
+    const z1 = await zeile(() => tap(p, TICK)); check(G.good(z1) && z1.haken && /wa-zeile-sinkt/.test(z1.anim) && z1.rows === n0 - 1, '9 app: a ticked row leaves as a picture with its check ticked, then it is gone', `${G.text(z1)}; rows ${n0} -> ${z1.rows}${z1.haken ? '' : '; ITS CHECK IS NOT TICKED in the picture'}`);
+    const key = (k) => async () => { await p.locator(TICK).first().focus(); await p.keyboard.press(k); };
+    const z2 = await zeile(key('Space')), z3 = await zeile(key('Enter'));
+    check(G.good(z2) && z2.haken && z2.rows === n0 - 2 && G.good(z3) && z3.haken && z3.rows === n0 - 3, '9 app: ticked by keyboard (Space, then Enter): the same', `Space: ${G.text(z2)}${z2.haken ? '' : ', CHECK NOT TICKED'}; Enter: ${G.text(z3)}${z3.haken ? '' : ', CHECK NOT TICKED'}; rows ${z3.rows}`);
+    await h.sheet('toast'); await p.waitForTimeout(500);
+    const to = await G(p, '.toast.wa-geht', () => p.locator('.toast:not(.wa-geht) .toast__undo').click());
+    check(G.good(to) && await p.locator('.toast.wa-geht').count() === 0, '9 app: a toast leaves as a picture (like a drop, under the one that follows), then it is gone', G.text(to)); }
   await p.evaluate(() => window.Wasser.stop()); const l = await p.evaluate(() => document.querySelectorAll('.w3-drop, .wa-licht, .wa-floor, [data-w3], [data-wa-ruht], .wa-geht').length);
   check(l === 0, '9 app: stop() leaves nothing behind', l); noErr(h, '9'); await h.close();
   // with reduced motion the water is one still picture: the tapped drop behind the sheet must be the very picture of the same
