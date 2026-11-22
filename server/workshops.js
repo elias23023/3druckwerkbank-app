@@ -133,9 +133,19 @@ export function mountWorkshops(api, d) {
       if (value !== null && Buffer.byteLength(JSON.stringify(value)) > MAX_ITEM_BYTES) fail(413, 'Ein Eintrag ist zu groß (über 3 MB). Bitte Fotos verkleinern.');
       return { coll: op.coll, id: op.id, value };
     });
-    const rev = await inTx((conn) => writeItems(conn, id, u.id, clean));
-    tell(id, { rev, by: u.id, client: str(req.body?.client, 40) });
-    res.json({ ok: true, rev });
+    // A booked print stays booked: a device that slept through the booking (closed, offline) would otherwise send its old "still running"
+    // copy and the material could be booked a second time. Its copy is replaced by the stored one, which every device then loads again.
+    const { rev, kept } = await inTx(async (conn) => {
+      const old = clean.filter((o) => o.coll === 'prints' && o.value && o.value.booked !== true); let list = clean; let kept = false;
+      if (old.length) {
+        const [rows] = await conn.query(`SELECT id, json FROM items WHERE workshop_id = ? AND coll = 'prints' AND deleted = 0 AND id IN (${old.map(() => '?').join(',')}) FOR UPDATE`, [id, ...old.map((o) => o.id)]);
+        const booked = new Map(); for (const r of rows) { try { const v = JSON.parse(r.json); if (v && v.booked === true) booked.set(String(r.id), v); } catch { /* unreadable: nothing to protect */ } }
+        if (booked.size) { kept = true; list = clean.map((o) => (o.coll === 'prints' && o.value && o.value.booked !== true && booked.has(o.id) ? { ...o, value: booked.get(o.id) } : o)); }
+      }
+      return { rev: await writeItems(conn, id, u.id, list), kept };
+    });
+    tell(id, { rev, by: u.id, client: kept ? '' : str(req.body?.client, 40) }); // kept: the sender has to load the stored print as well
+    res.json({ ok: true, rev, kept });
   }));
 
   // live channel: one small message per change, the browser then fetches what is new

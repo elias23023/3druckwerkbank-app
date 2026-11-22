@@ -91,10 +91,11 @@ async function pushOnce(g: number) {
     let newRev = rev;
     for (let i = 0; i < ops.length; i += 300) {
       const part = ops.slice(i, i + 300);
-      const r = await c.call<{ rev: number }>(`${base()}/ops`, { json: { client: clientId, ops: part.map((o) => { const j = o.key.indexOf('/'); return { coll: o.key.slice(0, j), id: o.key.slice(j + 1), value: o.value }; }) } });
+      const r = await c.call<{ rev: number; kept?: boolean }>(`${base()}/ops`, { json: { client: clientId, ops: part.map((o) => { const j = o.key.indexOf('/'); return { coll: o.key.slice(0, j), id: o.key.slice(j + 1), value: o.value }; }) } });
       if (g !== gen) return;
       for (const o of part) { if (o.value === null) { synced.delete(o.key); lastObj.delete(o.key); } else { synced.set(o.key, o.text!); lastObj.set(o.key, o.value); } }
-      const gap = r.rev !== newRev + 1; newRev = r.rev; if (gap) { await pull(g, true); if (g !== gen) return; }
+      // kept: the server held on to a booked print instead of our older copy - load it
+      const gap = r.rev !== newRev + 1 || !!r.kept; newRev = r.rev; if (gap) { await pull(g, true); if (g !== gen) return; }
     }
     rev = Math.max(rev, newRev); saveMeta(); armed = true;
     c.setSync({ status: 'bereit', lastSyncAt: new Date().toISOString(), error: undefined, local: undefined, remote: undefined });
