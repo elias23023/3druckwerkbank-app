@@ -58,11 +58,20 @@ export async function signInWithGoogleCredential(credential: string) { const r =
 export async function sendPasswordReset(email: string) { await call('/auth.php?a=reset-request', { json: { email } }); }
 export async function resetPassword(token: string, password: string) { const r = await call<{ user: CloudUser }>('/auth.php?a=reset', { json: { token, password } }); setAuth({ user: r.user }); return r.user; }
 /** Abmelden gilt erst, wenn der Server die Sitzung beendet hat (sonst wäre man nach dem Neuladen wieder angemeldet). */
-export async function signOut() { await flushSync(); const r = await call<{ private?: boolean }>('/auth.php?a=logout', { json: {} }); setAuth({ user: null }); stopSync(); if (r?.private) location.reload(); }
+/** Private site: signing out leaves nothing of the workshop in this browser (the account keeps it), then back to the sign-in page.
+ *  Writing is switched off first, so nothing that still runs until the page is gone can store the workshop again. */
+function leavePrivate() {
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith('3druckwerkbank:') && !['3druckwerkbank:v1', '3druckwerkbank:bereich', '3druckwerkbank:inseln'].includes(k)) localStorage.removeItem(k); // everything but the demo workshop and two switches
+    Storage.prototype.setItem = () => { /* leaving */ };
+  } catch { /* no storage */ }
+  location.reload();
+}
+export async function signOut() { await flushSync(); const r = await call<{ private?: boolean }>('/auth.php?a=logout', { json: {} }); setAuth({ user: null }); stopSync(); if (r?.private) leavePrivate(); }
 
 /** Überall abmelden: beendet die Sitzungen auf allen Geräten (nur mit dem Node.js-Server). */
 export const canSignOutEverywhere = NODE_API;
-export async function signOutEverywhere() { await flushSync(); const r = await call<{ private?: boolean }>('/auth.php?a=logout-all', { json: {} }); setAuth({ user: null }); stopSync(); if (r?.private) location.reload(); // private site: back to the sign-in page
+export async function signOutEverywhere() { await flushSync(); const r = await call<{ private?: boolean }>('/auth.php?a=logout-all', { json: {} }); setAuth({ user: null }); stopSync(); if (r?.private) leavePrivate(); // private site: back to the sign-in page
 }
 
 /** Google Identity Services laden und den offiziellen Knopf in ein Element rendern. */
@@ -308,4 +317,4 @@ export function stopSync() {
 export const liveMode = NODE_API;
 let liveLoaded = false;
 const liveMod = () => import('./live');
-export const internals = { call, hash, hasData, snapshot, backupLocal, setSync, getSync: () => syncState, signedOut: () => { const was = !!auth.user; setAuth({ user: null }); stopSync(); if (privateSite && was) location.reload(); } }; // private site: a session that ended elsewhere ("Überall abmelden", expired) must not leave the workshop on the screen
+export const internals = { call, hash, hasData, snapshot, backupLocal, setSync, getSync: () => syncState, signedOut: () => { const was = !!auth.user; setAuth({ user: null }); stopSync(); if (privateSite && was) leavePrivate(); } }; // private site: a session that ended elsewhere ("Überall abmelden", expired) must not leave the workshop on the screen
