@@ -75,6 +75,12 @@ function saveMeta() {
   const hashes: Record<string, string> = {}; for (const [k, v] of synced) hashes[k] = c.hash(v);
   try { localStorage.setItem(META_KEY, JSON.stringify({ userId, wid, rev, hashes } satisfies Meta)); } catch { /* voll: beim nächsten Start wird vollständig verglichen */ }
 }
+/**
+ * Ein Druck, der im Konto schon gebucht ist, während er hier noch läuft: Dieser Browser hat das Buchen verpasst (zu, ohne Verbindung) und
+ * seinen alten Stand nur selbst berührt (`tickPrints` setzt „Zeit abgelaufen“). Der alte Stand darf den gebuchten nicht ersetzen,
+ * sonst läuft der Druck wieder, lässt sich ein zweites Mal buchen und zieht das Material doppelt ab.
+ */
+const settled = (k: string, local: unknown, remote: unknown) => k.startsWith('prints/') && !!(remote as { booked?: boolean } | null | undefined)?.booked && !(local as { booked?: boolean } | undefined)?.booked;
 const base = () => `/workshops/${wid}`;
 const toast = (t: string) => useStore.getState().toast(t);
 
@@ -100,7 +106,7 @@ async function pushOnce(g: number) {
     if (err.status === 404) { toast('Diese Werkstatt gibt es für dich nicht mehr.'); void start(userId); return; }
     if (err.status === 400 || err.status === 413) { c.setSync({ status: 'fehler', error: err.message }); return; } // ein Eintrag wird abgelehnt: nicht in Dauerschleife wiederholen
     c.setSync({ status: 'fehler', error: `${err.message} Neuer Versuch folgt automatisch.` });
-    if (retry) clearTimeout(retry); retry = setTimeout(() => { retry = null; if (g === gen) void push(); }, 15_000);
+    if (retry) clearTimeout(retry); retry = setTimeout(() => { retry = null; if (g === gen) void pull(g, true).then(() => { if (g === gen) void push(); }); }, 15_000); // nach einer Pause zuerst holen, was inzwischen geschah
   }
 }
 /** Immer nur ein Speichervorgang; was währenddessen dazukommt, folgt direkt danach. */
@@ -118,7 +124,7 @@ async function pull(g: number, quiet = false) {
     if (live.role !== r.role) setLive({ role: r.role });
     if (r.items.length) {
       const pending = new Set(diff().map((o) => o.key)); const cur = items(); let changed = false;
-      for (const it of r.items) { const k = `${it.coll}/${it.id}`; if (pending.has(k)) continue; changed = true; if (it.value === null) cur.delete(k); else cur.set(k, it.value); }
+      for (const it of r.items) { const k = `${it.coll}/${it.id}`; if (pending.has(k)) { if (!settled(k, cur.get(k), it.value)) continue; pending.delete(k); } changed = true; if (it.value === null) cur.delete(k); else cur.set(k, it.value); }
       if (changed) apply(cur, pending);
     }
     rev = Math.max(rev, r.rev); saveMeta();
@@ -176,7 +182,7 @@ async function open(id: number, g: number) {
   if (meta && meta.userId === userId && meta.wid === id) {
     // bekannte Werkstatt auf diesem Gerät: was hier seit dem letzten Abgleich geändert wurde (auch ohne Verbindung), bleibt und wird gesendet
     const mine = new Set<string>();
-    for (const [k, v] of local) if (meta.hashes[k] !== c.hash(JSON.stringify(v))) mine.add(k);
+    for (const [k, v] of local) if (meta.hashes[k] !== c.hash(JSON.stringify(v)) && !settled(k, v, remote.get(k))) mine.add(k);
     for (const k of Object.keys(meta.hashes)) if (!local.has(k)) mine.add(k);
     const merged: Values = new Map(remote);
     for (const k of mine) { if (local.has(k)) merged.set(k, local.get(k)); else merged.delete(k); }
