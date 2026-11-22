@@ -4,7 +4,7 @@
 //
 //   node scripts/wasser/sollist.mjs [handy|desktop|alles] --soll <state> [--ist <state>] [--toene dunkel,klar] [--formate 2000,1920]
 //        [--zeiten nacht,tag] [--bereiche demo,echt] [--nur <name parts>] [--erwartet <name parts>] [--out <dir>] [--look eingebaut]
-//        [--engine chromium|webkit] [--api node] [--tropfen] [--liste]
+//        [--engine chromium|webkit] [--api node] [--wasser-egal] [--liste]
 //
 //   <state>   git:<revision>   that commit (git:HEAD, git:feinschliff-basis, git:9c4afa7): its src/ and public/ are exported to a
 //                              scratch folder, built there with THIS tree's node_modules and served. Built once per commit
@@ -33,15 +33,18 @@
 // pointer parked, the app's cloud banks held (they drift even with reduced motion), no blinking caret; every still is taken
 // until the same picture comes twice in a row; a screen that differs is looked at a second and a third time (the page may not
 // have settled; the desktop then gets its window nudged by one pixel, which makes the browser raster its layers again).
-// THE WATER INSIDE A DROP is not compared: every living drop takes its water from a running number (wasser.js, "seed"), and
-// how often the app rebuilt a button before the picture was taken differs from page to page - on the desktop two loads of
-// ONE build showed three of 27 screens with other water in a drop. So a screen whose pixels differ only INSIDE the drop
-// canvases is "ok*" (listed at the end, not a failure) - provided the drops themselves are the same: as many, at the same
-// places, of the same size, with the same labels, AND what lies on the water is the same: such a screen is taken once more on
-// both sides with the drop canvases hidden (only the label, icon and badge of each drop remain) and that pair is compared
-// over the whole picture - a changed colour of a label or icon on a drop is a DIFF ("ON a drop"); only the water itself is
-// excused. --tropfen makes such a screen a DIFF (to judge a change of the drops).
-// Every line: ok / ok* / DIFF, the screen, how many pixels differ and by how much (inside the drop canvases counted apart),
+// THE WATER INSIDE A DROP IS COMPARED like everything else (since 22.11.). With reduced motion the picture of a drop is a pure
+// function of its button (the seed of its water is made from the label: wasser.js, seedAll), the scene, the tone and the
+// window - two loads of ONE build give the same drops, pixel for pixel (shown on all 164 screens, phone and desktop, several
+// times). So a change of the water alone - the shader, a drop token, --wa-drop-veil - is a DIFF.
+// --wasser-egal brings the old excuse back, for ONE case: a Soll from before 22.11. (there every drop took its water from a
+// running number, so every drop differs from today's). Then a screen whose pixels differ only INSIDE the drop canvases is
+// "ok*" (listed at the end, not a failure) - provided the drops themselves are the same: as many, at the same places, of the
+// same size, with the same labels, AND what lies on the water is the same: such a screen is taken once more on both sides
+// with the drop canvases hidden (only the label, icon and badge of each drop remain) and that pair is compared over the
+// whole picture - a changed colour of a label or icon on a drop is a DIFF ("ON a drop"); only the water itself is excused.
+// (--tropfen, which used to switch the excuse off, is still taken and does nothing: it is the rule now.)
+// Every line: ok / DIFF (ok* only with --wasser-egal), the screen, how many pixels differ and by how much (inside the drop canvases counted apart),
 // and the box around all of them in CSS px. For every DIFF a picture <out>/<name>-vergleich.png: Soll | Ist | where they differ (red;
 // yellow inside drops). At the end the list of the screens that differ. Exit code 1 when a screen differs that is not named in
 // --erwartet, when a step failed on one side, or when one side reported a page error the other did not.
@@ -52,7 +55,7 @@ import { session, serve, diff, strip, args, abs, mkdir, outDir, REPO, lookArg, s
 import { openDesktop, WELTEN } from './desktop-lib.mjs';
 
 const a = args({ soll: '', ist: 'baum', look: 'eingebaut', toene: 'dunkel,klar', formate: '2000,1920', zeiten: '', bereiche: 'demo,echt', nur: '', erwartet: '', out: '', engine: 'chromium', api: '' },
-  { flags: ['liste', 'tropfen'], choices: { toene: TOENE, engine: ENGINES, zeiten: Object.keys(ZEITEN), bereiche: ['demo', 'echt'], formate: ['2000', '1920', '<WxH>'], api: ['node'] } });
+  { flags: ['liste', 'tropfen', 'wasser-egal'], choices: { toene: TOENE, engine: ENGINES, zeiten: Object.keys(ZEITEN), bereiche: ['demo', 'echt'], formate: ['2000', '1920', '<WxH>'], api: ['node'] } });
 const WAS = ['handy', 'desktop', 'alles']; const was = a._[0] || 'alles'; if (!WAS.includes(was) || a._.length > 1) fail(`"${a._.join(' ')}": one of ${WAS.join(' | ')} (nothing = alles)`);
 if (!a.soll && !a.liste) fail('--soll <state> is missing: git:<revision> | baum | an address | a folder with a built app   (see the head of this file)');
 const look = lookArg(a.look); if (look === 'auto') fail('--look auto would give two apps two different looks without saying so: eingebaut (each as built), a folder, vorlage or ohne');
@@ -131,7 +134,7 @@ async function pair(group, hs, screens, desk) {
       const dr = [await drops(hs[0], scale), await drops(hs[1], scale)]; const d = await diff(files[0], files[1], [...dr[0], ...dr[1]].map((x) => x.slice(0, 4)), `${out}/${id}-diff.png`); d.sameDrops = JSON.stringify(dr[0]) === JSON.stringify(dr[1]); d.drops = dr[1].length; return d; };
     let d = await look(false), looks = 1;
     while ((d.outside || !d.sameDrops || (d.inside && looks < 2)) && looks < 3) { await hs[0].page.waitForTimeout(1500); d = await look(looks === 2); looks++; }   // (other water in a drop does not go away by looking again: one more look, not two)
-    let n = d.outside + d.inside, onlyWater = !broke && !a.tropfen && d.outside === 0 && d.inside > 0 && d.sameDrops;
+    let n = d.outside + d.inside, onlyWater = !broke && a['wasser-egal'] && !a.tropfen && d.outside === 0 && d.inside > 0 && d.sameDrops;
     if (onlyWater) {                                               // the water is excused, what lies ON it is not: the same screen once more with the drop canvases hidden
       const dry = [`${out}/${id}-soll-ohne-wasser.png`, `${out}/${id}-ist-ohne-wasser.png`];
       for (let i = 0; i < 2; i++) { const tag = await hs[i].page.addStyleTag({ content: HIDE_WATER }); await fest(hs[i], dry[i], desk); await tag.evaluate((e) => e.remove()); }
@@ -191,7 +194,7 @@ try {
 
 const real = differ.filter((d) => !d.expected), exp = differ.filter((d) => d.expected);
 say(`\n== Soll gegen Ist: ${count} screens, ${count - differ.length} equal${water.length ? ` (${water.length} of them with other water inside a drop)` : ''}, ${differ.length} differ${exp.length ? ` (${exp.length} of them named in --erwartet)` : ''}; ${((Date.now() - t0) / 60000).toFixed(1)} min ==`);
-if (water.length) { say('equal outside the drops, other water in a drop (not compared; --tropfen counts it):'); for (const w of water) say(`  ${w}`); }
+if (water.length) { say('equal outside the drops, other water in a drop (excused by --wasser-egal):'); for (const w of water) say(`  ${w}`); }
 if (real.length) { say('DIFFER, and were not expected to:'); for (const d of real) say(`  ${d.full.padEnd(44)} ${d.text}${d.pic ? '\n      ' + d.pic : ''}`); }
 if (exp.length) { say('differ as expected (--erwartet):'); for (const d of exp) say(`  ${d.full.padEnd(44)} ${d.text}${d.pic ? '\n      ' + d.pic : ''}`); }
 if (!count) say('!! no screen matched --nur: --liste prints the names');
