@@ -205,12 +205,9 @@
 
 /* == 5. Frei über der Bühne ====================================================================================== */
 /* Labels and controls that lie directly on the painted stage. No blur, no bending - an island may lie behind them. */
-/* filter labels under a world title (a Wahl: the chosen one is the bead), the labels of a project */
-[data-wasser="desktop"] .world-title .pills > .pill,
-[data-wasser="desktop"] .world-title .glass.pill { background: var(--wa-frei); -webkit-backdrop-filter: none; backdrop-filter: none; }
-[data-wasser="desktop"] .world-title .pills > .pill:is(.on, .pill--on) { background: var(--wa-frei); }
-/* filter selects and the station select: a Feld on smoke glass */
-[data-wasser="desktop"] .world-title .select { background-color: var(--wa-frei-feld); -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* (The filters of Projekte and Archiv stood here once, free under a world title. They now lie in a basin - the head of the
+   world, .feld-kopf, and the gallery panel - and are drawn by the blocks "Etikett", "Wahl" and "Feld" of kern.css like every
+   label and field on a panel; --wa-frei-feld is kept for a field that stands free over the stage again.) */
 /* the two arrows beside the island: beads on smoke glass. The app centres them with a transform of its own
    (translateY(-50%)) and the press of a Perle is a transform too: the pressed state repeats the centring, or the arrow
    hops 23 px down under the pointer and the click is lost.

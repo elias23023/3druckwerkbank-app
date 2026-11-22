@@ -420,3 +420,34 @@ export function args(defaults = {}, { flags = [], choices = {} } = {}) {
   for (const [k, allowed] of Object.entries(choices)) for (const v of String(o[k] ?? '').split(',')) if (v !== '' && !allowed.includes(v) && !(allowed.includes('<iso>') && +new Date(v) > 0) && !(allowed.includes('<WxH>') && /^\d+x\d+$/.test(v))) fail(`--${k} ${o[k]}: "${v}" is not one of ${allowed.join(' | ')}`);
   return o;
 }
+
+/* ------------------------------------------------------------------ soft leaving (src/ui/gehen.ts, wasser.js "toasts") */
+// What the app takes away must stay as a PICTURE (class wa-geht) for the look's leaving time and then be gone. For sheets, the
+// search and rows this rests on React calling a ref's clean-up before it removes the node (head of gehen.ts): a React update
+// that changes the order would make things vanish hard again, without any error. So the standard checks watch it.
+//   const r = await abschied(page, '.sheet.wa-geht', () => closeButton.click())
+// sel = the leaving picture to wait for, act = what makes the app take the thing away. Watched by a MutationObserver (no
+// picture counting: a busy machine draws few).
+// Returned: seen (1 when it appeared), ms (from its insertion to its removal; -1 = never removed), t (--wa-t-leave in ms), left (leaving
+// pictures of any kind still there at the end), and what it was when first seen: inert, hidden (aria-hidden), spaet (placed from memory:
+// the clean-up came AFTER the removal - React's order has changed), anim and dur (the names of its leaving animations and
+// how long they take), haken (a ticked
+// check with its mark inside).
+// good(r) = the common verdict: it was there, inert and hidden, not placed from memory, it left by an animation that takes
+// --wa-t-leave, it was taken out after that time (not before 40 % of it, not later than 1.5 s after it: on a busy machine the
+// animation starts and ends late) and nothing is left.
+export async function abschied(page, sel, act) {
+  await page.evaluate((sel) => { const w = window.__abschied = { seen: 0, first: 0, last: 0, info: null, mo: null };
+    const look = () => { const g = document.querySelector(sel), t = performance.now();
+      if (g && !w.seen) { w.seen = 1; w.first = t; const tick = g.querySelector('.check'), an = g.getAnimations({ subtree: true }).filter((a) => { const x = a.effect && a.effect.target; return (x === g || (x && x.parentNode === g)) && a.effect.getTiming().iterations !== Infinity; });
+        w.info = { inert: g.inert === true, hidden: g.getAttribute('aria-hidden') === 'true', spaet: g.hasAttribute('data-gehen-spaet'), anim: an.map((a) => a.animationName || 'waapi').sort().join('+'), dur: Math.round(Math.max(0, ...an.map((a) => Number(a.effect.getComputedTiming().endTime) || 0))), haken: !!tick && tick.classList.contains('check--on') && !!tick.querySelector(':scope > svg > path') }; }
+      if (!g && w.seen && !w.last) w.last = t; };
+    w.mo = new MutationObserver(look); w.mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] }); }, sel);
+  await act();
+  await page.waitForFunction(() => window.__abschied.last > 0, null, { timeout: 4000 }).catch(() => {});
+  await page.waitForFunction(() => !document.querySelector('.wa-geht'), null, { timeout: 1500 }).catch(() => {});   // (what left with it - a sheet's scrim - goes a moment later)
+  return page.evaluate(() => { const w = window.__abschied; w.mo.disconnect(); const root = document.querySelector('[data-wasser]'), v = root ? getComputedStyle(root).getPropertyValue('--wa-t-leave') : '', n = parseFloat(v);
+    return { seen: w.seen, ms: w.last ? Math.round(w.last - w.first) : -1, t: !(n > 0) ? 0 : /ms\s*$/.test(v) ? n : n * 1000, left: document.querySelectorAll('.wa-geht').length, ...(w.info || {}) }; });
+}
+abschied.good = (r) => r.seen > 0 && r.inert && r.hidden && !r.spaet && !!r.anim && r.t > 0 && Math.abs(r.dur - r.t) <= 1 && r.ms >= r.t * 0.4 && r.ms <= r.t + 1500 && r.left === 0;
+abschied.text = (r) => (!r.seen ? 'NO LEAVING PICTURE: the thing was gone at once' : `${r.ms < 0 ? 'NEVER REMOVED' : `in the document for ${r.ms} ms`}, ${r.anim ? `${r.anim} over ${r.dur} ms` : 'NO ANIMATION'} (--wa-t-leave ${r.t} ms)${r.inert && r.hidden ? '' : ', NOT inert/hidden'}${r.spaet ? ', PLACED FROM MEMORY: the clean-up came after the removal (React\'s order has changed, head of src/ui/gehen.ts)' : ''}${r.left ? `, ${r.left} STILL THERE` : ''}`);

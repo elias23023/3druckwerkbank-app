@@ -67,10 +67,6 @@ p { margin: 0; }
 .faint { color: var(--text-3); }
 .small { font-size: 12px; }
 .xs { font-size: 11px; }
-.hand { position: absolute; font-family: var(--hand); font-size: clamp(18px, 1.7cqw, 28px); color: rgba(255,255,255,.88); line-height: 1.15; text-shadow: 0 2px 12px rgba(0,0,0,.55); transform: rotate(-5deg); pointer-events: none; max-width: 18%; white-space: pre-line; animation: rise var(--t-slow) var(--ease) both; }
-.hand--br { right: 3%; bottom: 12%; transform: rotate(-4deg); text-align: right; }
-.hand--bl { left: 2.5%; bottom: 3.5%; }
-.hand--tr { right: 3%; top: 7.5%; text-align: right; transform: rotate(-6deg); }
 
 .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1px solid var(--glass-border); font-size: 13px; font-weight: 500; transition: background var(--t-fast), transform var(--t-fast); white-space: nowrap; }
 .btn:hover { background: rgba(255,255,255,.18); }
@@ -139,9 +135,6 @@ p { margin: 0; }
 .brand__logo { width: 36px; height: 36px; display: block; flex: none; }
 .brand b { font-size: 15px; display: block; line-height: 1.1; }
 .brand span { font-size: 11px; color: var(--text-2); }
-.topbar__clock { margin-left: auto; text-align: right; }
-.topbar__clock b { font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1; display: block; }
-.topbar__clock span { font-size: 12px; color: var(--text-2); }
 .chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; }
 .chip .ico { width: 20px; height: 20px; }
 .dock { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 2px; padding: 6px; border-radius: 999px; }
@@ -175,10 +168,6 @@ p { margin: 0; }
 .toast { display: flex; align-items: center; gap: 14px; position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); z-index: var(--z-toast); padding: 10px 16px; font-size: 13px; animation: rise var(--t-fast) both; }
 
 /* ring + misc svg */
-.ring-wrap { position: absolute; display: flex; align-items: center; justify-content: center; }
-.world-title { position: absolute; left: 3.2%; top: 11%; max-width: 30%; animation: rise var(--t-mid) var(--ease) both; }
-.world-title h1 { font-size: clamp(26px, 3.2cqw, 46px); font-weight: 600; letter-spacing: -.02em; text-shadow: 0 2px 20px rgba(0,0,0,.45); line-height: 1.05; }
-.world-title p { color: var(--text-2); text-shadow: 0 1px 10px rgba(0,0,0,.5); font-size: clamp(13px, 1.1cqw, 16px); margin-top: 4px; }
 .back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
 .back:hover { color: var(--text); }
 
@@ -187,19 +176,11 @@ p { margin: 0; }
 @keyframes up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
 
 /* ---------- reduced motion ---------- */
-@media (prefers-reduced-motion: reduce) { :root { --t-slow: 1ms; --t-mid: 1ms; --t-fast: 1ms; } .island__body, .cloud, .fog::after { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { :root { --t-slow: 1ms; --t-mid: 1ms; --t-fast: 1ms; } .island__body { animation: none !important; } }
 :root[data-motion="reduziert"] { --t-slow: 1ms; --t-mid: 1ms; --t-fast: 1ms; }
-:root[data-motion="reduziert"] .island__body, :root[data-motion="reduziert"] .cloud, :root[data-motion="reduziert"] .fog::after { animation: none !important; }
+:root[data-motion="reduziert"] .island__body { animation: none !important; }
 :root[data-motion="reduziert"] .island { --par: 0px !important; }
-.prop { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.heute-ring { position: absolute; left: calc(50% - 150px); top: calc(50% - 150px); animation: rise var(--t-mid) var(--ease) both; }
-.heute-greet { position: absolute; left: 3.2%; top: 10%; max-width: 19.5%; animation: rise var(--t-mid) var(--ease) both; }
-.heute-greet h1 { font-size: clamp(26px, 3cqw, 44px); font-weight: 600; letter-spacing: -.02em; text-shadow: 0 2px 20px rgba(0,0,0,.45); line-height: 1.05; }
-.heute-greet p { color: var(--text-2); text-shadow: 0 1px 10px rgba(0,0,0,.5); margin-top: 6px; }
-.legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--text-2); }
-.legend span { display: inline-flex; align-items: center; gap: 5px; }
 .carousel-nav { position: absolute; top: 52%; transform: translateY(-50%); width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-.filters { position: absolute; left: 3.2%; top: 23%; max-width: 30%; padding: 10px 12px; animation: rise var(--t-mid) var(--ease) both; }
 .carousel-mobile { display: flex; gap: 8px; justify-content: center; }
 .mobile-only.carousel-mobile { display: none; }
 .project-card { position: absolute; left: 33%; bottom: 11%; width: 34%; }
@@ -223,11 +204,7 @@ p { margin: 0; }
 .ms::after { content: ""; position: absolute; top: 6px; left: 50%; width: 100%; height: 2px; background: rgba(255,255,255,.18); z-index: -1; }
 .ms:last-child::after { display: none; }
 .ms.done::after { background: var(--ok); }
-.inner-cluster { position: absolute; right: 3.2%; top: 12%; bottom: 11%; width: 47%; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: min-content; gap: 10px; align-content: start; overflow: auto; padding-right: 2px; scrollbar-width: thin; }
-.inner-cluster .panel { position: relative; max-height: 300px; min-width: 0; }
 .panel__body { min-width: 0; }
-.inner-cluster { mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); }
-.inner-cluster .panel--wide { grid-column: span 2; }
 .flow { height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; position: relative; }
 .flow > i { position: absolute; left: -30%; width: 30%; height: 100%; background: linear-gradient(90deg, transparent, #7cc6ff, transparent); animation: flow 2.2s linear infinite; }
 @keyframes flow { to { left: 100%; } }
@@ -249,8 +226,8 @@ p { margin: 0; }
 .gcard div { padding: 6px 8px 8px; display: flex; flex-direction: column; gap: 2px; }
 
 /* ---------- light theme refinements: text over the landscape stays white ---------- */
-.world-title, .heute-greet, .topbar__clock, .brand, .island__label { color: #f4f6fb; }
-.world-title p, .heute-greet p, .topbar__clock span, .brand span, .island__label small { color: rgba(244,246,251,.78); }
+.topbar__clock, .brand, .island__label { color: #f4f6fb; }
+.topbar__clock span, .brand span, .island__label small { color: rgba(244,246,251,.78); }
 :root[data-theme="hell"] .pill--warn { background: rgba(255,160,40,.3); color: #5a3200; }
 :root[data-theme="hell"] .pill--ok { background: rgba(40,170,90,.25); color: #0d4a26; }
 :root[data-theme="hell"] .pill--bad { background: rgba(230,70,70,.22); color: #7a1414; }
@@ -272,11 +249,7 @@ p { margin: 0; }
 .ms > span:first-of-type { line-height: 1.2; }
 
 /* start world */
-/* Start: the card of the day (block „Tageskarte“ below) stands in a PanelColumn top left; it replaced the loose blocks .start-clock and .start-weather. */
-.minicard { position: absolute; padding: 9px 11px; display: flex; flex-direction: column; gap: 5px; font-size: 12px; min-width: 150px; max-width: 220px; animation: rise var(--t-mid) var(--ease) both; animation-delay: var(--delay, 0ms); }
-.minicard .row { gap: 7px; }
-.minicard .pv { display: flex; align-items: flex-end; gap: 2px; height: 22px; }
-.minicard .pv i { flex: 1; background: linear-gradient(180deg, #ffe29a, #ffb14d); border-radius: 2px 2px 0 0; min-height: 2px; }
+/* Start: the card of the day (block „Tageskarte“ below) stands in a PanelColumn top left. */
 /* Heute: ring on the platform */
 .heute-time { position: absolute; left: 30%; width: 40%; top: 58%; text-align: center; color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,.7); animation: rise var(--t-mid) var(--ease) both; pointer-events: none; }
 .heute-time b { font-size: clamp(34px, 3.6cqw, 58px); font-weight: 600; letter-spacing: -.03em; line-height: 1; display: block; }
@@ -315,8 +288,6 @@ p { margin: 0; }
 @keyframes rainfall { from { background-position: 0 0; } to { background-position: 40px 120px; } }
 .wfx--snow { background-image: radial-gradient(circle, rgba(255,255,255,.9) 1.2px, transparent 2px), radial-gradient(circle, rgba(255,255,255,.7) 1px, transparent 2px); background-size: 90px 90px, 140px 140px; animation: snowfall 9s linear infinite; opacity: .8; }
 @keyframes snowfall { from { background-position: 0 0, 30px 0; } to { background-position: 20px 90px, 60px 140px; } }
-.wfx--fog { background: linear-gradient(180deg, rgba(220,225,235,.35), rgba(220,225,235,.15) 60%, transparent); backdrop-filter: blur(1px); }
-.wfx--overcast { background: rgba(60,70,90,.14); }
 .wfx--still { animation: none !important; }
 :root[data-motion="reduziert"] .wfx { animation: none !important; }
 /* stepper */
@@ -351,9 +322,6 @@ p { margin: 0; }
 /* Start: clock, date, greeting and weather stand in the card of the day, so the bar is short on the right - the search is centred on the screen there, not between the two groups (the other worlds keep their bar as it is) */
 .topbar--start .topbar__search { position: absolute; left: 0; right: 0; margin: 0 auto; }
 .topbar--start .topbar__search + * { margin-left: auto; }
-.topbar__clock { margin-left: 0; }
-.topbar__user { display: flex; flex-direction: column; line-height: 1.15; text-align: left; color: #f4f6fb; text-shadow: 0 1px 8px rgba(0,0,0,.5); }
-.topbar__user .muted { color: rgba(244,246,251,.75); }
 
 /* ---------- shared mobile rules (sheets, command bar, toast) ---------- */
 @media (max-width: 900px) {
@@ -445,8 +413,6 @@ p { margin: 0; }
 .topbar__konto img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
 .topbar__initial { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: linear-gradient(135deg, #ffd27a, #f0a540); color: #3a2208; }
 .konto-google-slot { display: flex; justify-content: center; min-height: 44px; }
-.konto-google { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 10px 14px; background: #fff; color: #1f1f1f; border: 1px solid rgba(0,0,0,.12); font-weight: 600; }
-.konto-google:hover { background: #f6f6f6; }
 .konto-oder { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; color: var(--text-2); font-size: 12px; }
 .konto-oder::before, .konto-oder::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.18); }
 .konto-user { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
@@ -560,7 +526,7 @@ p { margin: 0; }
 .topbar .brand.feld-etikett .brand__logo { width: 30px; height: 30px; }
 .topbar .brand.feld-etikett span { color: rgba(244,246,251,.86); }
 .topbar .topbar__clock.chip { margin-left: 0; gap: 9px; padding: 5px 13px; align-self: flex-start; margin-top: 4px; text-align: left; white-space: nowrap; }   /* 30 px high and up at the top edge of the buttons, not 40: the small island right of the search field reaches up to y 51 (2000 x 993) */
-.topbar .topbar__clock.chip b { display: inline; font-size: 16px; line-height: 1; font-variant-numeric: tabular-nums; }   /* the chip keeps its width when the minute changes */
+.topbar .topbar__clock.chip b { display: inline; font-size: 16px; font-weight: 600; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }   /* the chip keeps its width when the minute changes */
 .topbar .topbar__clock.chip span { font-size: 12.5px; line-height: 18px; color: rgba(244,246,251,.86); }
 .feld-sonne { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 500; }
 .feld-sonne .ico { color: #ffd77a; flex: none; }
