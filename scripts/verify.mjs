@@ -96,7 +96,7 @@ for (const [iso, look, key] of [[`${TODAY}T12:30:00+01:00`, 'mittag', `${SEASON}
   await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
   const dl = await pg.getAttribute('.stage', 'data-look');
   // the exact look depends on today's sunrise/sunset; what matters is the seasonal image it maps to (grey weather shows the graded <season>-regen image instead)
-  check(`Landscape at ${iso.slice(11, 16)} (${look}) is ${key}`, (await pg.locator(`.land img[src*="landschaft-${key}-"]`).count()) >= 1 || /bedeckt|nebel|regen/.test(dl ?? ''), `${dl} ${await pg.locator('.land img').first().getAttribute('src') ?? ''}`);
+  check(`Landscape at ${iso.slice(11, 16)} (${look}) is ${key}`, (await pg.locator(`.land img[src*="landschaft-${/bedeckt|nebel|regen/.test(dl ?? '') ? `${SEASON}-regen` : key}-"]`).count()) >= 1, `${dl} ${await pg.locator('.land img').first().getAttribute('src') ?? ''}`);
   await c.close();
 }
 // ---- Alpensee backgrounds with a fixed sun and weather (Open-Meteo answered by the test: sunrise 07:00, sunset 16:20, 14.11. = Herbst) ----
@@ -235,7 +235,7 @@ for (const [iso, look, key] of [[`${TODAY}T12:30:00+01:00`, 'mittag', `${SEASON}
   const w = await pg.evaluate(() => ({ s: document.querySelector('.stage')?.getAttribute('data-season'), fx: document.querySelectorAll('.season-fx--flake i').length, filter: getComputedStyle(document.querySelector('.island--active .island__body, .island .island__body')).filter }));
   check('Season override Winter: snow dust + island filter', w.s === 'winter' && w.fx >= 20 && /saturate/.test(w.filter), JSON.stringify(w));
   await pg.waitForTimeout(600);
-  check('Season override Winter: winter landscape', (await pg.locator('.land img[src*="landschaft-winter-"]').count()) >= 1 || /bedeckt|nebel|regen/.test(await pg.getAttribute('.stage', 'data-look') ?? ''), await pg.locator('.land img').last().getAttribute('src') ?? '');
+  check('Season override Winter: winter landscape', (await pg.locator('.land img[src*="landschaft-winter-"]').count()) >= 1, await pg.locator('.land img').last().getAttribute('src') ?? '');
   await pg.locator('.sheet .seg', { hasText: 'Winter' }).locator('button', { hasText: 'Automatisch' }).click(); await pg.waitForTimeout(300);
   check('Season back to auto', (await pg.evaluate(() => document.querySelector('.stage')?.getAttribute('data-season'))) === SEASON);
   await c.close();

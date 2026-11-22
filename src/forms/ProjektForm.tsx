@@ -74,7 +74,7 @@ export function ProjektForm({ projectId }: { projectId?: string }) {
   const close = () => s.closeSheet();
   const suggested = useMemo(() => {
     // type match 2, each area match 1; an island painted for exactly this type or area gets 3 more, so it leads
-    const score = (l: typeof LIB[number]) => { const t = l.types.includes(d.type), a = l.areas.filter((x) => d.areas.includes(x)).length; return (t ? 2 : 0) + a + ((l.own === 'type' && t) || (l.own === 'area' && a) ? 3 : 0); };
+    const score = (l: typeof LIB[number]) => { const t = l.types.includes(d.type), a = l.areas.filter((x) => d.areas.includes(x)).length; const n = (t ? 2 : 0) + a + ((l.own === 'type' && t) || (l.own === 'area' && a) ? 3 : 0); return n === 0 && l.own ? -1 : n; }; // an island painted for one type or area never fills up the list for another
     const used = new Map<string, number>(); s.projects.forEach((p) => used.set(p.island.libraryId, (used.get(p.island.libraryId) ?? 0) + 1));
     return [...LIB].filter((l) => l.id !== 'rahmen' && l.id !== 'staffelei').sort((a, b) => score(b) - score(a) || (used.get(b.id) ?? 0) - (used.get(a.id) ?? 0)).slice(0, 3);
   }, [d.type, d.areas, s.projects]);

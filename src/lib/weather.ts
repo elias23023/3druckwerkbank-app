@@ -107,7 +107,8 @@ export function dryWindow(hourly: WeatherHour[], minH = 3, from = new Date()): W
 export function todayDaily(data: WeatherData | undefined, now = new Date()): WeatherDay | undefined {
   if (!data) return undefined;
   const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  return data.daily.find((d) => d.date === key) ?? data.daily[0];
+  // only today's own entry: a stored forecast that no longer covers today (app opened offline after a week) must not lend another day's sunrise to this one
+  return data.daily.find((d) => d.date === key);
 }
 
 export interface WeatherAlert { level: 'warn' | 'info'; title: string; detail: string }

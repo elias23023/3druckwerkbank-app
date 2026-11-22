@@ -384,7 +384,9 @@ export const useStore = create<Store>()(
           'p-sensorhalter': [['elektronik', 'projekt-garten'], 'bereich-garten'], 'p-bewaesserung': [['ideen'], 'art-halterung'], 'p-organizer': [['werkstatt'], 'art-organizer'],
           'p-gehaeuse': [['elektronik'], 'art-gehaeuse'], 'p-zahnrad': [['werkstatt', 'projekt-haushalt'], 'art-reparatur'], 'p-schluesselhalter': [['ideen', 'projekt-haushalt'], 'bereich-haushalt'], 'p-pflanzgefaess': [['ideen'], 'projekt-deko'],
         };
-        if (isDemo && Array.isArray(p.projects)) p.projects = p.projects.map((pr) => { const m = DEMO_ISLANDS[pr?.id]; return m && pr.island?.kind === 'bibliothek' && m[0].includes(pr.island.libraryId) ? { ...pr, island: { ...pr.island, libraryId: m[1] } } : pr; });
+        // once per browser: afterwards an island the visitor picks himself stays, also when it is one an older seed had
+        let moved = true; if (isDemo) try { moved = localStorage.getItem('3druckwerkbank:inseln') === '2'; if (!moved) localStorage.setItem('3druckwerkbank:inseln', '2'); } catch { /* no storage: nothing was stored either */ }
+        if (isDemo && !moved && Array.isArray(p.projects)) p.projects = p.projects.map((pr) => { const m = DEMO_ISLANDS[pr?.id]; return m && pr.island?.kind === 'bibliothek' && m[0].includes(pr.island.libraryId) ? { ...pr, island: { ...pr.island, libraryId: m[1] } } : pr; });
         if (!p.projects && !p.devices && !p.spools) return { ...current, ui: { ...current.ui, drafts: p.ui?.drafts ?? {}, recent: Array.isArray(p.ui?.recent) ? p.ui.recent : [] } };
         return { ...current, ...normalizeState(p), weather: p.weather && p.weather.data && Array.isArray(p.weather.data.hourly) ? p.weather : undefined, ui: { ...current.ui, drafts: p.ui?.drafts && typeof p.ui.drafts === 'object' ? p.ui.drafts : {}, recent: Array.isArray(p.ui?.recent) ? p.ui.recent : [] } };
       },

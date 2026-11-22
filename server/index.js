@@ -247,6 +247,8 @@ api.post('/auth/register', wrap(async (req, res) => {
   const hash = await hashPw(pw); // always computed, so the response time is the same for known and unknown addresses
   if (!allowed(email)) { if (mailReady) return res.json({ ok: true, pending: true }); fail(403, 'Diese Seite ist zurzeit privat. Neue Konten sind nicht möglich.', 'private'); }
   if (!mailReady) {
+    // private site: an account is only made through the mailbox of a listed address (or from privat.json), never by whoever types that address first
+    if (PRIVATE.on) fail(403, 'Diese Seite ist zurzeit privat. Neue Konten sind nicht möglich.', 'private');
     // no mail available: direct registration (an existing account never gets a password this way)
     if (await exists()) fail(409, 'Für diese E-Mail gibt es schon ein Konto. Bitte anmelden oder „Passwort vergessen“ nutzen.', 'exists');
     const r = await q('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)', [email, hash, email.split('@')[0].slice(0, 120)]);
@@ -270,7 +272,7 @@ api.post('/auth/confirm', wrap(async (req, res) => {
   await throttle(req, 'confirm', 20);
   const token = str(req.body?.token, 200);
   const p = /^[a-f0-9]{64}$/.test(token) ? await one('SELECT email, password_hash FROM pending WHERE token_hash = ? AND expires_at > NOW()', [sha256(token)]) : null;
-  if (!p) fail(400, 'Der Link ist ungültig oder abgelaufen. Bitte noch einmal registrieren.');
+  if (!p || !allowed(p.email)) fail(400, 'Der Link ist ungültig oder abgelaufen. Bitte noch einmal registrieren.');
   await q('DELETE FROM pending WHERE email = ?', [p.email]);
   if (await one('SELECT id FROM users WHERE email = ?', [p.email])) fail(409, 'Für diese E-Mail gibt es schon ein Konto. Bitte anmelden.', 'exists');
   const r = await q('INSERT INTO users (email, password_hash, name, email_verified) VALUES (?, ?, ?, 1)', [p.email, p.password_hash, p.email.split('@')[0].slice(0, 120)]);
@@ -302,6 +304,7 @@ api.post('/auth/google', wrap(async (req, res) => {
   if (c.email_verified !== true && c.email_verified !== 'true') fail(401, 'Die Google-E-Mail ist nicht bestätigt.');
   const email = str(c.email).trim().toLowerCase(); const sub = str(String(c.sub ?? ''), 80);
   if (!validEmail(email) || !sub || sub.length > 64) fail(401, 'Google-Anmeldung konnte nicht geprüft werden. Bitte noch einmal versuchen.');
+  if (!allowed(email)) fail(403, 'Diese Seite ist zurzeit privat.', 'private'); // before anything is written
   const name = typeof c.name === 'string' ? c.name.slice(0, 120) : null;
   const pic = typeof c.picture === 'string' && c.picture.length <= 500 && c.picture.startsWith('https://') ? c.picture : null;
   let id; let u = await one('SELECT id FROM users WHERE google_sub = ?', [sub]);
@@ -326,7 +329,7 @@ api.post('/auth/reset-request', wrap(async (req, res) => {
   res.json({ ok: true }); // always the same answer, at once; the mail goes out afterwards
   if (!validEmail(email)) return;
   try {
-    if (!mailReady || !(await mayMail(email))) return;
+    if (!mailReady || !allowed(email) || !(await mayMail(email))) return;
     const u = await one('SELECT id FROM users WHERE email = ?', [email]); if (!u) return;
     const token = crypto.randomBytes(32).toString('hex');
     await q('DELETE FROM resets WHERE user_id = ? OR expires_at < NOW()', [u.id]);
@@ -340,7 +343,7 @@ api.post('/auth/reset', wrap(async (req, res) => {
   const token = str(req.body?.token, 200); const pw = str(req.body?.password, 1000);
   checkNewPassword(pw);
   const r = /^[a-f0-9]{64}$/.test(token) ? await one('SELECT user_id FROM resets WHERE token_hash = ? AND expires_at > NOW()', [sha256(token)]) : null;
-  if (!r) fail(400, 'Der Link ist ungültig oder abgelaufen.');
+  if (!r || (PRIVATE.on && !allowed((await one('SELECT email FROM users WHERE id = ?', [r.user_id]))?.email))) fail(400, 'Der Link ist ungültig oder abgelaufen.');
   await q('UPDATE users SET password_hash = ?, email_verified = 1 WHERE id = ?', [await hashPw(pw), r.user_id]);
   await q('DELETE FROM resets WHERE user_id = ?', [r.user_id]);
   await q('DELETE FROM sessions WHERE user_id = ?', [r.user_id]);
