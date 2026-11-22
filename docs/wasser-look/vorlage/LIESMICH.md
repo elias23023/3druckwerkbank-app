@@ -166,6 +166,14 @@ Seitenwechsel gelegentlich schwarz (im freigegebenen Stand bei 8 von 48 Wechseln
 - Zum Entscheiden liegt der Vergleich „Leben 1 gegen 1,5“ bei den Bildern (`leben-vergleich`). Ehrlich gesagt: Der
   Unterschied ist auf Handygröße kaum zu sehen; mehr Leben käme vom Tempo des Lichts, nicht von seiner Stärke.
 
+**Das Wasser im Tropfen ist bestimmbar, 22.11.** (`NOTIZEN.md`, Abschnitt 19): Der Keim eines Tropfens kommt aus
+der Beschriftung seines Knopfs (nicht mehr aus der Reihenfolge des Anmeldens), und jeder Tropfen beginnt im
+gemeinsamen Zeichenfeld auf einem geraden Bildpunkt. Bei reduzierter Bewegung ist das Ruhebild eines Tropfens damit
+eine reine Funktion von Knopf, Szene, Ton und Fenster; `sollist.mjs` vergleicht das Wasser mit (kein `ok*` mehr). Die
+Art des Wassers ist dieselbe, jeder Tropfen hat nur einen anderen, festen Keim. Dazu vier behobene Fehler im Skript
+(hängender Abruf einer Szene, Aufräumen nach einem Fehler, ruhender Tropfen bei Größenänderung, Maus ruht nach dem
+Schließen eines Bogens auf einem Tropfen).
+
 **Die Desktop-Vorlage, 14.11.** (Zahlen in `NOTIZEN.md`, Abschnitt 11.4):
 
 - Alle acht Welten, die Innenwelt, zwölf Bögen und Formulare, Suche, Hinweis, Tastatur und die leere Werkstatt wurden

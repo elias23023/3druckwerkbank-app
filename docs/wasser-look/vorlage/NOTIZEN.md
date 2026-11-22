@@ -1450,24 +1450,9 @@ template itself was not changed in this step.
   (no new covering); no island name is covered; no text is cut off. What the list holds on both sides: faded background
   islands under panels (inner world, Projekte), the weather signs on the island "Wetter", the search field over the far
   island "3D-Druck" / "Material" - the app's layout, not the look.
-- **Tab change** (`reiter.mjs handy`, three runs alternating the order of the two builds, `--drossel 1,4 --laeufe 1`;
-  ms, median of the three run medians): first visit 81 -> 25, second visit 95 -> 29; four times slowed down 326 -> 117
-  and 243 -> 92. Long tasks that are mostly scene work: 16 before, 0 after (all runs, x4). The drops show the new scene
-  27 to 34 ms after the tap (x4: 96 to 133 ms).
-- **Soft leaving:** `docs/wasser-look/entwurf/gehen/rennen.mjs` 51 of 51 on the final build; the last task on the phone's
-  Heute: leaving row and empty text never both visible (84 frames sampled; `abschluss/leer-probe.mjs`).
-- **The drop behind a sheet** (the owner's bug): reproduced on the old state with a finger held 140 ms - the drop
-  stands with its ring at 1 s and at 3 s (pixel-equal); on the new state it rests. A Playwright `tap()` (no frame
-  between touch and release) does NOT show the bug on the old state.
-- **Empty workspace, reduced motion, resizing:** phone "echt", seven screens and the settings sheet, both tones, with
-  and without system reduced motion: no page error, the sheet goes; the desktop worlds of "echt" in the layout check;
-  narrow and wide seven times in a row (390 / 1920 / 700 / 2000 / 390 / 1280 / 1920): the right shell each time, drops
-  drawn, no page or console error.
-- **WebKit** (Playwright's build, software GL, `abschluss/webkit.cjs`): the app loads (with `waitUntil: 'load'`; a
-  networkidle wait timed out for an earlier checker), the drop behind a sheet rests, a ticked row leaves and is gone,
-  the background crossfade ends with one picture and the drops on it, a toast replaces a toast, no page error. The
-  leaving picture of a closed sheet stood almost unchanged for 0.5 to 0.75 s and was gone after 0.75 to 1 s (Chromium,
-  same machine and load: gone after 0.3 to 0.5 s) - not explained; Safari on a phone not seen.
-- **Spot checks of the checkers' findings:** F1 (sollist.mjs blind to what lies on a drop): a magenta icon planted in a
-  copy of the build -> "DIFF ... ON a drop" on 3 of 3 screens; the unplanted copy -> equal. F12 (day card label in
-  "klar" under 4.5): 5.1. F13 (leaving row and empty text together): 0 frames.
+- **Tab change** (`reiter.mjs handy`, before and after alternating, 3 runs each way, 15 changes each): median ms until
+  the new screen stands, unthrottled: before 29 / 29 / 26 / 30, after 32 / 25 / 30 / 29; four times throttled: before 79 /
+  86 / 95 / 89, after 95 / 82 / 107 / 75 - no difference beyond the spread of the runs.
+- **Not done:** WebKit, Firefox, a real phone or GPU (that blocks of 2 x 2 begin on even pixels is how rasterisers work
+  and what the software one does; a real GPU was not measured). `vergleich.mjs` still has its own `ok*` (it compares two
+  looks, also with motion) - untouched. The harness page was not compared.

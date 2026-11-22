@@ -144,6 +144,9 @@ async function run(kind, name, url, ton, reduced, key, c) {
   const log = await p.evaluate(() => window.__bogen);
   const opened = await p.evaluate((s) => !!document.querySelector(s), c.open);
   // close it, and watch the drop wake: its last picture behind the sheet, its first after it, and 1 s later
+  // (the mouse leaves the drop first: since 22.11. a drop under a resting mouse takes its hover pose again when the sheet goes - right,
+  // but that first step is the pose, not the water, and "sprung" asks whether the WATER jumps. The hover itself: entwurf/tropfen-bestimmbar/sonden.cjs, probe 4)
+  if (kind !== 'handy') { await p.mouse.move(3, p.viewportSize().height - 3); await p.waitForTimeout(150); }
   const frozen = await canvas();
   if (c.close === 'escape') await p.keyboard.press('Escape'); else await p.evaluate(() => { const b = [...document.querySelectorAll('.sheet .sheet__head button')].pop(); if (b) b.click(); });
   let first = null; const tc = Date.now(); while (Date.now() - tc < 1200) { const x = await canvas(); if (x && frozen && diffMean(x, frozen) > 0) { first = x; break; } await p.waitForTimeout(16); }

@@ -138,6 +138,7 @@
     var TEX_W = 2048, TEX_H = 1024;     // landscape texture (power of two, mip-mapped). Kept at this size on purpose (14.11.): at 1024 x 512 a drop over fine detail (the gear on "Projekte", leaves behind it) is a little softer, seen enlarged
     var KEEP = 6;                       // scene textures kept, by image address; the one used longest ago goes first. Six of the eight scenes of the phone (five tabs and one more). One costs 8.4 MB as RGB with mipmaps, 11.2 MB where the GPU keeps RGB as RGBA (likely on an iPhone): at most about 67 MB
     var STRIPS = 4;                     // a new scene is scaled and uploaded in this many pieces, one after each frame (no long task at a change; the old scene stays in the drops until the last piece)
+    var FETCH_MAX = 8000;               // ms a scene's bytes may take to come from the browser's cache (fetch + decode on another thread) before the image itself is taken instead - a fetch that never answers must not hold up every later scene
     var SETTLE = 380, RING_OUT = 300;   // a drop that goes behind a sheet: ms until it stands in its rest pose at the latest, and ms in which a running ring fades out (then the drop rests and costs nothing)
     var SLEEP_AFTER = cfg.sleep;        // ms without touch or scroll until the water comes to rest (0 frames a second)
     var REST = 'data-wa-ruht';          // attribute on the root while the water rests: every other loop of the look pauses with it (kern.css, "Ruhe")
@@ -164,13 +165,15 @@
     var FLAT = !!cfg.debug.flat, PROF = !!cfg.debug.prof;   // test aids: plain copy of the landscape (to check the alignment), frame cost in Wasser.info.prof
     var COST = cfg.debug.cost;          // test aid: a function (ms) -> ms through which the governor sees what every water picture cost (pretend a slow phone)
     var STILL_T = 2.4;                  // frozen water time for reduced motion
+    var SEED_GAP = 0.09;                // how far apart the seeds of the drops of one row are kept (of 1: the whole circle of water phases)
+    var NOT_LETTER = /[\s\d.,:;!?%+*\/()\-\u2013\u2026]+/g;   // what does not count in a label when the seed of a drop is made from it (seedAll)
     var HOVER = 0.3;                    // how far a drop gives way under a MOUSE that rests on it (1 = pressed): it swells a breath towards the pointer and its glint brightens. No ring. A finger never hovers
 
-    var reduced = still, alive = true;
+    var reduced = still, alive = true, dead = false;   // dead: the drops have failed for good (fail), the plain glass stays
 
     var shell = null, home = null, modal = null;
     var recs = new Map();               // button -> record
-    var seedN = 0, frameNo = 0;
+    var frameNo = 0, reseed = false;
     var gl = null, glc = null, prog = null, U = {}, tex = null, texReady = false, lost = false, deriv = false, maxTex = 2048;
     var scene = { el: null, src: '', nw: 1280, nh: 720, pos: null, wait: null, blend: false };
     var store = new Map(), job = null, gen = 0, want = '', bad = new Set();   // the scene textures (address -> { tex, nw, nh }, the one used longest ago first), the scene being made, a count that makes older work stale (lost context, stop), the address the page shows now, addresses that could not be decoded
@@ -182,6 +185,7 @@
     var calm = 0, patience = UP_AFTER, upAt = -1e9, downAt = 0, held = 0;   // governor, the way up (held: ms of pictures drawn since the last climb)
     W3.wait = patience;
     var io = null, ro = null, mo = null, offs = [];
+    var mouse = null;                   // where the mouse was seen last [x, y]; null after a touch (a finger never hovers, but :hover sticks to what it tapped)
     var bgCache = new Map(), rng = document.createRange(), probe = null, dot = null;
 
     /* ------------------------------------------------------------------ shader */
@@ -469,8 +473,8 @@
         var opt = { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' };
         gl = FORCED ? null : glc.getContext('webgl', opt) || glc.getContext('experimental-webgl', opt);
         if (!gl) throw new Error(FORCED ? 'forced' : 'no webgl');
-        glc.addEventListener('webglcontextlost', function (e) { if (!alive) return; e.preventDefault(); lost = true; forget(); allOff(); W3.state = 'context lost'; });   // (not alive: stop() has given the context back itself. The textures went with the context: the store is emptied, the scene is made again on restore)
-        glc.addEventListener('webglcontextrestored', function () { if (!alive) return; lost = false; rewarm(); try { build(); loadScene(true); kick(); } catch (err) { fail(err); } });   // (the scenes warmed before are queued again: they come after the shown one)
+        glc.addEventListener('webglcontextlost', function (e) { if (!alive || dead) return; e.preventDefault(); lost = true; forget(); allOff(); W3.state = 'context lost'; });   // (not alive: stop() has given the context back itself. The textures went with the context: the store is emptied, the scene is made again on restore)
+        glc.addEventListener('webglcontextrestored', function () { if (!alive || dead) return; lost = false; rewarm(); try { build(); loadScene(true); kick(); } catch (err) { fail(err); } });   // (the scenes warmed before are queued again: they come after the shown one)
         build();
         return true;
       } catch (err) { fail(err); return false; }
@@ -498,7 +502,11 @@
     }
     function fail(err) {
       W3.state = 'fallback (' + (err && err.message ? err.message : err) + ')';
-      lost = true; forget(); recs.forEach(function (r) { detach(r); }); gl = null;      // the plain glass of kern.css takes over
+      dead = true;                                                // (the listeners of the context must not bring anything back: see initGL)
+      forget();                                                   // while the context is still there: every texture, the scene being made
+      recs.forEach(function (r) { detach(r); });
+      var ext = gl && !lost && gl.getExtension('WEBGL_lose_context'); lost = true; if (ext) ext.loseContext();   // the context itself is given back (until 22.11. it and its textures stayed until the page went)
+      gl = null;                                                  // the plain glass of kern.css takes over
       if (window.console && !FORCED) console.warn('[wasser] fallback:', err);
     }
     function allOff() { recs.forEach(function (r) { r.btn.removeAttribute('data-w3'); r.painted = false; }); }
@@ -520,8 +528,14 @@
       var src = img.currentSrc || img.src, e = store.get(src);
       want = src;                                                  // (also while it still loads: a scene being made for another page is given up)
       if (!gl || lost) return;
-      if (!force && src === scene.src && texReady) return;
-      if (e) { show(src, e); W3.reused++; return; }               // kept: shown at once, even before the new <img> has finished loading (if its srcset then picks another candidate, that one is made)
+      // a scene that is still being FETCHED or decoded and is not asked for any more is given up at once (its fetch is cut):
+      // one scene is made at a time, and a fetch that never comes back held every later scene up - the drops kept the old
+      // picture for good (found 22.11.). One made ahead only steps back when the page needs a scene of its own made, and
+      // goes back to the head of the waiting list.
+      var gaveUp = false;
+      if (job && !job.pic && job.src !== src && (!job.ahead || !e)) { if (job.ahead && ahead.indexOf(job.img) < 0) ahead.unshift(job.img); drop(job); gaveUp = true; }
+      if (!force && src === scene.src && texReady) { if (gaveUp) warmNext(); return; }
+      if (e) { show(src, e); W3.reused++; if (gaveUp) warmNext(); return; }   // kept: shown at once, even before the new <img> has finished loading (if its srcset then picks another candidate, that one is made)
       if (!img.complete || !img.naturalWidth) return;             // (an image that failed to load: the old scene stays)
       if (!job && !bad.has(src)) make(img, src);                  // (one scene is made at a time: when it is done, make() looks at "want" again)
     }
@@ -545,16 +559,27 @@
     // checked: its middle sampled into one pixel - the scene is a photo, never see-through there - and looked at again after
     // the next frame while it is empty (at most 30 times; Wasser.info.blank counts it).
     function make(img, src, ahead) {
-      var my = job = { src: src, ahead: !!ahead, gen: gen, img: img, nw: img.naturalWidth, nh: img.naturalHeight, pic: null, y: 0, tries: 0, tex: null, cv: null, cx: null, raf: 0, timer: 0 };
-      var away = window.createImageBitmap && window.fetch && !/^data:/.test(src)
-        ? fetch(src, { cache: 'force-cache', credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error('fetch ' + r.status); return r.blob(); }).then(function (b) { return createImageBitmap(b); })
+      var my = job = { src: src, ahead: !!ahead, gen: gen, img: img, nw: img.naturalWidth, nh: img.naturalHeight, pic: null, y: 0, tries: 0, tex: null, cv: null, cx: null, raf: 0, timer: 0, ac: null, limit: 0, second: false };
+      var can = window.createImageBitmap && window.fetch && !/^data:/.test(src);
+      function second() {                                         // the second way: the image itself (the first way failed, is missing, or took longer than FETCH_MAX)
+        if (my.second) return; my.second = true;
+        if (my.limit) { clearTimeout(my.limit); my.limit = 0; }
+        if (my !== job || my.gen !== gen || !alive) return;
+        (img.decode ? img.decode() : Promise.resolve()).then(function () { if (my === job) { my.pic = img; later(my); } },
+          function () { if (my === job) { bad.add(src); drop(my); onward(); } });   // a broken image: the old scene stays, this address is not tried again
+      }
+      if (can) {
+        if (window.AbortController) my.ac = new AbortController();
+        my.limit = setTimeout(function () { my.limit = 0; if (my.ac) my.ac.abort(); second(); }, FETCH_MAX);
+      }
+      var away = can
+        ? fetch(src, { cache: 'force-cache', credentials: 'same-origin', signal: my.ac ? my.ac.signal : undefined }).then(function (r) { if (!r.ok) throw new Error('fetch ' + r.status); return r.blob(); }).then(function (b) { return createImageBitmap(b); })
         : Promise.reject(new Error('no createImageBitmap'));
-      away.then(function (bmp) { if (my !== job || my.gen !== gen || !alive) { if (bmp.close) bmp.close(); return; } my.pic = bmp; later(my); },
-        function () {
-          if (my !== job || my.gen !== gen || !alive) return;
-          (img.decode ? img.decode() : Promise.resolve()).then(function () { if (my === job) { my.pic = img; later(my); } },
-            function () { if (my === job) { bad.add(src); drop(my); onward(); } });   // a broken image: the old scene stays, this address is not tried again
-        });
+      away.then(function (bmp) {
+        if (my.second || my !== job || my.gen !== gen || !alive) { if (bmp.close) bmp.close(); return; }   // (too late, given up or stopped: the bitmap is given back)
+        if (my.limit) { clearTimeout(my.limit); my.limit = 0; }
+        my.pic = bmp; later(my);
+      }, second);
     }
     function later(my) { my.raf = requestAnimationFrame(function () { my.raf = 0; my.timer = setTimeout(function () { my.timer = 0; strip(my); }, 0); }); }   // right after the next frame
     function strip(my) {
@@ -596,6 +621,8 @@
     }
     function drop(my) {                                           // end a scene that is being made, and give back what it holds
       if (my.raf) cancelAnimationFrame(my.raf); if (my.timer) clearTimeout(my.timer); my.raf = my.timer = 0;
+      if (my.limit) clearTimeout(my.limit); my.limit = 0;
+      if (my.ac && !my.pic) { try { my.ac.abort(); } catch (e) {} } my.ac = null;   // (still fetching: the request is cut; a bitmap that arrives all the same is closed in make)
       if (my.pic && my.pic !== my.img && my.pic.close) my.pic.close();
       if (my.tex && gl && !lost) gl.deleteTexture(my.tex);
       if (my.cv) my.cv.width = my.cv.height = 0;                  // (WebKit keeps a canvas's memory until it is collected otherwise)
@@ -713,7 +740,7 @@
     function attach(btn) {
       var cv = document.createElement('canvas');
       cv.className = 'w3-drop'; cv.setAttribute('aria-hidden', 'true'); cv.width = 2; cv.height = 2;
-      var r = { btn: btn, cv: cv, ctx: cv.getContext('2d'), seed: (seedN++ * 0.6180339887) % 1, vis: true, painted: false, behind: false, quiet: false, redo: false, since: 0, lag: 0, tLast: -1, stale: false,
+      var r = { btn: btn, cv: cv, ctx: cv.getContext('2d'), seed: 0, key: null, vis: true, painted: false, behind: false, quiet: false, redo: false, since: 0, lag: 0, tLast: -1, stale: false,
         w: 0, h: 0, cw: 0, ch: 0, rad: 0, tint: TINT[0], under: [0, 0, 0, 0, 0], light: [1, 1, 1, 0], sat: 1, veil: 1, ink: 1, lab: [0, 0, 6, 6], parent: null, rect: null, seen: -1, last: '',
         px: 0, py: 0, pv: 0, pvel: 0, ptarget: 0, hov: 0, ripT: -1, ripA: 0 };
       recs.set(btn, r);
@@ -723,7 +750,7 @@
       return r;
     }
     function detach(r) {
-      recs.delete(r.btn);
+      recs.delete(r.btn); reseed = true;
       if (io) io.unobserve(r.btn); if (ro) ro.unobserve(r.btn);
       if (r.cv.parentNode) r.cv.parentNode.removeChild(r.cv);
       r.btn.removeAttribute('data-w3');
@@ -753,6 +780,51 @@
         if (q && q.width && q.height) { L = Math.min(L, q.left); T = Math.min(T, q.top); R = Math.max(R, q.right); B = Math.max(B, q.bottom); }
       }
       r.lab = R > L ? [((L + R) / 2 - (b.left + b.width / 2)) / z, ((T + B) / 2 - (b.top + b.height / 2)) / z, (R - L) / 2 / z + 2, (B - T) / 2 / z + 2] : [0, 0, 8, 8];
+      var key = keyOf(r); if (key !== r.key) { r.key = key; reseed = true; }
+      // a drop at rest behind a sheet whose size, paint or label has changed is drawn once more (like requiet; until 22.11.
+      // it kept its old picture, stretched to the new size, until the sheet went)
+      var sig = [r.w, r.h, r.cw, r.ch, r.tint, r.under, r.light, r.sat, r.veil, r.ink, r.lab, key].join(';');
+      if (r.quiet && r.sig !== undefined && sig !== r.sig) { r.redo = true; needOne = true; }
+      r.sig = sig;
+    }
+    // THE SEED of a drop (uSeed: the phase of its outline, its swellings and its small waves) hangs on the BUTTON, not on the
+    // order in which the buttons were met (until 22.11. a running number: the same button got other water after every load
+    // and every rebuild of the page, and no picture of a drop could be compared with another). It is the label of the button
+    // - its text without the badge, else its aria-label or title; letters only, so a count or a clock in a label never
+    // stirs the water - made into a number between 0 and 1. Buttons with the same label (or none) are told apart by their
+    // order in the document, a golden-ratio step each, and the drops of one row keep a distance (SEED_GAP), so neighbours
+    // never share their water. A pure function of what the page shows: two loads of one page give every button the same water.
+    function keyOf(r) {
+      var btn = r.btn, t = '', i, n;
+      for (i = 0; i < btn.childNodes.length; i++) {
+        n = btn.childNodes[i]; if (n === r.cv) continue;
+        if (n.nodeType === 3) t += n.nodeValue; else if (n.nodeType === 1 && !(n.classList && n.classList.contains(cfg.badge))) t += n.textContent;
+      }
+      t = t.replace(NOT_LETTER, '');
+      return t || (btn.getAttribute('aria-label') || btn.getAttribute('title') || '').replace(NOT_LETTER, '');
+    }
+    function seedAll() {
+      reseed = false;
+      var list = [], groups = new Map(), i, k;
+      recs.forEach(function (r) { list.push(r); });
+      list.sort(function (a, b) { return a.btn.compareDocumentPosition(b.btn) & 2 ? 1 : -1; });   // the order of the document (2: b comes before a)
+      for (i = 0; i < list.length; i++) {
+        var r = list[i], g = groups.get(r.key);
+        if (!g) {
+          var h = 2166136261;
+          for (k = 0; k < r.key.length; k++) { h ^= r.key.charCodeAt(k); h = Math.imul(h, 16777619); }
+          h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;   // (labels that differ in one letter get water far apart)
+          groups.set(r.key, g = { base: (h >>> 0) / 4294967296, n: 0 });
+        }
+        r.seed = (g.base + g.n++ * 0.6180339887) % 1;
+        // two labels can fall close to each other by chance ("Suche" and "Einstellungen" of the phone's head did): drops of ONE
+        // row (the same parent) keep a distance - the later one in the document steps on by the small golden step until it is free
+        for (k = 0; k < 12 && near(r, list, i); k++) r.seed = (r.seed + 0.3819660113) % 1;
+      }
+    }
+    function near(r, list, n) {
+      for (var i = 0; i < n; i++) { var q = list[i], d; if (q.btn.parentNode !== r.btn.parentNode) continue; d = Math.abs(q.seed - r.seed); if (Math.min(d, 1 - d) < SEED_GAP) return true; }
+      return false;
     }
     function measureAll() { bgCache.clear(); readGradient(); recs.forEach(measure); nextStyle = performance.now() + 1000; }   // (the page's darkening too: its strengths are tone tokens, a live switch of the tone changes them)
 
@@ -780,10 +852,11 @@
         // for the drop that opened the sheet always one in the middle of its answer to the finger.) When the sheet goes it
         // wakes and goes on from its last picture: its water time stood still with it (lag), so it does not jump.
         if (r.behind && !was) { r.ptarget = r.hov = 0; r.since = performance.now(); r.quiet = false; }
-        else if (!r.behind && was) rouse(r);
+        else if (!r.behind && was) { rouse(r); if (mouse && !btn.disabled && btn.matches(':hover')) hover(btn, mouse[0], mouse[1], true); }   // (a mouse that rests on it: the sheet took the hover pose away, and no event brings it back while the mouse stays still)
       }
       restyle = false; if (retone) { retone = false; requiet(); }
       recs.forEach(function (rr, b) { if (!seen.has(b) || !b.isConnected) detach(rr); });
+      if (reseed) seedAll();
       if (fresh) followUntil = performance.now() + 700;         // new buttons may still slide in (card animation)
       loadScene(false);
       return fresh;
@@ -815,12 +888,13 @@
       raf = 0;
       var fresh = dirty && scan();
       if (lost || !gl || !recs.size) return;
+      if (reseed) seedAll();                                      // (a label was measured anew outside scan: fonts, a new size)
       // A NEW screen (tab, world, sheet): its first frame goes out without the work of the drops, their first water picture
       // follows in the next frame - the tap is answered with the new screen at once. For that one frame the new buttons show
       // their plain glass; they arrive with the entrance of their cards (opacity from 0), so it is not seen. With reduced
       // motion there is no entrance: drawn at once, as before.
       if (fresh && !reduced()) { needOne = true; raf = requestAnimationFrame(frame); return; }
-      if (now > nextStyle) measureAll();                          // cards may have changed their paint
+      if (now > nextStyle) { measureAll(); if (reseed) { seedAll(); needOne = true; } }   // cards may have changed their paint (and a label its words: then the drop its seed)
       if (!LEVELS[W3.level].fps && now - downAt > patience) { W3.level--; upAt = now; calm = slow = held = 0; }   // governor: the still level is left after the wait (the loop only comes here on a touch or scroll)
       var lv = LEVELS[W3.level], still = reduced() || !lv.fps;
       var tick = Math.min(0.1, Math.max(0, (now - lastTick) / 1000)); lastTick = now;
@@ -873,7 +947,7 @@
     var NONE = [0, 0, 0, 0];
     function neighbour(r, el) {            // the drop next to this one in the same row, in local px of this drop
       var q = el ? recs.get(el) : null;
-      if (!q || q.seen !== frameNo) return NONE;
+      if (!q || !q.rect || (q.seen !== frameNo && !q.quiet)) return NONE;   // (a neighbour that rests behind a sheet is not drawn in this picture, but it is there: where it was drawn last)
       var z = r.rect.width / r.cw;
       var cx = ((q.rect.left + q.rect.right) - (r.rect.left + r.rect.right)) / 2 / z, cy = ((q.rect.top + q.rect.bottom) - (r.rect.top + r.rect.bottom)) / 2 / z;
       if (Math.abs(cy) > Math.min(r.h, q.h) * 0.5 || Math.abs(cx) - (r.w + q.w) / 2 > 16) return NONE;
@@ -920,9 +994,14 @@
       for (i = 0; i < list.length; i++) {
         r = list[i];
         if (x + r.bw > AW && x > 0) { x = 0; y += rowH + 1; rowH = 0; }
-        r.ax = x; r.ay = y; x += r.bw + 1; if (r.bh > rowH) rowH = r.bh; if (x > needW) needW = x;
+        // every drop begins on an EVEN pixel of the atlas, counted from the left and from the BOTTOM (the height of the atlas
+        // is even, top + height of the drop is made even): the GPU shades in blocks of 2 x 2 pixels that begin on even
+        // pixels, and the slopes of the water (dFdx, dFdy) are differences inside such a block. A drop that began on an
+        // odd pixel paired its pixels the other way round and came out 1 of 255 different in hundreds of places - and
+        // where it lies in the atlas depends on which other drops are drawn in the same picture (measured 22.11.)
+        r.ax = x; r.ay = y + ((y + r.bh) & 1); x += r.bw + 1; x += x & 1; if (r.ay - y + r.bh > rowH) rowH = r.ay - y + r.bh; if (x > needW) needW = x;
       }
-      var needH = y + rowH;
+      var needH = y + rowH; needH += needH & 1;
       if (glc.width < needW || glc.height < needH || glc.width * glc.height > needW * needH * 2.5 + 65536) { glc.width = needW; glc.height = needH; }
       var GH = glc.height;
 
@@ -1095,8 +1174,8 @@
       mo = new MutationObserver(onMutations); wire();
       on(window, 'scroll', function () { followUntil = performance.now() + 160; wake(); }, cap);       // follow scrolling frame by frame
       on(window, 'resize', function () { scene.pos = null; grad.key = ''; readGradient(); measureAll(); requiet(); followUntil = performance.now() + 300; wake(); }, { passive: true });
-      on(window, 'pointerdown', function (e) { var b = mine(e.target); if (b) press(b, e.clientX, e.clientY); wake(); }, cap);
-      on(window, 'pointermove', function (e) { if (e.pointerType === 'mouse' && performance.now() - lastInput > 1000) wake(); }, cap);
+      on(window, 'pointerdown', function (e) { mouse = e.pointerType === 'mouse' ? [e.clientX, e.clientY] : null; var b = mine(e.target); if (b) press(b, e.clientX, e.clientY); wake(); }, cap);
+      on(window, 'pointermove', function (e) { if (e.pointerType !== 'mouse') return; mouse = [e.clientX, e.clientY]; if (performance.now() - lastInput > 1000) wake(); }, cap);
       on(window, 'pointerover', function (e) { if (e.pointerType !== 'mouse') return; var b = mine(e.target); if (b && !(e.relatedTarget && b.contains(e.relatedTarget))) hover(b, e.clientX, e.clientY, true); }, cap);
       on(window, 'pointerout', function (e) { if (e.pointerType !== 'mouse') return; var b = mine(e.target); if (b && !(e.relatedTarget && b.contains(e.relatedTarget))) hover(b, 0, 0, false); }, cap);   // a mouse that moves is someone at the screen: it keeps the water awake (looked at once a second at most; a finger always begins with pointerdown)
       ['pointerup', 'pointercancel', 'dragend', 'keyup'].forEach(function (n) { on(window, n, release, cap); });
