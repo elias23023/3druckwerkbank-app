@@ -48,3 +48,19 @@
 .m-shell .input, .m-shell .select, .m-shell .textarea { font-size: 16px; padding: 10px 12px; }
 .m-shell .btn { padding: 10px 14px; font-size: 14px; }
 .m-shell .btn--sm { padding: 7px 11px; font-size: 13px; }
+/* ---- Handy-Optik (22.11.) ---- */
+/* air above the first card: a strip of the page's picture stays free and scrolls away with the content */
+.m-main { padding-top: var(--m-luft, clamp(64px, 15vh, 150px)); }
+.m-main[data-seite="innen"] { --m-luft: 4px; }   /* an opened project: its island stands in that air */
+/* an opened project: the island large and free over the picture */
+.m-insel { flex: none; display: flex; justify-content: center; margin: -6px 0 -18px; pointer-events: none; }
+.m-insel img { width: min(74vw, 340px); height: auto; max-height: 34vh; object-fit: contain; filter: drop-shadow(0 18px 22px rgba(0,0,0,.5)); animation: rise var(--t-mid) var(--ease) both; }
+.m-insel--foto { margin: 4px 0 2px; }
+.m-insel--foto img { width: min(60vw, 260px); border-radius: 18px; object-fit: cover; aspect-ratio: 4 / 3; }
+/* lists: the island of a project, wide and without a tile behind it */
+.m-insel-mini { flex: none; width: 82px; height: 60px; display: flex; align-items: center; justify-content: center; }
+.m-insel-mini img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 5px 6px rgba(0,0,0,.45)); }
+.m-row .m-insel-mini--foto { width: 60px; height: 60px; margin: 0 11px; border-radius: 12px; }
+.m-insel-mini--foto img { object-fit: cover; filter: none; }
+.menue-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; }
+@media (prefers-reduced-motion: reduce) { .m-insel img { animation: none; } }

@@ -10,6 +10,7 @@ import { NotesField } from '../forms/ProjektDetail';
 import { STATUS_COLOR } from '../forms/GeraetForm';
 import { bestPvWindow, todayDaily, wmo, pvKw } from '../lib/weather';
 import { sceneLook, type Look } from '../scene/looks';
+import type { Route } from '../router';
 import { islandSrc, ASSET_VERSION } from '../scene/Island';
 import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { Logo } from '../ui/TopBar';
@@ -128,18 +129,17 @@ export function Mobile() {
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
-    <div className="m-shell" data-wasser="mobil" data-look={look}>
+    <div className="m-shell" data-wasser="mobil" data-look={look} data-nacht={look === 'nacht' ? 'nacht' : look === 'blau' || look === 'daemmerung' ? 'daemmer' : undefined}>
       <SceneBg src={sceneSrc(scene)} srcSet={sceneSrcSet(scene)} />
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
         <span className="spacer" />
         <button className="glass m-ico" onClick={() => setCommand(true)} aria-label="Suche"><ISearch /></button>
         <button className="glass m-ico" onClick={() => openSheet({ kind: 'hinweise' })} aria-label={`Hinweise (${hints.length})`}><IBolt />{hints.length ? <span className="badge">{hints.length}</span> : null}</button>
-        <button className="glass m-ico" onClick={() => openSheet({ kind: 'konto' })} aria-label="Konto"><IUser /></button>
-        <button className="glass m-ico" onClick={() => openSheet({ kind: 'einstellungen' })} aria-label="Einstellungen"><IGear /></button>
+        <button className="glass m-ico" onClick={() => openSheet({ kind: 'menue' })} aria-label="Konto und Einstellungen"><IUser /></button>
       </header>
-      <main className="m-main" key={tab + (project?.id ?? '')}>
-        {tab === 'start' ? <MStart now={now} /> : tab === 'heute' ? <MHeute now={now} /> : tab === 'projekte' ? (project ? <MProjekt p={project} now={now} /> : <MProjekte />) : tab === 'material' ? <MMaterial /> : <MMehr now={now} />}
+      <main className="m-main" data-seite={scene} key={scene + (project?.id ?? '')}>
+        {tab === 'start' ? <MStart now={now} /> : tab === 'heute' ? <MHeute now={now} /> : tab === 'projekte' ? (project ? <MProjekt p={project} now={now} /> : <MProjekte />) : tab === 'material' ? <MMaterial /> : <MMehr now={now} world={route.world} />}
       </main>
       <nav className="glass glass--strong m-tabs" aria-label="Bereiche">
         {TABS.map((t) => <button key={t.id} className={t.id === tab ? 'on' : ''} onClick={() => go(t.id)} aria-current={t.id === tab ? 'page' : undefined}>{t.icon}<span>{t.label}</span></button>)}
@@ -221,8 +221,8 @@ function MProjekte() {
       {list.length === 0 ? <span className="muted small">Noch kein Projekt. Leg dein erstes Projekt an: eine Idee und ein Name reichen für den Anfang.</span> : null}
       {list.map((p) => (
         <div key={p.id} className="m-row m-row--click" onClick={() => navigate({ world: 'projekte', projectId: p.id })}>
-          <div className="thumb"><img src={p.island.kind === 'eigenes' && p.island.photoDataUrl ? p.island.photoDataUrl : islandSrc(p.island.libraryId, 256)} alt="" style={{ objectFit: 'contain' }} /></div>
-          <div className="col grow" style={{ gap: 4 }}><div className="row"><b className="small ellipsis grow">{p.name}</b>{p.favorite ? <span style={{ color: '#ffd77a' }}>★</span> : null}</div><Progress value={p.progress} /><span className="xs" style={{ color: blocked(p) ? '#ff9a9a' : 'var(--text-2)' }}><i className="dot" style={{ background: blocked(p) ? '#ff6b6b' : STAGE_COLOR[p.stage], marginRight: 5 }} />{blocked(p) ? 'Blockiert' : p.stage} · {p.progress} %</span></div>
+          {p.island.kind === 'eigenes' && p.island.photoDataUrl ? <div className="thumb m-insel-mini m-insel-mini--foto"><img src={p.island.photoDataUrl} alt="" /></div> : <div className="m-insel-mini"><img src={islandSrc(p.island.libraryId, 256)} alt="" /></div>}
+          <div className="col grow" style={{ gap: 4, minWidth: 0 }}><div className="row"><b className="small ellipsis grow">{p.name}</b>{p.favorite ? <span style={{ color: '#ffd77a' }}>★</span> : null}</div><Progress value={p.progress} /><span className="xs" style={{ color: blocked(p) ? '#ff9a9a' : 'var(--text-2)' }}><i className="dot" style={{ background: blocked(p) ? '#ff6b6b' : STAGE_COLOR[p.stage], marginRight: 5 }} />{blocked(p) ? 'Blockiert' : p.stage} · {p.progress} %</span></div>
           <IChevR className="muted" />
         </div>
       ))}
@@ -240,8 +240,9 @@ function MProjekt({ p, now }: { p: Project; now: Date }) {
   return (
     <>
       <button className="m-back" onClick={() => navigate({ world: 'projekte' })}><IArrowL width={16} height={16} /> Projekte</button>
+      <div className={`m-insel${p.island.kind === 'eigenes' && p.island.photoDataUrl ? ' m-insel--foto' : ''}`} aria-hidden><img src={p.island.kind === 'eigenes' && p.island.photoDataUrl ? p.island.photoDataUrl : islandSrc(p.island.libraryId, 640)} alt="" /></div>
       <Card>
-        <div className="m-hero"><img src={p.island.kind === 'eigenes' && p.island.photoDataUrl ? p.island.photoDataUrl : islandSrc(p.island.libraryId, 256)} alt="" /><div className="col grow" style={{ gap: 6 }}><h2>{p.name}</h2><span className="small muted">{p.description}</span></div></div>
+        <div className="m-hero"><div className="col grow" style={{ gap: 6 }}><h2>{p.name}</h2>{p.description ? <span className="small muted">{p.description}</span> : null}</div></div>
         <div className="row" style={{ gap: 8 }}><select className="select" style={{ flex: 1 }} value={p.stage} onChange={(e) => st.setStage(p.id, e.target.value as Project['stage'])}>{STAGES.map((x) => <option key={x}>{x}</option>)}</select><b style={{ width: 54, textAlign: 'right' }}>{p.progress} %</b></div>
         <Progress value={p.progress} />
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}><button className="btn btn--sm" onClick={() => st.openSheet({ kind: 'projektForm', projectId: p.id })}>Bearbeiten</button><button className="btn btn--sm" onClick={() => st.openSheet({ kind: 'neuerDruck', projectId: p.id })}><IPrinter width={13} height={13} /> Druck planen</button>{!p.archivedAt ? <button className="btn btn--sm btn--primary" onClick={() => st.openSheet({ kind: 'abschliessen', projectId: p.id })}><IArchive width={13} height={13} /> Abschließen</button> : null}</div>
@@ -296,7 +297,7 @@ function MMaterial() {
   );
 }
 
-function MMehr({ now }: { now: Date }) {
+function MMehr({ now, world }: { now: Date; world: Route['world'] }) {
   const { devices, prints, weather, settings, projects, reports } = useStore(useShallow((st) => ({ devices: st.devices, prints: st.prints, weather: st.weather, settings: st.settings, projects: st.projects, reports: st.reports })));
   const openSheet = useStore((st) => st.openSheet);
   const cur = weather?.data.hourly.length ? weather.data.current : undefined;
@@ -304,6 +305,29 @@ function MMehr({ now }: { now: Date }) {
   const maxPv = Math.max(0.01, ...hours.map((h) => pvKw(h.ghi, settings.pvKwp)));
   const arch = archivedProjects(projects).sort((a, b) => (b.archivedAt ?? '').localeCompare(a.archivedAt ?? ''));
   const queue = prints.filter((p) => p.status === 'wartend').sort((a, b) => a.queueOrder - b.queueOrder);
+  const days = (weather?.data.daily ?? []).filter((d) => new Date(d.date + 'T23:59:59').getTime() >= now.getTime()).slice(0, 7);
+  if (world === 'wetter') return (
+    <>
+      <button className="m-back" onClick={() => navigate({ world: 'druck' })}><IArrowL width={16} height={16} /> Mehr</button>
+      <Card title="Wetter" icon={<ISun />}>
+        {cur ? <div className="row" style={{ gap: 12 }}><WeatherIcon code={cur.code} isDay={cur.isDay} size={36} /><div className="col grow"><b className="m-big">{fmtNum(cur.temp)} °C</b><span className="small muted">{wmo(cur.code).label} · Wind {fmtNum(cur.wind)} km/h · {cur.humidity} %</span></div></div> : <span className="muted small">Wetter nicht verfügbar</span>}
+        <div className="m-hours hours">{hours.map((h, i) => <div key={h.time} className={`hour${i === 0 ? ' now' : ''}`}><span className="muted">{i === 0 ? 'jetzt' : fmtTime(h.time)}</span><WeatherIcon code={h.code} isDay={h.isDay} size={16} /><b>{fmtNum(h.temp)}°</b><div className="pvbar"><i style={{ height: `${(pvKw(h.ghi, settings.pvKwp) / maxPv) * 100}%` }} /></div></div>)}</div>
+        <span className="xs faint">Balken: Solarstrom-Schätzung · Quelle Open-Meteo</span>
+      </Card>
+      <Card title="Die nächsten Tage" icon={<ICal />}>
+        {days.length === 0 ? <span className="muted small">Keine Vorhersage verfügbar.</span> : days.map((d, i) => <div key={d.date} className="m-row"><span className="muted" style={{ width: 64 }}>{i === 0 && sameDay(new Date(d.date + 'T12:00:00'), now) ? 'Heute' : fmtDayShort(d.date + 'T12:00:00')}</span><WeatherIcon code={d.code} isDay size={22} /><span className="grow ellipsis small">{wmo(d.code).label}</span><span className="small muted">{fmtNum(d.tmin)}°</span><b className="small" style={{ width: 34, textAlign: 'right' }}>{fmtNum(d.tmax)}°</b></div>)}
+      </Card>
+    </>
+  );
+  if (world === 'archiv') return (
+    <>
+      <button className="m-back" onClick={() => navigate({ world: 'druck' })}><IArrowL width={16} height={16} /> Mehr</button>
+      <Card title="Archiv" icon={<IArchive />} count={arch.length}>
+        {arch.length === 0 ? <span className="muted small">Noch nichts abgeschlossen. Fertige Projekte landen mit Bericht hier.</span> : null}
+        {arch.map((p) => { const r = reports.find((x) => x.projectId === p.id); return <div key={p.id} className="m-row m-row--click" onClick={() => r ? openSheet({ kind: 'bericht', reportId: r.id }) : navigate({ world: 'projekte', projectId: p.id })}><div className="m-insel-mini"><img src={islandSrc(p.island.libraryId, 256)} alt="" /></div><div className="col grow" style={{ gap: 1 }}><b className="small">{p.name}</b><span className="xs muted">{fmtDate(p.archivedAt)}{r ? ` · ${r.result}` : ''}</span></div><IChevR className="muted" /></div>; })}
+      </Card>
+    </>
+  );
   return (
     <>
       <Card title="Drucker & Warteschlange" icon={<IPrinter />} onMore={() => openSheet({ kind: 'geraete' })}>
@@ -312,14 +336,9 @@ function MMehr({ now }: { now: Date }) {
         {queue.map((q, i) => <div key={q.id} className="m-row m-row--click" onClick={() => openSheet({ kind: 'druck', printId: q.id })}><span className="xs muted" style={{ width: 16 }}>{i + 1}</span><div className="col grow" style={{ gap: 1 }}><span className="small">{q.name}</span><span className="xs muted">{devices.find((d) => d.id === q.printerId)?.name ?? 'Drucker fehlt'} · {fmtDuration(q.estimatedMinutes)} · {q.gramsPlanned} g</span></div></div>)}
         <button className="btn" onClick={() => openSheet({ kind: 'geraetForm', deviceKind: 'drucker' })}><IPlus width={14} height={14} /> Gerät hinzufügen</button>
       </Card>
-      <Card title="Wetter" icon={<ISun />}>
-        {cur ? <div className="row" style={{ gap: 12 }}><WeatherIcon code={cur.code} isDay={cur.isDay} size={36} /><div className="col grow"><b className="m-big">{fmtNum(cur.temp)} °C</b><span className="small muted">{wmo(cur.code).label} · Wind {fmtNum(cur.wind)} km/h · {cur.humidity} %</span></div></div> : <span className="muted small">Wetter nicht verfügbar</span>}
-        <div className="m-hours hours">{hours.map((h, i) => <div key={h.time} className={`hour${i === 0 ? ' now' : ''}`}><span className="muted">{i === 0 ? 'jetzt' : fmtTime(h.time)}</span><WeatherIcon code={h.code} isDay={h.isDay} size={16} /><b>{fmtNum(h.temp)}°</b><div className="pvbar"><i style={{ height: `${(pvKw(h.ghi, settings.pvKwp) / maxPv) * 100}%` }} /></div></div>)}</div>
-        <span className="xs faint">Balken: Solarstrom-Schätzung · Quelle Open-Meteo</span>
-      </Card>
-      <Card title="Archiv" icon={<IArchive />} count={arch.length}>
-        {arch.length === 0 ? <span className="muted small">Noch nichts abgeschlossen. Fertige Projekte landen mit Bericht hier.</span> : null}
-        {arch.map((p) => { const r = reports.find((x) => x.projectId === p.id); return <div key={p.id} className="m-row m-row--click" onClick={() => r ? openSheet({ kind: 'bericht', reportId: r.id }) : navigate({ world: 'projekte', projectId: p.id })}><div className="thumb"><img src={islandSrc(p.island.libraryId, 256)} alt="" style={{ objectFit: 'contain' }} /></div><div className="col grow" style={{ gap: 1 }}><b className="small">{p.name}</b><span className="xs muted">{fmtDate(p.archivedAt)}{r ? ` · ${r.result}` : ''}</span></div><IChevR className="muted" /></div>; })}
+      <Card title="Weitere Seiten" icon={<IList />}>
+        <div className="m-row m-row--click" onClick={() => navigate({ world: 'wetter' })}>{cur ? <WeatherIcon code={cur.code} isDay={cur.isDay} size={26} /> : <ISun />}<div className="col grow" style={{ gap: 1 }}><b className="small">Wetter</b><span className="xs muted">{cur ? `${fmtNum(cur.temp)} °C · ${wmo(cur.code).label}` : 'Wetter nicht verfügbar'}</span></div><IChevR className="muted" /></div>
+        <div className="m-row m-row--click" onClick={() => navigate({ world: 'archiv' })}><IArchive /><div className="col grow" style={{ gap: 1 }}><b className="small">Archiv</b><span className="xs muted">{arch.length === 0 ? 'Noch nichts abgeschlossen' : `${arch.length} ${arch.length === 1 ? 'abgeschlossenes Projekt' : 'abgeschlossene Projekte'}`}</span></div><IChevR className="muted" /></div>
       </Card>
       <Card title="Werkzeuge" icon={<IWrench />} onMore={() => openSheet({ kind: 'geraete', tab: 'werkzeuge' })}>
         {devices.every((d) => d.kind !== 'werkzeug') ? <span className="muted small">Noch kein Werkzeug angelegt.</span> : null}

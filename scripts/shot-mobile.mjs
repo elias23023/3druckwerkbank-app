@@ -8,7 +8,7 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(String(e)));
-const shots = [['#/start', 'm1-start'], ['#/heute', 'm2-heute'], ['#/projekte', 'm3-projekte'], ['#/projekte/p-sensorhalter', 'm4-projekt'], ['#/material', 'm5-material'], ['#/druck', 'm6-mehr']];
+const shots = [['#/start', 'm1-start'], ['#/heute', 'm2-heute'], ['#/projekte', 'm3-projekte'], ['#/projekte/p-sensorhalter', 'm4-projekt'], ['#/material', 'm5-material'], ['#/druck', 'm6-mehr'], ['#/wetter', 'm7-wetter'], ['#/archiv', 'm8-archiv']];
 for (const [hash, name] of shots) {
   await page.goto(base + hash, { waitUntil: 'networkidle' });
   await page.waitForSelector('.m-tabs', { timeout: 15000 });

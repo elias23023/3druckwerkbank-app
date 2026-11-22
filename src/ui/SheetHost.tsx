@@ -7,7 +7,7 @@ import { EinstellungenSheet, UeberSheet } from './About';
 import { ProjektDetailSheet } from '../forms/ProjektDetail';
 import { HinweiseSheet } from './Hinweise';
 import { KontoSheet } from './Konto';
-import { BereichSheet } from './Bereich';
+import { BereichSheet, MenueSheet } from './Bereich';
 
 export function SheetHost({ sheet }: { sheet: SheetKind }) {
   switch (sheet.kind) {
@@ -27,5 +27,6 @@ export function SheetHost({ sheet }: { sheet: SheetKind }) {
     case 'hinweise': return <HinweiseSheet />;
     case 'konto': return <KontoSheet resetToken={sheet.resetToken} />;
     case 'bereich': return <BereichSheet />;
+    case 'menue': return <MenueSheet />;
   }
 }

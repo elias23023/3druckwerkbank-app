@@ -36,6 +36,15 @@
   --wa-tab-lens: 1.1;                           /* the icon under the bead is slightly magnified */
   --wa-t-szene: var(--wa-t-settle);             /* a new picture behind the page fades in over the old one (section 2) ... */
   --wa-ease-szene: var(--wa-ease-flow);         /* ... comes at once and arrives softly */
+  /* the cards on the phone let more of the page's picture through than the desktop's panels (22.11.; kern.css has .72, .55,
+     .91 and .84). Only the tone "dunkel": the tone "klar" sets its own, lighter values with more weight. */
+  --wa-shelf: rgba(20, 21, 24, .6);
+  --wa-deep: rgba(18, 19, 22, .42);
+  --wa-under: rgba(18, 19, 23, .83);            /* 1 - (1 - .27) x (1 - .6) x (1 - .42) */
+  --wa-still: rgba(18, 19, 23, .76);
+  /* night: the page's picture (painted by day) sinks into a blue dark */
+  --wa-page-night: 5, 8, 20;                    /* r, g, b of that dark */
+  --wa-night-1: .1;  --wa-night-2: .4;  --wa-night-3: .22;  --wa-night-4: .1;   /* added to --wa-page-1 .. -4 at night; half of it at dusk and dawn */
   /* (the bar's own padding and number of tabs are tokens of the block "Markierung", kern.css: --wa-bar-pad 5 px -
      5 + 52 + 5 = 62 px high - and --wa-bar-tabs 5) */
 }
@@ -50,6 +59,13 @@
 [data-wasser="mobil"] .m-bg::after {
   background: linear-gradient(180deg, rgba(var(--wa-page-dark), var(--wa-page-1)) 0%, rgba(var(--wa-page-dark), var(--wa-page-2)) 30%, rgba(var(--wa-page-dark), var(--wa-page-3)) 70%, rgba(var(--wa-page-dark), var(--wa-page-4)) 100%);
 }
+/* Night and dusk (the app sets data-nacht="nacht" or "daemmer" on the shell from the look of the hour): the same four
+   stops, darker and blue. The drops read it like the day's (same form). */
+[data-wasser="mobil"][data-nacht] .m-bg::after {
+  --n: 1;
+  background: linear-gradient(180deg, rgba(var(--wa-page-night), calc(var(--wa-page-1) + var(--wa-night-1) * var(--n))) 0%, rgba(var(--wa-page-night), calc(var(--wa-page-2) + var(--wa-night-2) * var(--n))) 30%, rgba(var(--wa-page-night), calc(var(--wa-page-3) + var(--wa-night-3) * var(--n))) 70%, rgba(var(--wa-page-night), min(.95, calc(var(--wa-page-4) + var(--wa-night-4) * var(--n)))) 100%);
+}
+[data-wasser="mobil"][data-nacht="daemmer"] .m-bg::after { --n: .5; }
 /* A new picture behind the page (the app lays it over the old one, data-szene="kommt" once it has loaded) fades in; the
    app takes the old one away when this animation ends. The drops blend the two pictures by its opacity (wasser.js). */
 [data-wasser="mobil"] .m-bg img[data-szene="kommt"] {
