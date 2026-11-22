@@ -11,7 +11,7 @@ import { isDemo, storageName } from './workspace';
 import { makeEmptySeed } from '../seed';
 
 export interface CloudUser { id: number; email: string; name?: string | null; avatar?: string | null; provider: 'google' | 'email' }
-export interface CloudHealth { configured: boolean; google: boolean; googleClientId?: string | null; user: CloudUser | null }
+export interface CloudHealth { configured: boolean; google: boolean; googleClientId?: string | null; user: CloudUser | null; private?: boolean }
 
 const API = '/api';
 // Umstieg von PHP auf den Node.js-Server: gleiche Aufrufe, andere Adressen (/auth.php?a=login wird /auth/login). Gesteuert beim Build über VITE_API=node.
@@ -32,10 +32,11 @@ let auth: AuthState = { ready: false, configured: false, google: false, user: nu
 const authListeners = new Set<() => void>();
 const setAuth = (patch: Partial<AuthState>) => { auth = { ...auth, ...patch }; authListeners.forEach((l) => l()); };
 export function useAuth(): AuthState { return useSyncExternalStore((l) => { authListeners.add(l); return () => authListeners.delete(l); }, () => auth); }
+let privateSite = false; // private mode of the server: without a session there is only the sign-in page
 let healthPromise: Promise<void> | null = null;
 export function loadHealth(): Promise<void> {
   if (healthPromise) return healthPromise;
-  healthPromise = call<CloudHealth>('/health.php').then((h) => setAuth({ ready: true, configured: !!h.configured, google: !!h.google, googleClientId: h.googleClientId ?? null, user: h.user ?? null })).catch((e: Error & { kind?: string; status?: number }) => {
+  healthPromise = call<CloudHealth>('/health.php').then((h) => { privateSite = !!h.private; setAuth({ ready: true, configured: !!h.configured, google: !!h.google, googleClientId: h.googleClientId ?? null, user: h.user ?? null }); }).catch((e: Error & { kind?: string; status?: number }) => {
     setAuth({ ready: true, configured: false, google: false, user: null });
     // Netzfehler (offline, Zeitüberschreitung) sind nicht endgültig: später noch einmal fragen. Ohne Server oder ohne Konfiguration bleibt es aus.
     if (e.kind === undefined) { healthPromise = null; const again = () => { window.removeEventListener('online', again); clearTimeout(t); void loadHealth(); }; const t = setTimeout(again, 30_000); window.addEventListener('online', again); }
@@ -307,4 +308,4 @@ export function stopSync() {
 export const liveMode = NODE_API;
 let liveLoaded = false;
 const liveMod = () => import('./live');
-export const internals = { call, hash, hasData, snapshot, backupLocal, setSync, getSync: () => syncState, signedOut: () => { setAuth({ user: null }); stopSync(); } };
+export const internals = { call, hash, hasData, snapshot, backupLocal, setSync, getSync: () => syncState, signedOut: () => { const was = !!auth.user; setAuth({ user: null }); stopSync(); if (privateSite && was) location.reload(); } }; // private site: a session that ended elsewhere ("Überall abmelden", expired) must not leave the workshop on the screen
