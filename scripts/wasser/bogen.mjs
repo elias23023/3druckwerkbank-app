@@ -72,7 +72,7 @@ const NOISE = 6;   // of 255: what two pictures of the same still page may diffe
 // the cases: where to go, what to tap, how to close
 const CASES = {
   handy: {
-    tropfen: { hash: '#/start', sel: '.m-head [aria-label="Einstellungen"]', open: '.sheet', cover: '.sheet', close: 'sheet' },
+    tropfen: { hash: '#/start', sel: '.m-head [aria-label="Konto und Einstellungen"]', open: '.sheet', cover: '.sheet', close: 'sheet' },
     glas: null,   // (the phone has no plain-glass button that opens a sheet: its ghost buttons navigate, its row buttons act in place)
     zeile: { hash: '#/start', sel: '.m-main .m-row--click', open: '.sheet', cover: '.sheet', close: 'sheet' },
     suche: { hash: '#/start', sel: '.m-head [aria-label="Suche"]', open: '.cmd-back', cover: '.cmd', close: 'escape' },

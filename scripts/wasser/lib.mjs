@@ -274,8 +274,11 @@ export async function openApp(browser, engine, { look = 'auto', ton = '', reduce
   // sheets and overlays of the mobile shell, opened the way a user opens them
   const sheet = async (name) => {
     const tap = async (hash, loc) => { if (hash) await go(hash); await loc.first().click({ timeout: 4000 }); await page.waitForTimeout(700); };
-    if (name === 'konto') return tap(null, page.locator('.m-head [aria-label="Konto"]'));
-    if (name === 'einstellungen') return tap(null, page.locator('.m-head [aria-label="Einstellungen"]'));
+    // account and settings lie behind the one drop of the header (sheet "Konto und Einstellungen"): open it, then tap the row
+    const menu = async (title) => { await tap(null, page.locator('.m-head [aria-label="Konto und Einstellungen"]')); return tap(null, page.locator('.sheet .menue-row', { hasText: title })); };
+    if (name === 'menue') return tap(null, page.locator('.m-head [aria-label="Konto und Einstellungen"]'));
+    if (name === 'konto') return menu('Konto');
+    if (name === 'einstellungen') return menu('Einstellungen');
     if (name === 'hinweise') return tap(null, page.locator('.m-head [aria-label^="Hinweise"]'));
     if (name === 'suche') return tap(null, page.locator('.m-head [aria-label="Suche"]'));
     if (name === 'projekt') return tap('#/projekte', page.locator('.m-main .btn', { hasText: 'Neues Projekt' }));       // form: text fields, selects, pills

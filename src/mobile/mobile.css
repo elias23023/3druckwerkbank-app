@@ -49,9 +49,6 @@
 .m-shell .btn { padding: 10px 14px; font-size: 14px; }
 .m-shell .btn--sm { padding: 7px 11px; font-size: 13px; }
 /* ---- Handy-Optik (22.11.) ---- */
-/* air above the first card: a strip of the page's picture stays free and scrolls away with the content */
-.m-main { padding-top: var(--m-luft, clamp(64px, 15vh, 150px)); }
-.m-main[data-seite="innen"] { --m-luft: 4px; }   /* an opened project: its island stands in that air */
 /* an opened project: the island large and free over the picture */
 .m-insel { flex: none; display: flex; justify-content: center; margin: -6px 0 -18px; pointer-events: none; }
 .m-insel img { width: min(74vw, 340px); height: auto; max-height: 34vh; object-fit: contain; filter: drop-shadow(0 18px 22px rgba(0,0,0,.5)); animation: rise var(--t-mid) var(--ease) both; }

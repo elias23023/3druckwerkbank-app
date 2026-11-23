@@ -279,6 +279,18 @@ await pm.locator('.m-tabs button', { hasText: 'Material' }).click(); await pm.wa
 check('Mobile: spool list', (await pm.locator('.m-main .m-row--click').count()) >= 5);
 const tabBox = await pm.locator('.m-tabs').boundingBox();
 check('Mobile: tab bar inside viewport', !!tabBox && tabBox.y + tabBox.height <= 845, JSON.stringify(tabBox));
+// "Mehr": weather and archive are pages of their own, with their own picture; account and settings behind one drop
+await pm.locator('.m-tabs button', { hasText: 'Mehr' }).click(); await pm.waitForTimeout(400);
+await pm.locator('.m-main .m-row--click', { hasText: 'Archiv' }).click(); await pm.waitForTimeout(900);
+check('Mobile: archive page of its own', /#\/archiv/.test(await pm.evaluate(() => location.hash)) && (await pm.locator('.m-main .m-card h3', { hasText: 'Archiv' }).count()) === 1 && (await pm.locator('.m-main .m-card h3', { hasText: 'Drucker' }).count()) === 0 && (await pm.locator('.m-bg img[src*="seite-archiv"]').count()) >= 1);
+await pm.locator('.m-back').click(); await pm.waitForTimeout(400);
+await pm.locator('.m-main .m-row--click', { hasText: 'Wetter' }).click(); await pm.waitForTimeout(900);
+check('Mobile: weather page of its own', /#\/wetter/.test(await pm.evaluate(() => location.hash)) && (await pm.locator('.m-main .m-card h3', { hasText: 'Die nächsten Tage' }).count()) === 1 && (await pm.locator('.m-bg img[src*="seite-wetter"]').count()) >= 1);
+await pm.locator('.m-head button[aria-label="Konto und Einstellungen"]').click(); await pm.waitForTimeout(400);
+await pm.locator('.sheet .menue-row', { hasText: 'Einstellungen' }).click(); await pm.waitForTimeout(500);
+check('Mobile: settings behind the one drop of the header', (await pm.locator('.m-head .m-ico').count()) === 3 && /Einstellungen/.test(await pm.locator('.sheet .sheet__head').textContent() ?? ''));
+await pm.keyboard.press('Escape'); await pm.waitForTimeout(300);
+await pm.locator('.m-tabs button', { hasText: 'Material' }).click(); await pm.waitForTimeout(400);   // (what follows goes on in "Material")
 check('Mobile: no console errors', errM.filter((e) => !/open-meteo|ERR_FAILED|Failed to fetch|CORS/i.test(e)).length === 0, errM.join(' | ').slice(0, 300));
 // mobile shopping list: add, tick, remove, undo
 await pm.locator('.m-main input[aria-label="Auf die Einkaufsliste"]').fill('Testfilament Rot'); await pm.keyboard.press('Enter'); await pm.waitForTimeout(250);

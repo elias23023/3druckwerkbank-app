@@ -41,7 +41,7 @@ const tap = async (p, sel, i = 0) => { const [x, y] = await centre(p, sel, i); a
 const flights = (p, sel = '.m-tabs') => p.evaluate((sel) => document.querySelector(sel).getAnimations({ subtree: true }).filter((an) => an.effect && an.effect.pseudoElement === '::before' && !(an instanceof CSSTransition) && !(an instanceof CSSAnimation)).length, sel);
 const rings = (p) => p.evaluate(() => document.querySelectorAll('.wa-floor .wa-ring').length);
 const CARD_BTN = '.m-main > .m-card .btn:not(.btn--primary):not(.btn--icon):not(.btn--ghost)';
-const GEAR = '.m-head [aria-label="Einstellungen"]';
+const GEAR = '.m-head [aria-label="Konto und Einstellungen"]';
 // a drop's canvas sampled at every frame (sampler), and what it did after the sheet appeared (settled): how often it changed - a
 // drop frozen in the middle of its answer (the finding of 14.11.) does not change at all - and ms to its last change
 const sampler = (p, sel, open) => p.evaluate(([sel, open]) => { const log = window.__probe = []; const t0 = performance.now();
@@ -208,7 +208,7 @@ if (a.app) {
   // drop when the sheet is opened without touching anything (element.click(): no pointer, no press)
   { const r = await s.app({ ton: a.ton, reduced: true }); const q = r.page;
     await q.evaluate((sel) => document.querySelector(sel).click(), GEAR); await q.waitForTimeout(700); const ref = await sig(q, GEAR); await r.closeSheet(); await q.waitForTimeout(500);
-    await r.sheet('einstellungen'); await q.waitForTimeout(700); const tapped = await sig(q, GEAR);
+    await r.sheet('menue'); await q.waitForTimeout(700); const tapped = await sig(q, GEAR);
     check(ref && tapped === ref, '9 app: reduced motion: the tapped drop behind the sheet is its picture at rest', ref && tapped === ref ? 'the same pixels' : 'OTHER PIXELS than at rest'); noErr(r, '9'); await r.close(); }
 }
 /* 10: pull and arrival of the light, the bounds of the master token, the two tones */
