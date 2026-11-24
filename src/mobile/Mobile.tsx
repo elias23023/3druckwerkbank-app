@@ -44,7 +44,7 @@ function Card({ title, icon, count, children, onMore }: { title?: string; icon?:
 type Scene = 'start' | 'heute' | 'projekte' | 'innen' | 'druck' | 'material' | 'wetter' | 'archiv';
 const sceneSrc = (k: Scene) => `/img/seite-${k}-830.webp?v=${ASSET_VERSION}`;
 const sceneSrcSet = (k: Scene) => `/img/seite-${k}-540.webp?v=${ASSET_VERSION} 540w, ${sceneSrc(k)} 830w`;
-const TAB_SCENES: Scene[] = ['start', 'heute', 'projekte', 'material', 'druck'];   // the pictures of the five tabs ("Mehr" opens on "druck")
+const TAB_SCENES: Scene[] = ['start', 'heute', 'projekte', 'material', 'druck', 'wetter', 'archiv'];   // the pictures of the five tabs ("Mehr" opens on "druck") and of the two pages behind "Mehr"
 /** Loads the pictures of the other tabs in a quiet moment after the start - once per start of the phone view, not when the
  *  connection asks to save data - and hands them to the water look, which makes them ready for its drops (Wasser.warm).
  *  So the first visit of a tab waits neither for the network nor for the picture inside the drops. */
