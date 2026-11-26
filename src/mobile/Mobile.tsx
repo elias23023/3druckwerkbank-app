@@ -43,13 +43,15 @@ function Card({ title, icon, count, children, onMore }: { title?: string; icon?:
  *  below (the browser picks one candidate of the srcset for both). ?v= because the CDN and browsers keep /img/* for a year
  *  (ASSET_VERSION, Island.tsx). Keys also in scripts/check-hintergruende.mjs. */
 type Scene = 'start' | 'heute' | 'projekte' | 'innen' | 'druck' | 'material' | 'wetter' | 'archiv';
-const sceneSrc = (k: Scene) => `/img/seite-${k}-830.webp?v=${ASSET_VERSION}`;
-const sceneSrcSet = (k: Scene) => `/img/seite-${k}-540.webp?v=${ASSET_VERSION} 540w, ${sceneSrc(k)} 830w`;
+/** By night every page has its own picture of the same place under the moon (seite-<key>-nacht). */
+const sceneFile = (k: Scene, night: boolean, w: number) => `/img/seite-${k}${night ? '-nacht' : ''}-${w}.webp?v=${ASSET_VERSION}`;
+const sceneSrc = (k: Scene, night = false) => sceneFile(k, night, 830);
+const sceneSrcSet = (k: Scene, night = false) => `${sceneFile(k, night, 540)} 540w, ${sceneSrc(k, night)} 830w, ${sceneFile(k, night, 1290)} 1290w`;
 const TAB_SCENES: Scene[] = ['start', 'heute', 'projekte', 'material', 'druck', 'wetter', 'archiv'];   // the pictures of the five tabs ("Mehr" opens on "druck") and of the two pages behind "Mehr"
 /** Loads the pictures of the other tabs in a quiet moment after the start - once per start of the phone view, not when the
  *  connection asks to save data - and hands them to the water look, which makes them ready for its drops (Wasser.warm).
  *  So the first visit of a tab waits neither for the network nor for the picture inside the drops. */
-function usePreloadScenes(current: Scene) {
+function usePreloadScenes(current: Scene, night: boolean) {
   useEffect(() => {
     const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
     if (nav.connection?.saveData) return;
@@ -60,7 +62,7 @@ function usePreloadScenes(current: Scene) {
       for (const k of TAB_SCENES) {
         if (k === current) continue;
         const img = new Image(); img.decoding = 'async'; img.setAttribute('fetchpriority', 'low');
-        img.sizes = '100vw'; img.srcset = sceneSrcSet(k); img.src = sceneSrc(k);   // (sizes before srcset, as the page has them)
+        img.sizes = '100vw'; img.srcset = sceneSrcSet(k, night); img.src = sceneSrc(k, night);   // (sizes before srcset, as the page has them)
         imgs.push(img);
       }
       window.Wasser?.warm?.(imgs);
@@ -126,12 +128,13 @@ export function Mobile() {
   const go = (t: Tab) => navigate({ world: t === 'mehr' ? 'druck' : t });
   // background: one picture per page (tab, the open project, the worlds behind "Mehr"); a new one fades in (SceneBg)
   const scene: Scene = project ? 'innen' : tab === 'mehr' ? (route.world === 'wetter' ? 'wetter' : route.world === 'archiv' ? 'archiv' : 'druck') : tab;
-  usePreloadScenes(scene);
+  const night = look === 'nacht';
+  usePreloadScenes(scene, night);
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [{ id: 'start', label: 'Start', icon: <IHome /> }, { id: 'heute', label: 'Heute', icon: <IClock /> }, { id: 'projekte', label: 'Projekte', icon: <IFlag /> }, { id: 'material', label: 'Material', icon: <ILayers /> }, { id: 'mehr', label: 'Mehr', icon: <IList /> }];
 
   return (
-    <div className="m-shell" data-wasser="mobil" data-look={look} data-nacht={look === 'nacht' ? 'nacht' : look === 'blau' || look === 'daemmerung' ? 'daemmer' : undefined}>
-      <SceneBg src={sceneSrc(scene)} srcSet={sceneSrcSet(scene)} />
+    <div className="m-shell" data-wasser="mobil" data-look={look} data-nacht={look === 'blau' || look === 'daemmerung' ? 'daemmer' : undefined}>
+      <SceneBg src={sceneSrc(scene, night)} srcSet={sceneSrcSet(scene, night)} />
       <header className="m-head">
         <button className="brand" onClick={() => navigate({ world: 'start' })}><Logo size={30} /><div><b>3Druckwerkbank</b><span className={`ws-chip ws-chip--${workspace} ws-chip--mini`} role="button" aria-label={`Bereich: ${WORKSPACE_META[workspace].label}. Wechseln`} onClick={(e) => { e.stopPropagation(); openSheet({ kind: 'bereich' }); }}><i className="dot" />{WORKSPACE_META[workspace].short}</span></div></button>
         <span className="spacer" />

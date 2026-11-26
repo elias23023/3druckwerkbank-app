@@ -14,9 +14,9 @@ for (const season of SEASONS) for (const look of LOOKS) {
   for (const w of [1280, 1672]) for (const ext of ['avif', 'webp']) want.add(`landschaft-${key}-${w}.${ext}`);
 }
 const SEITEN = ['start', 'heute', 'projekte', 'innen', 'druck', 'material', 'wetter', 'archiv'];   // as SCENES in src/mobile/Mobile.tsx
-for (const key of SEITEN) for (const w of [540, 830]) want.add(`seite-${key}-${w}.webp`);
+for (const key of SEITEN) for (const nacht of ['', '-nacht']) for (const w of [540, 830, 1290]) want.add(`seite-${key}${nacht}-${w}.webp`);   // by day and by night
 const missing = [...want].filter((f) => !existsSync(path.join(dir, f)));
 const unused = readdirSync(dir).filter((f) => /^(landschaft|szene|seite)-/.test(f) && !want.has(f));
 if (unused.length) console.warn(`check-hintergruende: ${unused.length} Bilder ohne Look: ${unused.join(', ')}`);
 if (missing.length) { console.error(`check-hintergruende: ${missing.length} fehlen in ${dir}: ${missing.join(', ')}`); process.exit(1); }
-console.log(`check-hintergruende: ${LOOKS.length} Looks x ${SEASONS.length} Jahreszeiten, ${SEITEN.length} Handy-Seiten -> ${want.size} Dateien in ${dir} vorhanden`);
+console.log(`check-hintergruende: ${LOOKS.length} Looks x ${SEASONS.length} Jahreszeiten, ${SEITEN.length} Handy-Seiten (Tag und Nacht) -> ${want.size} Dateien in ${dir} vorhanden`);

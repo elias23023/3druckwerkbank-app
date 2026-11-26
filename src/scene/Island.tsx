@@ -24,7 +24,7 @@ export const FRAME_BOX: Partial<Record<LibraryIsland, CSSProperties>> = {
 };
 /** Bump when an image under /img changes its content (islands, landscapes, phone backgrounds): the CDN and browsers cache
  *  /img/* for a year (immutable), so the URL must change; it also names the image cache of the installed app (sw.js). */
-export const ASSET_VERSION = '20261115c';
+export const ASSET_VERSION = '20261126a';
 /** Desktop: name and subtitle under an island stand on a small label of smoke glass (block „Felder“ in global.css, class
  *  `island__label--feld`). false = the names stand free on the landscape as before (only the text shadow). */
 const LABEL_FIELD = true;
