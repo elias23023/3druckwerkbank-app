@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { greeting, quoteOfDay, sameDay } from '../lib/time';
@@ -29,6 +30,42 @@ const SEASON_ICON: Record<Season, (p: React.SVGProps<SVGSVGElement>) => React.Re
 /** Fraction of the day (0–1) of an ISO time or Date. */
 const dayFrac = (t: string | Date) => { const d = typeof t === 'string' ? new Date(t) : t; return (d.getHours() * 60 + d.getMinutes()) / 1440; };
 
+/** The day as a curve (24 hours from left to right): the sun's way rises from sunrise to its height at noon and sinks to sunset;
+ *  the field under it is lit hour by hour as much as the sun really shines (`marks`, from the forecast's cloud cover); the night
+ *  runs on as a low line with a few stars. What is past is bright, what is to come is fainter; the sun (by night the moon) stands
+ *  on the curve at the hour it is. Drawn in a fixed 320 x 66 field that scales with the card. Rules `.tb*` in global.css. */
+function Tagesbogen({ rise, set, at, marks }: { rise: number; set: number; at: number; marks?: { pos: number; color: string; sun: number }[] }) {
+  const id = useId().replace(/:/g, '');
+  const W = 320, B = 50, H = 38, D = 7;   // width, baseline, height of the day's curve above it, depth of the night's below it
+  const day = at >= rise && at <= set;
+  const y = (f: number) => (f >= rise && f <= set ? B - H * Math.sin(Math.PI * (f - rise) / (set - rise)) : B + D * Math.sin(Math.PI * (f < rise ? (f + 1 - set) : (f - set)) / (1 - (set - rise))));
+  const line = (a: number, b: number) => { const n = Math.max(2, Math.round((b - a) * 96)); return Array.from({ length: n + 1 }, (_, i) => { const f = a + (b - a) * i / n; return `${i ? 'L' : 'M'}${(f * W).toFixed(1)} ${y(f).toFixed(1)}`; }).join(''); };
+  const dayLine = line(rise, set), field = `${dayLine}L${(set * W).toFixed(1)} ${B}L${(rise * W).toFixed(1)} ${B}Z`;
+  const stops = marks && marks.length > 1 ? marks : [{ pos: 0, color: 'rgb(255 154 92)', sun: 1 }, { pos: .22, color: 'rgb(255 215 122)', sun: 1 }, { pos: .5, color: 'rgb(255 243 196)', sun: 1 }, { pos: .78, color: 'rgb(255 215 122)', sun: 1 }, { pos: 1, color: 'rgb(255 154 92)', sun: 1 }];
+  const x = at * W, yy = y(at);
+  return (
+    <svg className={`tb${day ? '' : ' tb--nacht'}`} viewBox={`0 0 ${W} 66`} aria-hidden>
+      <defs>
+        <linearGradient id={`${id}s`} gradientUnits="userSpaceOnUse" x1={rise * W} x2={set * W} y1="0" y2="0">{stops.map((m, i) => <stop key={i} offset={m.pos} stopColor={m.color} />)}</linearGradient>
+        <linearGradient id={`${id}f`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".62" /><stop offset="1" stopColor="#fff" stopOpacity=".04" /></linearGradient>
+        <mask id={`${id}m`}><rect x="0" y="0" width={W} height="66" fill={`url(#${id}f)`} /></mask>
+        <clipPath id={`${id}p`}><rect x="0" y="0" width={x} height="66" /></clipPath>
+        <filter id={`${id}g`} x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="3.2" /></filter>
+        <radialGradient id={`${id}o`}><stop offset="0" stopColor="#fff" /><stop offset=".45" stopColor={day ? '#ffe9a6' : '#eef3ff'} /><stop offset="1" stopColor={day ? '#ffc247' : '#c9d8ff'} /></radialGradient>
+      </defs>
+      <line className="tb__grund" x1="0" x2={W} y1={B} y2={B} />
+      {[.25, .5, .75].map((f) => <line key={f} className="tb__stunde" x1={f * W} x2={f * W} y1={B - 3} y2={B + 3} />)}
+      <path className="tb__nacht" d={line(0, rise)} /><path className="tb__nacht" d={line(set, 1)} />
+      {[[.05, 4], [.12, -3], [.2, 5], [.86, -2], [.92, 5], [.97, 1]].filter(([f]) => f < rise - .02 || f > set + .02).map(([f, dy], i) => <circle key={i} className="tb__stern" style={{ animationDelay: `${i * -.8}s` }} cx={f * W} cy={B - 9 + dy} r={i % 2 ? .9 : 1.2} />)}
+      <g className="tb__kommt"><path d={field} fill={`url(#${id}s)`} mask={`url(#${id}m)`} /><path className="tb__weg" d={dayLine} stroke={`url(#${id}s)`} /></g>
+      <g clipPath={`url(#${id}p)`}><path d={field} fill={`url(#${id}s)`} mask={`url(#${id}m)`} /><path className="tb__weg tb__weg--licht" d={dayLine} stroke={`url(#${id}s)`} filter={`url(#${id}g)`} /><path className="tb__weg" d={dayLine} stroke={`url(#${id}s)`} /></g>
+      <circle className="tb__fuss" cx={rise * W} cy={B} r="2.6" /><circle className="tb__fuss" cx={set * W} cy={B} r="2.6" />
+      <line className="tb__lot" x1={x} x2={x} y1={Math.min(yy, B) + 7} y2={Math.max(yy, B)} />
+      <g className="tb__jetzt" transform={`translate(${x.toFixed(1)} ${yy.toFixed(1)})`}><circle className="tb__hof" r="13" fill={day ? '#ffcf66' : '#b9ccff'} /><circle r="6.2" fill={`url(#${id}o)`} /></g>
+    </svg>
+  );
+}
+
 /**
  * The card of the day, shared by the phone's start tab and the desktop start world: greeting, clock, date, weather, daylight track
  * over 24 hours, season and solar window, quote – one sheet instead of loose lines over the scene.
@@ -56,7 +93,7 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
   const sunny = (() => {
     if (!today || !weather?.data.hourly.length || set <= rise) return null;
     const mix = (a: number[], b: number[], t: number) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
-    const stops: string[] = []; let hours = 0;
+    const stops: string[] = []; const marks: { pos: number; color: string; sun: number }[] = []; let hours = 0;
     for (const h of weather.data.hourly) {
       const d = new Date(h.time); if (!sameDay(d, now)) continue;
       const f = (d.getHours() + .5) / 24; if (f < rise - .5 / 24 || f > set + .5 / 24) continue;
@@ -64,10 +101,10 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
       const low = Math.min(1, Math.min(pos, 1 - pos) / .16);   // near sunrise and sunset the light is warmer and lower
       const bright = mix([255, 150, 84], [255, 226, 122], low); const top = mix(bright, [255, 246, 204], sun * low * .6);
       const c = h.precip > 0.05 ? mix([88, 122, 168], [120, 138, 164], sun) : mix([124, 134, 152], top, Math.pow(sun, .8));
-      stops.push(`rgb(${c.join(' ')}) ${(pos * 100).toFixed(1)}%`);
+      stops.push(`rgb(${c.join(' ')}) ${(pos * 100).toFixed(1)}%`); marks.push({ pos, color: `rgb(${c.join(' ')})`, sun });
       if (f >= rise && f <= set) hours += sun;
     }
-    return stops.length > 1 ? { css: `linear-gradient(90deg, ${stops.join(', ')})`, hours: Math.round(hours * 2) / 2 } : null;
+    return stops.length > 1 ? { marks, hours: Math.round(hours * 2) / 2 } : null;
   })();
   const tile = desktop ? 'item tk-fact' : 'm-row tk-fact';
   const motto = !desktop || !cur ? null : cur.precip > 0 ? 'Drinnen ist heute Werkstatt-Wetter.' : pvStart ? 'Ein guter Tag für neue Projekte.' : 'Ein ruhiger Tag zum Planen.';
@@ -85,7 +122,7 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
       </div>
       {today ? (
         <div className={`tk-day${turn ? ' tk-day--turn' : ''}`} role="img" aria-label={`Tageslicht von ${fmtTime(today.sunrise)} bis ${fmtTime(today.sunset)} Uhr${turn ? `, ${turn.text}` : ''}${sunny ? `, heute etwa ${fmtNum(sunny.hours, 1)} Stunden Sonne` : ''}`}>
-          <div className="tk-day__track"><i className="tk-day__light" style={{ left: `${rise * 100}%`, width: `${Math.max(0, set - rise) * 100}%`, ...(sunny ? { backgroundImage: sunny.css } : null) }} /><i className={`tk-day__now${cur && !cur.isDay ? ' tk-day__now--nacht' : ''}`} style={{ left: `${dayFrac(now) * 100}%` }} /></div>
+          <Tagesbogen rise={rise} set={set} at={dayFrac(now)} marks={sunny?.marks} />
           <span className="tk-day__lbl" style={{ left: `${rise * 100}%` }}>↑ {fmtTime(today.sunrise)}</span>
           <span className="tk-day__lbl" style={{ left: `${set * 100}%` }}>↓ {fmtTime(today.sunset)}</span>
           {turn ? <span className="tk-day__turn" aria-hidden>{turn.text}{sunny ? <span className="tk-day__sun"> · ≈ {fmtNum(sunny.hours, sunny.hours % 1 ? 1 : 0)} h Sonne</span> : null}</span> : null}

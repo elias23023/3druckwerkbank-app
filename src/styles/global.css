@@ -506,6 +506,28 @@ p { margin: 0; }
 .tk-day__now--nacht { background: radial-gradient(circle at 40% 35%, #fff 0 40%, #dfe9ff 100%); box-shadow: 0 0 0 3px rgba(223,233,255,.24), 0 0 14px 4px rgba(170,196,255,.4), 0 2px 8px rgba(0,0,0,.5); }
 .tk-day__lbl { top: 15px; }
 .tk-day__sun { color: #ffd77a; }
+/* the day as a curve (Tagesbogen, Tageskarte.tsx) */
+.tb { display: block; width: 100%; height: auto; overflow: visible; margin-top: -6px; }
+.tb * { animation-play-state: var(--wa-lauf, running); }
+.tb__grund { stroke: rgba(255,255,255,.2); stroke-width: 1; }
+.tb__stunde { stroke: rgba(255,255,255,.26); stroke-width: 1; }
+.tb__nacht { fill: none; stroke: rgba(170,196,255,.5); stroke-width: 1.6; stroke-dasharray: 1.5 4.5; stroke-linecap: round; }
+.tb__stern { fill: #fff; animation: wb-twinkle 3.6s ease-in-out infinite; }
+.tb__weg { fill: none; stroke-width: 2.6; stroke-linecap: round; }
+.tb__weg--licht { stroke-width: 5; opacity: .85; }
+.tb__kommt { opacity: .42; }
+.tb__fuss { fill: #ffb070; stroke: rgba(0,0,0,.35); stroke-width: .8; }
+.tb__lot { stroke: rgba(255,255,255,.3); stroke-width: 1; stroke-dasharray: 2 3; }
+.tb__hof { opacity: .34; filter: blur(4px); transform-box: fill-box; transform-origin: center; animation: wb-breathe 5s ease-in-out infinite; }
+.tb__jetzt { filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+@media (prefers-reduced-motion: reduce) { .tb * { animation: none !important; } }
+:root[data-motion="reduziert"] .tb * { animation: none !important; }
+.tk-day .tk-day__lbl { top: auto; bottom: auto; margin-top: -9px; }
+.tk-day--turn .tk-day__turn { padding-top: 14px; }
+.tk--desk .tk-day .tk-day__lbl { top: auto; margin-top: -4px; }
+.tk--desk .tb { margin: -21px 0 -7px; }
+.tk--desk .tk-day--turn .tk-day__turn { padding-top: 9px; }
+
 .tk__quote { border-top: 0; background: linear-gradient(90deg, rgba(255,255,255,.3), rgba(255,255,255,0) 85%) 0 0 / 100% 1px no-repeat; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
 [data-wasser] .tk.tk--himmel .tk-fact.tk-fact { background: rgba(10,14,22,.34); -webkit-backdrop-filter: blur(10px) saturate(1.25); backdrop-filter: blur(10px) saturate(1.25); border: 1px solid rgba(255,255,255,.14); box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 6px 16px -8px rgba(0,0,0,.6); }
 .tk--desk .tk__temp b { font-size: 22px; }
