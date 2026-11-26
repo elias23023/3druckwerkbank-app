@@ -12,9 +12,9 @@ import { ASSET_VERSION } from '../scene/Island';
 /** The living sky behind the card: one short silent loop per kind of weather (the user's films, public/img/wetter/himmel-<kind>.mp4
  *  with a still picture .webp of its first frame; made by scripts/optimize-himmel.mjs). Kinds without a film keep the drawn
  *  picture (WetterBild). Where motion is not wanted only the still picture shows (CSS, block „Wetterbild“). */
-const HIMMEL = new Set<string>(['teils', 'regen']);
+const HIMMEL = new Set<string>(['sonne', 'teils', 'wolke', 'nebel', 'regen', 'schnee', 'gewitter', 'nacht', 'nacht-teils']);
 export const himmelKind = (code: number, isDay: boolean): string | null => {
-  const i = wmoKind(code).icon; const k = i === 'schauer' ? 'regen' : i === 'sonne' && !isDay ? 'nacht' : i === 'teils' && !isDay ? 'nacht-teils' : i;
+  const i = wmoKind(code).icon; const k = i === 'schauer' ? 'regen' : i === 'sonne' && !isDay ? 'nacht' : i === 'teils' && !isDay ? 'nacht-teils' : ['sonne', 'teils', 'wolke', 'nebel', 'regen', 'schnee'].includes(i) ? i : 'gewitter';
   return HIMMEL.has(k) ? k : null;
 };
 export function Himmel({ kind }: { kind: string }) {
