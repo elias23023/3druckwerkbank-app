@@ -11,6 +11,8 @@ import '@fontsource/inter/latin-700.css';
 import '@fontsource/inter/latin-ext-700.css';
 import '@fontsource/caveat/latin-500.css';
 import '@fontsource/caveat/latin-600.css';
+import '@fontsource/fraunces/latin-500.css';   // the display face of the card of the day (clock, temperature)
+import '@fontsource/fraunces/latin-600.css';
 import './styles/tokens.css';
 import './styles/global.css';
 import { App } from './App';
