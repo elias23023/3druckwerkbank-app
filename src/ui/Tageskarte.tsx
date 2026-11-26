@@ -51,6 +51,24 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
   const turn = sunTurn(weather?.data, now);   // "Sonnenuntergang in …": the same helper as the ring and the weather panels
   const rise = today ? dayFrac(today.sunrise) : 0; const set = today ? dayFrac(today.sunset) : 0;
   const himmel = cur ? himmelKind(cur.code, cur.isDay) : null;
+  // how much sun really comes through, hour by hour between sunrise and sunset (from the cloud cover of the forecast):
+  // the light of the daylight track is painted with it - gold where the sun shines, grey-blue under clouds, blue where it rains
+  const sunny = (() => {
+    if (!today || !weather?.data.hourly.length || set <= rise) return null;
+    const mix = (a: number[], b: number[], t: number) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+    const stops: string[] = []; let hours = 0;
+    for (const h of weather.data.hourly) {
+      const d = new Date(h.time); if (!sameDay(d, now)) continue;
+      const f = (d.getHours() + .5) / 24; if (f < rise - .5 / 24 || f > set + .5 / 24) continue;
+      const sun = Math.max(0, Math.min(1, 1 - (h.cloud ?? 0) / 100)); const pos = Math.max(0, Math.min(1, (f - rise) / (set - rise)));
+      const low = Math.min(1, Math.min(pos, 1 - pos) / .16);   // near sunrise and sunset the light is warmer and lower
+      const bright = mix([255, 150, 84], [255, 226, 122], low); const top = mix(bright, [255, 246, 204], sun * low * .6);
+      const c = h.precip > 0.05 ? mix([88, 122, 168], [120, 138, 164], sun) : mix([124, 134, 152], top, Math.pow(sun, .8));
+      stops.push(`rgb(${c.join(' ')}) ${(pos * 100).toFixed(1)}%`);
+      if (f >= rise && f <= set) hours += sun;
+    }
+    return stops.length > 1 ? { css: `linear-gradient(90deg, ${stops.join(', ')})`, hours: Math.round(hours * 2) / 2 } : null;
+  })();
   const tile = desktop ? 'item tk-fact' : 'm-row tk-fact';
   const motto = !desktop || !cur ? null : cur.precip > 0 ? 'Drinnen ist heute Werkstatt-Wetter.' : pvStart ? 'Ein guter Tag für neue Projekte.' : 'Ein ruhiger Tag zum Planen.';
   const inner = (
@@ -66,11 +84,11 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
         </div>
       </div>
       {today ? (
-        <div className={`tk-day${turn ? ' tk-day--turn' : ''}`} role="img" aria-label={`Tageslicht von ${fmtTime(today.sunrise)} bis ${fmtTime(today.sunset)} Uhr${turn ? `, ${turn.text}` : ''}`}>
-          <div className="tk-day__track"><i className="tk-day__light" style={{ left: `${rise * 100}%`, width: `${Math.max(0, set - rise) * 100}%` }} /><i className="tk-day__now" style={{ left: `${dayFrac(now) * 100}%` }} /></div>
+        <div className={`tk-day${turn ? ' tk-day--turn' : ''}`} role="img" aria-label={`Tageslicht von ${fmtTime(today.sunrise)} bis ${fmtTime(today.sunset)} Uhr${turn ? `, ${turn.text}` : ''}${sunny ? `, heute etwa ${fmtNum(sunny.hours, 1)} Stunden Sonne` : ''}`}>
+          <div className="tk-day__track"><i className="tk-day__light" style={{ left: `${rise * 100}%`, width: `${Math.max(0, set - rise) * 100}%`, ...(sunny ? { backgroundImage: sunny.css } : null) }} /><i className={`tk-day__now${cur && !cur.isDay ? ' tk-day__now--nacht' : ''}`} style={{ left: `${dayFrac(now) * 100}%` }} /></div>
           <span className="tk-day__lbl" style={{ left: `${rise * 100}%` }}>↑ {fmtTime(today.sunrise)}</span>
           <span className="tk-day__lbl" style={{ left: `${set * 100}%` }}>↓ {fmtTime(today.sunset)}</span>
-          {turn ? <span className="tk-day__turn" aria-hidden>{turn.text}</span> : null}
+          {turn ? <span className="tk-day__turn" aria-hidden>{turn.text}{sunny ? <span className="tk-day__sun"> · ≈ {fmtNum(sunny.hours, sunny.hours % 1 ? 1 : 0)} h Sonne</span> : null}</span> : null}
         </div>
       ) : null}
       <div className="tk-facts">
