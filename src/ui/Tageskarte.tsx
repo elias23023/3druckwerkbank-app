@@ -41,13 +41,13 @@ function Tagesbogen({ rise, set, at, marks }: { rise: number; set: number; at: n
   const y = (f: number) => (f >= rise && f <= set ? B - H * Math.sin(Math.PI * (f - rise) / (set - rise)) : B + D * Math.sin(Math.PI * (f < rise ? (f + 1 - set) : (f - set)) / (1 - (set - rise))));
   const line = (a: number, b: number) => { const n = Math.max(2, Math.round((b - a) * 96)); return Array.from({ length: n + 1 }, (_, i) => { const f = a + (b - a) * i / n; return `${i ? 'L' : 'M'}${(f * W).toFixed(1)} ${y(f).toFixed(1)}`; }).join(''); };
   const dayLine = line(rise, set), field = `${dayLine}L${(set * W).toFixed(1)} ${B}L${(rise * W).toFixed(1)} ${B}Z`;
-  const stops = marks && marks.length > 1 ? marks : [{ pos: 0, color: 'rgb(255 154 92)', sun: 1 }, { pos: .22, color: 'rgb(255 215 122)', sun: 1 }, { pos: .5, color: 'rgb(255 243 196)', sun: 1 }, { pos: .78, color: 'rgb(255 215 122)', sun: 1 }, { pos: 1, color: 'rgb(255 154 92)', sun: 1 }];
+  const stops = marks && marks.length > 1 ? marks : [{ pos: 0, color: 'rgb(255 138 60)', sun: 1 }, { pos: .2, color: 'rgb(255 204 51)', sun: 1 }, { pos: .8, color: 'rgb(255 204 51)', sun: 1 }, { pos: 1, color: 'rgb(255 138 60)', sun: 1 }];
   const x = at * W, yy = y(at);
   return (
     <svg className={`tb${day ? '' : ' tb--nacht'}`} viewBox={`0 0 ${W} 66`} aria-hidden>
       <defs>
         <linearGradient id={`${id}s`} gradientUnits="userSpaceOnUse" x1={rise * W} x2={set * W} y1="0" y2="0">{stops.map((m, i) => <stop key={i} offset={m.pos} stopColor={m.color} />)}</linearGradient>
-        <linearGradient id={`${id}f`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".62" /><stop offset="1" stopColor="#fff" stopOpacity=".04" /></linearGradient>
+        <linearGradient id={`${id}f`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".9" /><stop offset=".55" stopColor="#fff" stopOpacity=".5" /><stop offset="1" stopColor="#fff" stopOpacity=".14" /></linearGradient>
         <mask id={`${id}m`}><rect x="0" y="0" width={W} height="66" fill={`url(#${id}f)`} /></mask>
         <clipPath id={`${id}p`}><rect x="0" y="0" width={x} height="66" /></clipPath>
         <filter id={`${id}g`} x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="3.2" /></filter>
@@ -99,8 +99,11 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
       const f = (d.getHours() + .5) / 24; if (f < rise - .5 / 24 || f > set + .5 / 24) continue;
       const sun = Math.max(0, Math.min(1, 1 - (h.cloud ?? 0) / 100)); const pos = Math.max(0, Math.min(1, (f - rise) / (set - rise)));
       const low = Math.min(1, Math.min(pos, 1 - pos) / .16);   // near sunrise and sunset the light is warmer and lower
-      const bright = mix([255, 150, 84], [255, 226, 122], low); const top = mix(bright, [255, 246, 204], sun * low * .6);
-      const c = h.precip > 0.05 ? mix([88, 122, 168], [120, 138, 164], sun) : mix([124, 134, 152], top, Math.pow(sun, .8));
+      // the colours: full sun is a strong gold (orange near sunrise and sunset), half sun a pale straw yellow, clouds a cool
+      // grey-blue, rain a clear blue - so the day can be read from the curve at a glance
+      const gold = mix([255, 138, 60], [255, 204, 51], low); const straw = mix([232, 196, 150], [233, 222, 170], low);
+      const dry = sun >= .5 ? mix(straw, gold, (sun - .5) * 2) : mix([118, 134, 160], straw, sun * 2);
+      const c = h.precip > 0.05 ? mix([64, 140, 235], [110, 170, 240], sun) : dry;
       stops.push(`rgb(${c.join(' ')}) ${(pos * 100).toFixed(1)}%`); marks.push({ pos, color: `rgb(${c.join(' ')})`, sun });
       if (f >= rise && f <= set) hours += sun;
     }
