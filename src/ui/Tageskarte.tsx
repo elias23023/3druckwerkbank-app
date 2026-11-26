@@ -17,11 +17,10 @@ export const himmelKind = (code: number, isDay: boolean): string | null => {
   const i = wmoKind(code).icon; const k = i === 'schauer' ? 'regen' : i === 'sonne' && !isDay ? 'nacht' : i === 'teils' && !isDay ? 'nacht-teils' : i;
   return HIMMEL.has(k) ? k : null;
 };
-export function Himmel({ kind, cloud }: { kind: string; cloud: boolean }) {
+export function Himmel({ kind }: { kind: string }) {
   const src = `/img/wetter/himmel-${kind}`;
   const film = (cls: string) => <video key={cls + kind} className={cls} src={`${src}.mp4?v=${ASSET_VERSION}`} poster={`${src}.webp?v=${ASSET_VERSION}`} autoPlay muted loop playsInline preload="auto" disablePictureInPicture onError={(e) => { e.currentTarget.style.display = 'none'; }} />;
-  // two layers of the same film: soft and large as the moving light of the whole card, sharp and small as the cloud top right
-  return <div className="tk-himmel" aria-hidden>{film('tk-himmel__weit')}{cloud ? film('tk-himmel__wolke') : null}</div>;
+  return <div className="tk-himmel" aria-hidden>{film('tk-himmel__weit')}</div>;
 }
 import { ISun, ISparkle, ISnow, IEnergy } from './Icons';
 
@@ -82,6 +81,6 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
     </>
   );
   return desktop
-    ? <section className={`glass panel tk tk--desk${himmel ? ' tk--himmel' : ''}`} aria-label="Heute">{himmel ? <Himmel kind={himmel} cloud={false} /> : null}<div className="panel__body">{inner}</div></section>
-    : <section className={`glass m-card m-today tk${himmel ? ' tk--himmel' : ''}`}>{himmel ? <Himmel kind={himmel} cloud /> : null}{inner}</section>;
+    ? <section className={`glass panel tk tk--desk${himmel ? ' tk--himmel' : ''}`} aria-label="Heute">{himmel ? <Himmel kind={himmel} /> : null}<div className="panel__body">{inner}</div></section>
+    : <section className={`glass m-card m-today tk${himmel ? ' tk--himmel' : ''}`}>{himmel ? <Himmel kind={himmel} /> : null}{inner}</section>;
 }
