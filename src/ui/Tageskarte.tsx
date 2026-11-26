@@ -6,6 +6,23 @@ import { todayDaily, wmo } from '../lib/weather';
 import { resolveSeason, SEASON_META, daysUntilNextSeason, type Season } from '../lib/season';
 import { sunTurn } from '../lib/sun';
 import { WetterBild } from './WetterBild';
+import { wmo as wmoKind } from '../lib/weather';
+import { ASSET_VERSION } from '../scene/Island';
+
+/** The living sky behind the card: one short silent loop per kind of weather (the user's films, public/img/wetter/himmel-<kind>.mp4
+ *  with a still picture .webp of its first frame; made by scripts/optimize-himmel.mjs). Kinds without a film keep the drawn
+ *  picture (WetterBild). Where motion is not wanted only the still picture shows (CSS, block „Wetterbild“). */
+const HIMMEL = new Set<string>(['teils', 'regen']);
+export const himmelKind = (code: number, isDay: boolean): string | null => {
+  const i = wmoKind(code).icon; const k = i === 'schauer' ? 'regen' : i === 'sonne' && !isDay ? 'nacht' : i === 'teils' && !isDay ? 'nacht-teils' : i;
+  return HIMMEL.has(k) ? k : null;
+};
+export function Himmel({ kind, cloud }: { kind: string; cloud: boolean }) {
+  const src = `/img/wetter/himmel-${kind}`;
+  const film = (cls: string) => <video key={cls + kind} className={cls} src={`${src}.mp4?v=${ASSET_VERSION}`} poster={`${src}.webp?v=${ASSET_VERSION}`} autoPlay muted loop playsInline preload="auto" disablePictureInPicture onError={(e) => { e.currentTarget.style.display = 'none'; }} />;
+  // two layers of the same film: soft and large as the moving light of the whole card, sharp and small as the cloud top right
+  return <div className="tk-himmel" aria-hidden>{film('tk-himmel__weit')}{cloud ? film('tk-himmel__wolke') : null}</div>;
+}
 import { ISun, ISparkle, ISnow, IEnergy } from './Icons';
 
 const ILeaf = (p: React.SVGProps<SVGSVGElement>) => <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="ico" {...p}><path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 14"/><path d="M5 19 14 10"/></svg>;
@@ -34,6 +51,7 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
   const [weekday, ...rest] = fmtLongDate(now).split(', ');
   const turn = sunTurn(weather?.data, now);   // "Sonnenuntergang in …": the same helper as the ring and the weather panels
   const rise = today ? dayFrac(today.sunrise) : 0; const set = today ? dayFrac(today.sunset) : 0;
+  const himmel = cur ? himmelKind(cur.code, cur.isDay) : null;
   const tile = desktop ? 'item tk-fact' : 'm-row tk-fact';
   const motto = !desktop || !cur ? null : cur.precip > 0 ? 'Drinnen ist heute Werkstatt-Wetter.' : pvStart ? 'Ein guter Tag für neue Projekte.' : 'Ein ruhiger Tag zum Planen.';
   const inner = (
@@ -45,7 +63,7 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
           <span className="tk__date"><b>{weekday}</b><span>{rest.join(', ')}</span></span>
         </div>
         <div className="tk__wx">
-          {cur ? <>{desktop ? null : <WetterBild code={cur.code} isDay={cur.isDay} width={88} />}<div className="tk__temp">{desktop ? <WetterBild code={cur.code} isDay={cur.isDay} width={46} /> : null}<b>{fmtNum(cur.temp)} °C</b></div><span className="small">{wmo(cur.code).label}</span><span className="xs muted">{[settings.location.name.split(',')[0], 'Open-Meteo'].filter(Boolean).join(' · ')}</span>{motto ? <p className="tk__motto">{motto}</p> : null}</> : <span className="muted small">{weather?.error ? 'Wetter nicht verfügbar' : 'Wetter …'}</span>}
+          {cur ? <>{desktop ? null : himmel ? <span className="tk__luft" /> : <WetterBild code={cur.code} isDay={cur.isDay} width={88} />}<div className="tk__temp">{desktop ? <WetterBild code={cur.code} isDay={cur.isDay} width={46} /> : null}<b>{fmtNum(cur.temp)} °C</b></div><span className="small">{wmo(cur.code).label}</span><span className="xs muted">{[settings.location.name.split(',')[0], 'Open-Meteo'].filter(Boolean).join(' · ')}</span>{motto ? <p className="tk__motto">{motto}</p> : null}</> : <span className="muted small">{weather?.error ? 'Wetter nicht verfügbar' : 'Wetter …'}</span>}
         </div>
       </div>
       {today ? (
@@ -64,6 +82,6 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
     </>
   );
   return desktop
-    ? <section className="glass panel tk tk--desk" aria-label="Heute"><div className="panel__body">{inner}</div></section>
-    : <section className="glass m-card m-today tk">{inner}</section>;
+    ? <section className={`glass panel tk tk--desk${himmel ? ' tk--himmel' : ''}`} aria-label="Heute">{himmel ? <Himmel kind={himmel} cloud={false} /> : null}<div className="panel__body">{inner}</div></section>
+    : <section className={`glass m-card m-today tk${himmel ? ' tk--himmel' : ''}`}>{himmel ? <Himmel kind={himmel} cloud /> : null}{inner}</section>;
 }

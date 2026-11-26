@@ -485,6 +485,16 @@ p { margin: 0; }
 @media (prefers-reduced-motion: reduce) { .wb * { animation: none !important; } .wb__bolt { opacity: 1; } }
 :root[data-motion="reduziert"] .wb * { animation: none !important; }
 .tk__wx > .wb { margin: -4px 0 2px; }
+/* the living sky behind the card (Himmel, Tageskarte.tsx): the film fills the card, its cloud stands top right; a veil keeps the text readable */
+.tk--himmel { isolation: isolate; overflow: hidden; }
+.tk-himmel { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; }
+.tk-himmel__weit { position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: cover; object-position: 80% 20%; filter: blur(22px) saturate(1.25) brightness(1.15); opacity: .75; }
+.tk-himmel__wolke { position: absolute; top: -6px; right: 2px; width: 62%; aspect-ratio: 4 / 3; object-fit: cover; -webkit-mask-image: radial-gradient(ellipse 54% 70% at 68% 44%, #000 50%, transparent 100%); mask-image: radial-gradient(ellipse 54% 70% at 68% 44%, #000 50%, transparent 100%); }
+.tk-himmel::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, rgba(8,11,18,.5) 0%, rgba(8,11,18,.3) 48%, rgba(8,11,18,0) 72%), linear-gradient(180deg, rgba(8,11,18,0) 34%, rgba(8,11,18,.6) 66%); }
+@media (prefers-reduced-motion: reduce) { .tk-himmel video { animation: none; } }
+.tk--himmel :is(.tk__temp, .tk__wx > span, .tk__hello, .tk__clock, .tk__date) { text-shadow: 0 1px 6px rgba(0,0,0,.75); }
+.tk__luft { display: block; width: 88px; height: 72px; }
+
 .tk--desk .tk__temp .wb { margin: -4px 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
 .tk__quote { margin: 0; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12); font-family: var(--hand); font-size: 22px; line-height: 1.15; color: #fff; }
 /* Desktop start world: the same card, tighter. It must end above the Projekte island (the column's bottom edge in Start.tsx), which leaves about 280 px
