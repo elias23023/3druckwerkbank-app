@@ -522,9 +522,9 @@ p { margin: 0; }
 .tk-fact b { font-size: 13.5px; letter-spacing: .01em; }
 .tk-fact span { font-size: 10.5px; letter-spacing: .03em; }
 .tk__quote { font-size: 24px; }
-.tk--desk .tk__hello { font-size: 21px; overflow: visible; }
-.tk--desk .tk__clock { font-size: 50px; margin: 0 0 3px; }
-.tk--desk .tk__temp b { font-size: 25px; }
+.tk.tk--desk .tk__hello { font-size: 21px; line-height: 1.05; overflow: visible; }
+.tk.tk--desk .tk__clock { font-size: 49px; margin: 0 0 3px; }
+.tk.tk--desk .tk__temp b { font-size: 25px; }
 .tk--desk .tk__wx > .xs { font-size: 9.5px; letter-spacing: .08em; }
 .tk--desk .tk-day__turn { font-size: 13px; }
 /* the day as a curve (Tagesbogen, Tageskarte.tsx) */
