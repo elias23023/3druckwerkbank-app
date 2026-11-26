@@ -16,6 +16,7 @@ import { workspace, WORKSPACE_META } from '../lib/workspace';
 import { Logo } from '../ui/TopBar';
 import { Check, Progress, Stack } from '../ui/Glass';
 import { WeatherIcon } from '../ui/WeatherIcon';
+import { WetterBild } from '../ui/WetterBild';
 import { Tageskarte } from '../ui/Tageskarte';
 import { SheetHost } from '../ui/SheetHost';
 import { CommandBar } from '../ui/CommandBar';
@@ -310,7 +311,7 @@ function MMehr({ now, world }: { now: Date; world: Route['world'] }) {
     <>
       <button className="m-back" onClick={() => navigate({ world: 'druck' })}><IArrowL width={16} height={16} /> Mehr</button>
       <Card title="Wetter" icon={<ISun />}>
-        {cur ? <div className="row" style={{ gap: 12 }}><WeatherIcon code={cur.code} isDay={cur.isDay} size={36} /><div className="col grow"><b className="m-big">{fmtNum(cur.temp)} °C</b><span className="small muted">{wmo(cur.code).label} · Wind {fmtNum(cur.wind)} km/h · {cur.humidity} %</span></div></div> : <span className="muted small">Wetter nicht verfügbar</span>}
+        {cur ? <div className="row" style={{ gap: 14 }}><WetterBild code={cur.code} isDay={cur.isDay} width={92} /><div className="col grow"><b className="m-big">{fmtNum(cur.temp)} °C</b><span className="small muted">{wmo(cur.code).label} · Wind {fmtNum(cur.wind)} km/h · {cur.humidity} %</span></div></div> : <span className="muted small">Wetter nicht verfügbar</span>}
         <div className="m-hours hours">{hours.map((h, i) => <div key={h.time} className={`hour${i === 0 ? ' now' : ''}`}><span className="muted">{i === 0 ? 'jetzt' : fmtTime(h.time)}</span><WeatherIcon code={h.code} isDay={h.isDay} size={16} /><b>{fmtNum(h.temp)}°</b><div className="pvbar"><i style={{ height: `${(pvKw(h.ghi, settings.pvKwp) / maxPv) * 100}%` }} /></div></div>)}</div>
         <span className="xs faint">Balken: Solarstrom-Schätzung · Quelle Open-Meteo</span>
       </Card>

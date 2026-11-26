@@ -5,7 +5,7 @@ import { fmtLongDate, fmtTime, fmtNum } from '../lib/format';
 import { todayDaily, wmo } from '../lib/weather';
 import { resolveSeason, SEASON_META, daysUntilNextSeason, type Season } from '../lib/season';
 import { sunTurn } from '../lib/sun';
-import { WeatherIcon } from './WeatherIcon';
+import { WetterBild } from './WetterBild';
 import { ISun, ISparkle, ISnow, IEnergy } from './Icons';
 
 const ILeaf = (p: React.SVGProps<SVGSVGElement>) => <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="ico" {...p}><path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 14"/><path d="M5 19 14 10"/></svg>;
@@ -45,7 +45,7 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
           <span className="tk__date"><b>{weekday}</b><span>{rest.join(', ')}</span></span>
         </div>
         <div className="tk__wx">
-          {cur ? <><div className="tk__temp"><WeatherIcon code={cur.code} isDay={cur.isDay} size={desktop ? 26 : 30} /><b>{fmtNum(cur.temp)} °C</b></div><span className="small">{wmo(cur.code).label}</span><span className="xs muted">{[settings.location.name.split(',')[0], 'Open-Meteo'].filter(Boolean).join(' · ')}</span>{motto ? <p className="tk__motto">{motto}</p> : null}</> : <span className="muted small">{weather?.error ? 'Wetter nicht verfügbar' : 'Wetter …'}</span>}
+          {cur ? <>{desktop ? null : <WetterBild code={cur.code} isDay={cur.isDay} width={88} />}<div className="tk__temp">{desktop ? <WetterBild code={cur.code} isDay={cur.isDay} width={46} /> : null}<b>{fmtNum(cur.temp)} °C</b></div><span className="small">{wmo(cur.code).label}</span><span className="xs muted">{[settings.location.name.split(',')[0], 'Open-Meteo'].filter(Boolean).join(' · ')}</span>{motto ? <p className="tk__motto">{motto}</p> : null}</> : <span className="muted small">{weather?.error ? 'Wetter nicht verfügbar' : 'Wetter …'}</span>}
         </div>
       </div>
       {today ? (
