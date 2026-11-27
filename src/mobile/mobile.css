@@ -61,3 +61,13 @@
 .m-insel-mini--foto img { object-fit: cover; filter: none; }
 .menue-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; }
 @media (prefers-reduced-motion: reduce) { .m-insel img { animation: none; } }
+/* ---- Schrift am Handy (27.11.) ---- the same type as the card of the day (global.css, block „Schrift der ganzen App“) */
+.m-head .brand b { font-family: var(--display); font-weight: 600; font-size: 16px; letter-spacing: -.005em; }
+.m-card h3 { font-family: var(--display); font-weight: 600; font-size: 16px; letter-spacing: .002em; }
+.m-card h3 .cnt { font-family: var(--font); }
+.m-big, .m-stat b { font-family: var(--display); font-weight: 600; letter-spacing: -.02em; font-variant-numeric: lining-nums tabular-nums; }
+.m-stat b { font-size: 24px; } .m-stat span { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+.m-hero h2 { font-family: var(--display); font-weight: 600; font-size: 25px; letter-spacing: -.015em; }
+.m-row b.small { letter-spacing: .003em; }
+.m-back { letter-spacing: .02em; }
+.m-tabs button span { letter-spacing: .03em; }

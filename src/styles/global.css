@@ -644,3 +644,19 @@ p { margin: 0; }
 .glass.col--aktuell { border: 1px solid #7cc6ff; }
 .alert.info > .ico { color: #7cc6ff; }
 .thumb.thumb--naechstes { background: rgba(124,198,255,.2); color: #7cc6ff; }
+/* ---- Schrift der ganzen App (27.11.) ---- as in the card of the day: the display serif (--display, Fraunces) for names, titles
+   and large figures, the hand (--hand) for greetings, small spaced capitals for captions; running text stays Inter.
+   (No rule here begins like a rule of the Wasser-Look: scripts/wasser checks that the look comes last.) */
+.feld-kopf h1, .project-hero h2, .project-card h2, .sheet__head h2 { font-family: var(--display); font-weight: 600; letter-spacing: -.012em; }
+.feld-kopf.feld-kopf--gruss h1 { font-family: var(--hand); font-size: 40px; font-weight: 600; letter-spacing: 0; line-height: 1; color: #ffd9a8; padding-bottom: 2px; }
+.island__label--big b, .island__label--small b { font-family: var(--display); font-weight: 600; letter-spacing: -.005em; }
+.island__label--big span { letter-spacing: .01em; }
+.panel__head h3 { font-family: var(--display); font-weight: 600; font-size: 15.5px; letter-spacing: .002em; }
+.stat b, .druck-stats .stat b { font-family: var(--display); font-weight: 600; letter-spacing: -.02em; font-variant-numeric: lining-nums tabular-nums; }
+.stat span { font-size: 10px; letter-spacing: .09em; text-transform: uppercase; }
+.brand b { font-family: var(--display); font-weight: 600; font-size: 16.5px; letter-spacing: -.005em; }
+.topbar .brand.feld-etikett span { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; }
+.topbar .topbar__clock.chip b { font-family: var(--display); font-weight: 600; font-size: 17px; font-variant-numeric: lining-nums tabular-nums; }
+.portal__centre b { font-family: var(--display); font-weight: 600; letter-spacing: -.02em; font-variant-numeric: lining-nums tabular-nums; }
+.gcard b, .project-hero .desc { letter-spacing: .003em; }
+.cmd__input, .cmd input { letter-spacing: .005em; }
