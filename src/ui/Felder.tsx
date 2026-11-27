@@ -16,7 +16,7 @@ import { PanelColumn } from './Glass';
  */
 export function Weltkopf({ title, sub, children, width = '17.5%', className, titleStyle, before }: { title: ReactNode; sub?: ReactNode; children?: ReactNode; width?: string; className?: string; titleStyle?: CSSProperties; before?: ReactNode }) {
   return (
-    <PanelColumn side="left" top="7.7%" bottom="auto" width={width}>
+    <PanelColumn side="left" top="max(7.7%, calc(68px / var(--ui-scale, 1)))" bottom="auto" width={width}>
       <header className={`glass panel feld-kopf${className ? ' ' + className : ''}`}>
         {before}
         <h1 style={titleStyle}>{title}</h1>
@@ -37,7 +37,7 @@ export function Spruchfeld() {
   const now = useNow(60_000);
   if (!show) return null;
   return (
-    <PanelColumn side="right" top="7.7%" bottom="auto" width="15%">
+    <PanelColumn side="right" top="max(7.7%, calc(68px / var(--ui-scale, 1)))" bottom="auto" width="15%">
       <aside className="glass panel feld-spruch" aria-label="Spruch des Tages">
         <p className="feld-spruch__text">„{quoteOfDay(now)}“</p>
       </aside>

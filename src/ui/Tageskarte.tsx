@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, useLayoutEffect, useRef } from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { greeting, quoteOfDay, sameDay } from '../lib/time';
@@ -34,9 +34,9 @@ const dayFrac = (t: string | Date) => { const d = typeof t === 'string' ? new Da
  *  the field under it is lit hour by hour as much as the sun really shines (`marks`, from the forecast's cloud cover); the night
  *  runs on as a low line with a few stars. What is past is bright, what is to come is fainter; the sun (by night the moon) stands
  *  on the curve at the hour it is. Drawn in a fixed 320 x 66 field that scales with the card. Rules `.tb*` in global.css. */
-function Tagesbogen({ rise, set, at, marks }: { rise: number; set: number; at: number; marks?: { pos: number; color: string; sun: number }[] }) {
+function Tagesbogen({ rise, set, at, marks, flach }: { rise: number; set: number; at: number; marks?: { pos: number; color: string; sun: number }[]; flach?: boolean }) {
   const id = useId().replace(/:/g, '');
-  const W = 320, B = 50, H = 38, D = 7;   // width, baseline, height of the day's curve above it, depth of the night's below it
+  const W = 320, H = flach ? 25 : 38, B = 12 + H, D = flach ? 5 : 7, T = B + 16;   // width, height of the day's curve, baseline, depth of the night's curve below it, total height (flach: the desktop's lower card)
   const day = at >= rise && at <= set;
   const y = (f: number) => (f >= rise && f <= set ? B - H * Math.sin(Math.PI * (f - rise) / (set - rise)) : B + D * Math.sin(Math.PI * (f < rise ? (f + 1 - set) : (f - set)) / (1 - (set - rise))));
   const line = (a: number, b: number) => { const n = Math.max(2, Math.round((b - a) * 96)); return Array.from({ length: n + 1 }, (_, i) => { const f = a + (b - a) * i / n; return `${i ? 'L' : 'M'}${(f * W).toFixed(1)} ${y(f).toFixed(1)}`; }).join(''); };
@@ -44,12 +44,12 @@ function Tagesbogen({ rise, set, at, marks }: { rise: number; set: number; at: n
   const stops = marks && marks.length > 1 ? marks : [{ pos: 0, color: 'rgb(255 138 60)', sun: 1 }, { pos: .2, color: 'rgb(255 204 51)', sun: 1 }, { pos: .8, color: 'rgb(255 204 51)', sun: 1 }, { pos: 1, color: 'rgb(255 138 60)', sun: 1 }];
   const x = at * W, yy = y(at);
   return (
-    <svg className={`tb${day ? '' : ' tb--nacht'}`} viewBox={`0 0 ${W} 66`} aria-hidden>
+    <svg className={`tb${day ? '' : ' tb--nacht'}`} viewBox={`0 0 ${W} ${T}`} aria-hidden>
       <defs>
         <linearGradient id={`${id}s`} gradientUnits="userSpaceOnUse" x1={rise * W} x2={set * W} y1="0" y2="0">{stops.map((m, i) => <stop key={i} offset={m.pos} stopColor={m.color} />)}</linearGradient>
         <linearGradient id={`${id}f`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".9" /><stop offset=".55" stopColor="#fff" stopOpacity=".5" /><stop offset="1" stopColor="#fff" stopOpacity=".14" /></linearGradient>
-        <mask id={`${id}m`}><rect x="0" y="0" width={W} height="66" fill={`url(#${id}f)`} /></mask>
-        <clipPath id={`${id}p`}><rect x="0" y="0" width={x} height="66" /></clipPath>
+        <mask id={`${id}m`}><rect x="0" y="0" width={W} height={T} fill={`url(#${id}f)`} /></mask>
+        <clipPath id={`${id}p`}><rect x="0" y="0" width={x} height={T} /></clipPath>
         <filter id={`${id}g`} x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="3.2" /></filter>
         <radialGradient id={`${id}o`}><stop offset="0" stopColor="#fff" /><stop offset=".45" stopColor={day ? '#ffe9a6' : '#eef3ff'} /><stop offset="1" stopColor={day ? '#ffc247' : '#c9d8ff'} /></radialGradient>
       </defs>
@@ -109,6 +109,15 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
     }
     return stops.length > 1 ? { marks, hours: Math.round(hours * 2) / 2 } : null;
   })();
+  // Desktop: the column of the card is only as high as the stage leaves above the islands, and on a low window (a laptop, a
+  // zoomed browser) that is less than the card needs. It never scrolls and never cuts: its contents are laid out wider and
+  // shown smaller (CSS zoom) until they fit.
+  const fitBody = useRef<HTMLDivElement>(null), fitInner = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const body = fitBody.current, inner = fitInner.current; if (!desktop || !body || !inner) return;
+    const fit = () => { inner.style.zoom = '1'; const need = inner.scrollHeight, have = body.clientHeight; inner.style.zoom = need > have + 1 ? String(Math.max(.55, have / need)) : '1'; };
+    fit(); const ro = new ResizeObserver(fit); ro.observe(body); return () => ro.disconnect();
+  });
   const tile = desktop ? 'item tk-fact' : 'm-row tk-fact';
   const motto = !desktop || !cur ? null : cur.precip > 0 ? 'Drinnen ist heute Werkstatt-Wetter.' : pvStart ? 'Ein guter Tag für neue Projekte.' : 'Ein ruhiger Tag zum Planen.';
   const inner = (
@@ -125,7 +134,7 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
       </div>
       {today ? (
         <div className={`tk-day${turn ? ' tk-day--turn' : ''}`} role="img" aria-label={`Tageslicht von ${fmtTime(today.sunrise)} bis ${fmtTime(today.sunset)} Uhr${turn ? `, ${turn.text}` : ''}${sunny ? `, heute etwa ${fmtNum(sunny.hours, 1)} Stunden Sonne` : ''}`}>
-          <Tagesbogen rise={rise} set={set} at={dayFrac(now)} marks={sunny?.marks} />
+          <Tagesbogen rise={rise} set={set} at={dayFrac(now)} marks={sunny?.marks} flach={desktop} />
           <span className="tk-day__lbl" style={{ left: `${rise * 100}%` }}>↑ {fmtTime(today.sunrise)}</span>
           <span className="tk-day__lbl" style={{ left: `${set * 100}%` }}>↓ {fmtTime(today.sunset)}</span>
           {turn ? <span className="tk-day__turn" aria-hidden>{turn.text}{sunny ? <span className="tk-day__sun"> · ≈ {fmtNum(sunny.hours, sunny.hours % 1 ? 1 : 0)} h Sonne</span> : null}</span> : null}
@@ -139,6 +148,6 @@ export function Tageskarte({ now, pvStart, variant }: { now: Date; pvStart?: str
     </>
   );
   return desktop
-    ? <section className={`glass panel tk tk--desk${himmel ? ' tk--himmel' : ''}`} aria-label="Heute">{himmel ? <Himmel kind={himmel} /> : null}<div className="panel__body">{inner}</div></section>
+    ? <section className={`glass panel tk tk--desk${himmel ? ' tk--himmel' : ''}`} aria-label="Heute">{himmel ? <Himmel kind={himmel} /> : null}<div className="panel__body" ref={fitBody}><div className="tk__fit" ref={fitInner}>{inner}</div></div></section>
     : <section className={`glass m-card m-today tk${himmel ? ' tk--himmel' : ''}`}>{himmel ? <Himmel kind={himmel} /> : null}{inner}</section>;
 }

@@ -23,7 +23,7 @@ export function Start() {
   return (
     <>
       {/* The card of the day stands in a column top left; the column ends above the Projekte island (its top edge: 35 % of the stage in both formats). */}
-      <PanelColumn side="left" top="7.7%" bottom="66%" width="17cqw">
+      <PanelColumn side="left" top="max(7.7%, calc(68px / var(--ui-scale, 1)))" bottom="66%" width="17cqw">
         <Tageskarte now={now} pvStart={pv?.start} variant="desktop" />
       </PanelColumn>
       <button className="scroll-hint feld-etikett" onClick={() => navigate({ world: 'heute' })}><span>Scrollen zum Erkunden</span><IDown /></button>
