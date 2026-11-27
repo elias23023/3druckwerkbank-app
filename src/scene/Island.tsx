@@ -1,4 +1,6 @@
+import { useContext, useEffect, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { NachtContext } from './nacht';
 import type { LibraryIsland } from '../types';
 import { IArrowR } from '../ui/Icons';
 
@@ -32,6 +34,9 @@ const LABEL_FIELD = true;
  *  default island instead of a missing image or a crash. The stored id stays untouched, so nothing is overwritten. */
 export const knownIsland = (id: LibraryIsland): LibraryIsland => (Object.prototype.hasOwnProperty.call(ISLAND_META, id) ? id : 'werkstatt');
 export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${knownIsland(id)}-${w}.webp?v=${ASSET_VERSION}`;
+/** The main islands that have a picture of their own for the night (same frame as the day picture: scripts/island-nacht.mjs). */
+const NACHT_INSELN = new Set<string>(['heute', 'projekte', 'druck', 'material', 'wetter', 'archiv']);
+const islandNightSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${knownIsland(id)}-nacht-${w}.webp?v=${ASSET_VERSION}`;
 
 export interface IslandProps {
   image: LibraryIsland; x: number; y: number; size: number; depth: number; active?: boolean; opacity?: number;
@@ -50,12 +55,18 @@ export function Island({ image: imageIn, x, y, size, depth, active, opacity, lab
     filter: `${filter ?? ''} blur(${(depth * 1.1).toFixed(2)}px) brightness(${(1 - depth * 0.2).toFixed(2)}) saturate(${(1 - depth * 0.2).toFixed(2)})`,
     ['--s' as string]: s, ['--par' as string]: `${par}px`, ['--halo' as string]: halo ?? 'transparent',
   };
-  const src = size > 22 ? islandSrc(image, 1254) : size > 9 ? islandSrc(image, 640) : islandSrc(image, 256);
+  const w = size > 22 ? 1254 : size > 9 ? 640 : 256;
+  const src = islandSrc(image, w);
+  // by night the island's night picture fades in over the day picture, which goes once the night picture has loaded
+  const night = useContext(NachtContext) && NACHT_INSELN.has(image);
+  const [nightReady, setNightReady] = useState(false);
+  useEffect(() => { if (!night) setNightReady(false); }, [night]);
   return (
     <div className={`island${active ? ' island--active' : ''}${onClick ? ' island--click' : ''}${halo ? ' island--halo' : ''}${spotlight ? ' island--spot' : ''}`} style={style} onClick={onClick} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : -1} aria-label={title ?? label}
       onKeyDown={(e) => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}>
       <div className="island__body" style={{ position: 'relative', width: '100%', aspectRatio: `${meta.w} / ${meta.h}` }}>
-        <img className="island__img" src={src} alt="" width={meta.w} height={meta.h} loading={eager ? 'eager' : 'lazy'} decoding="async" draggable={false} />
+        <img className={`island__img${night && nightReady ? ' island__img--weg' : ''}`} src={src} alt="" width={meta.w} height={meta.h} loading={eager ? 'eager' : 'lazy'} decoding="async" draggable={false} />
+        {night ? <img className={`island__img island__img--nacht${nightReady ? ' is-da' : ''}`} src={islandNightSrc(image, w)} alt="" width={meta.w} height={meta.h} decoding="async" draggable={false} ref={(el) => { if (el && el.complete && el.naturalWidth) setNightReady(true); }} onLoad={() => setNightReady(true)} /> : null}
         {children ? <div className="island__props" style={FRAME_BOX[image]}>{children}</div> : null}
       </div>
       {label ? (

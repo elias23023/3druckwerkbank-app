@@ -35,6 +35,10 @@ p { margin: 0; }
 .island--active { cursor: default; }
 .island__body { animation: float 7s ease-in-out infinite; filter: var(--season-filter, none); transition: filter 1.2s var(--ease); }
 .island__img { position: relative; width: 100%; height: auto; display: block; filter: drop-shadow(0 0 1px rgba(20, 10, 0, .25)) drop-shadow(0 30px 40px rgba(0, 0, 0, .35)); }
+.island__img--nacht { position: absolute; left: 0; top: 0; opacity: 0; transition: opacity 1.4s var(--ease); }   /* the night picture of a main island, exactly over the day picture (Island.tsx) */
+.island__img--nacht.is-da { opacity: 1; }
+.island__img--weg { opacity: 0; transition: opacity 1.4s var(--ease) .3s; }
+@media (prefers-reduced-motion: reduce) { .island__img--nacht, .island__img--weg { transition: none; } }
 .island--active .island__img { filter: drop-shadow(0 0 1px rgba(20, 10, 0, .25)) drop-shadow(0 50px 70px rgba(0, 0, 0, .5)); }
 .island__props { position: absolute; inset: 0; pointer-events: none; }
 .island__label { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: -2%; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; white-space: nowrap; color: #f4f6fb; text-shadow: 0 2px 14px rgba(0,0,0,.6), 0 0 2px rgba(0,0,0,.5); pointer-events: none; }

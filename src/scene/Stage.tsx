@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Landscape } from './Landscape';
 import { LOOK_META, NIGHT_LOOKS, type Look } from './looks';
+import { NachtContext } from './nacht';
 import { Clouds } from './Clouds';
 import { WeatherFx } from './WeatherFx';
 import { SeasonFx } from './SeasonFx';
@@ -45,7 +46,7 @@ export function Stage({ phase, look, world, parallax, islands, children, weather
         <SeasonFx season={season} night={night} reduced={!parallax} />
         <WeatherFx code={weatherCode} reduced={!parallax} look={look} />
       </div>
-      <div className="frame"><div className="islands">{islands}</div></div>
+      <div className="frame"><div className="islands"><NachtContext.Provider value={night}>{islands}</NachtContext.Provider></div></div>
       <div className="ground-mist" />
       <div className="vignette" />
       {children}
