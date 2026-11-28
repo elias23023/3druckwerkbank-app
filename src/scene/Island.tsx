@@ -7,8 +7,8 @@ import { IArrowR } from '../ui/Icons';
 export const ISLAND_META: Record<LibraryIsland, { w: number; h: number; disc?: { cx: number; cy: number; rx: number; ry: number } }> = {
   werkstatt: { w: 1098, h: 1227 }, elektronik: { w: 1098, h: 1226 }, ideen: { w: 1094, h: 1224 },
   rahmen: { w: 1094, h: 1190 }, staffelei: { w: 1203, h: 1123 },
-  // the six main islands (wide format; heute, projekte, druck, material, archiv from the user's image package of 15 Nov 2026, wetter of 7 Nov)
-  heute: { w: 1367, h: 953 }, projekte: { w: 1429, h: 1009 }, druck: { w: 1408, h: 965 }, material: { w: 1403, h: 1006 }, wetter: { w: 1401, h: 939 }, archiv: { w: 1348, h: 971 },
+  // the six main islands (wide format): the user's pictures of Nov 2026, redone as photographs through his picture AI on 27 Nov (source 2048 px)
+  heute: { w: 2048, h: 1531 }, projekte: { w: 2048, h: 1506 }, druck: { w: 2048, h: 1385 }, material: { w: 2048, h: 1493 }, wetter: { w: 2048, h: 1386 }, archiv: { w: 2048, h: 1523 },
   drucker: { w: 1081, h: 1188 },
   'projekt-garten': { w: 1081, h: 1167 }, 'projekt-haushalt': { w: 1080, h: 1168 }, 'projekt-fahrzeug': { w: 1080, h: 1209 }, 'projekt-buero': { w: 1080, h: 1186 },
   'projekt-hobby': { w: 1079, h: 1204 }, 'projekt-technik': { w: 1086, h: 1208 }, 'projekt-deko': { w: 1081, h: 1196 }, 'projekt-modell': { w: 1080, h: 1195 },
@@ -26,7 +26,7 @@ export const FRAME_BOX: Partial<Record<LibraryIsland, CSSProperties>> = {
 };
 /** Bump when an image under /img changes its content (islands, landscapes, phone backgrounds): the CDN and browsers cache
  *  /img/* for a year (immutable), so the URL must change; it also names the image cache of the installed app (sw.js). */
-export const ASSET_VERSION = '20261126a';
+export const ASSET_VERSION = '20261127a';
 /** Desktop: name and subtitle under an island stand on a small label of smoke glass (block „Felder“ in global.css, class
  *  `island__label--feld`). false = the names stand free on the landscape as before (only the text shadow). */
 const LABEL_FIELD = true;
@@ -34,6 +34,8 @@ const LABEL_FIELD = true;
  *  default island instead of a missing image or a crash. The stored id stays untouched, so nothing is overwritten. */
 export const knownIsland = (id: LibraryIsland): LibraryIsland => (Object.prototype.hasOwnProperty.call(ISLAND_META, id) ? id : 'werkstatt');
 export const islandSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${knownIsland(id)}-${w}.webp?v=${ASSET_VERSION}`;
+/** Islands whose source is 2048 px wide: they also have insel-<name>-2048.webp (scripts/optimize-island.mjs), offered to large and sharp screens. */
+const GROSS_INSELN = new Set<string>(['heute', 'projekte', 'druck', 'material', 'wetter', 'archiv']);
 /** The main islands that have a picture of their own for the night (same frame as the day picture: scripts/island-nacht.mjs). */
 const NACHT_INSELN = new Set<string>(['heute', 'projekte', 'druck', 'material', 'wetter', 'archiv']);
 const islandNightSrc = (id: LibraryIsland, w: 1254 | 640 | 256) => `/img/insel-${knownIsland(id)}-nacht-${w}.webp?v=${ASSET_VERSION}`;
@@ -57,6 +59,10 @@ export function Island({ image: imageIn, x, y, size, depth, active, opacity, lab
   };
   const w = size > 22 ? 1254 : size > 9 ? 640 : 256;
   const src = islandSrc(image, w);
+  // a large island of GROSS_INSELN: the browser takes the 2048 px file where the island is drawn wider than 1254 device pixels
+  const gross = w === 1254 && GROSS_INSELN.has(image);
+  const srcSet = gross ? `${src} 1254w, /img/insel-${image}-2048.webp?v=${ASSET_VERSION} 2048w` : undefined;
+  const sizes = gross ? `${Math.round(size * 1.1)}vw` : undefined;
   // by night the island's night picture fades in over the day picture, which goes once the night picture has loaded
   const night = useContext(NachtContext) && NACHT_INSELN.has(image);
   const [nightReady, setNightReady] = useState(false);
@@ -65,7 +71,7 @@ export function Island({ image: imageIn, x, y, size, depth, active, opacity, lab
     <div className={`island${active ? ' island--active' : ''}${onClick ? ' island--click' : ''}${halo ? ' island--halo' : ''}${spotlight ? ' island--spot' : ''}`} style={style} onClick={onClick} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : -1} aria-label={title ?? label}
       onKeyDown={(e) => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}>
       <div className="island__body" style={{ position: 'relative', width: '100%', aspectRatio: `${meta.w} / ${meta.h}` }}>
-        <img className={`island__img${night && nightReady ? ' island__img--weg' : ''}`} src={src} alt="" width={meta.w} height={meta.h} loading={eager ? 'eager' : 'lazy'} decoding="async" draggable={false} />
+        <img className={`island__img${night && nightReady ? ' island__img--weg' : ''}`} src={src} srcSet={srcSet} sizes={sizes} alt="" width={meta.w} height={meta.h} loading={eager ? 'eager' : 'lazy'} decoding="async" draggable={false} />
         {night ? <img className={`island__img island__img--nacht${nightReady ? ' is-da' : ''}`} src={islandNightSrc(image, w)} alt="" width={meta.w} height={meta.h} decoding="async" draggable={false} ref={(el) => { if (el && el.complete && el.naturalWidth) setNightReady(true); }} onLoad={() => setNightReady(true)} /> : null}
         {children ? <div className="island__props" style={FRAME_BOX[image]}>{children}</div> : null}
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { LOOK_META, landscapeKey, type Look } from './looks';
+import { LOOK_META, LANDSCAPE_WIDTHS as WIDTHS, landscapeKey, type Look } from './looks';
 import type { Season } from '../lib/season';
 import { ASSET_VERSION } from './Island';
 
@@ -9,8 +9,8 @@ const v = (f: string) => `/img/${f}?v=${ASSET_VERSION}`;
 function Layer({ name, on, onLoad }: { name: string; on: boolean; onLoad: () => void }) {
   return (
     <picture>
-      <source type="image/avif" srcSet={`${v(`landschaft-${name}-1280.avif`)} 1280w, ${v(`landschaft-${name}-1672.avif`)} 1672w`} sizes="100vw" />
-      <img src={v(`landschaft-${name}-1672.webp`)} srcSet={`${v(`landschaft-${name}-1280.webp`)} 1280w, ${v(`landschaft-${name}-1672.webp`)} 1672w`} sizes="100vw" alt="" style={{ opacity: on ? 1 : 0 }} fetchPriority={on ? 'high' : 'low'} decoding="async" onLoad={onLoad} />
+      <source type="image/avif" srcSet={WIDTHS.map((w) => `${v(`landschaft-${name}-${w}.avif`)} ${w}w`).join(', ')} sizes="100vw" />
+      <img src={v(`landschaft-${name}-1672.webp`)} srcSet={WIDTHS.map((w) => `${v(`landschaft-${name}-${w}.webp`)} ${w}w`).join(', ')} sizes="100vw" alt="" style={{ opacity: on ? 1 : 0 }} fetchPriority={on ? 'high' : 'low'} decoding="async" onLoad={onLoad} />
     </picture>
   );
 }

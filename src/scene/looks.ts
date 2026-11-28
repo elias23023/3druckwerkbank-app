@@ -25,16 +25,22 @@ export const LOOK_META: Record<Look, { sx: string; sy: string; glow: number; ray
   regen: { sx: '50%', sy: '5%', glow: .05, rays: 0, sky: 'linear-gradient(180deg,#3a4452 0%,#6d7886 60%,#9aa3ae 100%)', cloud: '170,180,195', label: 'Regen' },
 };
 
-/** Landscape image for a look in a season: per season six painted phases of the Alpensee (dawn, morning, noon, evening,
- *  blue hour, night) plus a graded overcast variant of its noon image for grey weather (scripts/grade-regen.mjs).
- *  Files: public/img/landschaft-<season>-<phase>-*.{avif,webp} (desktop) (the phone has one picture per page: Mobile.tsx). */
+/** Landscape image for a look: six phases of the day (dawn, morning, noon, evening, blue hour, night) plus a rain picture
+ *  for grey weather. Files: public/img/landschaft-<set>-<phase>-<width>.{avif,webp} (desktop; the phone has one picture per
+ *  page: Mobile.tsx). Two sets exist (LANDSCHAFT below):
+ *  'wolken'   the sea of clouds above the Alps, photographic, up to 4K, one set for every season (27 Nov 2026; made through
+ *             the user's picture AI at his wish). The season still shows in the islands' tint and in leaves or snow.
+ *  'alpensee' the painted lake, one set per season (<set> = the season), 1672 px. */
 export type LandscapePhase = 'daemmerung' | 'morgen' | 'mittag' | 'abend' | 'blau' | 'nacht' | 'regen';
 export const LANDSCAPE_PHASES: LandscapePhase[] = ['daemmerung', 'morgen', 'mittag', 'abend', 'blau', 'nacht', 'regen'];
 export const LOOK_PHASE: Record<Look, LandscapePhase> = {
   daemmerung: 'daemmerung', sonnenaufgang: 'morgen', morgen: 'morgen', mittag: 'mittag', nachmittag: 'mittag', golden: 'abend', sonnenuntergang: 'abend',
   blau: 'blau', nacht: 'nacht', bedeckt: 'regen', nebel: 'regen', regen: 'regen',
 };
-export const landscapeKey = (look: Look, season: string) => `${season}-${LOOK_PHASE[look]}`;
+export const LANDSCHAFT: 'wolken' | 'alpensee' = 'wolken';
+export const landscapeKey = (look: Look, season: string) => `${LANDSCHAFT === 'wolken' ? 'wolken' : season}-${LOOK_PHASE[look]}`;
+/** The widths the landscapes are delivered in (scripts/optimize-landscapes.mjs, scripts/check-hintergruende.mjs); 3840 = 4K. */
+export const LANDSCAPE_WIDTHS: number[] = LANDSCHAFT === 'wolken' ? [1280, 1672, 2560, 3840] : [1280, 1672];
 
 const MIN = 60_000;
 

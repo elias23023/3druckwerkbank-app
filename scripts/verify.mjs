@@ -90,13 +90,13 @@ await ctx3.close();
 const TODAY = new Date().toISOString().slice(0, 10);
 const SEASON = ['winter', 'winter', 'fruehling', 'fruehling', 'fruehling', 'sommer', 'sommer', 'sommer', 'herbst', 'herbst', 'herbst', 'winter'][Number(TODAY.slice(5, 7)) - 1];
 // only the two hours that mean the same look on every day of the year (dawn, sunset and blue hour move with the season: they are checked below with a fixed sun)
-for (const [iso, look, key] of [[`${TODAY}T12:30:00+01:00`, 'mittag', `${SEASON}-mittag`], [`${TODAY}T01:00:00+01:00`, 'nacht', `${SEASON}-nacht`]]) {
+for (const [iso, look, key] of [[`${TODAY}T12:30:00+01:00`, 'mittag', 'wolken-mittag'], [`${TODAY}T01:00:00+01:00`, 'nacht', 'wolken-nacht']]) {
   const c = await browser.newContext(ctxOpts); const pg = await c.newPage();
   await pg.clock.install({ time: new Date(iso) });
   await pg.goto(`${base}/#/start`, { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
   const dl = await pg.getAttribute('.stage', 'data-look');
   // the exact look depends on today's sunrise/sunset; what matters is the seasonal image it maps to (grey weather shows the graded <season>-regen image instead)
-  check(`Landscape at ${iso.slice(11, 16)} (${look}) is ${key}`, (await pg.locator(`.land img[src*="landschaft-${/bedeckt|nebel|regen/.test(dl ?? '') ? `${SEASON}-regen` : key}-"]`).count()) >= 1, `${dl} ${await pg.locator('.land img').first().getAttribute('src') ?? ''}`);
+  check(`Landscape at ${iso.slice(11, 16)} (${look}) is ${key}`, (await pg.locator(`.land img[src*="landschaft-${/bedeckt|nebel|regen/.test(dl ?? '') ? 'wolken-regen' : key}-"]`).count()) >= 1, `${dl} ${await pg.locator('.land img').first().getAttribute('src') ?? ''}`);
   await c.close();
 }
 // ---- Alpensee backgrounds with a fixed sun and weather (Open-Meteo answered by the test: sunrise 07:00, sunset 16:20, 14.11. = Herbst) ----
@@ -117,9 +117,9 @@ for (const [iso, look, key] of [[`${TODAY}T12:30:00+01:00`, 'mittag', `${SEASON}
     const r = await pg.evaluate((sel) => ({ look: document.querySelector('[data-look]')?.getAttribute('data-look'), src: [...document.querySelectorAll(sel)].pop()?.getAttribute('src') ?? '' }), mobile ? '.m-bg img' : '.land img');
     await c.close(); return r;
   };
-  let r = await bg('06:00', 0); check('Alpensee: 06:00 shows the dawn image', /landschaft-herbst-daemmerung-/.test(r.src), `${r.look} ${r.src}`);
-  r = await bg('17:15', 0); check('Alpensee: blue hour shows its own image', /landschaft-herbst-blau-/.test(r.src), `${r.look} ${r.src}`);
-  r = await bg('12:30', 61); check('Alpensee: rain code shows the graded rain image', r.look === 'regen' && /landschaft-herbst-regen-/.test(r.src), `${r.look} ${r.src}`);
+  let r = await bg('06:00', 0); check('Landscape: 06:00 shows the dawn image', /landschaft-wolken-daemmerung-/.test(r.src), `${r.look} ${r.src}`);
+  r = await bg('17:15', 0); check('Landscape: blue hour shows its own image', /landschaft-wolken-blau-/.test(r.src), `${r.look} ${r.src}`);
+  r = await bg('12:30', 61); check('Landscape: rain code shows the rain image', r.look === 'regen' && /landschaft-wolken-regen-/.test(r.src), `${r.look} ${r.src}`);
   // the phone: one picture per page, whatever the time of day and the weather
   r = await bg('12:30', 0, true); const r2 = await bg('12:30', 0, true, '#/heute');
   check('Handy-Hintergrund: Start shows seite-start, Heute shows seite-heute', /\/img\/seite-start-/.test(r.src) && /\/img\/seite-heute-/.test(r2.src), `${r.src} -> ${r2.src}`);
@@ -235,7 +235,7 @@ for (const [iso, look, key] of [[`${TODAY}T12:30:00+01:00`, 'mittag', `${SEASON}
   const w = await pg.evaluate(() => ({ s: document.querySelector('.stage')?.getAttribute('data-season'), fx: document.querySelectorAll('.season-fx--flake i').length, filter: getComputedStyle(document.querySelector('.island--active .island__body, .island .island__body')).filter }));
   check('Season override Winter: snow dust + island filter', w.s === 'winter' && w.fx >= 20 && /saturate/.test(w.filter), JSON.stringify(w));
   await pg.waitForTimeout(600);
-  check('Season override Winter: winter landscape', (await pg.locator('.land img[src*="landschaft-winter-"]').count()) >= 1, await pg.locator('.land img').last().getAttribute('src') ?? '');
+  check('Season override Winter: the landscape stays the sea of clouds (one set for every season)', (await pg.locator('.land img[src*="landschaft-wolken-"]').count()) >= 1, await pg.locator('.land img').last().getAttribute('src') ?? '');
   await pg.locator('.sheet .seg', { hasText: 'Winter' }).locator('button', { hasText: 'Automatisch' }).click(); await pg.waitForTimeout(300);
   check('Season back to auto', (await pg.evaluate(() => document.querySelector('.stage')?.getAttribute('data-season'))) === SEASON);
   await c.close();
